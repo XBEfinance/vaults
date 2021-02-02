@@ -8,6 +8,10 @@ contract Governable {
 
     address public governance;
 
+    constructor() public {
+        governance = msg.sender;
+    }
+
     modifier onlyGovernance {
         require(msg.sender == governance, "Caller is not a governance address!");
         _;

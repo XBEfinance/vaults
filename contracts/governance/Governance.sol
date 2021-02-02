@@ -8,8 +8,9 @@ import "./Governable.sol";
 import "./LPTokenWrapper.sol";
 import "./interfaces/IRewardDistributionRecipient.sol";
 import "./interfaces/IExecutor.sol";
+import "../templates/Initializable.sol";
 
-contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper {
+contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper, Initializable {
 
     struct Proposal {
         uint256 id;
@@ -53,7 +54,6 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper 
     uint256 public lock = 17280; // vote lock in blocks ~ 17280 3 days for 15s/block
     uint256 public minimum = 1e18; // minimal amount of governance token to allow proposal creation
     uint256 public quorum = 2000;
-    bool public config = true;
     uint256 public totalVotes;
 
     IERC20 public stakingRewardsToken;
@@ -62,6 +62,8 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper 
     uint256 public rewardRate = 0;
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
+
+    constructor() public Initializable() {}
 
     modifier updateReward(address _account) {
         rewardPerTokenStored = rewardPerToken();
@@ -73,10 +75,13 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper 
         _;
     }
 
-    function initialize(uint256 _id, address _stakingRewardsTokenAddress, address _governance, address _governanceToken) public {
-        require(config == true, "!config");
-        config = false;
-        proposalCount = _id;
+    function initialize(
+            uint256 _startId,
+            address _stakingRewardsTokenAddress,
+            address _governance,
+            address _governanceToken
+    ) public initializer {
+        proposalCount = _startId;
         stakingRewardsToken = IERC20(_stakingRewardsTokenAddress);
         setGovernance(_governance);
         _setGovernanceToken(_governanceToken);

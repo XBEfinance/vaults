@@ -24,6 +24,21 @@ const fs = require('fs');
 
 const mnemonic = fs.readFileSync('.secret').toString().trim();
 
+// NB: It's important to wrap the provider as a function.
+const rinkebyNetworkConfig = {
+  provider: () => new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/v3/${process.env.INFURA_ID}`),
+  network_id: 4, // Rinkeby's id
+  from: process.env.DEPLOYER_ACCOUNT, // contracts owner address
+  websockets: true,
+};
+
+const ganacheNetworkConfig = {
+  host: "127.0.0.1",     // Localhost (default: none)
+  port: 8545,            // Standard Ethereum port (default: none)
+  network_id: "*",       // Any network (default: none)
+  websockets: true
+};
+
 module.exports = {
   /**
    * Networks define how you connect to your ethereum client and let you set the
@@ -42,11 +57,8 @@ module.exports = {
     // tab if you use this network and you must also set the `host`, `port` and `network_id`
     // options below to some value.
 
-    // development: {
-    //  host: "127.0.0.1",     // Localhost (default: none)
-    //  port: 8545,            // Standard Ethereum port (default: none)
-    //  network_id: "*",       // Any network (default: none)
-    // },
+    development: ganacheNetworkConfig,
+    
     // Another network with more advanced options...
     // advanced: {
     // port: 8777,             // Custom port
@@ -57,13 +69,14 @@ module.exports = {
     // websockets: true        // Enable EventEmitter interface for web3 (default: false)
     // },
     // Useful for deploying to a public network.
-    // NB: It's important to wrap the provider as a function.
-    rinkeby: {
-      provider: () => new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/v3/${process.env.INFURA_ID}`),
-      network_id: 4, // Rinkeby's id
-      from: process.env.DEPLOYER_ACCOUNT, // contracts owner address
-      websockets: true,
-    },
+    rinkeby: rinkebyNetworkConfig,
+
+    // Use this network for part one of the deployment with free infura.
+    rinkeby_part_one: rinkebyNetworkConfig,
+    // Use this network for part two of the deployment with free infura.
+    rinkeby_part_two: rinkebyNetworkConfig,
+    rinkeby_governance: rinkebyNetworkConfig
+
     // Useful for private networks
     // private: {
     // provider: () => new HDWalletProvider(mnemonic, `https://network.io`),

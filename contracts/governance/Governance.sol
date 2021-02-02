@@ -2,6 +2,7 @@ pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/Math.sol";
 
 import "./Governable.sol";
 import "./LPTokenWrapper.sol";
@@ -65,7 +66,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper 
     modifier updateReward(address _account) {
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = lastTimeRewardApplicable();
-        if (account != address(0)) {
+        if (_account != address(0)) {
             rewards[_account] = earned(_account);
             userRewardPerTokenPaid[_account] = rewardPerTokenStored;
         }
@@ -173,11 +174,11 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper 
     }
 
     function register() public {
-        require(voters[sender] == false, "voter");
-        voters[sender] = true;
-        votes[sender] = balanceOf(_msgSender());
+        require(voters[_msgSender()] == false, "voter");
+        voters[_msgSender()] = true;
+        votes[_msgSender()] = balanceOf(_msgSender());
         totalVotes = totalVotes.add(votes[_msgSender()]);
-        emit RegisterVoter(sender, votes[_msgSender()], totalVotes);
+        emit RegisterVoter(_msgSender(), votes[_msgSender()], totalVotes);
     }
 
     function revoke() public {
@@ -189,7 +190,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper 
         } else {
             totalVotes = totalVotes.sub(votes[_msgSender()]);
         }
-        emit RevokeVoter(sender, votes[_msgSender()], totalVotes);
+        emit RevokeVoter(_msgSender(), votes[_msgSender()], totalVotes);
         votes[_msgSender()] = 0;
     }
 
@@ -223,7 +224,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper 
         uint256 _for = proposals[_id].forVotes[_msgSender()];
         if (_for > 0) {
             proposals[_id].totalForVotes = proposals[_id].totalForVotes.sub(_for);
-            proposals[_id].forVotes[sender] = 0;
+            proposals[_id].forVotes[_msgSender()] = 0;
         }
 
         uint256 vote = votesOf(_msgSender()).sub(proposals[_id].againstVotes[_msgSender()]);
@@ -260,13 +261,13 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper 
     function earned(address _account) public view returns (uint256) {
         return
             balanceOf(_account)
-                .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
+                .mul(rewardPerToken().sub(userRewardPerTokenPaid[_account]))
                 .div(1e18)
                 .add(rewards[_account]);
     }
 
     // stake visibility is public as overriding LPTokenWrapper's stake() function
-    function stake(uint256 _amount) public updateReward(_msgSender()) {
+    function stake(uint256 _amount) public override updateReward(_msgSender()) {
         require(_amount > 0, "Cannot stake 0");
         if (voters[_msgSender()] == true) {
             votes[_msgSender()] = votes[_msgSender()].add(_amount);
@@ -276,8 +277,8 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper 
         emit Staked(_msgSender(), _amount);
     }
 
-    function withdraw(uint256 _amount) public updateReward(_msgSender()) {
-        require(amount > 0, "Cannot withdraw 0");
+    function withdraw(uint256 _amount) public override updateReward(_msgSender()) {
+        require(_amount > 0, "Cannot withdraw 0");
         if (voters[_msgSender()] == true) {
             votes[_msgSender()] = votes[_msgSender()].sub(_amount);
             totalVotes = totalVotes.sub(_amount);
@@ -309,6 +310,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper 
     function notifyRewardAmount(uint256 _reward)
         external
         onlyRewardDistribution
+        override
         updateReward(address(0))
     {
         IERC20(stakingRewardsToken).safeTransferFrom(_msgSender(), address(this), _reward);

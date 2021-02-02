@@ -1,6 +1,7 @@
 pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract LPTokenWrapper {
@@ -16,7 +17,7 @@ contract LPTokenWrapper {
     function _setGovernanceToken(address newGovernanceToken) internal {
         require(address(governanceToken) != newGovernanceToken,
             "A new governance token must differ from the old.");
-        governanceToken = IERC20(newGovernanceToken)
+        governanceToken = IERC20(newGovernanceToken);
     }
 
     function totalSupply() public view returns(uint256) {
@@ -24,16 +25,16 @@ contract LPTokenWrapper {
     }
 
     function balanceOf(address _account) public view returns(uint256) {
-        return _balances[account];
+        return _balances[_account];
     }
 
-    function stake(uint256 _amount) public {
+    function stake(uint256 _amount) public virtual {
         _totalSupply = _totalSupply.add(_amount);
         _balances[msg.sender] = _balances[msg.sender].add(_amount);
         governanceToken.safeTransferFrom(msg.sender, address(this), _amount);
     }
 
-    function withdraw(uint256 _amount) public {
+    function withdraw(uint256 _amount) public virtual {
         _totalSupply = _totalSupply.sub(_amount);
         _balances[msg.sender] = _balances[msg.sender].sub(_amount);
         governanceToken.safeTransfer(msg.sender, _amount);

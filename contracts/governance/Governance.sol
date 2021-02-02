@@ -292,7 +292,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper 
 
     function exit() external {
         withdraw(balanceOf(_msgSender()));
-        getReward();
+        // getReward(); Un-comment this to enable the rewards.
     }
 
     function getReward() public updateReward(_msgSender()) {

@@ -1,5 +1,5 @@
 pragma solidity ^0.6.0;
 
-interface Executor {
+interface IExecutor {
     function execute(uint, uint, uint, uint) external;
 }

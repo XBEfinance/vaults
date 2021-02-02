@@ -11,7 +11,7 @@ contract Governable is Context {
     address public governance;
 
     modifier onlyGovernance() public {
-        require(_msgSender() == _governance, "Caller is not a governance member!");
+        require(_msgSender() == _governance, "Caller is not a governance address!");
         _;
     }
 

@@ -72,12 +72,13 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper 
         _;
     }
 
-    function initialize(uint256 _id, address _stakingRewardsTokenAddress, address _governance) public {
+    function initialize(uint256 _id, address _stakingRewardsTokenAddress, address _governance, address _governanceToken) public {
         require(config == true, "!config");
         config = false;
         proposalCount = _id;
         stakingRewardsToken = IERC20(_stakingRewardsTokenAddress);
         setGovernance(_governance);
+        _setGovernanceToken(_governanceToken);
     }
 
     function setBreaker(bool _breaker) external onlyGovernance {
@@ -101,8 +102,8 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper 
     }
 
     function seize(IERC20 _token, uint256 _amount) external onlyGovernance {
-        require(_token != stakingRewardsToken, "A token must be the staking rewards token.");
-        require(_token != governanceToken, "A token must be the governance token.");
+        require(_token != stakingRewardsToken, "A token must not be the staking rewards token.");
+        require(_token != governanceToken, "A token must not be the governance token.");
         _token.safeTransfer(governance, _amount);
     }
 

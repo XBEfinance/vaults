@@ -10,6 +10,7 @@ import "./interfaces/IRewardDistributionRecipient.sol";
 import "./interfaces/IExecutor.sol";
 import "../templates/Initializable.sol";
 
+
 contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper, Initializable {
 
     struct Proposal {
@@ -63,8 +64,6 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
 
-    constructor() public Initializable() {}
-
     modifier updateReward(address _account) {
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = lastTimeRewardApplicable();
@@ -75,42 +74,68 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         _;
     }
 
-    function initialize(
+    constructor() public Initializable() {}
+
+    function configure(
             uint256 _startId,
             address _stakingRewardsTokenAddress,
             address _governance,
             address _governanceToken
-    ) public initializer {
+    ) external initializer {
         proposalCount = _startId;
         stakingRewardsToken = IERC20(_stakingRewardsTokenAddress);
         setGovernance(_governance);
         _setGovernanceToken(_governanceToken);
     }
 
+    function seize(IERC20 _token, uint256 _amount) external onlyGovernance {
+        require(_token != stakingRewardsToken, "!stakingRewardsToken");
+        require(_token != governanceToken, "!governanceToken");
+        _token.safeTransfer(governance, _amount);
+    }
+
     function setBreaker(bool _breaker) external onlyGovernance {
         breaker = _breaker;
     }
 
-    function setQuorum(uint256 _quorum) public onlyGovernance {
+    function setQuorum(uint256 _quorum) external onlyGovernance {
         quorum = _quorum;
     }
 
-    function setMinimum(uint256 _minimum) public onlyGovernance {
+    function setMinimum(uint256 _minimum) external onlyGovernance {
         minimum = _minimum;
     }
 
-    function setPeriod(uint256 _period) public onlyGovernance {
+    function setPeriod(uint256 _period) external onlyGovernance {
         period = _period;
     }
 
-    function setLock(uint256 _lock) public onlyGovernance {
+    function setLock(uint256 _lock) external onlyGovernance {
         lock = _lock;
     }
 
-    function seize(IERC20 _token, uint256 _amount) external onlyGovernance {
-        require(_token != stakingRewardsToken, "A token must not be the staking rewards token.");
-        require(_token != governanceToken, "A token must not be the governance token.");
-        _token.safeTransfer(governance, _amount);
+    function exit() external {
+        withdraw(balanceOf(_msgSender()));
+        // getReward(); Un-comment this to enable the rewards.
+    }
+
+    function notifyRewardAmount(uint256 _reward)
+        external
+        onlyRewardDistribution
+        override
+        updateReward(address(0))
+    {
+        IERC20(stakingRewardsToken).safeTransferFrom(_msgSender(), address(this), _reward);
+        if (block.timestamp >= periodFinish) {
+            rewardRate = _reward.div(DURATION);
+        } else {
+            uint256 remaining = periodFinish.sub(block.timestamp);
+            uint256 leftover = remaining.mul(rewardRate);
+            rewardRate = _reward.add(leftover).div(DURATION);
+        }
+        lastUpdateTime = block.timestamp;
+        periodFinish = block.timestamp.add(DURATION);
+        emit RewardAdded(_reward);
     }
 
     function propose(address _executor, string memory _hash) public {
@@ -129,7 +154,13 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
             quorumRequired: quorum,
             open: true
         });
-        emit NewProposal(proposalCount, _msgSender(), block.number, period, _executor);
+        emit NewProposal(
+            proposalCount,
+            _msgSender(),
+            block.number,
+            period,
+            _executor
+        );
         voteLock[_msgSender()] = lock.add(block.number);
     }
 
@@ -245,11 +276,11 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         emit Vote(_id, _msgSender(), false, vote);
     }
 
-    function lastTimeRewardApplicable() public view returns (uint256) {
+    function lastTimeRewardApplicable() public view returns(uint256) {
         return Math.min(block.timestamp, periodFinish);
     }
 
-    function rewardPerToken() public view returns (uint256) {
+    function rewardPerToken() public view returns(uint256) {
         if (totalSupply() == 0) {
             return rewardPerTokenStored;
         }
@@ -263,7 +294,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
             );
     }
 
-    function earned(address _account) public view returns (uint256) {
+    function earned(address _account) public view returns(uint256) {
         return
             balanceOf(_account)
                 .mul(rewardPerToken().sub(userRewardPerTokenPaid[_account]))
@@ -271,9 +302,8 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
                 .add(rewards[_account]);
     }
 
-    // stake visibility is public as overriding LPTokenWrapper's stake() function
     function stake(uint256 _amount) public override updateReward(_msgSender()) {
-        require(_amount > 0, "Cannot stake 0");
+        require(_amount > 0, "!stake 0");
         if (voters[_msgSender()] == true) {
             votes[_msgSender()] = votes[_msgSender()].add(_amount);
             totalVotes = totalVotes.add(_amount);
@@ -283,7 +313,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     }
 
     function withdraw(uint256 _amount) public override updateReward(_msgSender()) {
-        require(_amount > 0, "Cannot withdraw 0");
+        require(_amount > 0, "!withdraw 0");
         if (voters[_msgSender()] == true) {
             votes[_msgSender()] = votes[_msgSender()].sub(_amount);
             totalVotes = totalVotes.sub(_amount);
@@ -293,11 +323,6 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         }
         super.withdraw(_amount);
         emit Withdrawn(_msgSender(), _amount);
-    }
-
-    function exit() external {
-        withdraw(balanceOf(_msgSender()));
-        // getReward(); Un-comment this to enable the rewards.
     }
 
     function getReward() public updateReward(_msgSender()) {
@@ -310,24 +335,5 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
             stakingRewardsToken.safeTransfer(_msgSender(), reward);
             emit RewardPaid(_msgSender(), reward);
         }
-    }
-
-    function notifyRewardAmount(uint256 _reward)
-        external
-        onlyRewardDistribution
-        override
-        updateReward(address(0))
-    {
-        IERC20(stakingRewardsToken).safeTransferFrom(_msgSender(), address(this), _reward);
-        if (block.timestamp >= periodFinish) {
-            rewardRate = _reward.div(DURATION);
-        } else {
-            uint256 remaining = periodFinish.sub(block.timestamp);
-            uint256 leftover = remaining.mul(rewardRate);
-            rewardRate = _reward.add(leftover).div(DURATION);
-        }
-        lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp.add(DURATION);
-        emit RewardAdded(_reward);
     }
 }

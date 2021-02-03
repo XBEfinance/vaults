@@ -4,6 +4,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
+
 contract LPTokenWrapper {
 
     using SafeMath for uint256;
@@ -13,12 +14,6 @@ contract LPTokenWrapper {
 
     IERC20 public governanceToken;
     uint256 private _totalSupply;
-
-    function _setGovernanceToken(address newGovernanceToken) internal {
-        require(address(governanceToken) != newGovernanceToken,
-            "A new governance token must differ from the old.");
-        governanceToken = IERC20(newGovernanceToken);
-    }
 
     function totalSupply() public view returns(uint256) {
         return _totalSupply;
@@ -38,5 +33,10 @@ contract LPTokenWrapper {
         _totalSupply = _totalSupply.sub(_amount);
         _balances[msg.sender] = _balances[msg.sender].sub(_amount);
         governanceToken.safeTransfer(msg.sender, _amount);
+    }
+
+    function _setGovernanceToken(address newGovernanceToken) internal {
+        require(address(governanceToken) != newGovernanceToken, "!new");
+        governanceToken = IERC20(newGovernanceToken);
     }
 }

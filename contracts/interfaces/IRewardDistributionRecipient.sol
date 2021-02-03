@@ -2,6 +2,7 @@ pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+
 abstract contract IRewardDistributionRecipient is Ownable {
 
     address public rewardDistribution;

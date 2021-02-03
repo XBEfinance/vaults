@@ -121,7 +121,7 @@ contract EURxb is AccessControl, OverrideERC20, IEURxb, Initializable {
     * @dev Return maturity info by id
     */
     function getMaturityInfo(uint256 id) external view returns (uint256 amount, uint256 maturity, uint256 prev ,uint256 next) {
-        (amount, maturity, prev , next) = _list.getNodeValue(id);
+        (amount, maturity, prev, next) = _list.getNodeValue(id);
         amount = amount.sub(_deletedMaturity[maturity]);
     }
 
@@ -177,7 +177,7 @@ contract EURxb is AccessControl, OverrideERC20, IEURxb, Initializable {
      * @param amount number of tokens
      * @param maturityEnd end date of interest accrual
      */
-    function addNewMaturity(uint256 amount, uint256 maturityEnd) onlyDDP external override {
+    function addNewMaturity(uint256 amount, uint256 maturityEnd) external onlyDDP override {
 //        require(amount > 0, "The amount must be greater than zero"); // TODO: check into DDP
 //        require(maturityEnd > 0, "End date must be greater than zero");
 
@@ -224,7 +224,7 @@ contract EURxb is AccessControl, OverrideERC20, IEURxb, Initializable {
      * @param amount number of tokens
      * @param maturityEnd end date of interest accrual
      */
-    function removeMaturity(uint256 amount, uint256 maturityEnd) onlyDDP external override {
+    function removeMaturity(uint256 amount, uint256 maturityEnd) external onlyDDP override {
 //        require(amount > 0, "The amount must be greater than zero"); // TODO: check into DDP
 //        require(maturityEnd > 0, "End date must be greater than zero");
         require(_list.listExists(), "The list does not exist");
@@ -338,7 +338,12 @@ contract EURxb is AccessControl, OverrideERC20, IEURxb, Initializable {
      * @param interest percent
      * @param prevIndex previous index
      */
-    function _calculateInterest(uint256 timestampNow, uint256 interest, uint256 prevIndex, uint256 lastAccrualTimestamp)
+    function _calculateInterest(
+        uint256 timestampNow,
+        uint256 interest,
+        uint256 prevIndex,
+        uint256 lastAccrualTimestamp
+    )
         internal
         view
         returns (uint256)

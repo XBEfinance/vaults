@@ -11,6 +11,7 @@ import "./interfaces/IBalancerPool.sol";
 import "./interfaces/IStakingManager.sol";
 import "./templates/Initializable.sol";
 
+
 /**
  * @title Router
  * @dev Liquidity management contract
@@ -185,7 +186,7 @@ contract Router is Ownable, Initializable {
         uint256 amountEUR = exchangeAmount.mul(eurRatio).div(tokenRatio);
         uint256 balanceEUR = _tEURxb.balanceOf(address(this));
 
-        require(balanceEUR >= 10 ** 18, 'EmptyEURxbBalance'); // balance great then 1 EURxb token
+        require(balanceEUR >= 10 ** 18, "EmptyEURxbBalance"); // balance great then 1 EURxb token
 
         // check if we don't have enough eurxb tokens
         if (balanceEUR <= amountEUR) {
@@ -236,7 +237,7 @@ contract Router is Ownable, Initializable {
         uint256 amountEUR = exchangeAmount.mul(eurRatio).div(tokenRatio);
         uint256 balanceEUR = _tEURxb.balanceOf(address(this));
 
-        require(balanceEUR >= 10 ** 18, 'EmptyEURxbBalance'); // balance great then 1 EURxb token
+        require(balanceEUR >= 10 ** 18, "EmptyEURxbBalance"); // balance great then 1 EURxb token
 
         // check if we don't have enough eurxb tokens
         if (balanceEUR <= amountEUR) {

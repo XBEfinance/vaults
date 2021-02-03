@@ -40,22 +40,6 @@ const zeroAddress = '0x0000000000000000000000000000000000000000';
 const usd = (n) => web3.utils.toWei(n, 'Mwei');
 const ether = (n) => web3.utils.toWei(n, 'ether');
 
-const governanceDeploy = async (deployer, network, accounts) => {
-
-    // deploy token contract
-    const xbeToken = await deployer.deploy(XBG, ether('10'));
-    // deploy governance contract
-    const governance = await deployer.deploy(Governance);
-
-    // configure gov contract
-    await governance.initialize(
-        0,
-        zeroAddress,
-        process.env.DEPLOYER_ACCOUNT,
-        xbeToken.address
-    );
-};
-
 module.exports = function (deployer, network, accounts) {
   deployer.then(async () => {
     if (network === 'test' || network === 'soliditycoverage') {
@@ -69,7 +53,6 @@ module.exports = function (deployer, network, accounts) {
       await deployer.link(TokenAccessRoles, SecurityAssetToken);
       await deployer.link(TokenAccessRoles, DDP);
       await deployer.link(TokenAccessRoles, EURxb);
-      // network === 'rinkeby-fork' - impossible name for network because "rinkeby-fork" cannot be interpeted as valid JS dictionary key
     } else if (network.startsWith('rinkeby')) {
       // FIRST PART OF DEPLOYING
       if (network === 'rinkeby_part_one') {
@@ -149,8 +132,19 @@ module.exports = function (deployer, network, accounts) {
           const busd = await BUSDImplementation.deployed();
           const dai = await Dai.deployed();
 
-          // deploy Router and StakingManager contracts
           const xbg = await deployer.deploy(XBG, ether('15000'));
+
+          // deploy governance token
+          const governance = await deployer.deploy(Governance);
+          // configure gov contract
+          await governance.configure(
+              0,
+              zeroAddress,
+              process.env.DEPLOYER_ACCOUNT,
+              xbg.address
+          );
+
+          // deploy Router and StakingManager contracts
           const sm = await deployer.deploy(
             StakingManager, xbg.address, process.env.START_TIME,
           );
@@ -216,13 +210,21 @@ module.exports = function (deployer, network, accounts) {
             eurxb.address);
 
           await eurxb.transfer(router.address, ether('100000'));
-      } else if (network === 'rinkeby_governance') {
-          await governanceDeploy(deployer, network, accounts);
       } else {
           console.error(`Unsupported rinkeby network: ${network}`);
       }
     } else if (network === 'development') {
-      await governanceDeploy(deployer, network, accounts);
+      // deploy token contract
+      const xbeToken = await deployer.deploy(XBG, ether('15000'));
+      // deploy governance contract
+      const governance = await deployer.deploy(Governance);
+      // configure gov contract
+      await governance.configure(
+          0,
+          zeroAddress,
+          process.env.DEPLOYER_ACCOUNT,
+          xbeToken.address
+      );
     } else {
       console.error(`Unsupported network: ${network}`);
     }

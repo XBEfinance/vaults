@@ -14,74 +14,159 @@ const { ZERO_ADDRESS } = constants;
 
 const Governance = artifacts.require('Governance');
 const GovernanceToken = artifacts.require('XBG');
+const MockToken = artifacts.require('MockToken');
+
+const toCamelCase = (str) => {
+  return str.replace(
+    /\W+(.)/g,
+    (match, chr) => {
+      return chr.toUpperCase();
+    }
+  );
+}
+
+const setterTest = (contractInstance, setterName, validValue, validAddress, invalidAddress) => {
+  const fieldName = toCamelCase(setterName.substring(2));
+  describe(`${fieldName} setter`, () => {
+    it(`should set a new ${fieldName}`, async () => {
+      await contractInstance[setterName](validValue, {from: validAddress});
+      expect(await contractInstance[fieldName]()).to.be.equal(validValue);
+    });
+    it('should fail if it is to be changed not by valid address', async () => {
+      await expectRevert(contractInstance[setterName](validValue, {from: invalidAddress}),
+        `Setter ${setterName} test: the sender is not valid!`);
+    });
+  });
+};
 
 contract('Governance', (accounts) => {
 
+  const governance = accounts[0];
   const miris = accounts[1];
   const alice = accounts[2];
   const bob = accounts[3];
+  const fool = accounts[4];
 
-  before(async () => {
+  const stardId = 0;
+  const stakingRewardsTokenAddress = ZERO_ADDRESS;
+
+  beforeEach(async () => {
     this.governanceContract = await Governance.new();
     this.governanceToken = await GovernanceToken.new();
+    await this.governanceContract.configure(
+      stardId,
+      stakingRewardsTokenAddress,
+      governance,
+      governanceToken.address
+    );
   });
 
   it('should be initialized', async () => {
-
+    expect(await this.governanceContract.proposalCount()).to.be.bignumber.equal(stardId);
+    expect(await this.governanceContract.governance()).to.be.equal(governance);
+    expect(await this.governanceContract.stakingRewardsToken()).to.be.equal(stakingRewardsTokenAddress);
+    expect(await this.governanceContract.governanceToken()).to.be.equal(governanceToken.address);
   });
 
   describe('authority functions', () => {
+
+    const mockTokens = ether('10');
+    const breakerValid = true;
+    const quorumValid = 200;
+    const minimumValid = 1000;
+    const periodValid = 3000;
+    const lockValid = 10000;
+
     // function seize(IERC20 _token, uint256 _amount) external onlyGovernance {
     //     require(_token != stakingRewardsToken, "!stakingRewardsToken");
     //     require(_token != governanceToken, "!governanceToken");
     //     _token.safeTransfer(governance, _amount);
     // }
     describe('seize properly', () => {
+
+      beforeEach(async () => {
+        const mockToken = await MockToken.new('Mock Token', 'MT', mockTokens, {from: fool});
+        await mockToken.approve(this.governanceContract.address, mockTokens, {from: fool});
+        await mockToken.safeTransfer(this.governanceContract.address, mockTokens, {from: fool});
+      });
+
       it('should transfer tokens to governance', async () => {
-
+        await this.governanceContract.seize(mockToken.address, mockTokens, {from: governance});
       });
+
       it('should fail if token is staking rewards token', async () => {
-
+        await expectRevert(this.governanceContract.seize(stakingRewardsTokenAddress, mockTokens, {from: governance}),
+          "Governance: the token is staking rewards token!");
       });
-      it('should fail if token is governance token', async () => {
 
+      it('should fail if token is governance token', async () => {
+        await expectRevert(this.governanceContract.seize(governanceToken.address, mockTokens, {from: governance}),
+          "Governance: the token is governance token!");
+      });
+
+      it('should fail if caller is not governance', async () => {
+        await expectRevert(this.governanceContract.seize(mockToken.address, mockTokens, {from: fool}),
+          "Governance: a caller is not the governance address!");
       });
     });
+
+
+
     //
     // function setBreaker(bool _breaker) external onlyGovernance {
     //     breaker = _breaker;
     // }
-    it('should set a new breaker', async () => {
-
-    });
+    setterTest(
+      this.governanceContract,
+      'setBreaker',
+      breakerValid,
+      governance,
+      fool
+    );
 
     // function setQuorum(uint256 _quorum) external onlyGovernance {
     //     quorum = _quorum;
     // }
-    it('should set a new quorum', async () => {
-
-    });
+    setterTest(
+      this.governanceContract,
+      'setQuorum',
+      quorumValid,
+      governance,
+      fool
+    );
 
     // function setMinimum(uint256 _minimum) external onlyGovernance {
     //     minimum = _minimum;
     // }
-    it('should set a new minumum tokens for proposing', async () => {
-
-    });
+    setterTest(
+      this.governanceContract,
+      'setMinimum',
+      minimumValid,
+      governance,
+      fool
+    );
 
     // function setPeriod(uint256 _period) external onlyGovernance {
     //     period = _period;
     // }
-    it('should set a new default period', async () => {
-
-    });
+    setterTest(
+      this.governanceContract,
+      'setPeriod',
+      periodValid,
+      governance,
+      fool
+    );
 
     // function setLock(uint256 _lock) external onlyGovernance {
     //     lock = _lock;
     // }
-    it('should set a new lock', async () => {
-
-    });
+    setterTest(
+      this.governanceContract,
+      'setLock',
+      lockValid,
+      governance,
+      fool
+    );
   });
 
   describe('governance process', () => {

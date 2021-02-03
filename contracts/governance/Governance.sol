@@ -195,14 +195,14 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     function tallyVotes(uint256 _id) public {
         require(proposals[_id].open == true, "!open");
         require(proposals[_id].end < block.number, "!end");
-
         (uint256 _for, uint256 _against,) = getStats(_id);
-        bool _quorum = false;
-        if (proposals[_id].quorum >= proposals[_id].quorumRequired) {
-            _quorum = true;
-        }
         proposals[_id].open = false;
-        emit ProposalFinished(_id, _for, _against, _quorum);
+        emit ProposalFinished(
+            _id,
+            _for,
+            _against,
+            proposals[_id].quorum >= proposals[_id].quorumRequired
+        );
     }
 
     function votesOf(address _voter) public view returns(uint256) {

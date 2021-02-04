@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 
 contract LPTokenWrapper {
-
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 

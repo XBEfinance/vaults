@@ -1,7 +1,7 @@
 /* eslint no-unused-vars: 0 */
 /* eslint eqeqeq: 0 */
 
-const { assert } = require('chai');
+const { expect, assert } = require('chai');
 const {
   BN,
   constants,
@@ -68,7 +68,7 @@ contract('Governance', (accounts) => {
     expect(await this.governanceContract.proposalCount()).to.be.bignumber.equal(stardId);
     expect(await this.governanceContract.governance()).to.be.equal(governance);
     expect(await this.governanceContract.stakingRewardsToken()).to.be.equal(stakingRewardsTokenAddress);
-    expect(await this.governanceContract.governanceToken()).to.be.equal(governanceToken.address);
+    expect(await this.governanceContract.governanceToken()).to.be.equal(this.governanceToken.address);
   });
 
   describe('authority functions', () => {

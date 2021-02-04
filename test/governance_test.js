@@ -12,7 +12,7 @@ const {
 } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
-const ZERO = new BN(0);
+const ZERO = new BN('0');
 
 const Governance = artifacts.require('Governance');
 const GovernanceToken = artifacts.require('XBG');
@@ -42,7 +42,6 @@ const setterTest = (contractInstance, setterName, validValue, validAddress, inva
 };
 
 contract('Governance', (accounts) => {
-
   const governance = accounts[0];
   const miris = accounts[1];
   const alice = accounts[2];
@@ -61,7 +60,7 @@ contract('Governance', (accounts) => {
       stardId,
       stakingRewardsTokenAddress,
       governance,
-      governanceToken.address
+      this.governanceToken.address
     );
   });
 
@@ -76,10 +75,10 @@ contract('Governance', (accounts) => {
 
     const mockTokens = ether('10');
     const breakerValid = true;
-    const quorumValid = new BN(200);
-    const minimumValid = new BN(1000);
-    const periodValid = new BN(3000);
-    const lockValid = new BN(10000);
+    const quorumValid = new BN('200');
+    const minimumValid = new BN('1000');
+    const periodValid = new BN('3000');
+    const lockValid = new BN('10000');
 
     describe('seize properly', () => {
 

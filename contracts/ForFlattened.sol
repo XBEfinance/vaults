@@ -9,3 +9,4 @@ import "./Router.sol";
 import "./SecurityAssetToken.sol";
 import "./StakingManager.sol";
 import "./governance/XBG.sol";
+import "./governance/Governance.sol";

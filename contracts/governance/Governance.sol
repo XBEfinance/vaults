@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/math/Math.sol";
 
 import "./Governable.sol";
 import "./LPTokenWrapper.sol";
-import "./interfaces/IRewardDistributionRecipient.sol";
-import "./interfaces/IExecutor.sol";
+import "../interfaces/IRewardDistributionRecipient.sol";
+import "../interfaces/IExecutor.sol";
 import "../templates/Initializable.sol";
 
 

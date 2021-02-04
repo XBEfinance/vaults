@@ -57,7 +57,7 @@ module.exports = {
     // tab if you use this network and you must also set the `host`, `port` and `network_id`
     // options below to some value.
 
-    development: ganacheNetworkConfig,
+    // development: ganacheNetworkConfig,
 
     // Another network with more advanced options...
     // advanced: {

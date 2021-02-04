@@ -140,7 +140,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
 
     function propose(address _executor, string memory _hash) public {
         require(votesOf(_msgSender()) > minimum, "<minimum");
-        proposals[proposalCount++] = Proposal({
+        proposals[proposalCount] = Proposal({
             id: proposalCount,
             proposer: _msgSender(),
             totalForVotes: 0,
@@ -161,6 +161,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
             period,
             _executor
         );
+        proposalCount++;
         voteLock[_msgSender()] = lock.add(block.number);
     }
 

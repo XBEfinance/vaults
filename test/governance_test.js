@@ -17,6 +17,7 @@ const ZERO = new BN('0');
 const Governance = artifacts.require('Governance');
 const GovernanceToken = artifacts.require('XBG');
 const MockToken = artifacts.require('MockToken');
+const ExecutorMock = artifacts.require('ExecutorMock');
 
 const deployAndConfigureGovernance = async (
     stardId,
@@ -292,6 +293,51 @@ contract('Governance', (accounts) => {
       _quorumReached: true
     });
     expect((await governanceContract.proposals(oldProposalCount)).open).to.be.equal(false);
+  });
+
+  describe('executor tests', () => {
+
+    var executorMock;
+
+    beforeEach(async () => {
+      await governanceContract.setPeriod(periodForVoting, {from: governance});
+      await governanceContract.setQuorum(quorumForVoting, {from: governance});
+      executorMock = await ExecutorMock.new();
+    });
+
+    it('should execute an executor function if quorum reached', async () => {
+      await governanceContract.setPeriod(periodForVoting, {from: governance});
+      const oldProposalCount = await governanceContract.proposalCount({from: governance});
+      await governanceContract.propose(executorMock.address, proposalHash, {from: alice});
+      await governanceContract.voteFor(oldProposalCount, {from: alice});
+      await governanceContract.voteAgainst(oldProposalCount, {from: bob});
+      await time.increase(time.duration.hours(9));
+      const receipt = await governanceContract.execute(oldProposalCount, {from: governance});
+      const aliceProcentsFor = new BN('4000');
+      const bobProcentsAgainst = new BN('6000');
+      expectEvent(receipt, 'ProposalFinished', {
+        _id: oldProposalCount,
+        _for: aliceProcentsFor, // for value from getStats() - 40%
+        _against: bobProcentsAgainst, // against value from getStats() - 60%
+        _quorumReached: true
+      });
+    });
+
+    it('should not execute an executor function if quorum not reached', async () => {
+      var oldProposalCount = await governanceContract.proposalCount({from: governance});
+      await governanceContract.propose(alice, proposalHash, {from: alice});
+      await expectRevert(governanceContract.execute(oldProposalCount, {from: governance}),
+        '!quorum');
+    });
+
+    it('should not execute an executor function if proposal not ended', async () => {
+      var oldProposalCount = await governanceContract.proposalCount({from: governance});
+      await governanceContract.propose(alice, proposalHash, {from: alice});
+      await governanceContract.voteFor(oldProposalCount, {from: alice});
+      await governanceContract.voteAgainst(oldProposalCount, {from: bob});
+      await expectRevert(governanceContract.execute(oldProposalCount, {from: governance}),
+        '!end');
+    });
   });
 
   it('should register a new voter', async () => {

@@ -64,16 +64,6 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
 
-    modifier updateReward(address _account) {
-        rewardPerTokenStored = rewardPerToken();
-        lastUpdateTime = lastTimeRewardApplicable();
-        if (_account != address(0)) {
-            rewards[_account] = earned(_account);
-            userRewardPerTokenPaid[_account] = rewardPerTokenStored;
-        }
-        _;
-    }
-
     constructor() public Initializable() {}
 
     function configure(
@@ -179,17 +169,21 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         public
         view
         returns(
-                uint256 _for,
-                uint256 _against,
-                uint256 _quorum
+            uint256 _for,
+            uint256 _against,
+            uint256 _quorum
         )
     {
         _for = proposals[_id].totalForVotes;
         _against = proposals[_id].totalAgainstVotes;
         uint256 _total = _for.add(_against);
-        _for = _for.mul(10000).div(_total);
-        _against = _against.mul(10000).div(_total);
-        _quorum = _total.mul(10000).div(proposals[_id].totalVotesAvailable);
+        if (_total == 0) {
+          _quorum = 0;
+        } else {
+          _for = _for.mul(10000).div(_total);
+          _against = _against.mul(10000).div(_total);
+          _quorum = _total.mul(10000).div(proposals[_id].totalVotesAvailable);
+        }
     }
 
     // synonimus: countVotes
@@ -275,6 +269,16 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         voteLock[_msgSender()] = lock.add(block.number);
 
         emit Vote(_id, _msgSender(), false, vote);
+    }
+
+    modifier updateReward(address _account) {
+        rewardPerTokenStored = rewardPerToken();
+        lastUpdateTime = lastTimeRewardApplicable();
+        if (_account != address(0)) {
+            rewards[_account] = earned(_account);
+            userRewardPerTokenPaid[_account] = rewardPerTokenStored;
+        }
+        _;
     }
 
     function lastTimeRewardApplicable() public view returns(uint256) {

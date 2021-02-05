@@ -321,7 +321,6 @@ contract('Governance', (accounts) => {
   it('should revoke the voter tokens', async () => {
     const totalVotes = await governanceContract.totalVotes({from: governance});
     const receipt = await governanceContract.revoke({from: fool});
-    // RevokeVoter(address _voter, uint256 _votes, uint256 _totalVotes);
     expectEvent(receipt, 'RevokeVoter', {
       _voter: fool,
       _votes: foolSum,
@@ -366,7 +365,11 @@ contract('Governance', (accounts) => {
     await governanceContract.setPeriod(periodForVoting, {from: governance});
     var oldProposalCount = await governanceContract.proposalCount({from: governance});
     await governanceContract.propose(alice, proposalHash, {from: alice});
-    await time.increase(time.duration.hours(8));
+    await time.increase(time.duration.days(1));
+    await time.advanceBlock();
+    await time.advanceBlock();
+    await time.advanceBlock();
+    await time.advanceBlock();
     await expectRevert(governanceContract.voteAgainst(oldProposalCount, {from: alice}), '>end');
   });
 
@@ -374,7 +377,11 @@ contract('Governance', (accounts) => {
     await governanceContract.setPeriod(periodForVoting, {from: governance});
     var oldProposalCount = await governanceContract.proposalCount({from: governance});
     await governanceContract.propose(alice, proposalHash, {from: alice});
-    await time.increase(time.duration.hours(8));
+    await time.increase(time.duration.days(1));
+    await time.advanceBlock();
+    await time.advanceBlock();
+    await time.advanceBlock();
+    await time.advanceBlock();
     await expectRevert(governanceContract.voteFor(oldProposalCount, {from: alice}), '>end');
   });
 
@@ -399,108 +406,108 @@ contract('Governance', (accounts) => {
     expect(_quorum).to.be.bignumber.equal(new BN('4166'));
   });
 
-  describe('rewards distribution', () => {
-      // TODO: This will be the module for testing that the rewards are given to the stakers.
-      // function lastTimeRewardApplicable() public view returns (uint256) {
-      //     return Math.min(block.timestamp, periodFinish);
-      // }
-      it('should get last time reward applicable', async () => {
-        assert.fail('NOT IMPLEMENTED');
-      });
-
-      // function rewardPerToken() public view returns (uint256) {
-      //     if (totalSupply() == 0) {
-      //         return rewardPerTokenStored;
-      //     }
-      //     return
-      //         rewardPerTokenStored.add(
-      //             lastTimeRewardApplicable()
-      //                 .sub(lastUpdateTime)
-      //                 .mul(rewardRate)
-      //                 .mul(1e18)
-      //                 .div(totalSupply())
-      //         );
-      // }
-      it('should get reward per token', async () => {
-        assert.fail('NOT IMPLEMENTED');
-      });
-
-      // function earned(address _account) public view returns (uint256) {
-      //     return
-      //         balanceOf(_account)
-      //             .mul(rewardPerToken().sub(userRewardPerTokenPaid[_account]))
-      //             .div(1e18)
-      //             .add(rewards[_account]);
-      // }
-
-      it('should get count of earned staking reward tokens', async () => {
-        assert.fail('NOT IMPLEMENTED');
-      });
-      //
-      // function stake(uint256 _amount) public override updateReward(_msgSender()) {
-      //     require(_amount > 0, "!stake 0");
-      //     if (voters[_msgSender()] == true) {
-      //         votes[_msgSender()] = votes[_msgSender()].add(_amount);
-      //         totalVotes = totalVotes.add(_amount);
-      //     }
-      //     super.stake(_amount);
-      //     emit Staked(_msgSender(), _amount);
-      // }
-
-      it('should stake governance tokens', async () => {
-        assert.fail('NOT IMPLEMENTED');
-      });
-      //
-      // function withdraw(uint256 _amount) public override updateReward(_msgSender()) {
-      //     require(_amount > 0, "!withdraw 0");
-      //     if (voters[_msgSender()] == true) {
-      //         votes[_msgSender()] = votes[_msgSender()].sub(_amount);
-      //         totalVotes = totalVotes.sub(_amount);
-      //     }
-      //     if (breaker == false) {
-      //         require(voteLock[_msgSender()] < block.number,"!locked");
-      //     }
-      //     super.withdraw(_amount);
-      //     emit Withdrawn(_msgSender(), _amount);
-      // }
-      it('should withdraw governance tokens', async () => {
-        assert.fail('NOT IMPLEMENTED');
-      });
-      //
-      // function getReward() public updateReward(_msgSender()) {
-      //     if (breaker == false) {
-      //         require(voteLock[_msgSender()] > block.number,"!voted");
-      //     }
-      //     uint256 reward = earned(_msgSender());
-      //     if (reward > 0) {
-      //         rewards[_msgSender()] = 0;
-      //         stakingRewardsToken.safeTransfer(_msgSender(), reward);
-      //         emit RewardPaid(_msgSender(), reward);
-      //     }
-      // }
-      it('should transfer reward amounts to caller', async () => {
-        assert.fail('NOT IMPLEMENTED');
-      });
-      // function notifyRewardAmount(uint256 _reward)
-      //     external
-      //     onlyRewardDistribution
-      //     override
-      //     updateReward(address(0))
-      // {
-      //     IERC20(stakingRewardsToken).safeTransferFrom(_msgSender(), address(this), _reward);
-      //     if (block.timestamp >= periodFinish) {
-      //         rewardRate = _reward.div(DURATION);
-      //     } else {
-      //         uint256 remaining = periodFinish.sub(block.timestamp);
-      //         uint256 leftover = remaining.mul(rewardRate);
-      //         rewardRate = _reward.add(leftover).div(DURATION);
-      //     }
-      //     lastUpdateTime = block.timestamp;
-      //     periodFinish = block.timestamp.add(DURATION);
-      //     emit RewardAdded(_reward);
-      // }
-      it('should transfer reward amounts to reward distributor', async () => {
-        assert.fail('NOT IMPLEMENTED');
-      });
-  });
+  // describe('rewards distribution', () => {
+  //     // TODO: This will be the module for testing that the rewards are given to the stakers.
+  //     // function lastTimeRewardApplicable() public view returns (uint256) {
+  //     //     return Math.min(block.timestamp, periodFinish);
+  //     // }
+  //     it('should get last time reward applicable', async () => {
+  //       assert.fail('NOT IMPLEMENTED');
+  //     });
+  //
+  //     // function rewardPerToken() public view returns (uint256) {
+  //     //     if (totalSupply() == 0) {
+  //     //         return rewardPerTokenStored;
+  //     //     }
+  //     //     return
+  //     //         rewardPerTokenStored.add(
+  //     //             lastTimeRewardApplicable()
+  //     //                 .sub(lastUpdateTime)
+  //     //                 .mul(rewardRate)
+  //     //                 .mul(1e18)
+  //     //                 .div(totalSupply())
+  //     //         );
+  //     // }
+  //     it('should get reward per token', async () => {
+  //       assert.fail('NOT IMPLEMENTED');
+  //     });
+  //
+  //     // function earned(address _account) public view returns (uint256) {
+  //     //     return
+  //     //         balanceOf(_account)
+  //     //             .mul(rewardPerToken().sub(userRewardPerTokenPaid[_account]))
+  //     //             .div(1e18)
+  //     //             .add(rewards[_account]);
+  //     // }
+  //
+  //     it('should get count of earned staking reward tokens', async () => {
+  //       assert.fail('NOT IMPLEMENTED');
+  //     });
+  //     //
+  //     // function stake(uint256 _amount) public override updateReward(_msgSender()) {
+  //     //     require(_amount > 0, "!stake 0");
+  //     //     if (voters[_msgSender()] == true) {
+  //     //         votes[_msgSender()] = votes[_msgSender()].add(_amount);
+  //     //         totalVotes = totalVotes.add(_amount);
+  //     //     }
+  //     //     super.stake(_amount);
+  //     //     emit Staked(_msgSender(), _amount);
+  //     // }
+  //
+  //     it('should stake governance tokens', async () => {
+  //       assert.fail('NOT IMPLEMENTED');
+  //     });
+  //     //
+  //     // function withdraw(uint256 _amount) public override updateReward(_msgSender()) {
+  //     //     require(_amount > 0, "!withdraw 0");
+  //     //     if (voters[_msgSender()] == true) {
+  //     //         votes[_msgSender()] = votes[_msgSender()].sub(_amount);
+  //     //         totalVotes = totalVotes.sub(_amount);
+  //     //     }
+  //     //     if (breaker == false) {
+  //     //         require(voteLock[_msgSender()] < block.number,"!locked");
+  //     //     }
+  //     //     super.withdraw(_amount);
+  //     //     emit Withdrawn(_msgSender(), _amount);
+  //     // }
+  //     it('should withdraw governance tokens', async () => {
+  //       assert.fail('NOT IMPLEMENTED');
+  //     });
+  //     //
+  //     // function getReward() public updateReward(_msgSender()) {
+  //     //     if (breaker == false) {
+  //     //         require(voteLock[_msgSender()] > block.number,"!voted");
+  //     //     }
+  //     //     uint256 reward = earned(_msgSender());
+  //     //     if (reward > 0) {
+  //     //         rewards[_msgSender()] = 0;
+  //     //         stakingRewardsToken.safeTransfer(_msgSender(), reward);
+  //     //         emit RewardPaid(_msgSender(), reward);
+  //     //     }
+  //     // }
+  //     it('should transfer reward amounts to caller', async () => {
+  //       assert.fail('NOT IMPLEMENTED');
+  //     });
+  //     // function notifyRewardAmount(uint256 _reward)
+  //     //     external
+  //     //     onlyRewardDistribution
+  //     //     override
+  //     //     updateReward(address(0))
+  //     // {
+  //     //     IERC20(stakingRewardsToken).safeTransferFrom(_msgSender(), address(this), _reward);
+  //     //     if (block.timestamp >= periodFinish) {
+  //     //         rewardRate = _reward.div(DURATION);
+  //     //     } else {
+  //     //         uint256 remaining = periodFinish.sub(block.timestamp);
+  //     //         uint256 leftover = remaining.mul(rewardRate);
+  //     //         rewardRate = _reward.add(leftover).div(DURATION);
+  //     //     }
+  //     //     lastUpdateTime = block.timestamp;
+  //     //     periodFinish = block.timestamp.add(DURATION);
+  //     //     emit RewardAdded(_reward);
+  //     // }
+  //     it('should transfer reward amounts to reward distributor', async () => {
+  //       assert.fail('NOT IMPLEMENTED');
+  //     });
+  // });
 });

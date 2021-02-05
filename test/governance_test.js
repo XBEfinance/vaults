@@ -378,6 +378,27 @@ contract('Governance', (accounts) => {
     await expectRevert(governanceContract.voteFor(oldProposalCount, {from: alice}), '>end');
   });
 
+  it('should exit vote process successfully', async () => {
+    const oldBalance = await governanceToken.balanceOf(fool, {from: fool});
+    await governanceContract.exit({from: fool});
+    const newBalance = await governanceToken.balanceOf(fool, {from: fool});
+    expect(newBalance.sub(oldBalance)).to.be.bignumber.equal(foolSum);
+  });
+
+  it('should get stats of the votes', async () => {
+    var oldProposalCount = await governanceContract.proposalCount({from: governance});
+    await governanceContract.propose(alice, proposalHash, {from: alice});
+    await governanceContract.voteFor(oldProposalCount, {from: alice});
+    await governanceContract.voteAgainst(oldProposalCount, {from: bob});
+    var { _for, _against, _quorum } = await governanceContract.getStats(
+      oldProposalCount,
+      {from: governance}
+    );
+    expect(_for).to.be.bignumber.equal(new BN('4000'));
+    expect(_against).to.be.bignumber.equal(new BN('6000'));
+    expect(_quorum).to.be.bignumber.equal(new BN('4166'));
+  });
+
   describe('rewards distribution', () => {
       // TODO: This will be the module for testing that the rewards are given to the stakers.
       // function lastTimeRewardApplicable() public view returns (uint256) {

@@ -149,129 +149,129 @@ contract('Governance', (accounts) => {
     stakeGovernanceReceipt = await governanceContract.stake(governanceSum, {from: governance});
   });
 
-  // it('should be configured', async () => {
-  //   expect(await governanceContract.proposalCount()).to.be.bignumber.equal(stardId);
-  //   expect(await governanceContract.governance()).to.be.equal(governance);
-  //   expect(await governanceContract.stakingRewardsToken()).to.be.equal(stakingRewardsTokenAddress);
-  //   expect(await governanceContract.governanceToken()).to.be.equal(governanceToken.address);
-  // });
-  //
-  // governanceSetterTest(
-  //   stardId,
-  //   initialTotalSupply,
-  //   stakingRewardsTokenAddress,
-  //   governance,
-  //   'setBreaker',
-  //   breakerValid,
-  //   governance,
-  //   fool,
-  //   "!governance"
-  // );
-  //
-  // governanceSetterTest(
-  //   stardId,
-  //   initialTotalSupply,
-  //   stakingRewardsTokenAddress,
-  //   governance,
-  //   'setQuorum',
-  //   quorumValid,
-  //   governance,
-  //   fool,
-  //   "!governance"
-  // );
-  //
-  // governanceSetterTest(
-  //   stardId,
-  //   initialTotalSupply,
-  //   stakingRewardsTokenAddress,
-  //   governance,
-  //   'setMinimum',
-  //   minimumValid,
-  //   governance,
-  //   fool,
-  //   "!governance"
-  // );
-  //
-  // governanceSetterTest(
-  //   stardId,
-  //   initialTotalSupply,
-  //   stakingRewardsTokenAddress,
-  //   governance,
-  //   'setPeriod',
-  //   periodValid,
-  //   governance,
-  //   fool,
-  //   "!governance"
-  // );
-  //
-  // governanceSetterTest(
-  //   stardId,
-  //   initialTotalSupply,
-  //   stakingRewardsTokenAddress,
-  //   governance,
-  //   'setLock',
-  //   lockValid,
-  //   governance,
-  //   fool,
-  //   "!governance"
-  // );
-  //
-  // describe('seize properly', () => {
-  //
-  //   var mockToken;
-  //
-  //   beforeEach(async () => {
-  //     mockToken = await MockToken.new('Mock Token', 'MT', mockTokens, {from: fool});
-  //     await mockToken.approve(governanceContract.address, mockTokens, {from: fool});
-  //     await mockToken.transfer(governanceContract.address, mockTokens, {from: fool});
-  //   });
-  //
-  //   it('should transfer tokens to governance', async () => {
-  //     await governanceContract.seize(mockToken.address, mockTokens, {from: governance});
-  //     expect(await mockToken.balanceOf(governance, {from: governance})).to.be.bignumber.equal(mockTokens);
-  //   });
-  //
-  //   it('should fail if token is staking rewards token', async () => {
-  //     await expectRevert(governanceContract.seize(stakingRewardsTokenAddress, mockTokens, {from: governance}),
-  //       "!stakingRewardsToken");
-  //   });
-  //
-  //   it('should fail if token is governance token', async () => {
-  //     await expectRevert(governanceContract.seize(governanceToken.address, mockTokens, {from: governance}),
-  //       "!governanceToken");
-  //   });
-  //
-  //   it('should fail if caller is not governance', async () => {
-  //     await expectRevert(governanceContract.seize(mockToken.address, mockTokens, {from: fool}),
-  //       "!governance");
-  //   });
-  // });
-  //
-  // it('should get the rank of the voter (governance tokens amount)', async () => {
-  //   expect(await governanceContract.votesOf(miris, {from: miris})).to.be.bignumber.equal(mirisSum);
-  // });
-  //
-  // it('should propose a new proposal', async () => {
-  //   const oldProposalCount = await governanceContract.proposalCount({from: governance});
-  //   const period = await governanceContract.period({from: governance});
-  //   const lock = await governanceContract.lock({from: governance});
-  //   const receipt = await governanceContract.propose(alice, proposalHash, {from: miris});
-  //   const latestBlock = await time.latestBlock();
-  //   expectEvent(receipt, 'NewProposal', {
-  //     _id: oldProposalCount,
-  //     _creator: miris,
-  //     _start: latestBlock,
-  //     _duration: period,
-  //     _executor: alice
-  //   });
-  //   expect(await governanceContract.voteLock(miris)).to.be.bignumber.equal(lock.add(latestBlock));
-  // });
-  //
-  // it('should fail proposal if minimal vote rank has not reached', async () => {
-  //   await governanceContract.setMinimum(minumumForVoting, {from: governance});
-  //   await expectRevert(governanceContract.propose(alice, proposalHash, {from: fool}),
-  //     '<minimum');
-  // });
+  it('should be configured', async () => {
+    expect(await governanceContract.proposalCount()).to.be.bignumber.equal(stardId);
+    expect(await governanceContract.governance()).to.be.equal(governance);
+    expect(await governanceContract.stakingRewardsToken()).to.be.equal(stakingRewardsTokenAddress);
+    expect(await governanceContract.governanceToken()).to.be.equal(governanceToken.address);
+  });
+
+  governanceSetterTest(
+    stardId,
+    initialTotalSupply,
+    stakingRewardsTokenAddress,
+    governance,
+    'setBreaker',
+    breakerValid,
+    governance,
+    fool,
+    "!governance"
+  );
+
+  governanceSetterTest(
+    stardId,
+    initialTotalSupply,
+    stakingRewardsTokenAddress,
+    governance,
+    'setQuorum',
+    quorumValid,
+    governance,
+    fool,
+    "!governance"
+  );
+
+  governanceSetterTest(
+    stardId,
+    initialTotalSupply,
+    stakingRewardsTokenAddress,
+    governance,
+    'setMinimum',
+    minimumValid,
+    governance,
+    fool,
+    "!governance"
+  );
+
+  governanceSetterTest(
+    stardId,
+    initialTotalSupply,
+    stakingRewardsTokenAddress,
+    governance,
+    'setPeriod',
+    periodValid,
+    governance,
+    fool,
+    "!governance"
+  );
+
+  governanceSetterTest(
+    stardId,
+    initialTotalSupply,
+    stakingRewardsTokenAddress,
+    governance,
+    'setLock',
+    lockValid,
+    governance,
+    fool,
+    "!governance"
+  );
+
+  describe('seize properly', () => {
+
+    var mockToken;
+
+    beforeEach(async () => {
+      mockToken = await MockToken.new('Mock Token', 'MT', mockTokens, {from: fool});
+      await mockToken.approve(governanceContract.address, mockTokens, {from: fool});
+      await mockToken.transfer(governanceContract.address, mockTokens, {from: fool});
+    });
+
+    it('should transfer tokens to governance', async () => {
+      await governanceContract.seize(mockToken.address, mockTokens, {from: governance});
+      expect(await mockToken.balanceOf(governance, {from: governance})).to.be.bignumber.equal(mockTokens);
+    });
+
+    it('should fail if token is staking rewards token', async () => {
+      await expectRevert(governanceContract.seize(stakingRewardsTokenAddress, mockTokens, {from: governance}),
+        "!stakingRewardsToken");
+    });
+
+    it('should fail if token is governance token', async () => {
+      await expectRevert(governanceContract.seize(governanceToken.address, mockTokens, {from: governance}),
+        "!governanceToken");
+    });
+
+    it('should fail if caller is not governance', async () => {
+      await expectRevert(governanceContract.seize(mockToken.address, mockTokens, {from: fool}),
+        "!governance");
+    });
+  });
+
+  it('should get the rank of the voter (governance tokens amount)', async () => {
+    expect(await governanceContract.votesOf(miris, {from: miris})).to.be.bignumber.equal(mirisSum);
+  });
+
+  it('should propose a new proposal', async () => {
+    const oldProposalCount = await governanceContract.proposalCount({from: governance});
+    const period = await governanceContract.period({from: governance});
+    const lock = await governanceContract.lock({from: governance});
+    const receipt = await governanceContract.propose(alice, proposalHash, {from: miris});
+    const latestBlock = await time.latestBlock();
+    expectEvent(receipt, 'NewProposal', {
+      _id: oldProposalCount,
+      _creator: miris,
+      _start: latestBlock,
+      _duration: period,
+      _executor: alice
+    });
+    expect(await governanceContract.voteLock(miris)).to.be.bignumber.equal(lock.add(latestBlock));
+  });
+
+  it('should fail proposal if minimal vote rank has not reached', async () => {
+    await governanceContract.setMinimum(minumumForVoting, {from: governance});
+    await expectRevert(governanceContract.propose(alice, proposalHash, {from: fool}),
+      '<minimum');
+  });
 
   it('should tally votes for a proposal', async () => {
     await governanceContract.setPeriod(periodForVoting, {from: governance});
@@ -279,11 +279,11 @@ contract('Governance', (accounts) => {
     await governanceContract.propose(alice, proposalHash, {from: alice});
     await governanceContract.voteFor(oldProposalCount, {from: alice});
     await governanceContract.voteAgainst(oldProposalCount, {from: bob});
-    await time.increase(waitingDuration);
-    console.log(
-      (await governanceContract.proposals(oldProposalCount)).end.toString(),
-      (await time.latestBlock()).toString()
-    );
+    await time.increase(time.duration.hours(9));
+    // console.log(
+    //   (await governanceContract.proposals(oldProposalCount)).end.toString(),
+    //   (await time.latestBlock()).toString()
+    // );
     const receipt = await governanceContract.tallyVotes(oldProposalCount, {from: bob});
     expectEvent(receipt, 'ProposalFinished', {
       _id: oldProposalCount,
@@ -294,48 +294,48 @@ contract('Governance', (accounts) => {
     expect((await governanceContract.proposals(oldProposalCount)).open).to.be.equal(false);
   });
 
-  // it('should register a new voter', async () => {
-  //   expectEvent(registerGovernanceReceipt, 'RegisterVoter', {
-  //     _voter: governance,
-  //     _votes: ZERO,
-  //     _totalVotes: ZERO
-  //   });
-  //   expectEvent(stakeGovernanceReceipt, 'Staked', {
-  //     _user: governance,
-  //     _amount: governanceSum
-  //   });
-  // });
-  //
-  // it('should fail if register voter twice', async () => {
-  //   await expectRevert(governanceContract.register({from: fool}),
-  //     'voter');
-  // });
-  //
-  // it('should exit from voting process', async () => {
-  //   const oldBalance = await governanceToken.balanceOf(governance, {from: governance});
-  //   await governanceContract.exit({from: governance});
-  //   const newBalance = await governanceToken.balanceOf(governance, {from: governance});
-  //   expect(newBalance.sub(oldBalance)).to.be.bignumber.equal(governanceSum);
-  // });
-  //
-  // it('should revoke the voter tokens', async () => {
-  //   const totalVotes = await governanceContract.totalVotes({from: governance});
-  //   const receipt = await governanceContract.revoke({from: fool});
-  //   // RevokeVoter(address _voter, uint256 _votes, uint256 _totalVotes);
-  //   expectEvent(receipt, 'RevokeVoter', {
-  //     _voter: fool,
-  //     _votes: foolSum,
-  //     _totalVotes: totalVotes.sub(foolSum)
-  //   });
-  //   expect(await governanceContract.voters(fool, {from: governance})).to.be.equal(false);
-  //   expect(await governanceContract.votes(fool, {from: governance})).to.be.bignumber.equal(ZERO);
-  // });
-  //
-  // it('should not revoke not the voter', async () => {
-  //   await expectRevert(governanceContract.revoke({from: charlie}),
-  //     '!voter');
-  // });
-  //
+  it('should register a new voter', async () => {
+    expectEvent(registerGovernanceReceipt, 'RegisterVoter', {
+      _voter: governance,
+      _votes: ZERO,
+      _totalVotes: ZERO
+    });
+    expectEvent(stakeGovernanceReceipt, 'Staked', {
+      _user: governance,
+      _amount: governanceSum
+    });
+  });
+
+  it('should fail if register voter twice', async () => {
+    await expectRevert(governanceContract.register({from: fool}),
+      'voter');
+  });
+
+  it('should exit from voting process', async () => {
+    const oldBalance = await governanceToken.balanceOf(governance, {from: governance});
+    await governanceContract.exit({from: governance});
+    const newBalance = await governanceToken.balanceOf(governance, {from: governance});
+    expect(newBalance.sub(oldBalance)).to.be.bignumber.equal(governanceSum);
+  });
+
+  it('should revoke the voter tokens', async () => {
+    const totalVotes = await governanceContract.totalVotes({from: governance});
+    const receipt = await governanceContract.revoke({from: fool});
+    // RevokeVoter(address _voter, uint256 _votes, uint256 _totalVotes);
+    expectEvent(receipt, 'RevokeVoter', {
+      _voter: fool,
+      _votes: foolSum,
+      _totalVotes: totalVotes.sub(foolSum)
+    });
+    expect(await governanceContract.voters(fool, {from: governance})).to.be.equal(false);
+    expect(await governanceContract.votes(fool, {from: governance})).to.be.bignumber.equal(ZERO);
+  });
+
+  it('should not revoke not the voter', async () => {
+    await expectRevert(governanceContract.revoke({from: charlie}),
+      '!voter');
+  });
+
   it('should vote for', async () => {
     await governanceContract.setPeriod(periodForVoting, {from: governance});
     var oldProposalCount = await governanceContract.proposalCount({from: governance});
@@ -345,7 +345,7 @@ contract('Governance', (accounts) => {
       _id: oldProposalCount,
       _voter: alice,
       _vote: true,
-      _weight: aliceSum.sub(await (await governanceContract.proposals(oldProposalCount)).forVotes[alice])
+      _weight: new BN('200000000000000000000')
     });
   });
 
@@ -358,7 +358,7 @@ contract('Governance', (accounts) => {
       _id: oldProposalCount,
       _voter: alice,
       _vote: false,
-      _weight: aliceSum.sub(await (await governanceContract.proposals(oldProposalCount)).againstVotes[alice])
+      _weight: new BN('200000000000000000000')
     });
   });
 
@@ -376,24 +376,6 @@ contract('Governance', (accounts) => {
     await governanceContract.propose(alice, proposalHash, {from: alice});
     await time.increase(time.duration.hours(8));
     await expectRevert(governanceContract.voteFor(oldProposalCount, {from: alice}), '>end');
-  });
-
-  it('should not vote against before start', async () => {
-    var oldProposalCount = await governanceContract.proposalCount({from: governance});
-    await expectRevert(governanceContract.voteAgainst(oldProposalCount, {from: alice}), '<start');
-  });
-
-  it('should not vote for before start', async () => {
-    var oldProposalCount = await governanceContract.proposalCount({from: governance});
-    await expectRevert(governanceContract.voteFor(oldProposalCount, {from: alice}), '<start');
-  });
-
-  it('should exit vote process successfully', async () => {
-
-  });
-
-  it('should get stats of the votes', async () => {
-
   });
 
   describe('rewards distribution', () => {

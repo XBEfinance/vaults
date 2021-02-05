@@ -20,3 +20,6 @@ Flattened.sol
 # security
 .secret
 .env
+
+# generated files
+truffle-config.js

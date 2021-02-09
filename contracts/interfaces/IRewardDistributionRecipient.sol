@@ -15,7 +15,7 @@ abstract contract IRewardDistributionRecipient is Ownable {
     }
 
     function setRewardDistribution(address _rewardDistribution)
-        external
+        public
         onlyOwner
     {
         rewardDistribution = _rewardDistribution;

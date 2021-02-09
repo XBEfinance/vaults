@@ -74,8 +74,9 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     ) external initializer {
         proposalCount = _startId;
         stakingRewardsToken = IERC20(_stakingRewardsTokenAddress);
-        setGovernance(_governance);
         _setGovernanceToken(_governanceToken);
+        setGovernance(_governance);
+        setRewardDistribution(_governance);
     }
 
     function seize(IERC20 _token, uint256 _amount) external onlyGovernance {
@@ -337,7 +338,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         uint256 reward = earned(_msgSender());
         if (reward > 0) {
             rewards[_msgSender()] = 0;
-            stakingRewardsToken.safeTransfer(_msgSender(), reward);
+            stakingRewardsToken.transfer(_msgSender(), reward);
             emit RewardPaid(_msgSender(), reward);
         }
     }

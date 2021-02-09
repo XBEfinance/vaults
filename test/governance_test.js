@@ -22,6 +22,11 @@ const MockContract = artifacts.require("MockContract");
 const MockToken = artifacts.require('MockToken');
 const ExecutorMock = artifacts.require('ExecutorMock');
 
+const actorStake = async (address, sum, governanceContract, governanceToken) => {
+  await governanceToken.approve(governanceContract.address, sum, {from: address});
+  await governanceContract.stake(sum, {from: address});
+};
+
 const activeActor = async (address, sum, governanceContract, governanceToken, governance) => {
   await governanceToken.approve(address, sum, {from: governance});
   await governanceToken.transfer(address, sum, {from: governance});
@@ -258,12 +263,15 @@ contract('Governance', (accounts) => {
 
     it('should get the rank of the voter (governance tokens amount)', async () => {
       await activeActor(miris, mirisSum, governanceContract, governanceToken, governance);
+      await actorStake(miris, mirisSum, governanceContract, governanceToken);
       expect(await governanceContract.votesOf(miris, {from: miris})).to.be.bignumber.equal(mirisSum);
     });
 
     it('should propose a new proposal', async () => {
 
+      await governanceContract.setMinimum(minumumForVoting, {from: governance});
       await activeActor(miris, mirisSum, governanceContract, governanceToken, governance);
+      await actorStake(miris, mirisSum, governanceContract, governanceToken);
 
       const oldProposalCount = await governanceContract.proposalCount({from: governance});
       const period = await governanceContract.period({from: governance});
@@ -289,8 +297,13 @@ contract('Governance', (accounts) => {
 
     it('should tally votes for a proposal', async () => {
 
+      await governanceContract.setMinimum(minumumForVoting, {from: governance});
+
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
       await activeActor(bob, bobSum, governanceContract, governanceToken, governance);
+      await actorStake(bob, bobSum, governanceContract, governanceToken);
+      await actorStake(alice, aliceSum, governanceContract, governanceToken);
+
 
       await governanceContract.setPeriod(periodForVoting, {from: governance});
       var oldProposalCount = await governanceContract.proposalCount({from: governance});
@@ -321,7 +334,10 @@ contract('Governance', (accounts) => {
       it('should execute an executor function if quorum reached', async () => {
 
         await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+        await actorStake(alice, aliceSum, governanceContract, governanceToken);
         await activeActor(bob, bobSum, governanceContract, governanceToken, governance);
+        await actorStake(bob, bobSum, governanceContract, governanceToken);
+
 
         await governanceContract.setPeriod(periodForVoting, {from: governance});
         const oldProposalCount = await governanceContract.proposalCount({from: governance});
@@ -329,7 +345,7 @@ contract('Governance', (accounts) => {
         await governanceContract.voteFor(oldProposalCount, {from: alice});
         await governanceContract.voteAgainst(oldProposalCount, {from: bob});
         await time.increase(time.duration.hours(9));
-        const receipt = await governanceContract.execute(oldProposalCount, {from: governance});
+        const receipt = await governanceContract.execute(oldProposalCount, {from: alice});
         const aliceProcentsFor = new BN('4975');
         const bobProcentsAgainst = new BN('5024');
         expectEvent(receipt, 'ProposalFinished', {
@@ -343,16 +359,18 @@ contract('Governance', (accounts) => {
       it('should not execute an executor function if quorum not reached', async () => {
 
         await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+        await actorStake(alice, aliceSum, governanceContract, governanceToken);
 
         var oldProposalCount = await governanceContract.proposalCount({from: governance});
         await governanceContract.propose(alice, proposalHash, {from: alice});
-        await expectRevert(governanceContract.execute(oldProposalCount, {from: governance}),
+        await expectRevert(governanceContract.execute(oldProposalCount, {from: alice}),
           '!quorum');
       });
 
       it('should not execute an executor function if proposal not ended', async () => {
 
         await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+        await actorStake(alice, aliceSum, governanceContract, governanceToken);
         await activeActor(bob, bobSum, governanceContract, governanceToken, governance);
 
         var oldProposalCount = await governanceContract.proposalCount({from: governance});
@@ -392,13 +410,17 @@ contract('Governance', (accounts) => {
     it('should exit from voting process', async () => {
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
       const oldBalance = await governanceToken.balanceOf(alice, {from: alice});
+      await actorStake(alice, aliceSum, governanceContract, governanceToken);
+      console.log(oldBalance.toString());
       await governanceContract.exit({from: alice});
       const newBalance = await governanceToken.balanceOf(alice, {from: alice});
-      expect(newBalance.sub(oldBalance)).to.be.bignumber.equal(aliceSum);
+      expect(newBalance.sub(oldBalance)).to.be.bignumber.equal(ZERO);
     });
 
     it('should revoke the voter tokens', async () => {
       await activeActor(fool, foolSum, governanceContract, governanceToken, governance);
+      await actorStake(fool, foolSum, governanceContract, governanceToken);
+
       const totalVotes = await governanceContract.totalVotes({from: governance});
       const receipt = await governanceContract.revoke({from: fool});
       expectEvent(receipt, 'RevokeVoter', {
@@ -418,6 +440,7 @@ contract('Governance', (accounts) => {
     it('should vote for', async () => {
 
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+      await actorStake(alice, aliceSum, governanceContract, governanceToken);
 
       await governanceContract.setPeriod(periodForVoting, {from: governance});
       var oldProposalCount = await governanceContract.proposalCount({from: governance});
@@ -434,6 +457,7 @@ contract('Governance', (accounts) => {
     it('should vote against', async () => {
 
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+      await actorStake(alice, aliceSum, governanceContract, governanceToken);
 
       await governanceContract.setPeriod(periodForVoting, {from: governance});
       var oldProposalCount = await governanceContract.proposalCount({from: governance});
@@ -450,6 +474,7 @@ contract('Governance', (accounts) => {
     it('should not vote against when time has passed', async () => {
 
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+      await actorStake(alice, aliceSum, governanceContract, governanceToken);
 
       await governanceContract.setPeriod(periodForVoting, {from: governance});
       var oldProposalCount = await governanceContract.proposalCount({from: governance});
@@ -465,6 +490,7 @@ contract('Governance', (accounts) => {
     it('should not vote for when time has passed', async () => {
 
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+      await actorStake(alice, aliceSum, governanceContract, governanceToken);
 
       await governanceContract.setPeriod(periodForVoting, {from: governance});
       var oldProposalCount = await governanceContract.proposalCount({from: governance});
@@ -477,20 +503,13 @@ contract('Governance', (accounts) => {
       await expectRevert(governanceContract.voteFor(oldProposalCount, {from: alice}), '>end');
     });
 
-    it('should exit vote process successfully', async () => {
-
-      await activeActor(fool, foolSum, governanceContract, governanceToken, governance);
-
-      const oldBalance = await governanceToken.balanceOf(fool, {from: fool});
-      await governanceContract.exit({from: fool});
-      const newBalance = await governanceToken.balanceOf(fool, {from: fool});
-      expect(newBalance.sub(oldBalance)).to.be.bignumber.equal(foolSum);
-    });
-
     it('should get stats of the votes', async () => {
 
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+      await actorStake(alice, aliceSum, governanceContract, governanceToken);
       await activeActor(bob, bobSum, governanceContract, governanceToken, governance);
+      await actorStake(bob, bobSum, governanceContract, governanceToken);
+
 
       var oldProposalCount = await governanceContract.proposalCount({from: governance});
       await governanceContract.propose(alice, proposalHash, {from: alice});
@@ -516,6 +535,8 @@ contract('Governance', (accounts) => {
     });
 
     it('should stake governance tokens if sender is not a voter', async () => {
+      await governanceToken.approve(charlie, charlieSum, {from: governance});
+      await governanceToken.transfer(charlie, charlieSum, {from: governance});
       await governanceToken.approve(governanceContract.address, charlieSum, {from: charlie});
       const receipt = await governanceContract.stake(charlieSum, {from: charlie});
       expectEvent(receipt, 'Staked', {
@@ -563,10 +584,10 @@ contract('Governance', (accounts) => {
     it('should fail if vote locked', async () => {
 
       await activeActor(bob, bobSum, governanceContract, governanceToken, governance);
+      await actorStake(bob, bobSum, governanceContract, governanceToken);
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+      await actorStake(alice, aliceSum, governanceContract, governanceToken);
 
-      await governanceToken.approve(governanceContract.address, bobSum, {from: bob});
-      await governanceContract.stake(bobSum, {from: bob});
       await governanceContract.setPeriod(periodForVoting, {from: governance});
       var oldProposalCount = await governanceContract.proposalCount({from: governance});
       await governanceContract.propose(alice, proposalHash, {from: alice});
@@ -584,7 +605,9 @@ contract('Governance', (accounts) => {
       const bobsNewSum = someAdditionalSum.add(bobSum);
 
       await activeActor(bob, bobsNewSum, governanceContract, governanceToken, governance);
+
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+      await actorStake(alice, aliceSum, governanceContract, governanceToken);
 
       await governanceToken.approve(governanceContract.address, bobSum, {from: bob});
       await governanceContract.stake(bobSum, {from: bob});
@@ -622,6 +645,8 @@ contract('Governance', (accounts) => {
     it('should transfer reward amounts to reward distributor if period not finished', async () => {
 
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+      await actorStake(alice, aliceSum, governanceContract, governanceToken);
+
       await activeActor(bob, bobSum, governanceContract, governanceToken, governance);
 
       const DURATION = await governanceContract.DURATION({from: governance});
@@ -652,95 +677,95 @@ contract('Governance', (accounts) => {
     });
   });
 
-  // it('should get reward per token', async () => {
-  //   var stakingRewardsToken = await MockToken.new('Third Mock Token', 'TMT', ether('100'));
-  //   var governanceToken = await GovernanceToken.new(0, {from: governance});
-  //   var governanceContract = await Governance.new();
-  //   await governanceContract.configure(
-  //     stardId,
-  //     stakingRewardsToken.address,
-  //     governance,
-  //     governanceToken.address
-  //   );
-  //
-  //   var rewardPerToken = await governanceContract.rewardPerToken({from: governance});
-  //   var rewardPerTokenStored = await governanceContract.rewardPerTokenStored({from: governance});
-  //   expect(rewardPerToken).to.be.bignumber.equal(rewardPerTokenStored);
-  //
-  //   governanceToken = await GovernanceToken.new(initialTotalSupply, {from: governance});
-  //   governanceContract = await Governance.new();
-  //   await governanceContract.configure(
-  //     stardId,
-  //     stakingRewardsToken.address,
-  //     governance,
-  //     governanceToken.address
-  //   );
-  //
-  //   rewardPerTokenStored = await governanceContract.rewardPerTokenStored({from: governance});
-  //   const lastTimeRewardApplicable = await governanceContract.lastTimeRewardApplicable({from: governance});
-  //   const lastUpdateTime = await governanceContract.lastUpdateTime({from: governance});
-  //   const rewardRate = await governanceContract.rewardRate({from: governance});
-  //   const totalSupply = await governanceContract.totalSupply({from: governance});
-  //
-  //   console.log(rewardPerTokenStored.toString(),
-  //     lastTimeRewardApplicable.toString(),
-  //     lastUpdateTime.toString(),
-  //     rewardRate.toString(),
-  //     totalSupply.toString());
-  //
-  //   rewardPerToken = await governanceContract.rewardPerToken({from: governance});
-  //
-  //   const trueRewardPerToken = rewardPerTokenStored.add(
-  //     lastTimeRewardApplicable
-  //       .sub(lastUpdateTime)
-  //       .mul(rewardRate)
-  //       .mul(CONVERSION_WEI_CONSTANT)
-  //       .div(totalSupply)
-  //   );
-  //   console.log(rewardPerToken, trueRewardPerToken);
-  //   expect(rewardPerToken).to.be.bignumber.equal(trueRewardPerToken);
-  // });
+  it('should get reward per token', async () => {
+    var stakingRewardsToken = await MockToken.new('Third Mock Token', 'TMT', ether('100'));
+    var governanceToken = await GovernanceToken.new(0, {from: governance});
+    var governanceContract = await Governance.new();
+    await governanceContract.configure(
+      stardId,
+      stakingRewardsToken.address,
+      governance,
+      governanceToken.address
+    );
 
-  // it('should get count of earned staking reward tokens', async () => {
-  //   const mock = await MockContract.new();
-  //   const stakingRewardsToken = await MockToken.new('Fourth Mock Token', 'FMT', ether('100'));
-  //   const governanceContract = await Governance.new();
-  //   const mockedGovernanceToken = await GovernanceToken.at(mock.address);
-  //   await governanceContract.configure(
-  //     stardId,
-  //     stakingRewardsToken.address,
-  //     governance,
-  //     mockedGovernanceToken.address
-  //   );
-  //
-  //   const balanceOfAccountABI = governanceContract.contract.methods.balanceOf(ZERO_ADDRESS).encodeABI();
-  //   const rewardPerTokenABI = governanceContract.contract.methods.rewardPerToken().encodeABI();
-  //   const userRewardPerTokenPaidABI = governanceContract.contract.methods.userRewardPerTokenPaid(ZERO_ADDRESS).encodeABI();
-  //   const rewardsABI = governanceContract.contract.methods.rewards(ZERO_ADDRESS).encodeABI();
-  //
-  //   await mock.givenMethodReturnUint(balanceOfAccountABI, ether('5'));
-  //
-  //   const balanceOfAccount = await governanceContract.balanceOf(governance, {from: governance});
-  //   const rewardPerToken = await governanceContract.rewardPerToken({from: governance});
-  //   const userRewardPerTokenPaid = await governanceContract.userRewardPerTokenPaid(governance, {from: governance});
-  //   const rewards = await governanceContract.rewards(governance, {from: governance});
-  //
-  //   const earned = await governanceContract.earned(governance, {from: governance});
-  //
-  //   const trueEarned = balanceOfAccount
-  //       .mul(rewardPerToken.sub(userRewardPerTokenPaid))
-  //       .div(CONVERSION_WEI_CONSTANT)
-  //       .add(rewards);
-  //
-  //   console.log(
-  //     `balance of governance: ${balanceOfAccount}`,
-  //     `reward per token: ${rewardPerToken}`,
-  //     `user reward per token paid: ${userRewardPerTokenPaid}`,
-  //     `rewards: ${rewards}`,
-  //     `true earned: ${trueEarned}`,
-  //     `const: ${CONVERSION_WEI_CONSTANT}`,
-  //     `earned: ${earned}`
-  //   );
-  //   expect(earned).to.be.bignumber.equal(trueEarned);
-  // });
+    var rewardPerToken = await governanceContract.rewardPerToken({from: governance});
+    var rewardPerTokenStored = await governanceContract.rewardPerTokenStored({from: governance});
+    expect(rewardPerToken).to.be.bignumber.equal(rewardPerTokenStored);
+
+    governanceToken = await GovernanceToken.new(initialTotalSupply, {from: governance});
+    governanceContract = await Governance.new();
+    await governanceContract.configure(
+      stardId,
+      stakingRewardsToken.address,
+      governance,
+      governanceToken.address
+    );
+
+    rewardPerTokenStored = await governanceContract.rewardPerTokenStored({from: governance});
+    const lastTimeRewardApplicable = await governanceContract.lastTimeRewardApplicable({from: governance});
+    const lastUpdateTime = await governanceContract.lastUpdateTime({from: governance});
+    const rewardRate = await governanceContract.rewardRate({from: governance});
+    const totalSupply = await governanceContract.totalSupply({from: governance});
+
+    console.log(rewardPerTokenStored.toString(),
+      lastTimeRewardApplicable.toString(),
+      lastUpdateTime.toString(),
+      rewardRate.toString(),
+      totalSupply.toString());
+
+    rewardPerToken = await governanceContract.rewardPerToken({from: governance});
+
+    const trueRewardPerToken = rewardPerTokenStored.add(
+      lastTimeRewardApplicable
+        .sub(lastUpdateTime)
+        .mul(rewardRate)
+        .mul(CONVERSION_WEI_CONSTANT)
+        .div(totalSupply)
+    );
+    console.log(rewardPerToken, trueRewardPerToken);
+    expect(rewardPerToken).to.be.bignumber.equal(trueRewardPerToken);
+  });
+
+  it('should get count of earned staking reward tokens', async () => {
+    const mock = await MockContract.new();
+    const stakingRewardsToken = await MockToken.new('Fourth Mock Token', 'FMT', ether('100'));
+    const governanceContract = await Governance.new();
+    const mockedGovernanceToken = await GovernanceToken.at(mock.address);
+    await governanceContract.configure(
+      stardId,
+      stakingRewardsToken.address,
+      governance,
+      mockedGovernanceToken.address
+    );
+
+    const balanceOfAccountABI = governanceContract.contract.methods.balanceOf(ZERO_ADDRESS).encodeABI();
+    const rewardPerTokenABI = governanceContract.contract.methods.rewardPerToken().encodeABI();
+    const userRewardPerTokenPaidABI = governanceContract.contract.methods.userRewardPerTokenPaid(ZERO_ADDRESS).encodeABI();
+    const rewardsABI = governanceContract.contract.methods.rewards(ZERO_ADDRESS).encodeABI();
+
+    await mock.givenMethodReturnUint(balanceOfAccountABI, ether('5'));
+
+    const balanceOfAccount = await governanceContract.balanceOf(governance, {from: governance});
+    const rewardPerToken = await governanceContract.rewardPerToken({from: governance});
+    const userRewardPerTokenPaid = await governanceContract.userRewardPerTokenPaid(governance, {from: governance});
+    const rewards = await governanceContract.rewards(governance, {from: governance});
+
+    const earned = await governanceContract.earned(governance, {from: governance});
+
+    const trueEarned = balanceOfAccount
+        .mul(rewardPerToken.sub(userRewardPerTokenPaid))
+        .div(CONVERSION_WEI_CONSTANT)
+        .add(rewards);
+
+    console.log(
+      `balance of governance: ${balanceOfAccount}`,
+      `reward per token: ${rewardPerToken}`,
+      `user reward per token paid: ${userRewardPerTokenPaid}`,
+      `rewards: ${rewards}`,
+      `true earned: ${trueEarned}`,
+      `const: ${CONVERSION_WEI_CONSTANT}`,
+      `earned: ${earned}`
+    );
+    expect(earned).to.be.bignumber.equal(trueEarned);
+  });
 });

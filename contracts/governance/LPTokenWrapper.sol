@@ -10,21 +10,27 @@ contract LPTokenWrapper {
     using SafeERC20 for IERC20;
 
     IERC20 public governanceToken;
+    mapping(address => uint256) private _balances;
+    uint256 private _totalSupply;
 
     function totalSupply() public view returns(uint256) {
-        return governanceToken.totalSupply();
+        return _totalSupply;
     }
 
     function balanceOf(address _account) public view returns(uint256) {
-        return governanceToken.balanceOf(_account);
+        return _balances[_account];
     }
 
     function stake(uint256 _amount) public virtual {
+        _totalSupply = _totalSupply.add(_amount);
+        _balances[msg.sender] = _balances[msg.sender].add(_amount);
         governanceToken.safeTransferFrom(msg.sender, address(this), _amount);
     }
 
     function withdraw(uint256 _amount) public virtual {
-        governanceToken.safeTransfer(msg.sender, _amount);
+        _totalSupply = _totalSupply.sub(_amount);
+        _balances[msg.sender] = _balances[msg.sender].sub(_amount);
+        governanceToken.transfer(msg.sender, _amount);
     }
 
     function _setGovernanceToken(address newGovernanceToken) internal {

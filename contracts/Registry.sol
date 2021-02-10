@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
 import "./interfaces/IController.sol";
 import "./interfaces/IStrategy.sol";
-import "./interfaces/IVault.sol";
-import "./interfaces/IWrappedVault.sol";
+import "./interfaces/vault/IVaultCore.sol";
+import "./interfaces/vault/IVaultDelegated.sol";
 import "./governance/Governable.sol";
 import "./templates/Initializable.sol";
 
@@ -70,9 +70,9 @@ contract Registry is Governable, Initializable {
     function _addVault(address _vault) internal {
         require(_vault.isContract(), "!contract");
         // Checks if vault is already on the array
-        require(!vaults.contains(_vault), "exists");
-        // Adds unique _vault to vaults array
-        vaults.add(_vault);
+        require(!_vaults.contains(_vault), "exists");
+        // Adds unique _vault to _vaults array
+        _vaults.add(_vault);
     }
 
     function _addController(address _controller) internal {
@@ -83,7 +83,7 @@ contract Registry is Governable, Initializable {
     }
 
     function removeVault(address _vault) public onlyGovernance {
-        vaults.remove(_vault);
+        _vaults.remove(_vault);
     }
 
     function _getVaultData(address _vault)
@@ -105,11 +105,11 @@ contract Registry is Governable, Initializable {
         isDelegated = isDelegatedVault[vault];
 
         // Get values from controller
-        controller = IVault(vault).controller();
-        if (isWrapped && IVault(vault).underlying() != address(0)) {
-            token = IVault(_vault).token(); // Use non-wrapped vault
+        controller = IVaultCore(vault).controller();
+        if (isWrapped && IVaultDelegated(vault).underlying() != address(0)) {
+            token = IVaultCore(_vault).token(); // Use non-wrapped vault
         } else {
-            token = IVault(vault).token();
+            token = IVaultCore(vault).token();
         }
 
         if (isDelegated) {
@@ -129,7 +129,7 @@ contract Registry is Governable, Initializable {
 
         // Check if strategy has the same token as vault
         if (isWrapped) {
-            address underlying = IVault(vault).underlying();
+            address underlying = IVaultDelegated(vault).underlying();
             require(underlying == token, "!wrappedTokenMatch"); // Might happen?
         } else if (!isDelegated) {
             address strategyToken = IStrategy(strategy).want();
@@ -141,17 +141,17 @@ contract Registry is Governable, Initializable {
 
     // Vaults getters
     function getVault(uint256 index) external view returns(address vault) {
-        return vaults.at(index);
+        return _vaults.at(index);
     }
 
     function getVaultsLength() external view returns(uint256) {
-        return vaults.length();
+        return _vaults.length();
     }
 
     function getVaults() external view returns(address[] memory) {
-        address[] memory vaultsArray = new address[](vaults.length());
-        for (uint256 i = 0; i < vaults.length(); i++) {
-            vaultsArray[i] = vaults.at(i);
+        address[] memory vaultsArray = new address[](_vaults.length());
+        for (uint256 i = 0; i < _vaults.length(); i++) {
+            vaultsArray[i] = _vaults.at(i);
         }
         return vaultsArray;
     }
@@ -183,16 +183,16 @@ contract Registry is Governable, Initializable {
             bool[] memory isDelegatedArray
         )
     {
-        vaultsAddresses = new address[](vaults.length());
-        controllerArray = new address[](vaults.length());
-        tokenArray = new address[](vaults.length());
-        strategyArray = new address[](vaults.length());
-        isWrappedArray = new bool[](vaults.length());
-        isDelegatedArray = new bool[](vaults.length());
+        vaultsAddresses = new address[](_vaults.length());
+        controllerArray = new address[](_vaults.length());
+        tokenArray = new address[](_vaults.length());
+        strategyArray = new address[](_vaults.length());
+        isWrappedArray = new bool[](_vaults.length());
+        isDelegatedArray = new bool[](_vaults.length());
 
-        for (uint256 i = 0; i < vaults.length(); i++) {
-            vaultsAddresses[i] = vaults.at(i);
-            (address _controller, address _token, address _strategy, bool _isWrapped, bool _isDelegated) = _getVaultData(vaults.at(i));
+        for (uint256 i = 0; i < _vaults.length(); i++) {
+            vaultsAddresses[i] = _vaults.at(i);
+            (address _controller, address _token, address _strategy, bool _isWrapped, bool _isDelegated) = _getVaultData(_vaults.at(i));
             controllerArray[i] = _controller;
             tokenArray[i] = _token;
             strategyArray[i] = _strategy;

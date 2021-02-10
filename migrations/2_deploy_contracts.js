@@ -144,6 +144,8 @@ module.exports = function (deployer, network, accounts) {
               xbg.address
           );
 
+          // TODO: First deploy controller, then Registry, then Vaults
+
           // deploy Router and StakingManager contracts
           const sm = await deployer.deploy(
             StakingManager, xbg.address, process.env.START_TIME,
@@ -213,18 +215,6 @@ module.exports = function (deployer, network, accounts) {
       } else {
           console.error(`Unsupported rinkeby network: ${network}`);
       }
-    } else if (network === 'development') {
-      // deploy token contract
-      const xbeToken = await deployer.deploy(XBG, ether('15000'));
-      // deploy governance contract
-      const governance = await deployer.deploy(Governance);
-      // configure gov contract
-      await governance.configure(
-          0,
-          zeroAddress,
-          process.env.DEPLOYER_ACCOUNT,
-          xbeToken.address
-      );
     } else {
       console.error(`Unsupported network: ${network}`);
     }

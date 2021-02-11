@@ -8,6 +8,7 @@ import "./interfaces/IController.sol";
 import "./interfaces/IStrategy.sol";
 import "./interfaces/vault/IVaultCore.sol";
 import "./interfaces/vault/IVaultDelegated.sol";
+import "./interfaces/vault/IVaultWrapped.sol";
 import "./governance/Governable.sol";
 import "./templates/Initializable.sol";
 
@@ -18,8 +19,8 @@ contract Registry is Governable, Initializable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
 
-    EnumerableSet.AddressSet private vaults;
-    EnumerableSet.AddressSet private controllers;
+    EnumerableSet.AddressSet private _vaults;
+    EnumerableSet.AddressSet private _controllers;
 
     mapping(address => address) private wrappedVaults;
     mapping(address => bool) public isDelegatedVault;
@@ -44,7 +45,7 @@ contract Registry is Governable, Initializable {
 
     function addWrappedVault(address _vault) public onlyGovernance {
         addVault(_vault);
-        address _wrappedVault = IWrappedVault(_vault).vault();
+        address _wrappedVault = IVaultWrapped(_vault).vault();
 
         require(_wrappedVault.isContract(), "!contract");
         wrappedVaults[_vault] = _wrappedVault;
@@ -77,8 +78,8 @@ contract Registry is Governable, Initializable {
 
     function _addController(address _controller) internal {
         // Adds Controller to controllers array
-        if (!controllers.contains(_controller)) {
-            controllers.add(_controller);
+        if (!_controllers.contains(_controller)) {
+            _controllers.add(_controller);
         }
     }
 

@@ -12,7 +12,7 @@ const {
 } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
-const ZERO = new BN('0');
+const { ZERO, CONVERSION_WEI_CONSTANT } = require('./utils/common');
 
 const Governance = artifacts.require('Governance');
 const GovernanceToken = artifacts.require('XBG');
@@ -48,6 +48,10 @@ const deployAndConfigureGovernance = async (
     governanceToken.address
   );
   return [ governanceContract, governanceToken, stakingRewardsToken ];
+}
+
+module.exports = {
+  actorStake, activeActor, deployAndConfigureGovernance
 }
 
 const governanceSetterTest = (
@@ -94,8 +98,6 @@ contract('Governance', (accounts) => {
   const bob = accounts[3];
   const fool = accounts[4];
   const charlie = accounts[5];
-
-  const CONVERSION_WEI_CONSTANT = ether('1');
 
   const stardId = ZERO;
   const initialTotalSupply = ether('15000');
@@ -189,38 +191,6 @@ contract('Governance', (accounts) => {
         initialTotalSupply,
         governance
       );
-
-      // send some gov token to participate
-      // await governanceToken.approve(fool, foolSum, {from: governance});
-      // await governanceToken.approve(miris, mirisSum, {from: governance});
-      // await governanceToken.approve(alice, aliceSum, {from: governance});
-      // await governanceToken.approve(bob, bobSum, {from: governance});
-      // await governanceToken.approve(charlie, charlieSum, {from: governance});
-      // await governanceToken.approve(governanceContract.address, governanceSum, {from: governance});
-      //
-      // await governanceToken.transfer(fool, foolSum, {from: governance});
-      // await governanceToken.transfer(miris, mirisSum, {from: governance});
-      // await governanceToken.transfer(alice, aliceSum, {from: governance});
-      // await governanceToken.transfer(bob, bobSum, {from: governance});
-      // await governanceToken.transfer(charlie, charlieSum, {from: governance});
-      //
-      // await governanceContract.register({from: fool});
-      // registerReceipt = await governanceContract.register({from: miris});
-      // await governanceContract.register({from: alice});
-      // await governanceContract.register({from: bob});
-      // await governanceContract.register({from: governance});
-      //
-      // await governanceToken.approve(governanceContract.address, foolSum, {from: fool});
-      // await governanceToken.approve(governanceContract.address, mirisSum, {from: miris});
-      // await governanceToken.approve(governanceContract.address, aliceSum, {from: alice});
-      // await governanceToken.approve(governanceContract.address, bobSum, {from: bob});
-      // await governanceToken.approve(governanceContract.address, governanceSum, {from: governance});
-      //
-      // await governanceContract.stake(foolSum, {from: fool});
-      // stakeReceipt = await governanceContract.stake(mirisSum, {from: miris});
-      // await governanceContract.stake(aliceSum, {from: alice});
-      // await governanceContract.stake(bobSum, {from: bob});
-      // await governanceContract.stake(governanceSum, {from: governance});
     });
 
     it('should be configured', async () => {
@@ -411,7 +381,7 @@ contract('Governance', (accounts) => {
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
       const oldBalance = await governanceToken.balanceOf(alice, {from: alice});
       await actorStake(alice, aliceSum, governanceContract, governanceToken);
-      console.log(oldBalance.toString());
+      // console.log(oldBalance.toString());
       await governanceContract.exit({from: alice});
       const newBalance = await governanceToken.balanceOf(alice, {from: alice});
       expect(newBalance.sub(oldBalance)).to.be.bignumber.equal(ZERO);
@@ -707,11 +677,11 @@ contract('Governance', (accounts) => {
     const rewardRate = await governanceContract.rewardRate({from: governance});
     const totalSupply = await governanceContract.totalSupply({from: governance});
 
-    console.log(rewardPerTokenStored.toString(),
-      lastTimeRewardApplicable.toString(),
-      lastUpdateTime.toString(),
-      rewardRate.toString(),
-      totalSupply.toString());
+    // console.log(rewardPerTokenStored.toString(),
+    //   lastTimeRewardApplicable.toString(),
+    //   lastUpdateTime.toString(),
+    //   rewardRate.toString(),
+    //   totalSupply.toString());
 
     rewardPerToken = await governanceContract.rewardPerToken({from: governance});
 
@@ -722,7 +692,7 @@ contract('Governance', (accounts) => {
         .mul(CONVERSION_WEI_CONSTANT)
         .div(totalSupply)
     );
-    console.log(rewardPerToken, trueRewardPerToken);
+    // console.log(rewardPerToken, trueRewardPerToken);
     expect(rewardPerToken).to.be.bignumber.equal(trueRewardPerToken);
   });
 
@@ -757,15 +727,15 @@ contract('Governance', (accounts) => {
         .div(CONVERSION_WEI_CONSTANT)
         .add(rewards);
 
-    console.log(
-      `balance of governance: ${balanceOfAccount}`,
-      `reward per token: ${rewardPerToken}`,
-      `user reward per token paid: ${userRewardPerTokenPaid}`,
-      `rewards: ${rewards}`,
-      `true earned: ${trueEarned}`,
-      `const: ${CONVERSION_WEI_CONSTANT}`,
-      `earned: ${earned}`
-    );
+    // console.log(
+    //   `balance of governance: ${balanceOfAccount}`,
+    //   `reward per token: ${rewardPerToken}`,
+    //   `user reward per token paid: ${userRewardPerTokenPaid}`,
+    //   `rewards: ${rewards}`,
+    //   `true earned: ${trueEarned}`,
+    //   `const: ${CONVERSION_WEI_CONSTANT}`,
+    //   `earned: ${earned}`
+    // );
     expect(earned).to.be.bignumber.equal(trueEarned);
   });
 });

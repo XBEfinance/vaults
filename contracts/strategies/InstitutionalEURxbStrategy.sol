@@ -11,7 +11,6 @@ import "../governance/Governable.sol";
 import "../templates/Initializable.sol";
 
 
-
 contract InstitutionalEURxbStrategy is IStrategy, Governable, Initializable {
 
     using SafeERC20 for IERC20;

@@ -40,7 +40,12 @@ contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, IVaultDelegated
         Initializable()
     {}
 
-    function configure(address _eurxb, address _governance, address _initialController, address _initialStrategy) external initializer {
+    function configure(
+        address _eurxb,
+        address _governance,
+        address _initialController,
+        address _initialStrategy
+    ) external initializer {
         eurxb = IERC20(_eurxb);
         setGovernance(_governance);
         setController(_initialController);
@@ -49,7 +54,7 @@ contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, IVaultDelegated
     }
 
     function setMin(uint256 _newMin) onlyGovernance external {
-        require(min != _newMin, "!old");
+        require(min != _newMin, "!new");
         min = _newMin;
     }
 

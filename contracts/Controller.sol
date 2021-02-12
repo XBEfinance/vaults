@@ -54,14 +54,9 @@ contract Controller is IController, Governable, Initializable {
     constructor() Initializable() public {}
 
     function configure(
-          address _eurxbToken,
-          address _initialVault,
-          address _initialStrategy,
           address _initialTreasury,
           address _initialStrategist
     ) external initializer {
-        _vaults[_eurxbToken] = _initialVault;
-        _strategies[_eurxbToken] = _initialStrategy;
         _treasury = _initialTreasury;
         strategist = _initialStrategist;
     }
@@ -161,6 +156,7 @@ contract Controller is IController, Governable, Initializable {
 
     // Only allows to withdraw non-core strategy tokens ~ this is over and above normal yield
     function harvest(address _strategy, address _token) override external {
+        require(_token != _want, "!want");
         // This contract should never have value in it, but just incase since this is a public call
         uint256 _before = IERC20(_token).balanceOf(address(this));
         IStrategy(_strategy).withdraw(_token);

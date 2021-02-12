@@ -1,4 +1,4 @@
-const { BN } = require('@openzeppelin/test-helpers');
+const { BN, ether } = require('@openzeppelin/test-helpers');
 
 /* eslint-disable */
 function increaseTime(duration) {
@@ -44,4 +44,6 @@ module.exports = {
   newBN,
   DAY: 86400,
   HOUR: 3600,
+  ZERO: new BN('0'),
+  CONVERSION_WEI_CONSTANT: ether('1')
 };

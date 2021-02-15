@@ -129,7 +129,7 @@ contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, IVaultDelegated
 
     function earn() override external {
       uint256 _bal = available();
-      eurxb.safeTransfer(_controller, _bal);
+      require(eurxb.transfer(_controller, _bal), "!transfer");
       IController(_controller).earn(address(eurxb), _bal);
     }
 

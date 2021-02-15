@@ -58,9 +58,9 @@ contract InstitutionalEURxbStrategy is IStrategy, Governable, Initializable {
             _amount = _withdrawSome(_amount.sub(_balance));
             _amount = _amount.add(_balance);
         }
-        address _vault = IController(_controller).vaults(address(this));
+        address _vault = IController(_controller).vaults(_eurxb);
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
-        require(IERC20(_eurxb).transfer(_vault, _amount), "!transfer");
+        require(IERC20(_eurxb).transfer(_vault, _amount), "!transfer strategy");
     }
 
     // this function is withdraw from business process the difference between balance and requested sum

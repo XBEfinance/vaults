@@ -205,14 +205,31 @@ contract('InstitutionalEURxbVault', (accounts) => {
   it('should deposit correctly', async () => {
     const mockedAmount = ether('10');
 
-    const transferFromCalldata = revenueToken.contract
+    const transferFromMirisCalldata = revenueToken.contract
       .methods.transferFrom(miris, vault.address, mockedAmount).encodeABI();
+    const transferFromGovernanceCalldata = revenueToken.contract
+      .methods.transferFrom(governance, vault.address, mockedAmount).encodeABI();
+
     const balanceOfVaultCalldata = revenueToken.contract
       .methods.balanceOf(vault.address).encodeABI();
 
-    await mock.givenCalldataReturnBool(transferFromCalldata,
+    const balanceOfMirisCalldata = revenueToken.contract
+      .methods.balanceOf(miris).encodeABI();
+    const balanceOfGovernanceCalldata = revenueToken.contract
+      .methods.balanceOf(governance).encodeABI();
+
+
+    await mock.givenCalldataReturnBool(transferFromMirisCalldata,
       true);
+    await mock.givenCalldataReturnBool(transferFromGovernanceCalldata,
+      true);
+
     await mock.givenCalldataReturnUint(balanceOfVaultCalldata,
+      mockedAmount);
+
+    await mock.givenCalldataReturnUint(balanceOfMirisCalldata,
+      mockedAmount);
+    await mock.givenCalldataReturnUint(balanceOfGovernanceCalldata,
       mockedAmount);
 
     await vault.deposit(mockedAmount, {from: miris});
@@ -257,7 +274,7 @@ contract('InstitutionalEURxbVault', (accounts) => {
     expect(actualVaultTokens).to.be.bignumber.equal(mockedAmount);
   });
 
-  it('should withdraw correctly when revenue token is equal to vault token', async () => {
+  const withdrawsTestWithEqualAmounts = async (isTestingAll) => {
     const mockedAmount = ether('10');
 
     const transferFromCalldata = revenueToken.contract
@@ -266,6 +283,7 @@ contract('InstitutionalEURxbVault', (accounts) => {
         .methods.balanceOf(vault.address).encodeABI();
     const balanceOfMirisCalldata = revenueToken.contract
         .methods.balanceOf(miris).encodeABI();
+
 
     await mock.givenCalldataReturnBool(transferFromCalldata,
       true);
@@ -277,87 +295,94 @@ contract('InstitutionalEURxbVault', (accounts) => {
 
     await vault.depositAll({from: miris});
 
-    await vault.withdraw(mockedAmount, {from: miris});
 
     const vaultBalance = await vault.balance();
     const vaultTotalSupply = await vault.totalSupply();
 
-    var r = vaultBalance.mul(mockedAmount).div(totalSupply);
+    var r = vaultBalance.mul(mockedAmount).div(vaultTotalSupply);
+
+    const transferCalldata = revenueToken.contract
+      .methods.transfer(miris, r).encodeABI();
+    await mock.givenCalldataReturnBool(transferCalldata,
+      true);
+
+    if (!isTestingAll) {
+      await vault.withdraw(mockedAmount, {from: miris});
+    } else {
+      await vault.withdrawAll({from: miris});
+    }
+
     expect(await vault.balanceOf(miris)).to.be.bignumber.equal(ZERO);
+  };
 
-    const revenueTokenVaultBalanceCalldata = revenueToken.contract
-      .methods.balanceOf(vault.address).encodeABI();
-
-    const difference = ether('1')
-    await mock.givenCalldataReturnUint(revenueTokenVaultBalanceCalldata,
-      r.sub(difference));
-
-  });
-
-  it('should withdraw correctly when revenue token is not equal to vault token', async () => {
+  const withdrawsTestWithoutEqualAmounts = async (isTestingAll) => {
     const mockedAmount = ether('10');
 
     const transferFromCalldata = revenueToken.contract
-      .methods.transferFrom(miris, vault.address, mockedAmount).encodeABI();
+      .methods.transferFrom(miris, miris, ZERO).encodeABI();
+    const transferCalldata = revenueToken.contract
+      .methods.transfer(miris, ZERO).encodeABI();
+
+    await mock.givenMethodReturnBool(transferFromCalldata,
+      true);
+    await mock.givenMethodReturnBool(transferCalldata,
+      true);
+
     const balanceOfVaultCalldata = revenueToken.contract
         .methods.balanceOf(vault.address).encodeABI();
     const balanceOfMirisCalldata = revenueToken.contract
         .methods.balanceOf(miris).encodeABI();
-
-    await mock.givenCalldataReturnBool(transferFromCalldata,
-      true);
-    await mock.givenCalldataReturnUint(balanceOfVaultCalldata,
-      mockedAmount);
-    await mock.givenCalldataReturnUint(balanceOfMirisCalldata,
-      mockedAmount);
-
-    await vault.depositAll({from: miris});
-
-    const revenueTokenVaultBalanceCalldata = revenueToken.contract
-      .methods.balanceOf(vault.address).encodeABI();
-
     const revenueTokenStrategyBalanceCalldata = revenueToken.contract
       .methods.balanceOf(strategy.address).encodeABI();
 
+
+    await mock.givenCalldataReturnUint(balanceOfVaultCalldata,
+      mockedAmount);
+    await mock.givenCalldataReturnUint(balanceOfMirisCalldata,
+      mockedAmount);
+
+    await vault.depositAll({from: miris});
+
+
     const difference = ether('1');
-
-    const revenueTokenStrategyTransferCalldata = revenueToken.contract
-      .methods.transfer(vault.address, difference).encodeABI();
-
 
     const vaultBalance = await vault.balance();
     const vaultTotalSupply = await vault.totalSupply();
-    var r = vaultBalance.mul(mockedAmount).div(totalSupply);
+    var r = vaultBalance.mul(mockedAmount).div(vaultTotalSupply);
 
-    await mock.givenCalldataReturnUint(revenueTokenVaultBalanceCalldata,
+    await mock.givenCalldataReturnUint(balanceOfVaultCalldata,
       r.sub(difference));
 
     await mock.givenCalldataReturnUint(revenueTokenStrategyBalanceCalldata,
       difference);
 
-    await mock.givenCalldataReturnBool(revenueTokenStrategyTransferCalldata,
-      true);
-
-    await vault.withdraw(mockedAmount, {from: miris});
+    if (!isTestingAll) {
+      await vault.withdraw(mockedAmount, {from: miris});
+    } else {
+      await vault.withdrawAll({from: miris});
+    }
 
     expect(await vault.balanceOf(miris)).to.be.bignumber.equal(ZERO);
+  };
+
+  it('should withdraw correctly when revenue token is equal to vault token', async () => {
+    await withdrawsTestWithEqualAmounts(false);
   });
 
-  //
-  // // function withdrawAll() override external {
-  // //     withdraw(eurxb.balanceOf(_msgSender()));
-  // // }
-  // it('should withdraw all correctly', async () => {
-  //
-  // });
-  //
-  // // function earn() override external {
-  // //   uint256 _bal = available();
-  // //   eurxb.safeTransfer(_controller, _bal);
-  // //   IController(_controller).earn(address(eurxb), _bal);
-  // // }
-  // it('should earn correctly', async () => {
-  //
-  // });
+  it('should withdraw correctly when revenue token is not equal to vault token', async () => {
+    await withdrawsTestWithoutEqualAmounts(false);
+  });
+
+  it('should withdraw all correctly when revenue token amount is not equal to vault token amount', async () => {
+    await withdrawsTestWithoutEqualAmounts(true);
+  });
+
+  it('should withdraw all correctly when revenue token amount is equal to vault token amount', async () => {
+    await withdrawsTestWithEqualAmounts(true);
+  });
+
+  it('should earn correctly', async () => {
+    
+  });
 
 });

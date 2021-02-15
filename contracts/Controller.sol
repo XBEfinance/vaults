@@ -145,11 +145,11 @@ contract Controller is IController, Governable, Initializable {
         if (_want != _token) {
             address converter = converters[_token][_want];
             require(converter != address(0), '!converter');
-            IERC20(_token).safeTransfer(converter, _amount);
+            require(IERC20(_token).transfer(converter, _amount), "!transferConverterToken");
             _amount = IConverter(converter).convert(_strategy);
-            IERC20(_want).safeTransfer(_strategy, _amount);
+            require(IERC20(_want).transfer(_strategy, _amount), "!transferStrategyWant");
         } else {
-            IERC20(_token).safeTransfer(_strategy, _amount);
+            require(IERC20(_token).transfer(_strategy, _amount), "!transferStrateguToken");
         }
         IStrategy(_strategy).deposit();
     }

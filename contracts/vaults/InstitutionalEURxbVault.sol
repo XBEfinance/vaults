@@ -43,13 +43,10 @@ contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, IVaultDelegated
 
     function configure(
         address _eurxb,
-        address _initialController,
-        address _initialStrategy
+        address _initialController
     ) external initializer {
         eurxb = IERC20(_eurxb);
         setController(_initialController);
-        IController(_controller).setVault(_eurxb, address(this));
-        IController(_controller).setStrategy(_eurxb, _initialStrategy);
     }
 
     function setMin(uint256 _newMin) onlyGovernance external {
@@ -94,7 +91,7 @@ contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, IVaultDelegated
 
     function deposit(uint256 _amount) override public {
         uint256 _pool = balance();
-        eurxb.safeTransferFrom(_msgSender(), address(this), _amount);
+        eurxb.transferFrom(_msgSender(), address(this), _amount);
         _amount = eurxb.balanceOf(address(this));
         uint256 shares = 0;
         if (totalSupply() == 0) {

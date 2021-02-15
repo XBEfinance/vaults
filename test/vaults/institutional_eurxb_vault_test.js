@@ -12,7 +12,7 @@ const {
 } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
-const { ZERO } = require('../utils/common');
+const { ZERO, CONVERSION_WEI_CONSTANT } = require('../utils/common');
 
 const {
   actorStake, activeActor, deployAndConfigureGovernance
@@ -75,161 +75,200 @@ contract('InstitutionalEURxbVault', (accounts) => {
     await vault.configure(
       revenueToken.address,
       controller.address,
+      {from: governance}
+    );
+
+    await controller.setVault(
+      revenueToken.address,
+      vault.address,
+      {from: governance}
+    );
+
+    await controller.setApprovedStrategy(
+      revenueToken.address,
+      strategy.address,
+      true,
+      {from: governance}
+    );
+
+    await controller.setStrategy(
+      revenueToken.address,
       strategy.address,
       {from: governance}
     );
 
   });
 
-  it('should configure successfully', async () => {
-    expect(await vault.controller()).to.be.equal(controller.address);
-    expect(await vault.governance()).to.be.equal(governance);
-    expect(await vault.eurxb()).to.be.equal(revenueToken.address);
-    expect(await controller.vaults(revenueToken.address)).to.be.equal(vault.address);
-    expect(await controller.strategies(revenueToken.address)).to.be.equal(strategy.address);
-  });
+  // it('should configure successfully', async () => {
+  //   expect(await vault.controller()).to.be.equal(controller.address);
+  //   expect(await vault.governance()).to.be.equal(governance);
+  //   expect(await vault.eurxb()).to.be.equal(revenueToken.address);
+  //   expect(await controller.vaults(revenueToken.address)).to.be.equal(vault.address);
+  //   expect(await controller.strategies(revenueToken.address)).to.be.equal(strategy.address);
+  // });
+  //
+  // it('should set min', async () => {
+  //   await vault.setMin(testMin, {from: governance});
+  //   expect(await vault.min()).to.be.bignumber.equal(testMin);
+  //   await expectRevert(vault.setMin(testMin, {from: governance}), '!new');
+  //   await expectRevert(vault.setMin(testMin, {from: miris}), '!governance');
+  // });
+  //
+  // it('should set controller', async () => {
+  //   await vault.setController(ZERO_ADDRESS, {from: governance});
+  //   expect(await vault.controller()).to.be.bignumber.equal(ZERO_ADDRESS);
+  //   await expectRevert(vault.setController(ZERO_ADDRESS, {from: governance}), '!new');
+  //   await expectRevert(vault.setController(ZERO_ADDRESS, {from: miris}), '!governance');
+  // });
+  //
+  // it('should calculate balance correctly', async () => {
+  //   const mockedRevenueTokenBalance = ether('10');
+  //
+  //   // prepare calldata
+  //   const balanceOfCalldata = revenueToken.contract
+  //     .methods.balanceOf(vault.address).encodeABI();
+  //
+  //   // mock eurxb balance of this
+  //   await mock.givenCalldataReturnUint(balanceOfCalldata,
+  //     mockedRevenueTokenBalance);
+  //
+  //   const strategyAddress = await controller.strategies(
+  //     revenueToken.address, {from: governance}
+  //   );
+  //   expect(strategyAddress).to.be.equal(strategy.address);
+  //
+  //   const strategyContract = await IStrategy.at(strategyAddress);
+  //   const strategyContractBalanceOf = await strategyContract.balanceOf(
+  //     {from: governance}
+  //   );
+  //
+  //   const revenueTokenBalance = await revenueToken.balanceOf(
+  //     vault.address, {from: governance}
+  //   );
+  //
+  //   const validSum = revenueTokenBalance.add(strategyContractBalanceOf);
+  //   const actualSum = await vault.balance({from: governance});
+  //
+  //   expect(actualSum).to.be.bignumber.equal(validSum);
+  // });
+  //
+  // it('should calculate available balance', async () => {
+  //   const mockedRevenueTokenBalance = ether('10');
+  //   // prepare calldata
+  //   const balanceOfCalldata = revenueToken.contract
+  //     .methods.balanceOf(vault.address).encodeABI();
+  //   // mock eurxb balance of this
+  //   await mock.givenCalldataReturnUint(balanceOfCalldata,
+  //     mockedRevenueTokenBalance);
+  //   const min = await vault.min();
+  //   const max = await vault.max();
+  //   const revenueTokenBalance = await revenueToken.balanceOf(vault.address);
+  //   const valid = revenueTokenBalance.mul(min).div(max);
+  //   const actual = await vault.available();
+  //   expect(actual).to.be.bignumber.equal(valid);
+  // });
+  //
+  // it('should get vault token address', async () => {
+  //   expect(await vault.token()).to.be.equal(vault.address);
+  // });
+  //
+  // it('should get eurxb token address', async () => {
+  //   expect(await vault.underlying()).to.be.equal(revenueToken.address);
+  // });
+  //
+  // it('should get controller', async () => {
+  //   expect(await vault.controller()).to.be.equal(controller.address);
+  // });
 
-  it('should set min', async () => {
-    await vault.setMin(testMin, {from: governance});
-    expect(await vault.min()).to.be.bignumber.equal(testMin);
-    await expectRevert(vault.setMin(testMin, {from: governance}), '!new');
-    await expectRevert(vault.setMin(testMin, {from: miris}), '!governance');
-  });
-
-  it('should set controller', async () => {
-    await vault.setController(ZERO_ADDRESS, {from: governance});
-    expect(await vault.controller()).to.be.bignumber.equal(ZERO_ADDRESS);
-    await expectRevert(vault.setController(ZERO_ADDRESS, {from: governance}), '!new');
-    await expectRevert(vault.setController(ZERO_ADDRESS, {from: miris}), '!governance');
-  });
-
-  it('should calculate balance correctly', async () => {
-    const mockedRevenueTokenBalance = ether('10');
-
-    // prepare calldata
-    const balanceOfCalldata = revenueToken.contract
-      .methods.balanceOf(vault.address).encodeABI();
-
-    // mock eurxb balance of this
-    await mock.givenCalldataReturnUint(balanceOfCalldata,
-      mockedRevenueTokenBalance);
-
-    const strategyAddress = await controller.strategies(
-      revenueToken.address, {from: governance}
-    );
-    expect(strategyAddress).to.be.equal(strategy.address);
-
-    const strategyContract = await IStrategy.at(strategyAddress);
-    const strategyContractBalanceOf = await strategyContract.balanceOf(
-      {from: governance}
-    );
-
-    const revenueTokenBalance = await revenueToken.balanceOf(
-      vault.address, {from: governance}
-    );
-
-    const validSum = revenueTokenBalance.add(strategyContractBalanceOf);
-    const actualSum = await vault.balance({from: governance});
-
-    expect(actualSum).to.be.bignumber.equal(validSum);
-  });
-
-  // Custom logic in here for how much the vault allows to be borrowed
-  // Sets minimum required on-hand to keep small withdrawals cheap
-  // function available() public view returns (uint) {
-  //     return eurxb.balanceOf(address(this)).mul(min).div(max);
-  // }
-  it('should calculate available balance', async () => {
-
-  });
-
-  // function token() override external view returns(address) {
-  //     return address(this);
-  // }
-  it('should get vault token address', async () => {
-
-  });
-
-  // function underlying() override external view returns(address) {
-  //     return address(eurxb);
-  // }
-  it('should get eurxb token address', async () => {
-
-  });
-
-  // function controller() override external view returns(address) {
-  //     return _controller;
-  // }
-  it('should get controller', async () => {
-
-  });
-
-  // function getPricePerFullShare() override external view returns(uint256) {
-  //     return balance().mul(1e18).div(totalSupply());
-  // }
   it('should get price per full share', async () => {
-
+    const mockedAmount = ether('10');
+    const transferFromCalldata = revenueToken.contract
+      .methods.transferFrom(governance, vault.address, mockedAmount).encodeABI();
+    const balanceOfCalldata = revenueToken.contract
+        .methods.balanceOf(vault.address).encodeABI();
+    await mock.givenCalldataReturnUint(balanceOfCalldata,
+      mockedAmount);
+    await mock.givenCalldataReturnBool(transferFromCalldata, true);
+    await vault.deposit(mockedAmount, {from: miris});
+    const balance = await vault.balance();
+    const totalSupply = await vault.totalSupply();
+    const validPrice = balance.mul(CONVERSION_WEI_CONSTANT).div(totalSupply);
+    const actualPrice = await vault.getPricePerFullShare();
+    expect(actualPrice).to.be.bignumber.equal(validPrice);
   });
 
-  // function deposit(uint256 _amount) override public {
-  //     uint256 _pool = balance();
-  //     uint256 _before = eurxb.balanceOf(address(this));
-  //     eurxb.safeTransferFrom(_msgSender(), address(this), _amount);
-  //     uint256 _after = eurxb.balanceOf(address(this));
-  //     _amount = _after.sub(_before); // Additional check for deflationary tokens
-  //     uint256 shares = 0;
-  //     if (totalSupply() == 0) {
-  //         shares = _amount;
-  //     } else {
-  //         shares = (_amount.mul(totalSupply())).div(_pool);
-  //     }
-  //     _mint(_msgSender(), shares);
-  // }
   it('should deposit correctly', async () => {
+    const mockedAmount = ether('10');
 
+    const transferFromCalldata = revenueToken.contract
+      .methods.transferFrom(governance, vault.address, mockedAmount).encodeABI();
+    const balanceOfCalldata = revenueToken.contract
+        .methods.balanceOf(vault.address).encodeABI();
+
+    await mock.givenCalldataReturnUint(balanceOfCalldata,
+      mockedAmount);
+    await mock.givenCalldataReturnBool(transferFromCalldata, true);
+
+    await vault.deposit(mockedAmount, {from: miris});
+
+    var balance = await vault.balance();
+    var totalSupply = await vault.totalSupply();
+
+    expect(balance).to.be.bignumber.equal(mockedAmount);
+    expect(totalSupply).to.be.bignumber.equal(mockedAmount);
+
+    await vault.deposit(mockedAmount, {from: governance});
+
+    balance = await vault.balance();
+    totalSupply = await vault.totalSupply();
+
+    const multiplier = new BN('2');
+    expect(balance).to.be.bignumber.equal(mockedAmount);
+    expect(totalSupply).to.be.bignumber.equal(mockedAmount.mul(multiplier));
   });
 
-  // function depositAll() override external {
-  //     deposit(eurxb.balanceOf(_msgSender()));
-  // }
   it('should deposit all correctly', async () => {
+    const mockedAmount = ether('10');
+
+    const transferFromCalldata = revenueToken.contract
+      .methods.transferFrom(governance, vault.address, mockedAmount).encodeABI();
+    const balanceOfVaultCalldata = revenueToken.contract
+        .methods.balanceOf(vault.address).encodeABI();
+    const balanceOfMirisCalldata = revenueToken.contract
+        .methods.balanceOf(miris).encodeABI();
+
+    await mock.givenCalldataReturnBool(transferFromCalldata, true);
+
+    await mock.givenCalldataReturnUint(balanceOfVaultCalldata,
+      mockedAmount);
+
+    await mock.givenCalldataReturnUint(balanceOfMirisCalldata,
+      mockedAmount);
+
+    await vault.depositAll({from: miris});
+    const actualVaultTokens = await vault.balanceOf(miris);
+    expect(actualVaultTokens).to.be.bignumber.equal(mockedAmount);
 
   });
 
-  // function withdraw(uint256 _shares) override public {
-  //     uint256 r = (balance().mul(_shares)).div(totalSupply());
-  //     _burn(_msgSender(), _shares);
-  //     // Check balance
-  //     uint256 b = eurxb.balanceOf(address(this));
-  //     if (b < r) {
-  //         uint256 _withdraw = r.sub(b);
-  //         IController(_controller).withdraw(address(eurxb), _withdraw);
-  //         uint256 _after = eurxb.balanceOf(address(this));
-  //         uint256 _diff = _after.sub(b);
-  //         if (_diff < _withdraw) {
-  //             r = b.add(_diff);
-  //         }
-  //     }
-  //     eurxb.safeTransfer(_msgSender(), r);
-  // }
   it('should withdraw correctly', async () => {
-
+    
   });
-
-  // function withdrawAll() override external {
-  //     withdraw(eurxb.balanceOf(_msgSender()));
-  // }
-  it('should withdraw all correctly', async () => {
-
-  });
-
-  // function earn() override external {
-  //   uint256 _bal = available();
-  //   eurxb.safeTransfer(_controller, _bal);
-  //   IController(_controller).earn(address(eurxb), _bal);
-  // }
-  it('should earn correctly', async () => {
-
-  });
+  //
+  // // function withdrawAll() override external {
+  // //     withdraw(eurxb.balanceOf(_msgSender()));
+  // // }
+  // it('should withdraw all correctly', async () => {
+  //
+  // });
+  //
+  // // function earn() override external {
+  // //   uint256 _bal = available();
+  // //   eurxb.safeTransfer(_controller, _bal);
+  // //   IController(_controller).earn(address(eurxb), _bal);
+  // // }
+  // it('should earn correctly', async () => {
+  //
+  // });
 
 });

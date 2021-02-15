@@ -131,7 +131,7 @@ contract Controller is IController, Governable, Initializable {
         _strategies[_token] = _strategy;
     }
 
-    function setApproveStrategy(address _token, address _strategy, bool _status) onlyGovernance external {
+    function setApprovedStrategy(address _token, address _strategy, bool _status) onlyGovernance external {
         _approvedStrategies[_token][_strategy] = _status;
     }
 

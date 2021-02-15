@@ -91,7 +91,7 @@ contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, IVaultDelegated
 
     function deposit(uint256 _amount) override public {
         uint256 _pool = balance();
-        eurxb.transferFrom(_msgSender(), address(this), _amount);
+        require(eurxb.transferFrom(_msgSender(), address(this), _amount), "!transferFrom");
         _amount = eurxb.balanceOf(address(this));
         uint256 shares = 0;
         if (totalSupply() == 0) {
@@ -120,7 +120,7 @@ contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, IVaultDelegated
                 r = b.add(_diff);
             }
         }
-        eurxb.safeTransfer(_msgSender(), r);
+        require(eurxb.transfer(_msgSender(), r), "!transfer");
     }
 
     function withdrawAll() override external {

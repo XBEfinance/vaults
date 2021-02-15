@@ -182,14 +182,19 @@ contract('InstitutionalEURxbVault', (accounts) => {
 
   it('should get price per full share', async () => {
     const mockedAmount = ether('10');
+
     const transferFromCalldata = revenueToken.contract
-      .methods.transferFrom(governance, vault.address, mockedAmount).encodeABI();
-    const balanceOfCalldata = revenueToken.contract
+      .methods.transferFrom(miris, vault.address, mockedAmount).encodeABI();
+    const balanceOfVaultCalldata = revenueToken.contract
         .methods.balanceOf(vault.address).encodeABI();
-    await mock.givenCalldataReturnUint(balanceOfCalldata,
+
+    await mock.givenCalldataReturnBool(transferFromCalldata,
+      true);
+    await mock.givenCalldataReturnUint(balanceOfVaultCalldata,
       mockedAmount);
-    await mock.givenCalldataReturnBool(transferFromCalldata, true);
+
     await vault.deposit(mockedAmount, {from: miris});
+
     const balance = await vault.balance();
     const totalSupply = await vault.totalSupply();
     const validPrice = balance.mul(CONVERSION_WEI_CONSTANT).div(totalSupply);
@@ -201,13 +206,14 @@ contract('InstitutionalEURxbVault', (accounts) => {
     const mockedAmount = ether('10');
 
     const transferFromCalldata = revenueToken.contract
-      .methods.transferFrom(governance, vault.address, mockedAmount).encodeABI();
-    const balanceOfCalldata = revenueToken.contract
-        .methods.balanceOf(vault.address).encodeABI();
+      .methods.transferFrom(miris, vault.address, mockedAmount).encodeABI();
+    const balanceOfVaultCalldata = revenueToken.contract
+      .methods.balanceOf(vault.address).encodeABI();
 
-    await mock.givenCalldataReturnUint(balanceOfCalldata,
+    await mock.givenCalldataReturnBool(transferFromCalldata,
+      true);
+    await mock.givenCalldataReturnUint(balanceOfVaultCalldata,
       mockedAmount);
-    await mock.givenCalldataReturnBool(transferFromCalldata, true);
 
     await vault.deposit(mockedAmount, {from: miris});
 
@@ -216,6 +222,7 @@ contract('InstitutionalEURxbVault', (accounts) => {
 
     expect(balance).to.be.bignumber.equal(mockedAmount);
     expect(totalSupply).to.be.bignumber.equal(mockedAmount);
+    expect(await vault.balanceOf(miris)).to.be.bignumber.equal(mockedAmount);
 
     await vault.deposit(mockedAmount, {from: governance});
 
@@ -225,35 +232,117 @@ contract('InstitutionalEURxbVault', (accounts) => {
     const multiplier = new BN('2');
     expect(balance).to.be.bignumber.equal(mockedAmount);
     expect(totalSupply).to.be.bignumber.equal(mockedAmount.mul(multiplier));
+    expect(await vault.balanceOf(governance)).to.be.bignumber.equal(mockedAmount);
   });
 
   it('should deposit all correctly', async () => {
     const mockedAmount = ether('10');
 
     const transferFromCalldata = revenueToken.contract
-      .methods.transferFrom(governance, vault.address, mockedAmount).encodeABI();
+      .methods.transferFrom(miris, vault.address, mockedAmount).encodeABI();
     const balanceOfVaultCalldata = revenueToken.contract
-        .methods.balanceOf(vault.address).encodeABI();
+      .methods.balanceOf(vault.address).encodeABI();
     const balanceOfMirisCalldata = revenueToken.contract
-        .methods.balanceOf(miris).encodeABI();
+      .methods.balanceOf(miris).encodeABI();
 
-    await mock.givenCalldataReturnBool(transferFromCalldata, true);
-
+    await mock.givenCalldataReturnBool(transferFromCalldata,
+      true);
     await mock.givenCalldataReturnUint(balanceOfVaultCalldata,
       mockedAmount);
-
     await mock.givenCalldataReturnUint(balanceOfMirisCalldata,
       mockedAmount);
 
     await vault.depositAll({from: miris});
     const actualVaultTokens = await vault.balanceOf(miris);
     expect(actualVaultTokens).to.be.bignumber.equal(mockedAmount);
+  });
+
+  it('should withdraw correctly when revenue token is equal to vault token', async () => {
+    const mockedAmount = ether('10');
+
+    const transferFromCalldata = revenueToken.contract
+      .methods.transferFrom(miris, vault.address, mockedAmount).encodeABI();
+    const balanceOfVaultCalldata = revenueToken.contract
+        .methods.balanceOf(vault.address).encodeABI();
+    const balanceOfMirisCalldata = revenueToken.contract
+        .methods.balanceOf(miris).encodeABI();
+
+    await mock.givenCalldataReturnBool(transferFromCalldata,
+      true);
+    await mock.givenCalldataReturnUint(balanceOfVaultCalldata,
+      mockedAmount);
+    await mock.givenCalldataReturnUint(balanceOfMirisCalldata,
+      mockedAmount);
+
+
+    await vault.depositAll({from: miris});
+
+    await vault.withdraw(mockedAmount, {from: miris});
+
+    const vaultBalance = await vault.balance();
+    const vaultTotalSupply = await vault.totalSupply();
+
+    var r = vaultBalance.mul(mockedAmount).div(totalSupply);
+    expect(await vault.balanceOf(miris)).to.be.bignumber.equal(ZERO);
+
+    const revenueTokenVaultBalanceCalldata = revenueToken.contract
+      .methods.balanceOf(vault.address).encodeABI();
+
+    const difference = ether('1')
+    await mock.givenCalldataReturnUint(revenueTokenVaultBalanceCalldata,
+      r.sub(difference));
 
   });
 
-  it('should withdraw correctly', async () => {
-    
+  it('should withdraw correctly when revenue token is not equal to vault token', async () => {
+    const mockedAmount = ether('10');
+
+    const transferFromCalldata = revenueToken.contract
+      .methods.transferFrom(miris, vault.address, mockedAmount).encodeABI();
+    const balanceOfVaultCalldata = revenueToken.contract
+        .methods.balanceOf(vault.address).encodeABI();
+    const balanceOfMirisCalldata = revenueToken.contract
+        .methods.balanceOf(miris).encodeABI();
+
+    await mock.givenCalldataReturnBool(transferFromCalldata,
+      true);
+    await mock.givenCalldataReturnUint(balanceOfVaultCalldata,
+      mockedAmount);
+    await mock.givenCalldataReturnUint(balanceOfMirisCalldata,
+      mockedAmount);
+
+    await vault.depositAll({from: miris});
+
+    const revenueTokenVaultBalanceCalldata = revenueToken.contract
+      .methods.balanceOf(vault.address).encodeABI();
+
+    const revenueTokenStrategyBalanceCalldata = revenueToken.contract
+      .methods.balanceOf(strategy.address).encodeABI();
+
+    const difference = ether('1');
+
+    const revenueTokenStrategyTransferCalldata = revenueToken.contract
+      .methods.transfer(vault.address, difference).encodeABI();
+
+
+    const vaultBalance = await vault.balance();
+    const vaultTotalSupply = await vault.totalSupply();
+    var r = vaultBalance.mul(mockedAmount).div(totalSupply);
+
+    await mock.givenCalldataReturnUint(revenueTokenVaultBalanceCalldata,
+      r.sub(difference));
+
+    await mock.givenCalldataReturnUint(revenueTokenStrategyBalanceCalldata,
+      difference);
+
+    await mock.givenCalldataReturnBool(revenueTokenStrategyTransferCalldata,
+      true);
+
+    await vault.withdraw(mockedAmount, {from: miris});
+
+    expect(await vault.balanceOf(miris)).to.be.bignumber.equal(ZERO);
   });
+
   //
   // // function withdrawAll() override external {
   // //     withdraw(eurxb.balanceOf(_msgSender()));

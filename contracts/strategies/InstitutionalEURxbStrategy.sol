@@ -16,7 +16,7 @@ contract InstitutionalEURxbStrategy is IStrategy, Governable, Initializable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
-    constructor() Initializable() public {}
+    constructor() Initializable() Governable() public {}
 
     address private _eurxb;
     address private _controller;

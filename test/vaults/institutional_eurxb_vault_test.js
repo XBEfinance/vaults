@@ -16,7 +16,7 @@ const { ZERO } = require('../utils/common');
 
 const {
   actorStake, activeActor, deployAndConfigureGovernance
-} = require('../governance_test.js');
+} = require('../utils/governance_redeploy');
 
 const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
 const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
@@ -62,19 +62,21 @@ contract('InstitutionalEURxbVault', (accounts) => {
 
     await strategy.configure(
       revenueToken.address,
-      controller.address
+      controller.address,
+      {from: governance}
     );
 
-    await contoller.configure(
+    await controller.configure(
       treasuryAddress,
-      strategist
+      strategist,
+      {from: governance}
     );
 
     await vault.configure(
       revenueToken.address,
-      governance,
       controller.address,
-      strategy.address
+      strategy.address,
+      {from: governance}
     );
 
   });
@@ -101,16 +103,35 @@ contract('InstitutionalEURxbVault', (accounts) => {
     await expectRevert(vault.setController(ZERO_ADDRESS, {from: miris}), '!governance');
   });
 
-  // function balance() override public view returns(uint256) {
-  //     return eurxb.balanceOf(address(this)).add(
-  //         IStrategy(
-  //             IController(_controller).strategies(address(eurxb))
-  //         ).balanceOf()
-  //     );
-  // }
   it('should calculate balance correctly', async () => {
+    const mockedRevenueTokenBalance = ether('10');
+
+    // prepare calldata
+    const balanceOfCalldata = revenueToken.contract
+      .methods.balanceOf(vault.address).encodeABI();
+
     // mock eurxb balance of this
-    // mock balance of strategy
+    await mock.givenCalldataReturnUint(balanceOfCalldata,
+      mockedRevenueTokenBalance);
+
+    const strategyAddress = await controller.strategies(
+      revenueToken.address, {from: governance}
+    );
+    expect(strategyAddress).to.be.equal(strategy.address);
+
+    const strategyContract = await IStrategy.at(strategyAddress);
+    const strategyContractBalanceOf = await strategyContract.balanceOf(
+      {from: governance}
+    );
+
+    const revenueTokenBalance = await revenueToken.balanceOf(
+      vault.address, {from: governance}
+    );
+
+    const validSum = revenueTokenBalance.add(strategyContractBalanceOf);
+    const actualSum = await vault.balance({from: governance});
+
+    expect(actualSum).to.be.bignumber.equal(validSum);
   });
 
   // Custom logic in here for how much the vault allows to be borrowed

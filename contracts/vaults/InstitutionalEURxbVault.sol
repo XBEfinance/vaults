@@ -38,16 +38,15 @@ contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, IVaultDelegated
             'iEURxb'
         )
         Initializable()
+        Governable()
     {}
 
     function configure(
         address _eurxb,
-        address _governance,
         address _initialController,
         address _initialStrategy
     ) external initializer {
         eurxb = IERC20(_eurxb);
-        setGovernance(_governance);
         setController(_initialController);
         IController(_controller).setVault(_eurxb, address(this));
         IController(_controller).setStrategy(_eurxb, _initialStrategy);
@@ -73,7 +72,7 @@ contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, IVaultDelegated
 
     // Custom logic in here for how much the vault allows to be borrowed
     // Sets minimum required on-hand to keep small withdrawals cheap
-    function available() public view returns (uint) {
+    function available() public view returns(uint) {
         return eurxb.balanceOf(address(this)).mul(min).div(max);
     }
 
@@ -95,10 +94,8 @@ contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, IVaultDelegated
 
     function deposit(uint256 _amount) override public {
         uint256 _pool = balance();
-        uint256 _before = eurxb.balanceOf(address(this));
         eurxb.safeTransferFrom(_msgSender(), address(this), _amount);
-        uint256 _after = eurxb.balanceOf(address(this));
-        _amount = _after.sub(_before); // Additional check for deflationary tokens
+        _amount = eurxb.balanceOf(address(this));
         uint256 shares = 0;
         if (totalSupply() == 0) {
             shares = _amount;

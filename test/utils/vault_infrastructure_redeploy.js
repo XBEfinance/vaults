@@ -1,3 +1,6 @@
+const { constants } = require('@openzeppelin/test-helpers');
+const { ZERO_ADDRESS } = constants;
+
 const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
 const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
 const Controller = artifacts.require("Controller");
@@ -7,17 +10,19 @@ const MockContract = artifacts.require("MockContract");
 const vaultInfrastructureRedeploy = async (
   governance,
   strategist,
-  treasuryAddress
+  treasuryAddress,
+  mockTokensOwner=ZERO_ADDRESS
 ) => {
   const mock = await MockContract.new();
   const controller = await Controller.new();
   const strategy = await InstitutionalEURxbStrategy.new();
   const vault = await InstitutionalEURxbVault.new();
-  const revenueToken = await ERC20.at(mock.address);
+  var revenueToken = await ERC20.at(mock.address);
 
   await strategy.configure(
     revenueToken.address,
     controller.address,
+    vault.address,
     {from: governance}
   );
 

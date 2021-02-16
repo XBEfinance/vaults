@@ -81,7 +81,7 @@ contract('Controller', (accounts) => {
     await expectRevert(controller.inCaseStrategyTokenGetStuck(strategy.address, revenueToken.address),
       "!want");
     const mockedBalance = ether('10');
-    const mockToken = await getMockTokenPrepared(strategy.address, mockedBalance);
+    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance);
     await controller.inCaseStrategyTokenGetStuck(strategy.address, mockToken.address);
     expect(await mockToken.balanceOf(controller.address)).to.be.bignumber.equal(mockedBalance);
 
@@ -92,8 +92,33 @@ contract('Controller', (accounts) => {
   });
 
   it('should withdraw tokens from strategy', async () => {
-    const mockedBalance = ether('10');
-    const mockToken = await getMockTokenPrepared(strategy.address, mockedBalance);
+    var mockedBalance = ether('10');
+    var toWithdraw = ether('5');
+    const balanceOfStrategyCalldata = revenueToken.contract
+      .methods.balanceOf(strategy.address).encodeABI();
+    await mock.givenCalldataReturnUint(balanceOfStrategyCalldata, mockedBalance);
+
+    await strategy.setController(mock.address, {from: governance});
+
+    const vaultsCalldata = controller.contract
+      .methods.vaults(revenueToken.address).encodeABI();
+
+    await mock.givenCalldataReturnAddress(vaultsCalldata, ZERO_ADDRESS);
+
+    const invalidVault = await (await Controller.at(await strategy.controller()))
+      .vaults(revenueToken.address);
+
+    expect(invalidVault).to.be.equal(ZERO_ADDRESS);
+
+    await strategy.setController(controller.address, {from: governance});
+
+    const transferCalldata = revenueToken.contract
+      .methods.transfer(miris, 0).encodeABI();
+
+    await mock.givenMethodReturnBool(transferCalldata, false);
+
+    await expectRevert(controller.withdraw(revenueToken.address, toWithdraw),
+      "!transferStrategy");
   });
 
   // // function setParts(uint256 _newParts) onlyGovernance external {

@@ -19,19 +19,42 @@ contract InstitutionalEURxbStrategy is IStrategy, Governable, Initializable {
     constructor() Initializable() Governable() public {}
 
     address private _eurxb;
-    address private _controller;
+    address public controller;
+    address public vault;
 
     modifier onlyController {
-      require(msg.sender == _controller, "!controller");
-      _;
+        require(_msgSender() == controller, "!controller");
+        _;
+    }
+
+    modifier onlyControllerOrVault {
+        require(_msgSender() == controller || _msgSender() == vault, "!controller|vault");
+        _;
     }
 
     function configure(
       address _eurxbAddress,
-      address _controllerAddress
+      address _controllerAddress,
+      address _vaultAddress
     ) initializer external {
-      _eurxb = _eurxbAddress;
-      _controller = _controllerAddress;
+        _eurxb = _eurxbAddress;
+        controller = _controllerAddress;
+        vault = _vaultAddress;
+    }
+
+    function setVault(address _newVault) onlyGovernance external {
+        require(vault != _newVault, "!old");
+        vault = _newVault;
+    }
+
+    function setController(address _newController) onlyGovernance external {
+        require(controller != _newController, "!old");
+        controller = _newController;
+    }
+
+    function setEurXb(address _newEurXb) onlyGovernance external {
+        require(_eurxb != _newEurXb, "!old");
+        _eurxb = _newEurXb;
     }
 
     function want() override external view returns(address) {
@@ -47,25 +70,25 @@ contract InstitutionalEURxbStrategy is IStrategy, Governable, Initializable {
     function withdraw(address _token) override onlyController external {
         require(address(_token) != address(_eurxb), "!want");
         uint256 balance = IERC20(_token).balanceOf(address(this));
-        require(IERC20(_token).transfer(_controller, balance), "!transfer");
+        require(IERC20(_token).transfer(controller, balance), "!transfer");
     }
 
     // Controller | Vault role - withdraw should always return to Vault
     // Withdraw partial funds, normally used with a vault withdrawal
-    function withdraw(uint256 _amount) override onlyController external {
+    function withdraw(uint256 _amount) override onlyControllerOrVault external {
         uint256 _balance = IERC20(_eurxb).balanceOf(address(this));
         if (_balance < _amount) {
             _amount = _withdrawSome(_amount.sub(_balance));
             _amount = _amount.add(_balance);
         }
-        address _vault = IController(_controller).vaults(_eurxb);
+        address _vault = IController(controller).vaults(_eurxb);
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
-        require(IERC20(_eurxb).transfer(_vault, _amount), "!transfer strategy");
+        require(IERC20(_eurxb).transfer(_vault, _amount), "!transferStrategy");
     }
 
     // this function is withdraw from business process the difference between balance and requested sum
-    function _withdrawSome(uint256 _amount) internal returns (uint) {
-      revert("Not implemented");
+    function _withdrawSome(uint256 _amount) internal returns(uint) {
+      return _amount;
     }
 
     function skim() override external {

@@ -154,7 +154,7 @@ contract Controller is IController, Governable, Initializable {
             _amount = IConverter(converter).convert(_strategy);
             require(IERC20(_want).transfer(_strategy, _amount), "!transferStrategyWant");
         } else {
-            require(IERC20(_token).transfer(_strategy, _amount), "!transferStrateguToken");
+            require(IERC20(_token).transfer(_strategy, _amount), "!transferStrategyToken");
         }
         IStrategy(_strategy).deposit();
     }

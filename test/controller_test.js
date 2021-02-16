@@ -21,6 +21,7 @@ const Controller = artifacts.require("Controller");
 const ERC20 = artifacts.require("ERC20");
 const IStrategy = artifacts.require("IStrategy");
 const MockToken = artifacts.require('MockToken');
+const IConverter = artifacts.require('IConverter');
 
 const MockContract = artifacts.require("MockContract");
 
@@ -170,74 +171,76 @@ contract('Controller', (accounts) => {
   //   await controller.setVault(revenueToken.address, mock.address);
   //   expect(await controller.vaults(revenueToken.address)).to.be.equal(mock.address);
   // });
-
+  //
   // it('should set converter address', async () => {
   //   const mockToken = await MockToken.new('Mock Token', 'MT', ether('123'), {from: miris});
   //   await controller.setConverter(revenueToken.address, mockToken.address, mock.address);
   //   expect(await controller.converters(revenueToken.address, mockToken.address)).to.be.equal(mock.address);
   // });
 
-  it('should set strategy address', async () => {
-    await expectRevert(controller.setStrategy(revenueToken.address, mock.address), '!approved');
-
-    const transferCalldata = revenueToken.contract
-      .methods.transfer(miris, 0).encodeABI();
-    const balanceOfCalldata = revenueToken.contract
-      .methods.balanceOf(miris).encodeABI();
-    const mockedBalance = ether('10');
-
-    await mock.givenMethodReturnUint(balanceOfCalldata, mockedBalance);
-    await mock.givenMethodReturnBool(transferCalldata, true);
-
-    await controller.setApprovedStrategy(revenueToken.address, mock.address, true);
-    const receipt = await controller.setStrategy(revenueToken.address, mock.address);
-    expectEvent(receipt, 'WithdrawToVaultAll', {
-      _token: revenueToken.address
-    });
-    expect(await controller.strategies(revenueToken.address)).to.be.equal(mock.address);
-  });
-
-  it('should approve strategy address', async () => {
-    await controller.setApprovedStrategy(revenueToken.address, mock.address, true);
-    expect(await controller.approvedStrategies(revenueToken.address, mock.address)).to.be.equal(true);
-  });
-
-  it('should get approved strategy address', async () => {
-    expect(await controller.approvedStrategies(revenueToken.address, mock.address)).to.be.equal(false);
-  });
+  // it('should set strategy address', async () => {
+  //   await expectRevert(controller.setStrategy(revenueToken.address, mock.address), '!approved');
+  //
+  //   const transferCalldata = revenueToken.contract
+  //     .methods.transfer(miris, 0).encodeABI();
+  //   const balanceOfCalldata = revenueToken.contract
+  //     .methods.balanceOf(miris).encodeABI();
+  //   const mockedBalance = ether('10');
+  //
+  //   await mock.givenMethodReturnUint(balanceOfCalldata, mockedBalance);
+  //   await mock.givenMethodReturnBool(transferCalldata, true);
+  //
+  //   await controller.setApprovedStrategy(revenueToken.address, mock.address, true);
+  //   const receipt = await controller.setStrategy(revenueToken.address, mock.address);
+  //   expectEvent(receipt, 'WithdrawToVaultAll', {
+  //     _token: revenueToken.address
+  //   });
+  //   expect(await controller.strategies(revenueToken.address)).to.be.equal(mock.address);
+  // });
+  //
+  // it('should approve strategy address', async () => {
+  //   await controller.setApprovedStrategy(revenueToken.address, mock.address, true);
+  //   expect(await controller.approvedStrategies(revenueToken.address, mock.address)).to.be.equal(true);
+  // });
+  //
+  // it('should get approved strategy address', async () => {
+  //   expect(await controller.approvedStrategies(revenueToken.address, mock.address)).to.be.equal(false);
+  // });
 
   it('should send tokens to the strategy and earn', async () => {
+    const mockedBalance = ether('10');
+    const sumToEarn = ether('1');
+    const sumToEarnInRevenueToken = ether('2');
 
+    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance);
+
+    await expectRevert(controller.earn(mockToken.address, sumToEarn), '!converter');
+
+    await controller.setConverter(mockToken.address, revenueToken.address, mock.address);
+    await expectRevert(controller.earn(mockToken.address, sumToEarn), '!transferConverterToken');
+
+    await mockToken.approve(controller.address, sumToEarn, {from: miris});
+    await mockToken.transfer(controller.address, sumToEarn, {from: miris});
+
+    const converterCalldata = (await IConverter.at(mock.address)).contract
+      .methods.convert(strategy.address).encodeABI();
+
+    await mock.givenCalldataReturnUint(converterCalldata, sumToEarnInRevenueToken);
+
+    const transferCalldata = revenueToken.contract
+      .methods.transfer(strategy.address, sumToEarnInRevenueToken).encodeABI();
+
+    await mock.givenCalldataReturnBool(transferCalldata, false);
+    await expectRevert(controller.earn(mockToken.address, sumToEarn), '!transferStrategyWant');
+
+    await expectRevert(controller.earn(revenueToken.address, sumToEarnInRevenueToken), '!transferStrategyToken');
+
+    await mock.givenCalldataReturnBool(transferCalldata, true);
+    await expectRevert(controller.earn(revenueToken.address, sumToEarnInRevenueToken), 'Not implemented');
   });
 
-  // // // Only allows to withdraw non-core strategy tokens ~ this is over and above normal yield
-  // // function harvest(address _strategy, address _token) override external {
-  // //     require(_token != _want, "!want");
-  // //     // This contract should never have value in it, but just incase since this is a public call
-  // //     uint256 _before = IERC20(_token).balanceOf(address(this));
-  // //     IStrategy(_strategy).withdraw(_token);
-  // //     uint256 _after =  IERC20(_token).balanceOf(address(this));
-  // //     if (_after > _before) {
-  // //         uint256 _amount = _after.sub(_before);
-  // //         address _want = IStrategy(_strategy).want();
-  // //         uint256[] memory _distribution;
-  // //         uint256 _expected;
-  // //         _before = IERC20(_want).balanceOf(address(this));
-  // //         IERC20(_token).safeApprove(_oneSplit, 0);
-  // //         IERC20(_token).safeApprove(_oneSplit, _amount);
-  // //         (_expected, _distribution) = IOneSplitAudit(_oneSplit).getExpectedReturn(_token, _want, _amount, parts, 0);
-  // //         IOneSplitAudit(_oneSplit).swap(_token, _want, _amount, _expected, _distribution, 0);
-  // //         _after = IERC20(_want).balanceOf(address(this));
-  // //         if (_after > _before) {
-  // //             _amount = _after.sub(_before);
-  // //             uint256 _reward = _amount.mul(split).div(max);
-  // //             earn(_want, _amount.sub(_reward));
-  // //             IERC20(_want).safeTransfer(_treasury, _reward);
-  // //         }
-  // //     }
-  // // }
-  // it('should harvest tokens from the strategy', async () => {
-  //
-  // });
+  it('should harvest tokens from the strategy', async () => {
+
+  });
 
 });

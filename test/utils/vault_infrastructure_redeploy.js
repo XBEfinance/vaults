@@ -9,15 +9,14 @@ const MockContract = artifacts.require("MockContract");
 
 const vaultInfrastructureRedeploy = async (
   governance,
-  strategist,
-  treasuryAddress,
-  mockTokensOwner=ZERO_ADDRESS
+  strategist
 ) => {
   const mock = await MockContract.new();
   const controller = await Controller.new();
   const strategy = await InstitutionalEURxbStrategy.new();
   const vault = await InstitutionalEURxbVault.new();
   var revenueToken = await ERC20.at(mock.address);
+  var treasuryAddress = vault.address;
 
   await strategy.configure(
     revenueToken.address,

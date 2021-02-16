@@ -75,7 +75,7 @@ contract InstitutionalEURxbStrategy is IStrategy, Governable, Initializable {
 
     // Controller | Vault role - withdraw should always return to Vault
     // Withdraw partial funds, normally used with a vault withdrawal
-    function withdraw(uint256 _amount) override onlyControllerOrVault external {
+    function withdraw(uint256 _amount) override onlyControllerOrVault public {
         uint256 _balance = IERC20(_eurxb).balanceOf(address(this));
         if (_balance < _amount) {
             _amount = _withdrawSome(_amount.sub(_balance));
@@ -88,7 +88,7 @@ contract InstitutionalEURxbStrategy is IStrategy, Governable, Initializable {
 
     // this function is withdraw from business process the difference between balance and requested sum
     function _withdrawSome(uint256 _amount) internal returns(uint) {
-      return _amount;
+        return _amount;
     }
 
     function skim() override external {
@@ -96,8 +96,10 @@ contract InstitutionalEURxbStrategy is IStrategy, Governable, Initializable {
     }
 
     // Controller | Vault role - withdraw should always return to Vault
-    function withdrawAll() override external returns(uint256) {
-        revert("Not implemented");
+    function withdrawAll() override onlyControllerOrVault external returns(uint256) {
+        uint256 _balance = IERC20(_eurxb).balanceOf(address(this));
+        withdraw(_balance);
+        return _balance;
     }
 
     // balance of this address in "want" tokens

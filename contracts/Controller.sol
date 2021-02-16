@@ -19,6 +19,8 @@ contract Controller is IController, Governable, Initializable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
+    event WithdrawToVaultAll(address _token);
+
     // token => vault
     mapping(address => address) private _vaults;
 
@@ -32,10 +34,10 @@ contract Controller is IController, Governable, Initializable {
     mapping(address => mapping(address => bool)) private _approvedStrategies;
 
     address public strategist;
+    address public oneSplit;
 
     //Treasury contract
     address private _treasury;
-    address private _oneSplit;
 
     // procents (in base points) to send to treasury
     uint256 public split = 5000;
@@ -44,7 +46,7 @@ contract Controller is IController, Governable, Initializable {
     uint256 public constant max = 10000;
 
     // One Split parts
-    uint256 public parts;
+    uint256 public parts = 100;
 
     modifier onlyGovernanceOrStrategist {
       require(_msgSender() == strategist || _msgSender() == governance, "!governance|strategist");
@@ -79,17 +81,19 @@ contract Controller is IController, Governable, Initializable {
     }
 
     function setRewards(address _newTreasury) onlyGovernance external {
-        require(_treasury != _newTreasury, 'old');
+        require(_treasury != _newTreasury, '!old');
+        require(_newTreasury != address(0), '!treasury');
+        require(_newTreasury.isContract(), '!contract');
         _treasury = _newTreasury;
     }
 
     function setOneSplit(address _newOneSplit) onlyGovernance external {
-        require(_oneSplit != _newOneSplit, 'old');
-        _oneSplit = _newOneSplit;
+        require(oneSplit != _newOneSplit, '!old');
+        oneSplit = _newOneSplit;
     }
 
     function setStrategist(address _newStrategist) onlyGovernance external {
-        require(strategist != _newStrategist, 'old');
+        require(strategist != _newStrategist, '!old');
         strategist = _newStrategist;
     }
 
@@ -127,6 +131,7 @@ contract Controller is IController, Governable, Initializable {
         address _current = _strategies[_token];
         if (_current != address(0)) {
             IStrategy(_current).withdrawAll();
+            emit WithdrawToVaultAll(_token);
         }
         _strategies[_token] = _strategy;
     }
@@ -167,10 +172,10 @@ contract Controller is IController, Governable, Initializable {
             uint256[] memory _distribution;
             uint256 _expected;
             _before = IERC20(_want).balanceOf(address(this));
-            IERC20(_token).safeApprove(_oneSplit, 0);
-            IERC20(_token).safeApprove(_oneSplit, _amount);
-            (_expected, _distribution) = IOneSplitAudit(_oneSplit).getExpectedReturn(_token, _want, _amount, parts, 0);
-            IOneSplitAudit(_oneSplit).swap(_token, _want, _amount, _expected, _distribution, 0);
+            IERC20(_token).safeApprove(oneSplit, 0);
+            IERC20(_token).safeApprove(oneSplit, _amount);
+            (_expected, _distribution) = IOneSplitAudit(oneSplit).getExpectedReturn(_token, _want, _amount, parts, 0);
+            IOneSplitAudit(oneSplit).swap(_token, _want, _amount, _expected, _distribution, 0);
             _after = IERC20(_want).balanceOf(address(this));
             if (_after > _before) {
                 _amount = _after.sub(_before);

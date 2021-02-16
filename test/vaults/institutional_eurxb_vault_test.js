@@ -29,7 +29,6 @@ contract('InstitutionalEURxbVault', (accounts) => {
   const miris = accounts[1];
   const strategist = accounts[2];
 
-  const treasuryAddress = ZERO_ADDRESS;
   const testMin = new BN('9600');
 
   var revenueToken;
@@ -41,8 +40,7 @@ contract('InstitutionalEURxbVault', (accounts) => {
   beforeEach(async () => {
     [mock, controller, strategy, vault, revenueToken] = await vaultInfrastructureRedeploy(
       governance,
-      strategist,
-      treasuryAddress
+      strategist
     );
   });
 

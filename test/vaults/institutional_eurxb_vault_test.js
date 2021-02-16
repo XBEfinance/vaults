@@ -99,86 +99,84 @@ contract('InstitutionalEURxbVault', (accounts) => {
 
   });
 
-  // it('should configure successfully', async () => {
-  //   expect(await vault.controller()).to.be.equal(controller.address);
-  //   expect(await vault.governance()).to.be.equal(governance);
-  //   expect(await vault.eurxb()).to.be.equal(revenueToken.address);
-  //   expect(await controller.vaults(revenueToken.address)).to.be.equal(vault.address);
-  //   expect(await controller.strategies(revenueToken.address)).to.be.equal(strategy.address);
-  // });
-  //
-  // it('should set min', async () => {
-  //   await vault.setMin(testMin, {from: governance});
-  //   expect(await vault.min()).to.be.bignumber.equal(testMin);
-  //   await expectRevert(vault.setMin(testMin, {from: governance}), '!new');
-  //   await expectRevert(vault.setMin(testMin, {from: miris}), '!governance');
-  // });
-  //
-  // it('should set controller', async () => {
-  //   await vault.setController(ZERO_ADDRESS, {from: governance});
-  //   expect(await vault.controller()).to.be.bignumber.equal(ZERO_ADDRESS);
-  //   await expectRevert(vault.setController(ZERO_ADDRESS, {from: governance}), '!new');
-  //   await expectRevert(vault.setController(ZERO_ADDRESS, {from: miris}), '!governance');
-  // });
-  //
-  // it('should calculate balance correctly', async () => {
-  //   const mockedRevenueTokenBalance = ether('10');
-  //
-  //   // prepare calldata
-  //   const balanceOfCalldata = revenueToken.contract
-  //     .methods.balanceOf(vault.address).encodeABI();
-  //
-  //   // mock eurxb balance of this
-  //   await mock.givenCalldataReturnUint(balanceOfCalldata,
-  //     mockedRevenueTokenBalance);
-  //
-  //   const strategyAddress = await controller.strategies(
-  //     revenueToken.address, {from: governance}
-  //   );
-  //   expect(strategyAddress).to.be.equal(strategy.address);
-  //
-  //   const strategyContract = await IStrategy.at(strategyAddress);
-  //   const strategyContractBalanceOf = await strategyContract.balanceOf(
-  //     {from: governance}
-  //   );
-  //
-  //   const revenueTokenBalance = await revenueToken.balanceOf(
-  //     vault.address, {from: governance}
-  //   );
-  //
-  //   const validSum = revenueTokenBalance.add(strategyContractBalanceOf);
-  //   const actualSum = await vault.balance({from: governance});
-  //
-  //   expect(actualSum).to.be.bignumber.equal(validSum);
-  // });
-  //
-  // it('should calculate available balance', async () => {
-  //   const mockedRevenueTokenBalance = ether('10');
-  //   // prepare calldata
-  //   const balanceOfCalldata = revenueToken.contract
-  //     .methods.balanceOf(vault.address).encodeABI();
-  //   // mock eurxb balance of this
-  //   await mock.givenCalldataReturnUint(balanceOfCalldata,
-  //     mockedRevenueTokenBalance);
-  //   const min = await vault.min();
-  //   const max = await vault.max();
-  //   const revenueTokenBalance = await revenueToken.balanceOf(vault.address);
-  //   const valid = revenueTokenBalance.mul(min).div(max);
-  //   const actual = await vault.available();
-  //   expect(actual).to.be.bignumber.equal(valid);
-  // });
-  //
-  // it('should get vault token address', async () => {
-  //   expect(await vault.token()).to.be.equal(vault.address);
-  // });
-  //
-  // it('should get eurxb token address', async () => {
-  //   expect(await vault.underlying()).to.be.equal(revenueToken.address);
-  // });
-  //
-  // it('should get controller', async () => {
-  //   expect(await vault.controller()).to.be.equal(controller.address);
-  // });
+  it('should configure successfully', async () => {
+    expect(await vault.controller()).to.be.equal(controller.address);
+    expect(await vault.governance()).to.be.equal(governance);
+    expect(await vault.eurxb()).to.be.equal(revenueToken.address);
+    expect(await controller.vaults(revenueToken.address)).to.be.equal(vault.address);
+    expect(await controller.strategies(revenueToken.address)).to.be.equal(strategy.address);
+  });
+
+  it('should set min', async () => {
+    await vault.setMin(testMin, {from: governance});
+    expect(await vault.min()).to.be.bignumber.equal(testMin);
+    await expectRevert(vault.setMin(testMin, {from: governance}), '!new');
+    await expectRevert(vault.setMin(testMin, {from: miris}), '!governance');
+  });
+
+  it('should set controller', async () => {
+    await vault.setController(ZERO_ADDRESS, {from: governance});
+    expect(await vault.controller()).to.be.bignumber.equal(ZERO_ADDRESS);
+    await expectRevert(vault.setController(ZERO_ADDRESS, {from: governance}), '!new');
+    await expectRevert(vault.setController(ZERO_ADDRESS, {from: miris}), '!governance');
+  });
+
+  it('should calculate balance correctly', async () => {
+    const mockedRevenueTokenBalance = ether('10');
+
+    // prepare calldata
+    const balanceOfCalldata = revenueToken.contract
+      .methods.balanceOf(vault.address).encodeABI();
+
+    // mock eurxb balance of this
+    await mock.givenCalldataReturnUint(balanceOfCalldata,
+      mockedRevenueTokenBalance);
+
+    const strategyAddress = await controller.strategies(
+      revenueToken.address, {from: governance}
+    );
+    expect(strategyAddress).to.be.equal(strategy.address);
+
+    const strategyContract = await IStrategy.at(strategyAddress);
+    const strategyContractBalanceOf = await strategyContract.balanceOf(
+      {from: governance}
+    );
+
+    const revenueTokenBalance = await revenueToken.balanceOf(
+      vault.address, {from: governance}
+    );
+
+    const validSum = revenueTokenBalance.add(strategyContractBalanceOf);
+    const actualSum = await vault.balance({from: governance});
+
+    expect(actualSum).to.be.bignumber.equal(validSum);
+  });
+
+  it('should calculate available balance', async () => {
+    const mockedRevenueTokenBalance = ether('10');
+    const balanceOfCalldata = revenueToken.contract
+      .methods.balanceOf(vault.address).encodeABI();
+    await mock.givenCalldataReturnUint(balanceOfCalldata,
+      mockedRevenueTokenBalance);
+    const min = await vault.min();
+    const max = await vault.max();
+    const revenueTokenBalance = await revenueToken.balanceOf(vault.address);
+    const valid = revenueTokenBalance.mul(min).div(max);
+    const actual = await vault.available();
+    expect(actual).to.be.bignumber.equal(valid);
+  });
+
+  it('should get vault token address', async () => {
+    expect(await vault.token()).to.be.equal(vault.address);
+  });
+
+  it('should get eurxb token address', async () => {
+    expect(await vault.underlying()).to.be.equal(revenueToken.address);
+  });
+
+  it('should get controller', async () => {
+    expect(await vault.controller()).to.be.equal(controller.address);
+  });
 
   it('should get price per full share', async () => {
     const mockedAmount = ether('10');
@@ -381,8 +379,27 @@ contract('InstitutionalEURxbVault', (accounts) => {
     await withdrawsTestWithEqualAmounts(true);
   });
 
-  it('should earn correctly', async () => {
-    
+  const earnTests = async (withConverter) => {
+    const transferCalldata = revenueToken.contract
+      .methods.transfer(miris, ZERO).encodeABI();
+    await mock.givenMethodReturnBool(transferCalldata,
+      true);
+
+    const mockedRevenueTokenBalance = ether('10');
+    const balanceOfCalldata = revenueToken.contract
+      .methods.balanceOf(vault.address).encodeABI();
+    await mock.givenCalldataReturnUint(balanceOfCalldata,
+      mockedRevenueTokenBalance);
+    const available = await vault.available();
+    await expectRevert(vault.earn(), "Not implemented");
+  };
+
+  it('should earn correctly without converter', async () => {
+    await earnTests(false);
+  });
+
+  it('should earn correctly with converter', async () => {
+    await earnTests(true);
   });
 
 });

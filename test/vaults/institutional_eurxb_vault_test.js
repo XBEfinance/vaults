@@ -13,10 +13,7 @@ const {
 const { ZERO_ADDRESS } = constants;
 
 const { ZERO, CONVERSION_WEI_CONSTANT } = require('../utils/common');
-
-const {
-  actorStake, activeActor, deployAndConfigureGovernance
-} = require('../utils/governance_redeploy');
+const { vaultInfrastructureRedeploy } = require('../utils/vault_infrastructure_redeploy');
 
 const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
 const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
@@ -32,71 +29,21 @@ contract('InstitutionalEURxbVault', (accounts) => {
   const miris = accounts[1];
   const strategist = accounts[2];
 
-  const stardId = ZERO;
-  const initialTotalSupply = ether('15000');
   const treasuryAddress = ZERO_ADDRESS;
+  const testMin = new BN('9600');
 
-  var governanceContract;
-  var governanceToken;
-  var stakingRewardsToken;
   var revenueToken;
   var controller;
   var strategy;
   var vault;
   var mock;
 
-  const testMin = new BN('9600');
-
   beforeEach(async () => {
-    [ governanceContract, governanceToken, stakingRewardsToken ] = await deployAndConfigureGovernance(
-      stardId,
-      initialTotalSupply,
-      governance
-    );
-
-    mock = await MockContract.new();
-    controller = await Controller.new();
-    strategy = await InstitutionalEURxbStrategy.new();
-    vault = await InstitutionalEURxbVault.new();
-    revenueToken = await ERC20.at(mock.address);
-
-    await strategy.configure(
-      revenueToken.address,
-      controller.address,
-      {from: governance}
-    );
-
-    await controller.configure(
-      treasuryAddress,
+    [mock, controller, strategy, vault, revenueToken] = vaultInfrastructureRedeploy(
+      governance,
       strategist,
-      {from: governance}
+      treasuryAddress
     );
-
-    await vault.configure(
-      revenueToken.address,
-      controller.address,
-      {from: governance}
-    );
-
-    await controller.setVault(
-      revenueToken.address,
-      vault.address,
-      {from: governance}
-    );
-
-    await controller.setApprovedStrategy(
-      revenueToken.address,
-      strategy.address,
-      true,
-      {from: governance}
-    );
-
-    await controller.setStrategy(
-      revenueToken.address,
-      strategy.address,
-      {from: governance}
-    );
-
   });
 
   it('should configure successfully', async () => {

@@ -25,10 +25,10 @@ contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, IVaultDelegated
     address private _controller;
     IERC20 public eurxb;
 
-    // minimum procents to be in business? (in base points)
+    // minimum percentage to be in business? (in base points)
     uint256 public min = 9500;
 
-    // hundred procents (in base points)
+    // hundred procent (in base points)
     uint256 public constant max = 10000;
 
     constructor()

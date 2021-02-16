@@ -12,31 +12,39 @@ const {
 } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
-const { ZERO } = require('../utils/common');
+const { ZERO, CONVERSION_WEI_CONSTANT } = require('../utils/common');
+const { vaultInfrastructureRedeploy } = require('../utils/vault_infrastructure_redeploy');
 
-const {
-  actorStake, activeActor, deployAndConfigureGovernance
-} = require('./governance_test.js');
+const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
+const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
+const Controller = artifacts.require("Controller");
+const ERC20 = artifacts.require("ERC20");
+const IStrategy = artifacts.require("IStrategy");
 
 const MockContract = artifacts.require("MockContract");
 
-const MockToken = artifacts.require('MockToken');
-const ExecutorMock = artifacts.require('ExecutorMock');
-
 contract('Controller', (accounts) => {
 
-  // function configure(
-  //       address _eurxbToken,
-  //       address _initialVault,
-  //       address _initialStrategy,
-  //       address _initialTreasury,
-  //       address _initialStrategist
-  // ) external initializer {
-  //     _vaults[_eurxbToken] = _initialVault;
-  //     _strategies[_eurxbToken] = _initialStrategy;
-  //     _treasury = _initialTreasury;
-  //     strategist = _initialStrategist;
-  // }
+  const governance = accounts[0];
+  const miris = accounts[1];
+  const strategist = accounts[2];
+
+  const treasuryAddress = ZERO_ADDRESS;
+
+  var revenueToken;
+  var controller;
+  var strategy;
+  var vault;
+  var mock;
+
+  beforeEach(async () => {
+    [mock, controller, strategy, vault, revenueToken] = vaultInfrastructureRedeploy(
+      governance,
+      strategist,
+      treasuryAddress
+    );
+  });
+
   it('should configure properly', async () => {
 
   });

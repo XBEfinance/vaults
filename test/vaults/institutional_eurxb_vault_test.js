@@ -39,7 +39,7 @@ contract('InstitutionalEURxbVault', (accounts) => {
   var mock;
 
   beforeEach(async () => {
-    [mock, controller, strategy, vault, revenueToken] = vaultInfrastructureRedeploy(
+    [mock, controller, strategy, vault, revenueToken] = await vaultInfrastructureRedeploy(
       governance,
       strategist,
       treasuryAddress

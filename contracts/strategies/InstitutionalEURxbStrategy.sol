@@ -47,7 +47,7 @@ contract InstitutionalEURxbStrategy is IStrategy, Governable, Initializable {
     function withdraw(address _token) override onlyController external {
         require(address(_token) != address(_eurxb), "!want");
         uint256 balance = IERC20(_token).balanceOf(address(this));
-        IERC20(_token).safeTransfer(_controller, balance);
+        require(IERC20(_token).transfer(_controller, balance), "!transfer");
     }
 
     // Controller | Vault role - withdraw should always return to Vault

@@ -18,10 +18,11 @@ const { vaultInfrastructureRedeploy } = require('./utils/vault_infrastructure_re
 const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
 const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
 const Controller = artifacts.require("Controller");
-const ERC20 = artifacts.require("ERC20");
+const IERC20 = artifacts.require("IERC20");
 const IStrategy = artifacts.require("IStrategy");
 const MockToken = artifacts.require('MockToken');
 const IConverter = artifacts.require('IConverter');
+const IOneSplitAudit = artifacts.require('IOneSplitAudit');
 
 const MockContract = artifacts.require("MockContract");
 
@@ -214,11 +215,37 @@ contract('Controller', (accounts) => {
 
     var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance);
 
-    await expectRevert(controller.earn(mockToken.address, sumToEarn), '!converter');
+    ////
+    await controller.setApprovedStrategy(mockToken.address, strategy.address, true);
+    await controller.setStrategy(mockToken.address, strategy.address);
 
+    await expectRevert(controller.earn(mockToken.address, sumToEarn, {from: miris}), '!converter');
+    ////
+
+    ////
+
+    const vaultTransferCalldata = revenueToken.contract.
+      methods.transfer(vault.address, 0).encodeABI();
+    await mock.givenMethodReturnBool(vaultTransferCalldata, true);
+
+    await controller.setApprovedStrategy(mock.address, mock.address, true);
+    await controller.setStrategy(mock.address, mock.address);
+
+    const wantCalldata = (await IStrategy.at(mock.address)).contract
+      .methods.want().encodeABI();
+
+    const transferToConverterCalldata = (await IERC20.at(mock.address)).contract
+      .methods.transfer(mock.address, sumToEarn).encodeABI();
+
+    await mock.givenMethodReturnBool(transferToConverterCalldata, false);
+    await mock.givenMethodReturnAddress(wantCalldata, mockToken.address);
+
+    await controller.setConverter(mock.address, mockToken.address, mock.address);
+    await expectRevert(controller.earn(mock.address, sumToEarn, {from: miris}), '!transferConverterToken');
+    ////
+
+    await mock.reset();
     await controller.setConverter(mockToken.address, revenueToken.address, mock.address);
-    await expectRevert(controller.earn(mockToken.address, sumToEarn), '!transferConverterToken');
-
     await mockToken.approve(controller.address, sumToEarn, {from: miris});
     await mockToken.transfer(controller.address, sumToEarn, {from: miris});
 
@@ -240,6 +267,52 @@ contract('Controller', (accounts) => {
   });
 
   it('should harvest tokens from the strategy', async () => {
+    const mockedBalance = ether('10');
+    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance);
+    const wantCalldata = (await IStrategy.at(mock.address)).contract
+      .methods.want().encodeABI();
+    await mock.givenMethodReturnAddress(wantCalldata, mockToken.address);
+    await expectRevert(controller.harvest(mock.address, mockToken.address), '!want');
+
+    await mock.reset();
+
+    const tokensForStrategy = ether('2');
+
+    await mockToken.approve(strategy.address, tokensForStrategy, {from: miris});
+    await mockToken.transfer(strategy.address, tokensForStrategy, {from: miris});
+
+    await controller.setOneSplit(mock.address);
+
+    const swapCalldata = (await IOneSplitAudit.at(mock.address)).contract
+      .methods.swap(mock.address, mock.address, 0, 0, [], 0).encodeABI();
+
+    const expectedReturnCalldata = (await IOneSplitAudit.at(mock.address)).contract
+      .methods.getExpectedReturn(mock.address, mock.address, 0, 0, 0).encodeABI();
+
+    const swappedToWantAmount = ether('3');
+
+    await mock.givenMethodReturnUint(swapCalldata, swappedToWantAmount);
+    await mock.givenMethodReturn(
+      expectedReturnCalldata,
+      web3.eth.abi.encodeParameters(
+        ["uint256", "uint256[]"],
+        [swappedToWantAmount, [ZERO, ZERO]]
+      )
+    );
+
+    const transferCalldata = revenueToken.contract
+      .methods.transfer(mock.address, 0).encodeABI();
+
+    const split = await controller.split();
+    const max = await controller.max();
+
+    const earnTransferCalldata = revenueToken.contract
+      .methods.transfer(strategy.address, swappedToWantAmount.mul(split).div(max)).encodeABI();
+
+    await mock.givenMethodReturnBool(transferCalldata, false);
+    await mock.givenCalldataReturnBool(earnTransferCalldata, true);
+
+    await expectRevert(controller.harvest(strategy.address, mockToken.address), "!transferTreasury");
 
   });
 

@@ -174,14 +174,26 @@ contract Controller is IController, Governable, Initializable {
             _before = IERC20(_want).balanceOf(address(this));
             IERC20(_token).safeApprove(oneSplit, 0);
             IERC20(_token).safeApprove(oneSplit, _amount);
-            (_expected, _distribution) = IOneSplitAudit(oneSplit).getExpectedReturn(_token, _want, _amount, parts, 0);
-            IOneSplitAudit(oneSplit).swap(_token, _want, _amount, _expected, _distribution, 0);
-            _after = IERC20(_want).balanceOf(address(this));
+            (_expected, _distribution) = IOneSplitAudit(oneSplit).getExpectedReturn(
+                _token,
+                _want,
+                _amount,
+                parts,
+                0
+            );
+            _after = IOneSplitAudit(oneSplit).swap(
+                _token,
+                _want,
+                _amount,
+                _expected,
+                _distribution,
+                0
+            );
             if (_after > _before) {
                 _amount = _after.sub(_before);
                 uint256 _reward = _amount.mul(split).div(max);
                 earn(_want, _amount.sub(_reward));
-                IERC20(_want).safeTransfer(_treasury, _reward);
+                require(IERC20(_want).transfer(_treasury, _reward), '!transferTreasury');
             }
         }
     }

@@ -37,7 +37,6 @@ contract('Controller', (accounts) => {
   var strategy;
   var vault;
   var mock;
-  var treasuryAddress;
 
   const getMockTokenPrepared = async (mintTo, mockedAmount) => {
     const mockToken = await MockToken.new('Mock Token', 'MT', ether('123'), {from: miris});
@@ -55,7 +54,7 @@ contract('Controller', (accounts) => {
 
   it('should configure properly', async () => {
     expect(await controller.strategist()).to.be.equal(strategist);
-    expect(await controller.rewards()).to.be.equal(treasuryAddress);
+    expect(await controller.rewards()).to.be.equal(vault.address);
   });
 
   it('should evacuate tokens from controller', async () => {
@@ -135,18 +134,18 @@ contract('Controller', (accounts) => {
     await expectRevert(controller.setRewards(await controller.rewards()), '!old');
     const newTreasury = mock.address;
     await controller.setRewards(newTreasury, {from: governance});
-    expect(await controller.rewards()).to.be.bignumber.equal(_newTreasury);
+    expect(await controller.rewards()).to.be.bignumber.equal(newTreasury);
   });
 
   it('should set one split address', async () => {
     await expectRevert(controller.setOneSplit(await controller.oneSplit()), '!old');
     const newOneSplit = mock.address;
-    await controller.setOneSplit(_newOneSplit);
+    await controller.setOneSplit(newOneSplit);
     expect(await controller.oneSplit()).to.be.equal(newOneSplit);
   });
 
   it('should set strategist address', async () => {
-    await expectRevert(controller.setStrategist(miris), '!old');
+    await expectRevert(controller.setStrategist(strategist), '!old');
     const newStrategist = miris;
     await controller.setStrategist(newStrategist);
     expect(await controller.strategist()).to.be.equal(newStrategist);
@@ -167,9 +166,10 @@ contract('Controller', (accounts) => {
 
 
   it('should set vault by token', async () => {
-    await expectRevert(controller.setVault(revenueToken.address, ZERO_ADDRESS), '!vault 0');
-    await controller.setVault(revenueToken.address, mock.address);
-    expect(await controller.vaults(revenueToken.address)).to.be.equal(mock.address);
+    var mockToken = await getMockTokenPrepared(strategy.address, ether('10'));
+    await expectRevert(controller.setVault(revenueToken.address, vault.address), '!vault 0');
+    await controller.setVault(mockToken.address, mock.address);
+    expect(await controller.vaults(mockToken.address)).to.be.equal(mock.address);
   });
 
   it('should set converter address', async () => {

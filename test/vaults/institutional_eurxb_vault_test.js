@@ -115,10 +115,6 @@ contract('InstitutionalEURxbVault', (accounts) => {
     expect(await vault.token()).to.be.equal(vault.address);
   });
 
-  it('should get eurxb token address', async () => {
-    expect(await vault.underlying()).to.be.equal(revenueToken.address);
-  });
-
   it('should get controller', async () => {
     expect(await vault.controller()).to.be.equal(controller.address);
   });

@@ -16,7 +16,7 @@ import "../governance/Governable.sol";
 import "../templates/Initializable.sol";
 
 
-contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, IVaultDelegated, Governable, Initializable, ERC20 {
+contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, ERC20 {
 
     using SafeERC20 for IERC20;
     using Address for address;
@@ -75,10 +75,6 @@ contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, IVaultDelegated
 
     function token() override external view returns(address) {
         return address(this);
-    }
-
-    function underlying() override external view returns(address) {
-        return address(eurxb);
     }
 
     function controller() override external view returns(address) {

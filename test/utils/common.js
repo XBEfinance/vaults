@@ -52,6 +52,7 @@ module.exports = {
   DAY: 86400,
   HOUR: 3600,
   ZERO: new BN('0'),
+  ONE: new BN('1'),
   CONVERSION_WEI_CONSTANT: ether('1'),
   getMockTokenPrepared
 };

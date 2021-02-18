@@ -22,17 +22,10 @@ contract Registry is Governable, Initializable {
     EnumerableSet.AddressSet private _vaults;
     EnumerableSet.AddressSet private _controllers;
 
-    mapping(address => address) private wrappedVaults;
+    mapping(address => address) public wrappedVaults;
     mapping(address => bool) public isDelegatedVault;
 
     constructor() public Initializable() Governable() {}
-
-    function configure(
-      address[2] vaults
-    ) external initializer {
-      addDelegatedVault(vaults[0]);
-      addDelegatedVault(vaults[1]);
-    }
 
     function getName() external pure returns(string memory) {
       return "Registry";

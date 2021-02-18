@@ -4,7 +4,7 @@ const { ZERO_ADDRESS } = constants;
 const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
 const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
 const Controller = artifacts.require("Controller");
-const ERC20 = artifacts.require("ERC20");
+const IERC20 = artifacts.require("ERC20");
 const MockContract = artifacts.require("MockContract");
 
 const vaultInfrastructureRedeploy = async (
@@ -15,7 +15,8 @@ const vaultInfrastructureRedeploy = async (
   const controller = await Controller.new();
   const strategy = await InstitutionalEURxbStrategy.new();
   const vault = await InstitutionalEURxbVault.new();
-  var revenueToken = await ERC20.at(mock.address);
+  var revenueToken = await IERC20.at(mock.address);
+  // TODO: it's a temporal address, change it when treasury contract is ready
   var treasuryAddress = vault.address;
 
   await strategy.configure(
@@ -38,7 +39,7 @@ const vaultInfrastructureRedeploy = async (
   );
 
   await controller.setVault(
-    revenueToken.address,
+    vault.address,
     vault.address,
     {from: governance}
   );

@@ -11,32 +11,45 @@ const {
   time
 } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
+const { ZERO, getMockTokenPrepared } = require('./utils/common');
+const { vaultInfrastructureRedeploy } = require('./utils/vault_infrastructure_redeploy');
 
-const { ZERO } = require('../utils/common');
-
-const {
-  actorStake, activeActor, deployAndConfigureGovernance
-} = require('./governance_test.js');
+const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
+const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
+const Controller = artifacts.require("Controller");
+const IERC20 = artifacts.require("IERC20");
+const IStrategy = artifacts.require("IStrategy");
+const MockToken = artifacts.require('MockToken');
+const IConverter = artifacts.require('IConverter');
+const IOneSplitAudit = artifacts.require('IOneSplitAudit');
+const Registry = artifacts.require('Registry');
 
 const MockContract = artifacts.require("MockContract");
 
-const MockToken = artifacts.require('MockToken');
-const ExecutorMock = artifacts.require('ExecutorMock');
-
 contract('Registry', (accounts) => {
 
-  // function configure(
-  //         address _governance
-  // ) external initializer {
-  //     setGovernance(_governance);
-  // }
-  it('should configure properly', async () => {
+  const governance = accounts[0];
+  const miris = accounts[1];
+  const strategist = accounts[2];
 
+  var revenueToken;
+  var controller;
+  var strategy;
+  var vault;
+  var mock;
+  var registry;
+
+  beforeEach(async () => {
+    [mock, controller, strategy, vault, revenueToken] = await vaultInfrastructureRedeploy(
+      governance,
+      strategist
+    );
   });
 
-  // function getName() external pure returns(string memory) {
-  //   return "Registry";
-  // }
+  it('should configure properly', async () => {
+    
+  });
+
   it('should get name of the registry', async () => {
 
   });

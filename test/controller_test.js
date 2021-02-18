@@ -12,7 +12,7 @@ const {
 } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
-const { ZERO, CONVERSION_WEI_CONSTANT } = require('./utils/common');
+const { ZERO, CONVERSION_WEI_CONSTANT, getMockTokenPrepared } = require('./utils/common');
 const { vaultInfrastructureRedeploy } = require('./utils/vault_infrastructure_redeploy');
 
 const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
@@ -38,13 +38,6 @@ contract('Controller', (accounts) => {
   var strategy;
   var vault;
   var mock;
-
-  const getMockTokenPrepared = async (mintTo, mockedAmount) => {
-    const mockToken = await MockToken.new('Mock Token', 'MT', ether('123'), {from: miris});
-    await mockToken.approve(mintTo, mockedAmount, {from: miris});
-    await mockToken.transfer(mintTo, mockedAmount, {from: miris});
-    return mockToken;
-  };
 
   beforeEach(async () => {
     [mock, controller, strategy, vault, revenueToken] = await vaultInfrastructureRedeploy(
@@ -81,7 +74,7 @@ contract('Controller', (accounts) => {
     await expectRevert(controller.inCaseStrategyTokenGetStuck(strategy.address, revenueToken.address),
       "!want");
     const mockedBalance = ether('10');
-    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance);
+    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, miris);
     await controller.inCaseStrategyTokenGetStuck(strategy.address, mockToken.address);
     expect(await mockToken.balanceOf(controller.address)).to.be.bignumber.equal(mockedBalance);
 
@@ -167,7 +160,7 @@ contract('Controller', (accounts) => {
 
 
   it('should set vault by token', async () => {
-    var mockToken = await getMockTokenPrepared(strategy.address, ether('10'));
+    var mockToken = await getMockTokenPrepared(strategy.address, ether('10'), miris);
     await expectRevert(controller.setVault(revenueToken.address, vault.address), '!vault 0');
     await controller.setVault(mockToken.address, mock.address);
     expect(await controller.vaults(mockToken.address)).to.be.equal(mock.address);
@@ -213,7 +206,7 @@ contract('Controller', (accounts) => {
     const sumToEarn = ether('1');
     const sumToEarnInRevenueToken = ether('2');
 
-    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance);
+    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, miris);
 
     ////
     await controller.setApprovedStrategy(mockToken.address, strategy.address, true);
@@ -275,7 +268,7 @@ contract('Controller', (accounts) => {
   it('should harvest tokens from the strategy', async () => {
 
     const mockedBalance = ether('10');
-    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance);
+    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, miris);
 
     const wantCalldata = (await IStrategy.at(mock.address)).contract
       .methods.want().encodeABI();

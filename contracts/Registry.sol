@@ -27,9 +27,12 @@ contract Registry is Governable, Initializable {
 
     constructor() public Initializable() Governable() {}
 
-    // function configure(
-    // ) external initializer {
-    // }
+    function configure(
+      address[2] vaults
+    ) external initializer {
+      addDelegatedVault(vaults[0]);
+      addDelegatedVault(vaults[1]);
+    }
 
     function getName() external pure returns(string memory) {
       return "Registry";

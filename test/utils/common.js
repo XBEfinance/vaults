@@ -36,6 +36,13 @@ const Ether = value_str => new BN(web3.utils.toWei(value_str, 'ether'));
 const newBN = (value_str = '1.0') => new BN(web3.utils.toWei(value_str, 'ether'));
 /* eslint-enable */
 
+const getMockTokenPrepared = async (mintTo, mockedAmount, from) => {
+  const mockToken = await MockToken.new('Mock Token', 'MT', ether('123'), {from: miris});
+  await mockToken.approve(mintTo, mockedAmount, {from});
+  await mockToken.transfer(mintTo, mockedAmount, {from});
+  return mockToken;
+};
+
 module.exports = {
   increaseTime,
   currentTimestamp,
@@ -45,5 +52,6 @@ module.exports = {
   DAY: 86400,
   HOUR: 3600,
   ZERO: new BN('0'),
-  CONVERSION_WEI_CONSTANT: ether('1')
+  CONVERSION_WEI_CONSTANT: ether('1'),
+  getMockTokenPrepared
 };

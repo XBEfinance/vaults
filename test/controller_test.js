@@ -224,51 +224,59 @@ contract('Controller', (accounts) => {
 
     ////
 
-    const vaultTransferCalldata = revenueToken.contract.
-      methods.transfer(vault.address, 0).encodeABI();
-    await mock.givenMethodReturnBool(vaultTransferCalldata, true);
+    await mock.reset();
 
-    await controller.setApprovedStrategy(mock.address, mock.address, true);
-    await controller.setStrategy(mock.address, mock.address);
+    const secondMock = await MockContract.new();
+
+    await controller.setApprovedStrategy(secondMock.address, mock.address, true);
+    await controller.setStrategy(secondMock.address, mock.address);
+
+    await controller.setConverter(secondMock.address, mock.address, mock.address);
 
     const wantCalldata = (await IStrategy.at(mock.address)).contract
       .methods.want().encodeABI();
+    await mock.givenMethodReturnAddress(wantCalldata, mock.address);
 
-    const transferToConverterCalldata = (await IERC20.at(mock.address)).contract
-      .methods.transfer(mock.address, sumToEarn).encodeABI();
+    const transferSecondMockCalldata = (await IERC20.at(secondMock.address)).contract
+      .methods.transfer(secondMock.address, 0).encodeABI();
+    await secondMock.givenMethodReturnBool(transferSecondMockCalldata, false);
 
-    await mock.givenMethodReturnBool(transferToConverterCalldata, false);
-    await mock.givenMethodReturnAddress(wantCalldata, mockToken.address);
-
-    await controller.setConverter(mock.address, mockToken.address, mock.address);
-    await expectRevert(controller.earn(mock.address, sumToEarn, {from: miris}), '!transferConverterToken');
+    await expectRevert(controller.earn(secondMock.address, sumToEarn, {from: miris}), '!transferConverterToken');
     ////
 
-    await mock.reset();
-    await controller.setConverter(mockToken.address, revenueToken.address, mock.address);
-    await mockToken.approve(controller.address, sumToEarn, {from: miris});
-    await mockToken.transfer(controller.address, sumToEarn, {from: miris});
-
+    ////
     const converterCalldata = (await IConverter.at(mock.address)).contract
       .methods.convert(strategy.address).encodeABI();
 
     await mock.givenCalldataReturnUint(converterCalldata, sumToEarnInRevenueToken);
 
-    const transferCalldata = revenueToken.contract
-      .methods.transfer(strategy.address, sumToEarnInRevenueToken).encodeABI();
+    const transferCalldata = (await IERC20.at(mock.address)).contract
+      .methods.transfer(mock.address, sumToEarnInRevenueToken).encodeABI();
+
+    await secondMock.givenMethodReturnBool(transferSecondMockCalldata, true);
+
 
     await mock.givenCalldataReturnBool(transferCalldata, false);
-    await expectRevert(controller.earn(mockToken.address, sumToEarn), '!transferStrategyWant');
+    await expectRevert(controller.earn(secondMock.address, sumToEarn, {from: miris}), '!transferStrategyWant');
+    ////
 
+    ///
+    const vaultTransferCalldata = revenueToken.contract.
+      methods.transfer(vault.address, 0).encodeABI();
+    await mock.givenMethodReturnBool(vaultTransferCalldata, true);
+    const transferMockCalldata = revenueToken.contract
+      .methods.transfer(mock.address, 0).encodeABI();
+    await mock.givenMethodReturnBool(transferMockCalldata, false);
     await expectRevert(controller.earn(revenueToken.address, sumToEarnInRevenueToken), '!transferStrategyToken');
+    ///
 
-    await mock.givenCalldataReturnBool(transferCalldata, true);
-    await expectRevert(controller.earn(revenueToken.address, sumToEarnInRevenueToken), 'Not implemented');
   });
 
   it('should harvest tokens from the strategy', async () => {
+
     const mockedBalance = ether('10');
     var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance);
+
     const wantCalldata = (await IStrategy.at(mock.address)).contract
       .methods.want().encodeABI();
     await mock.givenMethodReturnAddress(wantCalldata, mockToken.address);

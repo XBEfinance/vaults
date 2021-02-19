@@ -39,7 +39,7 @@ const vaultInfrastructureRedeploy = async (
   );
 
   await controller.setVault(
-    vault.address,
+    revenueToken.address,
     vault.address,
     {from: governance}
   );

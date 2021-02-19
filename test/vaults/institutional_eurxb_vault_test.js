@@ -112,7 +112,7 @@ contract('InstitutionalEURxbVault', (accounts) => {
   });
 
   it('should get vault token address', async () => {
-    expect(await vault.token()).to.be.equal(vault.address);
+    expect(await vault.token()).to.be.equal(revenueToken.address);
   });
 
   it('should get controller', async () => {

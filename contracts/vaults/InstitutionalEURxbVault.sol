@@ -74,7 +74,7 @@ contract InstitutionalEURxbVault is IVaultCore, IVaultTransfers, Governable, Ini
     }
 
     function token() override external view returns(address) {
-        return address(this);
+        return address(eurxb);
     }
 
     function controller() override external view returns(address) {

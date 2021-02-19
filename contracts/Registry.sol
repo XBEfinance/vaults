@@ -41,13 +41,13 @@ contract Registry is Governable, Initializable {
         addVault(_vault);
         address _wrappedVault = IVaultWrapped(_vault).vault();
 
-        require(_wrappedVault.isContract(), "!contract");
+        require(_wrappedVault.isContract(), "!contractWrapped");
         wrappedVaults[_vault] = _wrappedVault;
 
-        (address controller, , , , ) = _getVaultData(_vault);
+        // (address controller, , , , ) = _getVaultData(_vault);
 
         // Adds to controllers array
-        _addController(controller);
+        // _addController(controller);
         // TODO Add and track tokens and strategies? [historical]
         // (current ones can be obtained via getVaults + getVaultInfo)
     }
@@ -55,9 +55,9 @@ contract Registry is Governable, Initializable {
     function addDelegatedVault(address _vault) public onlyGovernance {
         addVault(_vault);
         isDelegatedVault[_vault] = true;
-        (address controller, , , , ) = _getVaultData(_vault);
+        // (address controller, , , , ) = _getVaultData(_vault);
         // Adds to controllers array
-        _addController(controller);
+        // _addController(controller);
         // TODO Add and track tokens and strategies? [historical]
         // (current ones can be obtained via getVaults + getVaultInfo)
     }

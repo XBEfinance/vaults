@@ -62,7 +62,7 @@ contract InstitutionalEURxbStrategy is IStrategy, Governable, Initializable {
     }
 
     function deposit() override external {
-        // do nothing yet
+        revert('Not implemented');
     }
 
     // NOTE: must exclude any tokens used in the yield

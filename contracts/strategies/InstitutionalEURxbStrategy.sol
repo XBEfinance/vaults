@@ -42,19 +42,19 @@ contract InstitutionalEURxbStrategy is IStrategy, Governable, Initializable {
         vault = _vaultAddress;
     }
 
-    function setVault(address _newVault) onlyGovernance external {
+    function setVault(address _newVault) override onlyGovernance external {
         require(vault != _newVault, "!old");
         vault = _newVault;
     }
 
-    function setController(address _newController) onlyGovernance external {
+    function setController(address _newController) override onlyGovernance external {
         require(controller != _newController, "!old");
         controller = _newController;
     }
 
-    function setEurXb(address _newEurXb) onlyGovernance external {
-        require(_eurxb != _newEurXb, "!old");
-        _eurxb = _newEurXb;
+    function setWant(address _newWant) override onlyGovernance external {
+        require(_eurxb != _newWant, "!old");
+        _eurxb = _newWant;
     }
 
     function want() override external view returns(address) {

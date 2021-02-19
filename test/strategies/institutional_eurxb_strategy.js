@@ -11,100 +11,110 @@ const {
   time
 } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
-
 const { ZERO } = require('../utils/common');
+const { vaultInfrastructureRedeploy } = require('../utils/vault_infrastructure_redeploy');
 
-const {
-  actorStake, activeActor, deployAndConfigureGovernance
-} = require('../governance_test.js');
+const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
+const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
+const IController = artifacts.require("IController");
+const IERC20 = artifacts.require("IERC20");
+const IStrategy = artifacts.require("IStrategy");
 
 const MockContract = artifacts.require("MockContract");
 
-const MockToken = artifacts.require('MockToken');
-const ExecutorMock = artifacts.require('ExecutorMock');
-
 contract('InstitutionalEURxbStrategy', (accounts) => {
 
-  // function configure(
-  //   address _eurxbAddress,
-  //   address _controllerAddress
-  // ) initializer external {
-  //   _eurxb = _eurxbAddress;
-  //   _controller = _controllerAddress;
-  // }
+  const governance = accounts[0];
+  const miris = accounts[1];
+  const strategist = accounts[2];
+
+  var revenueToken;
+  var controller;
+  var strategy;
+  var vault;
+  var mock;
+
+  beforeEach(async () => {
+    [mock, controller, strategy, vault, revenueToken] = await vaultInfrastructureRedeploy(
+      governance,
+      strategist
+    );
+  });
+
   it('should configure properly', async () => {
-
+    expect(await strategy.want()).to.be.equal(revenueToken.address);
+    expect(await strategy.controller()).to.be.equal(controller.address);
+    expect(await strategy.vault()).to.be.equal(vault.address);
   });
 
-  // function want() override external view returns(address) {
-  //     return _eurxb;
-  // }
-  it('should return \"want\" token', async () => {
-
+  it('should set a new vault', async () => {
+    await expectRevert(strategy.setVault(vault.address), "!old");
+    await strategy.setVault(mock.address);
+    expect(await strategy.vault()).to.be.equal(mock.address);
   });
 
-  // function deposit() override external {
-  //     revert("Not implemented");
-  // }
+  it('should set a new want', async () => {
+    await expectRevert(strategy.setWant(revenueToken.address), "!old");
+    const secondMock = await MockContract.new();
+    await strategy.setWant(secondMock.address);
+    expect(await strategy.want()).to.be.equal(secondMock.address);
+  });
+
+  it('should set a new controller', async () => {
+    await expectRevert(strategy.setController(controller.address), "!old");
+    await strategy.setController(mock.address);
+    expect(await strategy.controller()).to.be.equal(mock.address);
+  });
+
   it('should deposit the balance', async () => {
-
+    await expectRevert(strategy.deposit(), "Not implemented");
   });
 
-  // // NOTE: must exclude any tokens used in the yield
-  // // Controller role - withdraw should return to Controller
-  // function withdraw(address _token) override onlyController external {
-  //     require(address(_token) != address(_eurxb), "!want");
-  //     uint256 balance = IERC20(_token).balanceOf(address(this));
-  //     IERC20(_token).safeTransfer(_controller, balance);
-  // }
   it('should withdraw the balance of the non-want token', async () => {
-
+    await expectRevert(strategy.withdraw(mock.address), "!controller");
+    await strategy.setController(governance);
+    await expectRevert(strategy.withdraw(mock.address), "!want");
+    const secondMock = await MockContract.new();
+    const transferCallback = (await IERC20.at(secondMock.address)).contract
+      .methods.transfer(miris, 0).encodeABI();
+    await secondMock.givenMethodReturnBool(transferCallback, false);
+    await expectRevert(strategy.withdraw(secondMock.address), "!transfer");
   });
 
-  // // Controller | Vault role - withdraw should always return to Vault
-  // // Withdraw partial funds, normally used with a vault withdrawal
-  // function withdraw(uint256 _amount) override onlyController external {
-  //     uint256 _balance = IERC20(_eurxb).balanceOf(address(this));
-  //     if (_balance < _amount) {
-  //         _amount = _withdrawSome(_amount.sub(_balance));
-  //         _amount = _amount.add(_balance);
-  //     }
-  //     address _vault = IController(_controller).vaults(address(this));
-  //     require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
-  //     IERC20(_eurxb).safeTransfer(_vault, _amount);
-  // }
   it('should withdraw the amount of \"want\" token', async () => {
+    const mockedBalance = ether('10');
+    await expectRevert(strategy.methods["withdraw(uint256)"](mockedBalance), "!controller|vault");
+    await strategy.setController(mock.address);
+    await strategy.setVault(governance);
+    const vaultsCalldata = (await IController.at(mock.address)).contract
+      .methods.vaults(revenueToken.address).encodeABI();
+    await mock.givenCalldataReturnAddress(vaultsCalldata, ZERO_ADDRESS);
 
+    await expectRevert(strategy.methods["withdraw(uint256)"](mockedBalance), "!vault");
+
+    await mock.givenCalldataReturnAddress(vaultsCalldata, vault.address);
+
+    const transferCallback = revenueToken.contract
+      .methods.transfer(miris, 0).encodeABI();
+    await mock.givenMethodReturnBool(transferCallback, false);
+
+    await expectRevert(strategy.methods["withdraw(uint256)"](mockedBalance), "!transferStrategy");
   });
 
-  // function skim() override external {
-  //     revert("Not implemented");
-  // }
   it('should skim', async () => {
-
+    await expectRevert(strategy.skim(), "Not implemented");
   });
 
-  // // Controller | Vault role - withdraw should always return to Vault
-  // function withdrawAll() override external returns(uint256) {
-  //     revert("Not implemented");
-  // }
-  it('should withdraw all of the \"want\" token', async () => {
-
-  });
-
-  // // balance of this address in "want" tokens
-  // function balanceOf() override external view returns(uint256) {
-  //     return IERC20(_eurxb).balanceOf(address(this));
-  // }
   it('should return balance \"want\" token of this contract', async () => {
-
+    const mockedBalance = ether('10');
+    const balanceOfCalldata = revenueToken.contract
+      .methods.balanceOf(strategy.address).encodeABI();
+    await mock.givenCalldataReturnUint(balanceOfCalldata, mockedBalance);
+    expect(await strategy.balanceOf()).to.be.bignumber.equal(mockedBalance);
   });
 
-  // function withdrawalFee() override external view returns(uint256) {
-  //     revert("Not implemented");
-  // }
   it('should return withdrawal fee', async () => {
-
+    await expectRevert(strategy.withdrawalFee(), "Not implemented");
   });
 
 });

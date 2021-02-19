@@ -2,7 +2,7 @@ pragma solidity ^0.6.0;
 
 
 interface IStrategy {
-    function want() external view returns (address);
+    function want() external view returns(address);
 
     function deposit() external;
 
@@ -21,4 +21,10 @@ interface IStrategy {
     function balanceOf() external view returns(uint256);
 
     function withdrawalFee() external view returns(uint256);
+
+    function setVault(address _newVault) external;
+
+    function setController(address _newController) external;
+
+    function setWant(address _newWant) external;
 }

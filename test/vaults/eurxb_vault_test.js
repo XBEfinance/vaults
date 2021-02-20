@@ -1,6 +1,6 @@
 /* eslint no-unused-vars: 0 */
 /* eslint eqeqeq: 0 */
-const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
+// const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
 const { expect, assert } = require('chai');
 const {
   BN,
@@ -37,7 +37,7 @@ const testsWithProxy = (useTokenProxy) => {
     var strategy;
     var vault;
     var mock;
-    var tokenProxy;
+    var tokenProxyFactory;
 
     beforeEach(async () => {
       if (useTokenProxy) {
@@ -47,7 +47,7 @@ const testsWithProxy = (useTokenProxy) => {
           strategy,
           vault,
           revenueToken,
-          tokenProxy
+          tokenProxyFactory
         ] = await vaultInfrastructureRedeploy(
           governance,
           strategist,
@@ -69,15 +69,29 @@ const testsWithProxy = (useTokenProxy) => {
     });
 
     if (useTokenProxy) {
-      it('should set token proxy', async () => {
-        await expectRevert(tokenProxy.setToken(revenueToken.address), "!old");
+      it('should configure token proxy factory', async () => {
+        expect(await tokenProxyFactory.tokenImpl()).to.be.equal(revenueToken.address);
+      });
+
+      it('should set new token implementation', async () => {
+        await expectRevert(tokenProxyFactory.setNewToken(revenueToken.address), "!old");
         const newMock = await MockContract.new();
-        await tokenProxy.setToken(newMock.address);
+        await tokenProxyFactory.setNewToken(newMock.address);
+        expect(await tokenProxyFactory.tokenImpl()).to.be.equal(newMock.address);
+      });
+
+      it('should clone token properly', async () => {
+        const newMock = await MockContract.new();
+        await tokenProxyFactory.setNewToken(newMock.address);
         const testCalldata = (await IERC20.at(newMock.address)).contract
           .methods.balanceOf(miris).encodeABI();
         const mockedSum = ether('10');
         await newMock.givenCalldataReturnUint(testCalldata, mockedSum);
-        expect(new IERC20(tokenProxy.address).balanceOf(miris).call()).to.be.bignumber.equal(mockedSum);
+        const proxyTokenAddress = await tokenProxyFactory.cloneToken();
+        const abi = require('../../build/contracts/ERC20.json').abi;
+        const contract = new web3.eth.Contract(abi, proxyTokenAddress);
+        expect(await contract.methods.balanceOf(miris).call()).to.be.bignumber.equal(mockedSum);
+
       });
     }
 

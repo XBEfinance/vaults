@@ -6,7 +6,7 @@ const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy
 const Controller = artifacts.require("Controller");
 const IERC20 = artifacts.require("ERC20");
 const MockContract = artifacts.require("MockContract");
-const TokenProxy = artifacts.require("TokenProxy");
+const TokenProxyFactory = artifacts.require("TokenProxyFactory");
 
 const configureMainParts = async (
   strategy,
@@ -82,9 +82,9 @@ const vaultInfrastructureRedeploy = async (
   );
 
   if (useTokenProxy) {
-    const tokenProxy = await TokenProxy.new();
-    await tokenProxy.configure(revenueToken.address);
-    return [ mock, controller, strategy, vault, revenueToken, tokenProxy ]
+    const tokenProxyFactory = await TokenProxyFactory.new();
+    await tokenProxyFactory.configure(revenueToken.address);
+    return [ mock, controller, strategy, vault, revenueToken, tokenProxyFactory ]
   } else {
     return [ mock, controller, strategy, vault, revenueToken ]
   }

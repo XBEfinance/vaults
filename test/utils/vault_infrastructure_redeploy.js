@@ -6,19 +6,17 @@ const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy
 const Controller = artifacts.require("Controller");
 const IERC20 = artifacts.require("ERC20");
 const MockContract = artifacts.require("MockContract");
+const TokenProxy = artifacts.require("TokenProxy");
 
-const vaultInfrastructureRedeploy = async (
+const configureMainParts = async (
+  strategy,
+  controller,
+  revenueToken,
+  vault,
+  treasuryAddress,
   governance,
   strategist
 ) => {
-  const mock = await MockContract.new();
-  const controller = await Controller.new();
-  const strategy = await InstitutionalEURxbStrategy.new();
-  const vault = await InstitutionalEURxbVault.new();
-  var revenueToken = await IERC20.at(mock.address);
-  // TODO: it's a temporal address, change it when treasury contract is ready
-  var treasuryAddress = vault.address;
-
   await strategy.configure(
     revenueToken.address,
     controller.address,
@@ -56,8 +54,40 @@ const vaultInfrastructureRedeploy = async (
     strategy.address,
     {from: governance}
   );
+}
 
-  return [ mock, controller, strategy, vault, revenueToken ]
+const vaultInfrastructureRedeploy = async (
+  governance,
+  strategist,
+  useTokenProxy
+) => {
+  const mock = await MockContract.new();
+
+  const controller = await Controller.new();
+  const strategy = await InstitutionalEURxbStrategy.new();
+  const vault = await InstitutionalEURxbVault.new();
+  var revenueToken = await IERC20.at(mock.address);
+
+  // TODO: it's a temporal address, change it when treasury contract is ready
+  var treasuryAddress = vault.address;
+
+  await configureMainParts(
+    strategy,
+    controller,
+    revenueToken,
+    vault,
+    treasuryAddress,
+    governance,
+    strategist
+  );
+
+  if (useTokenProxy) {
+    const tokenProxy = await TokenProxy.new();
+    await tokenProxy.configure(revenueToken.address);
+    return [ mock, controller, strategy, vault, revenueToken, tokenProxy ]
+  } else {
+    return [ mock, controller, strategy, vault, revenueToken ]
+  }
 };
 
 module.exports = { vaultInfrastructureRedeploy };

@@ -20,6 +20,7 @@ const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy
 const Controller = artifacts.require("Controller");
 const IERC20 = artifacts.require("IERC20");
 const IStrategy = artifacts.require("IStrategy");
+const MockToken = artifacts.require('MockToken');
 
 const MockContract = artifacts.require("MockContract");
 
@@ -74,24 +75,25 @@ const testsWithProxy = (useTokenProxy) => {
       });
 
       it('should set new token implementation', async () => {
-        await expectRevert(tokenProxyFactory.setNewToken(revenueToken.address), "!old");
+        await expectRevert(tokenProxyFactory.setNewTokenImpl(revenueToken.address), "!old");
         const newMock = await MockContract.new();
-        await tokenProxyFactory.setNewToken(newMock.address);
+        await tokenProxyFactory.setNewTokenImpl(newMock.address);
         expect(await tokenProxyFactory.tokenImpl()).to.be.equal(newMock.address);
       });
 
       it('should clone token properly', async () => {
-        const newMock = await MockContract.new();
-        await tokenProxyFactory.setNewToken(newMock.address);
-        const testCalldata = (await IERC20.at(newMock.address)).contract
-          .methods.balanceOf(miris).encodeABI();
         const mockedSum = ether('10');
-        await newMock.givenCalldataReturnUint(testCalldata, mockedSum);
-        const proxyTokenAddress = await tokenProxyFactory.cloneToken();
-        const abi = require('../../build/contracts/ERC20.json').abi;
-        const contract = new web3.eth.Contract(abi, proxyTokenAddress);
-        expect(await contract.methods.balanceOf(miris).call()).to.be.bignumber.equal(mockedSum);
-
+        const newMock = await MockToken.new("Mock Token", "MT", mockedSum);
+        await tokenProxyFactory.setNewTokenImpl(newMock.address);
+        const salt = web3.utils.utf8ToHex('some salt');
+        const miniCloneAddress = await tokenProxyFactory.predictCloneTokenAddress(salt);
+        const receipt = await tokenProxyFactory.cloneToken(salt);
+        expectEvent(receipt, "Cloned", {
+          _clone: miniCloneAddress
+        });
+        const miniClone = await MockToken.at(miniCloneAddress);
+        await miniClone.mintSender(mockedSum);
+        expect(await miniClone.balanceOf(governance)).to.be.bignumber.equal(mockedSum);
       });
     }
 

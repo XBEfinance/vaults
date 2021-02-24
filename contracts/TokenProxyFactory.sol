@@ -1,10 +1,12 @@
 pragma solidity ^0.6.0;
 
-import "@openzeppelin/upgrades/contracts/upgradeability/ProxyFactory.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./governance/Governable.sol";
 import "./templates/Initializable.sol";
 
-contract TokenProxyFactory is Governable, Initializable, ProxyFactory {
+contract TokenProxyFactory is Governable, Initializable {
+
+    event Cloned(address _clone);
 
     address public tokenImpl;
 
@@ -17,8 +19,13 @@ contract TokenProxyFactory is Governable, Initializable, ProxyFactory {
         tokenImpl = _newTokenImpl;
     }
 
-    function cloneToken() onlyGovernance public returns(address) {
-        return deployMinimal(tokenImpl, "");
+    function predictCloneTokenAddress(bytes32 salt) external view returns(address) {
+      return Clones.predictDeterministicAddress(tokenImpl, salt);
+    }
+
+    function cloneToken(bytes32 salt) onlyGovernance external {
+        address _result = Clones.cloneDeterministic(tokenImpl, salt);
+        emit Cloned(_result);
     }
 
 }

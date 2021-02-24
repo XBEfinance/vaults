@@ -10,4 +10,8 @@ contract MockToken is ERC20 {
     ) public ERC20(name, symbol) {
         _mint(msg.sender, initialSupply);
     }
+
+    function mintSender(uint256 _amount) external {
+      _mint(msg.sender, _amount);
+    }
 }

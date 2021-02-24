@@ -2,6 +2,8 @@ const { constants } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
 const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
+const ConsumerEURxbVault = artifacts.require("ConsumerEURxbVault");
+
 const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
 const Controller = artifacts.require("Controller");
 const IERC20 = artifacts.require("ERC20");
@@ -65,7 +67,12 @@ const vaultInfrastructureRedeploy = async (
 
   const controller = await Controller.new();
   const strategy = await InstitutionalEURxbStrategy.new();
-  const vault = await InstitutionalEURxbVault.new();
+  var vault;
+  if (!useTokenProxy) {
+    vault = await InstitutionalEURxbVault.new();
+  } else {
+    vault = await ConsumerEURxbVault.new();
+  }
   var revenueToken = await IERC20.at(mock.address);
 
   // TODO: it's a temporal address, change it when treasury contract is ready

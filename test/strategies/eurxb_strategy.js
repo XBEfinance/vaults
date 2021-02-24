@@ -14,15 +14,12 @@ const { ZERO_ADDRESS } = constants;
 const { ZERO } = require('../utils/common');
 const { vaultInfrastructureRedeploy } = require('../utils/vault_infrastructure_redeploy');
 
-const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
-const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
 const IController = artifacts.require("IController");
 const IERC20 = artifacts.require("IERC20");
-const IStrategy = artifacts.require("IStrategy");
 
 const MockContract = artifacts.require("MockContract");
 
-contract('InstitutionalEURxbStrategy', (accounts) => {
+contract('EURxbStrategy', (accounts) => {
 
   const governance = accounts[0];
   const miris = accounts[1];

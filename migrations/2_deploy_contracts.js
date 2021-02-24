@@ -19,8 +19,8 @@ const XBG = artifacts.require('XBG');
 const Governance = artifacts.require('Governance');
 
 const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
+const ConsumerEURxbVault = artifacts.require("ConsumerEURxbVault");
 const EURxbStrategy = artifacts.require("EURxbStrategy");
-const CustomerEURxbVault = artifacts.require("CustomerEURxbVault");
 const Controller = artifacts.require("Controller");
 const Registry = artifacts.require("Registry");
 const CloneFactory = artifacts.require("CloneFactory");
@@ -154,7 +154,7 @@ module.exports = function (deployer, network, accounts) {
 
           // Deploy Vaults, Registry, Controller and CloneFactory
           const institutionalEURxbVault = await deployer.deploy(InstitutionalEURxbVault);
-          const customerEURxbVault = await deployer.deploy(CustomerEURxbVault);
+          const consumerEURxbVault = await deployer.deploy(ConsumerEURxbVault);
 
           const eurxbStrategy = await deployer.deploy(EURxbStrategy);
 
@@ -207,7 +207,7 @@ module.exports = function (deployer, network, accounts) {
           await eurxbStrategyClone.configure(
             eurxbClone.address,
             controller.address,
-            customerEURxbVault.address
+            consumerEURxbVault.address
           );
 
           await institutionalEURxbVault.configure(
@@ -215,7 +215,7 @@ module.exports = function (deployer, network, accounts) {
             controller.address
           );
 
-          await customerEURxbVault.configure(
+          await consumerEURxbVault.configure(
             eurxbClone.address,
             controller.address
           );
@@ -228,7 +228,7 @@ module.exports = function (deployer, network, accounts) {
 
           await controller.setVault(
             eurxbClone.address,
-            customerEURxbVault.address
+            consumerEURxbVault.address
           );
 
           await controller.setApprovedStrategy(
@@ -255,7 +255,7 @@ module.exports = function (deployer, network, accounts) {
 
           // Adding vaults to Registry
           await registry.addVault(institutionalEURxbVault.address);
-          await registry.addVault(customerEURxbVault.address);
+          await registry.addVault(consumerEURxbVault.address);
 
           // deploy Router and StakingManager contracts
           const sm = await deployer.deploy(

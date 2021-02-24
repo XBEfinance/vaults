@@ -18,6 +18,14 @@ const EURxb = artifacts.require('EURxb');
 const XBG = artifacts.require('XBG');
 const Governance = artifacts.require('Governance');
 
+const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
+const EURxbStrategy = artifacts.require("EURxbStrategy");
+const CustomerEURxbVault = artifacts.require("CustomerEURxbVault");
+const Controller = artifacts.require("Controller");
+const Registry = artifacts.require("Registry");
+const CloneFactory = artifacts.require("CloneFactory");
+const Clones = artifacts.require("Clones");
+
 const Router = artifacts.require('Router');
 const StakingManager = artifacts.require('StakingManager');
 
@@ -144,7 +152,110 @@ module.exports = function (deployer, network, accounts) {
               xbg.address
           );
 
-          // TODO: First deploy controller, then Registry, then Vaults
+          // Deploy Vaults, Registry, Controller and CloneFactory
+          const institutionalEURxbVault = await deployer.deploy(InstitutionalEURxbVault);
+          const customerEURxbVault = await deployer.deploy(CustomerEURxbVault);
+
+          const eurxbStrategy = await deployer.deploy(EURxbStrategy);
+
+          const controller = await deployer.deploy(Controller);
+          await controller.configure(
+            zeroAddress,
+            zeroAddress
+          );
+          const registry = await deployer.deploy(Registry);
+
+          await deployer.deploy(Clones);
+          await deployer.link(Clones, CloneFactory);
+          const cloneFactory = await deployer.deploy(CloneFactory);
+
+          // Deploy clones for EURxb and EURxbStrategy
+          const strategyCloneSalt = web3.utils.utf8ToHex('strategy clone');
+          const eurxbStrategyCloneAddress = await cloneFactory.predictCloneAddress(
+            eurxbStrategy.address,
+            strategyCloneSalt
+          );
+          await cloneFactory.clone(
+            eurxbStrategy.address,
+            strategyCloneSalt
+          );
+          const eurxbStrategyClone = await EURxbStrategy.at(
+            eurxbStrategyCloneAddress
+          );
+
+          const eurxbCloneSalt = web3.utils.utf8ToHex('eurxb clone');
+          const eurxbCloneAddress = await cloneFactory.predictCloneAddress(
+            eurxb.address,
+            eurxbCloneSalt
+          );
+          await cloneFactory.clone(
+            eurxb.address,
+            eurxbCloneSalt
+          )
+          const eurxbClone = await EURxb.at(
+            eurxbCloneAddress
+          );
+
+          // Configure that customer vault has clones of eurxb and strategy
+          // Configure that institutional vault has original eurxb and strategy
+          await eurxbStrategy.configure(
+            eurxb.address,
+            controller.address,
+            institutionalEURxbVault.address
+          );
+
+          await eurxbStrategyClone.configure(
+            eurxbClone.address,
+            controller.address,
+            customerEURxbVault.address
+          );
+
+          await institutionalEURxbVault.configure(
+            eurxb.address,
+            controller.address
+          );
+
+          await customerEURxbVault.configure(
+            eurxbClone.address,
+            controller.address
+          );
+
+          // Adding vaults and strategies to Controller
+          await controller.setVault(
+            eurxb.address,
+            institutionalEURxbVault.address
+          );
+
+          await controller.setVault(
+            eurxbClone.address,
+            customerEURxbVault.address
+          );
+
+          await controller.setApprovedStrategy(
+            eurxb.address,
+            eurxbStrategy.address,
+            true
+          );
+
+          await controller.setApprovedStrategy(
+            eurxbClone.address,
+            eurxbStrategyClone.address,
+            true
+          );
+
+          await controller.setStrategy(
+            eurxb.address,
+            eurxbStrategy.address
+          );
+
+          await controller.setStrategy(
+            eurxbClone.address,
+            eurxbStrategyClone.address
+          );
+
+          // Adding vaults to Registry
+          await registry.addVault(institutionalEURxbVault.address);
+          await registry.addVault(customerEURxbVault.address);
 
           // deploy Router and StakingManager contracts
           const sm = await deployer.deploy(

@@ -4,11 +4,11 @@ const { ZERO_ADDRESS } = constants;
 const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
 const ConsumerEURxbVault = artifacts.require("ConsumerEURxbVault");
 
-const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
+const EURxbStrategy = artifacts.require("EURxbStrategy");
 const Controller = artifacts.require("Controller");
 const IERC20 = artifacts.require("ERC20");
 const MockContract = artifacts.require("MockContract");
-const TokenProxyFactory = artifacts.require("TokenProxyFactory");
+const CloneFactory = artifacts.require("CloneFactory");
 
 const configureMainParts = async (
   strategy,
@@ -66,7 +66,7 @@ const vaultInfrastructureRedeploy = async (
   const mock = await MockContract.new();
 
   const controller = await Controller.new();
-  const strategy = await InstitutionalEURxbStrategy.new();
+  const strategy = await EURxbStrategy.new();
   var vault;
   if (!useTokenProxy) {
     vault = await InstitutionalEURxbVault.new();
@@ -89,9 +89,8 @@ const vaultInfrastructureRedeploy = async (
   );
 
   if (useTokenProxy) {
-    const tokenProxyFactory = await TokenProxyFactory.new();
-    await tokenProxyFactory.configure(revenueToken.address);
-    return [ mock, controller, strategy, vault, revenueToken, tokenProxyFactory ]
+    const cloneFactory = await CloneFactory.new();
+    return [ mock, controller, strategy, vault, revenueToken, cloneFactory ]
   } else {
     return [ mock, controller, strategy, vault, revenueToken ]
   }

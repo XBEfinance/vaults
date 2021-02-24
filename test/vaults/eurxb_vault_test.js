@@ -16,8 +16,6 @@ const { ZERO, CONVERSION_WEI_CONSTANT } = require('../utils/common');
 const { vaultInfrastructureRedeploy } = require('../utils/vault_infrastructure_redeploy');
 
 const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
-const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
-const Controller = artifacts.require("Controller");
 const IERC20 = artifacts.require("IERC20");
 const IStrategy = artifacts.require("IStrategy");
 const MockToken = artifacts.require('MockToken');
@@ -38,7 +36,7 @@ const testsWithProxy = (useTokenProxy) => {
     var strategy;
     var vault;
     var mock;
-    var tokenProxyFactory;
+    var cloneFactory;
 
     beforeEach(async () => {
       if (useTokenProxy) {
@@ -48,7 +46,7 @@ const testsWithProxy = (useTokenProxy) => {
           strategy,
           vault,
           revenueToken,
-          tokenProxyFactory
+          cloneFactory
         ] = await vaultInfrastructureRedeploy(
           governance,
           strategist,
@@ -70,26 +68,17 @@ const testsWithProxy = (useTokenProxy) => {
     });
 
     if (useTokenProxy) {
-      it('should configure token proxy factory', async () => {
-        expect(await tokenProxyFactory.tokenImpl()).to.be.equal(revenueToken.address);
-      });
-
-      it('should set new token implementation', async () => {
-        await expectRevert(tokenProxyFactory.setNewTokenImpl(revenueToken.address), "!old");
-        const newMock = await MockContract.new();
-        await tokenProxyFactory.setNewTokenImpl(newMock.address);
-        expect(await tokenProxyFactory.tokenImpl()).to.be.equal(newMock.address);
-      });
-
       it('should clone token properly', async () => {
+
         const mockedSum = ether('10');
         const newMock = await MockToken.new("Mock Token", "MT", mockedSum);
-        await tokenProxyFactory.setNewTokenImpl(newMock.address);
+
         const salt = web3.utils.utf8ToHex('some salt');
-        const miniCloneAddress = await tokenProxyFactory.predictCloneTokenAddress(salt);
-        const receipt = await tokenProxyFactory.cloneToken(salt);
+        const miniCloneAddress = await cloneFactory.predictCloneAddress(newMock.address, salt);
+        const receipt = await cloneFactory.clone(newMock.address, salt);
         expectEvent(receipt, "Cloned", {
-          _clone: miniCloneAddress
+          _clone: miniCloneAddress,
+          _main: newMock.address
         });
         const miniClone = await MockToken.at(miniCloneAddress);
         await miniClone.mintSender(mockedSum);

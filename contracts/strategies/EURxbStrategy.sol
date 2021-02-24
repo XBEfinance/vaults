@@ -11,12 +11,10 @@ import "../governance/Governable.sol";
 import "../templates/Initializable.sol";
 
 
-contract InstitutionalEURxbStrategy is IStrategy, Governable, Initializable {
+contract EURxbStrategy is IStrategy, Governable, Initializable {
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
-
-    constructor() Initializable() Governable() public {}
 
     address private _eurxb;
     address public controller;

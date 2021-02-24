@@ -16,4 +16,4 @@ import "./vaults/InstitutionalEURxbVault.sol";
 import "./strategies/InstitutionalEURxbStrategy.sol";
 import "./Controller.sol";
 import "./Registry.sol";
-import "./TokenProxyFactory.sol";
+import "./CloneFactory.sol";

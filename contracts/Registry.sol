@@ -25,8 +25,6 @@ contract Registry is Governable, Initializable {
     mapping(address => address) public wrappedVaults;
     mapping(address => bool) public isDelegatedVault;
 
-    constructor() public Initializable() Governable() {}
-
     function getName() external pure returns(string memory) {
       return "Registry";
     }

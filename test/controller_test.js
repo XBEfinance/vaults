@@ -15,8 +15,6 @@ const { ZERO_ADDRESS } = constants;
 const { ZERO, CONVERSION_WEI_CONSTANT, getMockTokenPrepared } = require('./utils/common');
 const { vaultInfrastructureRedeploy } = require('./utils/vault_infrastructure_redeploy');
 
-const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
-const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
 const Controller = artifacts.require("Controller");
 const IERC20 = artifacts.require("IERC20");
 const IStrategy = artifacts.require("IStrategy");

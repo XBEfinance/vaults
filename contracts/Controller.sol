@@ -53,8 +53,6 @@ contract Controller is IController, Governable, Initializable {
       _;
     }
 
-    constructor() Initializable() Governable() public {}
-
     function configure(
           address _initialTreasury,
           address _initialStrategist

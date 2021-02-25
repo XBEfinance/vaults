@@ -10,26 +10,39 @@ import "../interfaces/IController.sol";
 import "../governance/Governable.sol";
 import "../templates/Initializable.sol";
 
-
+/// @title EURxbStrategy
+/// @notice This is base contract for yield farming strategy with EURxb token
 contract EURxbStrategy is IStrategy, Governable, Initializable {
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
+    /// @notice EURxb instance address
     address private _eurxb;
+
+    /// @notice Controller instance getter, used to simplify controller-related actions
     address public controller;
+
+    /// @notice Vault instance getter, used to simplify vault-related actions
     address public vault;
 
+    /// @dev Prevents other msg.sender than controller address
     modifier onlyController {
         require(_msgSender() == controller, "!controller");
         _;
     }
 
+    /// @dev Prevents other msg.sender than controller or vault addresses
     modifier onlyControllerOrVault {
         require(_msgSender() == controller || _msgSender() == vault, "!controller|vault");
         _;
     }
 
+    /// @notice Default initialize method for solving migration linearization problem
+    /// @dev Called once only by deployer
+    /// @param _eurxbAddress: address of eurxb instance
+    /// @param _controllerAddress: address of controller instance
+    /// @param _vaultAddress: address of vault related to this strategy (Link type: 1:1)
     function configure(
         address _eurxbAddress,
         address _controllerAddress,
@@ -40,25 +53,35 @@ contract EURxbStrategy is IStrategy, Governable, Initializable {
         vault = _vaultAddress;
     }
 
+
+    /// @notice Usual setter with check if passet param is new
+    /// @param _newVault
     function setVault(address _newVault) override onlyGovernance external {
         require(vault != _newVault, "!old");
         vault = _newVault;
     }
 
+    /// @notice Usual setter with check if passet param is new
+    /// @param _newController
     function setController(address _newController) override onlyGovernance external {
         require(controller != _newController, "!old");
         controller = _newController;
     }
 
+    /// @notice Usual setter with check if passet param is new
+    /// @param _newWant
     function setWant(address _newWant) override onlyGovernance external {
         require(_eurxb != _newWant, "!old");
         _eurxb = _newWant;
     }
 
+    /// @notice Usual getter (inherited from IStrategy)
+    /// @return 'want' token (In this case EURxb)
     function want() override external view returns(address) {
         return _eurxb;
     }
 
+    /// @dev To be realised
     function deposit() override external {
         revert('Not implemented');
     }
@@ -84,11 +107,12 @@ contract EURxbStrategy is IStrategy, Governable, Initializable {
         require(IERC20(_eurxb).transfer(_vault, _amount), "!transferStrategy");
     }
 
-    /// @notice this function is withdraw from business process the difference between balance and requested sum
+    /// @notice This function withdraw from business process the difference between balance and requested sum
     function _withdrawSome(uint256 _amount) internal returns(uint) {
         return _amount;
     }
 
+    /// @dev To be realised
     function skim() override external {
         revert("Not implemented");
     }

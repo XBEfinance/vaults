@@ -3,11 +3,8 @@ pragma solidity ^0.6.0;
 import "./EURxbVault.sol";
 
 /// @title ConsumerEURxbVault
-/// @notice
-/// @dev
+/// @notice Vault for consumers of the system
 contract ConsumerEURxbVault is EURxbVault {
-    /// @notice
-    /// @dev
-    /// @return
-    constructor() EURxbVault("Consumer") public {}
+    /// @notice Constructor that creates a consumer vault
+    constructor() EURxbVault("Consumer", "c") public {}
 }

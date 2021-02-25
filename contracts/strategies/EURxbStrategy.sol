@@ -31,9 +31,9 @@ contract EURxbStrategy is IStrategy, Governable, Initializable {
     }
 
     function configure(
-      address _eurxbAddress,
-      address _controllerAddress,
-      address _vaultAddress
+        address _eurxbAddress,
+        address _controllerAddress,
+        address _vaultAddress
     ) initializer external {
         _eurxb = _eurxbAddress;
         controller = _controllerAddress;
@@ -63,16 +63,16 @@ contract EURxbStrategy is IStrategy, Governable, Initializable {
         revert('Not implemented');
     }
 
-    // NOTE: must exclude any tokens used in the yield
-    // Controller role - withdraw should return to Controller
+    /// @notice must exclude any tokens used in the yield
+    /// @dev Controller role - withdraw should return to Controller
     function withdraw(address _token) override onlyController external {
         require(address(_token) != address(_eurxb), "!want");
         uint256 balance = IERC20(_token).balanceOf(address(this));
         require(IERC20(_token).transfer(controller, balance), "!transfer");
     }
 
-    // Controller | Vault role - withdraw should always return to Vault
-    // Withdraw partial funds, normally used with a vault withdrawal
+    /// @notice Withdraw partial funds, normally used with a vault withdrawal
+    /// @dev Controller | Vault role - withdraw should always return to Vault
     function withdraw(uint256 _amount) override onlyControllerOrVault public {
         uint256 _balance = IERC20(_eurxb).balanceOf(address(this));
         if (_balance < _amount) {
@@ -84,7 +84,7 @@ contract EURxbStrategy is IStrategy, Governable, Initializable {
         require(IERC20(_eurxb).transfer(_vault, _amount), "!transferStrategy");
     }
 
-    // this function is withdraw from business process the difference between balance and requested sum
+    /// @notice this function is withdraw from business process the difference between balance and requested sum
     function _withdrawSome(uint256 _amount) internal returns(uint) {
         return _amount;
     }
@@ -93,18 +93,19 @@ contract EURxbStrategy is IStrategy, Governable, Initializable {
         revert("Not implemented");
     }
 
-    // Controller | Vault role - withdraw should always return to Vault
+    /// @dev Controller | Vault role - withdraw should always return to Vault
     function withdrawAll() override onlyControllerOrVault external returns(uint256) {
         uint256 _balance = IERC20(_eurxb).balanceOf(address(this));
         withdraw(_balance);
         return _balance;
     }
 
-    // balance of this address in "want" tokens
+    /// @notice balance of this address in "want" tokens
     function balanceOf() override external view returns(uint256) {
         return IERC20(_eurxb).balanceOf(address(this));
     }
 
+    /// @notice balance of this address in "want" tokens
     function withdrawalFee() override external view returns(uint256) {
         revert("Not implemented");
     }

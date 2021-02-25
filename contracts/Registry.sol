@@ -12,6 +12,9 @@ import "./interfaces/vault/IVaultWrapped.sol";
 import "./governance/Governable.sol";
 import "./templates/Initializable.sol";
 
+/// @title Registry
+/// @notice
+/// @dev
 contract Registry is Governable, Initializable {
 
     using Address for address;
@@ -19,22 +22,37 @@ contract Registry is Governable, Initializable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
 
+    /// @notice
     EnumerableSet.AddressSet private _vaults;
+    /// @notice
     EnumerableSet.AddressSet private _controllers;
 
+    /// @notice
     mapping(address => address) public wrappedVaults;
+    /// @notice
     mapping(address => bool) public isDelegatedVault;
 
+    /// @notice
+    /// @dev
+    /// @return
     function getName() external pure returns(string memory) {
       return "Registry";
     }
 
+    /// @notice
+    /// @dev
+    /// @param _vault
+    /// @return
     function addVault(address _vault) public onlyGovernance {
         _addVault(_vault);
         (address controller, , , , ) = _getVaultData(_vault);
         _addController(controller);
     }
 
+    /// @notice
+    /// @dev
+    /// @param _vault
+    /// @return
     function addWrappedVault(address _vault) public onlyGovernance {
         addVault(_vault);
         address _wrappedVault = IVaultWrapped(_vault).vault();
@@ -50,6 +68,10 @@ contract Registry is Governable, Initializable {
         // (current ones can be obtained via getVaults + getVaultInfo)
     }
 
+    /// @notice
+    /// @dev
+    /// @param _vault
+    /// @return
     function addDelegatedVault(address _vault) public onlyGovernance {
         addVault(_vault);
         isDelegatedVault[_vault] = true;
@@ -60,6 +82,10 @@ contract Registry is Governable, Initializable {
         // (current ones can be obtained via getVaults + getVaultInfo)
     }
 
+    /// @notice
+    /// @dev
+    /// @param _vault
+    /// @return
     function _addVault(address _vault) internal {
         require(_vault.isContract(), "!contract");
         // Checks if vault is already on the array
@@ -68,6 +94,10 @@ contract Registry is Governable, Initializable {
         _vaults.add(_vault);
     }
 
+    /// @notice
+    /// @dev
+    /// @param _controller
+    /// @return
     function _addController(address _controller) internal {
         // Adds Controller to controllers array
         if (!_controllers.contains(_controller)) {
@@ -75,10 +105,18 @@ contract Registry is Governable, Initializable {
         }
     }
 
+    /// @notice
+    /// @dev
+    /// @param _vault
+    /// @return
     function removeVault(address _vault) public onlyGovernance {
         _vaults.remove(_vault);
     }
 
+    /// @notice
+    /// @dev
+    /// @param _vault
+    /// @return
     function _getVaultData(address _vault)
         internal
         view
@@ -137,10 +175,16 @@ contract Registry is Governable, Initializable {
         return _vaults.at(index);
     }
 
+    /// @notice
+    /// @dev
+    /// @return
     function getVaultsLength() external view returns(uint256) {
         return _vaults.length();
     }
 
+    /// @notice
+    /// @dev
+    /// @return
     function getVaults() external view returns(address[] memory) {
         address[] memory vaultsArray = new address[](_vaults.length());
         for (uint256 i = 0; i < _vaults.length(); i++) {
@@ -149,6 +193,10 @@ contract Registry is Governable, Initializable {
         return vaultsArray;
     }
 
+    /// @notice
+    /// @dev
+    /// @param _vault
+    /// @return
     function getVaultInfo(address _vault)
         external
         view
@@ -164,6 +212,9 @@ contract Registry is Governable, Initializable {
         return (controller, token, strategy, isWrapped, isDelegated);
     }
 
+    /// @notice
+    /// @dev
+    /// @return
     function getVaultsInfo()
         external
         view

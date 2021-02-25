@@ -16,21 +16,30 @@ import "../governance/Governable.sol";
 import "../templates/Initializable.sol";
 
 
+/// @title EURxbVault
+/// @notice
+/// @dev
 contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, ERC20 {
 
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
 
+    /// @notice
     address private _controller;
+    /// @notice
     IERC20 private _token;
 
-    // minimum percentage to be in business? (in base points)
+    /// @notice minimum percentage to be in business? (in base points)
     uint256 public min = 9500;
 
-    // hundred procent (in base points)
+    /// @notice hundred procent (in base points)
     uint256 public constant max = 10000;
 
+    /// @notice
+    /// @dev
+    /// @param typeName
+    /// @return
     constructor(string memory typeName)
         public
         ERC20(
@@ -41,6 +50,11 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
         Governable()
     {}
 
+    /// @notice
+    /// @dev
+    /// @param _initialToken
+    /// @param _initialController
+    /// @return
     function configure(
         address _initialToken,
         address _initialController
@@ -49,16 +63,27 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
         setController(_initialController);
     }
 
+    /// @notice
+    /// @dev
+    /// @param _newMin
+    /// @return
     function setMin(uint256 _newMin) onlyGovernance external {
         require(min != _newMin, "!new");
         min = _newMin;
     }
 
+    /// @notice
+    /// @dev
+    /// @param _newController
+    /// @return
     function setController(address _newController) public onlyGovernance {
         require(_controller != _newController, "!new");
         _controller = _newController;
     }
 
+    /// @notice
+    /// @dev
+    /// @return
     function balance() override public view returns(uint256) {
         return _token.balanceOf(address(this)).add(
             IStrategy(
@@ -73,18 +98,31 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
         return _token.balanceOf(address(this)).mul(min).div(max);
     }
 
+    /// @notice
+    /// @dev
+    /// @return
     function token() override external view returns(address) {
         return address(_token);
     }
 
+    /// @notice
+    /// @dev
+    /// @return
     function controller() override external view returns(address) {
         return _controller;
     }
 
+    /// @notice
+    /// @dev
+    /// @return
     function getPricePerFullShare() override external view returns(uint256) {
         return balance().mul(1e18).div(totalSupply());
     }
 
+    /// @notice
+    /// @dev
+    /// @param _amount
+    /// @return
     function deposit(uint256 _amount) override public {
         uint256 _pool = balance();
         require(_token.transferFrom(_msgSender(), address(this), _amount), "!transferFrom");
@@ -98,10 +136,17 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
         _mint(_msgSender(), shares);
     }
 
+    /// @notice
+    /// @dev
+    /// @return
     function depositAll() override external {
         deposit(_token.balanceOf(_msgSender()));
     }
 
+    /// @notice
+    /// @dev
+    /// @param _shares
+    /// @return
     function withdraw(uint256 _shares) override public {
         uint256 r = (balance().mul(_shares)).div(totalSupply());
         _burn(_msgSender(), _shares);
@@ -119,10 +164,16 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
         require(_token.transfer(_msgSender(), r), "!transfer");
     }
 
+    /// @notice
+    /// @dev
+    /// @return
     function withdrawAll() override external {
         withdraw(_token.balanceOf(_msgSender()));
     }
 
+    /// @notice
+    /// @dev
+    /// @return
     function earn() override external {
       uint256 _bal = available();
       require(_token.transfer(_controller, _bal), "!transfer");

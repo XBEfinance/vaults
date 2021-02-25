@@ -11,61 +11,151 @@ import "../interfaces/IExecutor.sol";
 import "../templates/Initializable.sol";
 
 
+/// @title Governance
+/// @notice
+/// @dev
 contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper, Initializable {
 
+    /// @notice The Proposal struct used to represent vote process.
     struct Proposal {
-        uint256 id;
-        address proposer;
-        mapping(address => uint256) forVotes;
-        mapping(address => uint256) againstVotes;
-        uint256 totalForVotes;
-        uint256 totalAgainstVotes;
-        uint256 start; // block start;
-        uint256 end; // start + period
-        address executor;
-        string hash;
-        uint256 totalVotesAvailable;
-        uint256 quorum;
-        uint256 quorumRequired;
-        bool open;
+        uint256 id; // Unique ID of the proposal (here Counter lib can be used)
+        address proposer; // An address who created the proposal
+        mapping(address => uint256) forVotes; // Percentage (in base points) of governance token (votes) of 'for' side
+        mapping(address => uint256) againstVotes; // Percentage (in base points) of governance token (votes) of 'against' side
+        uint256 totalForVotes; // Total amount of governance token (votes) in side 'for'
+        uint256 totalAgainstVotes; // Total amount of governance token (votes) in side 'against'
+        uint256 start; // Block start
+        uint256 end; // Start + period
+        address executor; // Custom contract which can execute changes regarding to voting process end
+        string hash; // An IPFS hash of the proposal document
+        uint256 totalVotesAvailable; // Total amount votes that are not in voting process
+        uint256 quorum; // Current quorum (in base points)
+        uint256 quorumRequired; // Quorum to end the voting process
+        bool open; // Proposal status
     }
 
+    /// @notice Emits when new proposal is created
+    /// @param _id: ID of the proposal
+    /// @param _creator: Address of proposal creator
+    /// @param _start: Voting process start timestamp
+    /// @param _duration: Milliseconds during which the voting process occurs
+    /// @param _executor: Address of the the executor contract
     event NewProposal(uint256 _id, address _creator, uint256 _start, uint256 _duration, address _executor);
+
+    /// @notice Emits when someone votes in proposal
+    /// @param _id: ID of the proposal
+    /// @param _voter: Voter address
+    /// @param _vote: 'For' or 'Against' vote type
+    /// @param _weight: Vote weight in percents (in base points)
     event Vote(uint256 indexed _id, address indexed _voter, bool _vote, uint256 _weight);
+
+    /// @notice Emits when voting process finished
+    /// @param _id: ID of the proposal
+    /// @param _for: 'For' votes percentage in base points
+    /// @param _against: 'Against' votes percentage in base points
+    /// @param _quorumReached: Is quorum percents are above or equal to required quorum? (bool)
     event ProposalFinished(uint256 indexed _id, uint256 _for, uint256 _against, bool _quorumReached);
+
+    /// @notice Emits when voter invoke registration method
+    /// @param _voter: Voter address
+    /// @param _votes: Governance tokens number to be placed as votes
+    /// @param _totalVotes: Total governance token placed as votes for all users
     event RegisterVoter(address _voter, uint256 _votes, uint256 _totalVotes);
+
+    /// @notice Emits when voter invoke revoke method
+    /// @param _voter: Voter address
+    /// @param _votes: Governance tokens number to be removed as votes
+    /// @param _totalVotes: Total governance token removed as votes for all users
     event RevokeVoter(address _voter, uint256 _votes, uint256 _totalVotes);
 
+    /// @notice Emits when reward for participation in voting processes is sent to governance contract
+    /// @param _reward: Amount of staking reward tokens
     event RewardAdded(uint256 _reward);
+
+    /// @notice Emits when sum of governance token staked to governance contract
+    /// @param _user: User who stakes
+    /// @param _amount: Amount of governance token to stake
     event Staked(address indexed _user, uint256 _amount);
+
+    /// @notice Emits when sum of governance token withdrawn from governance contract
+    /// @param _user: User who withdraw
+    /// @param _amount: Amount of governance token to withdraw
     event Withdrawn(address indexed _user, uint256 _amount);
+
+    /// @notice Emits when reward for participation in voting processes is sent to user.
+    /// @param _user: Voter who receive rewards
+    /// @param _reward: Amount of staking reward tokens
     event RewardPaid(address indexed _user, uint256 _reward);
 
-    mapping(address => uint256) public voteLock; // period that your sake it locked to keep it for voting
+    /// @notice Period that your sake is locked to keep it for voting
+    /// @dev voter => lock period
+    mapping(address => uint256) public voteLock;
+
+    /// @notice Exists to store proposals
+    /// @dev id => proposal struct
     mapping(uint256 => Proposal) public proposals;
+
+    /// @notice Amount of governance tokens staked as votes for each voter
+    /// @dev voter => token amount
     mapping(address => uint256) public votes;
+
+    /// @notice Exists to check if voter registered
+    /// @dev user => is voter?
     mapping(address => bool) public voters;
 
+    /// @notice Exists to keep history of rewards paid
+    /// @dev voter => reward paid
     mapping(address => uint256) public userRewardPerTokenPaid;
+
+    /// @notice Exists to track amounts of reward to be paid
+    /// @dev voter => reward to pay
     mapping(address => uint256) public rewards;
 
+    /// @notice Stops governance token ability to withdraw when involved in some voting process
     bool public breaker = false;
+
+    /// @notice Exists to generate ids for new proposals
     uint256 public proposalCount;
-    uint256 public period = 17280; // voting period in blocks ~ 17280 3 days for 15s/block
-    uint256 public lock = 17280; // vote lock in blocks ~ 17280 3 days for 15s/block
-    uint256 public minimum = 1e18; // minimal amount of governance token to allow proposal creation
+
+    /// @notice Voting period in blocks ~ 17280 3 days for 15s/block
+    uint256 public period = 17280;
+
+    /// @notice Vote lock in blocks ~ 17280 3 days for 15s/block
+    uint256 public lock = 17280;
+
+    /// @notice Minimal amount of governance token to allow proposal creation
+    uint256 public minimum = 1e18;
+
+    /// @notice Default quorum required in base points
     uint256 public quorum = 2000;
+
+    /// @notice Total amount of governance tokens staked
     uint256 public totalVotes;
 
+    /// @notice Token in which reward for voting will be paid
     IERC20 public stakingRewardsToken;
+
+    /// @notice Default duration of the voting process in milliseconds
     uint256 public constant DURATION = 7 days;
+
+    /// @notice Time period in milliseconds during which rewards are paid
     uint256 public periodFinish = 0;
+
+    /// @notice This variable regulates amount of staking reward token to be paid, it depends from period finish. The last claims the lowest reward
     uint256 public rewardRate = 0;
+
+    /// @notice Amount of staking reward token per governance token staked
     uint256 public rewardPerTokenStored = 0;
+
+    /// @notice Last time when rewards was added and recalculated
     uint256 public lastUpdateTime;
 
-    constructor() public Initializable() {}
-
+    /// @notice Default initialize method for solving migration linearization problem
+    /// @dev Called once only by deployer
+    /// @param _startId: Starting ID (default: 0)
+    /// @param _stakingRewardsTokenAddress: Token in which rewards are paid
+    /// @param _governance: Governance address
+    /// @param _governanceToken: Governance token address
     function configure(
             uint256 _startId,
             address _stakingRewardsTokenAddress,
@@ -79,37 +169,55 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         setRewardDistribution(_governance);
     }
 
+    /// @notice
+    /// @dev
+    /// @param _token
+    /// @param _amount
+    /// @return
     function seize(IERC20 _token, uint256 _amount) external onlyGovernance {
         require(_token != stakingRewardsToken, "!stakingRewardsToken");
         require(_token != governanceToken, "!governanceToken");
         _token.safeTransfer(governance, _amount);
     }
 
+    /// @notice Usual setter
+    /// @param _breaker
     function setBreaker(bool _breaker) external onlyGovernance {
         breaker = _breaker;
     }
 
+    /// @notice Usual setter
+    /// @param _quorum
     function setQuorum(uint256 _quorum) external onlyGovernance {
         quorum = _quorum;
     }
 
+    /// @notice Usual setter
+    /// @param _minimum
     function setMinimum(uint256 _minimum) external onlyGovernance {
         minimum = _minimum;
     }
 
+    /// @notice Usual setter
+    /// @param _period
     function setPeriod(uint256 _period) external onlyGovernance {
         period = _period;
     }
 
+    /// @notice Usual setter
+    /// @param _lock
     function setLock(uint256 _lock) external onlyGovernance {
         lock = _lock;
     }
 
+    /// @notice Allows msg.sender exit from the whole governance process and withdraw all his rewards and governance tokens
     function exit() external {
         withdraw(balanceOf(_msgSender()));
         // getReward(); Un-comment this to enable the rewards.
     }
 
+    /// @notice Adds to governance contract staking reward tokens to be sent to vote process participants.
+    /// @param _reward: Amount of staking rewards token in wei
     function notifyRewardAmount(uint256 _reward)
         external
         onlyRewardDistribution
@@ -129,6 +237,9 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         emit RewardAdded(_reward);
     }
 
+    /// @notice Creates a proposal to vote
+    /// @param _executor: Executor contract address
+    /// @param _hash: IPFS hash of the proposal document
     function propose(address _executor, string memory _hash) public {
         require(votesOf(_msgSender()) > minimum, "<minimum");
         proposals[proposalCount] = Proposal({
@@ -156,6 +267,8 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         voteLock[_msgSender()] = lock.add(block.number);
     }
 
+    /// @notice Called by third party to execute the proposal conditions
+    /// @param _id: ID of the proposal
     function execute(uint256 _id) public {
         (uint256 _for, uint256 _against, uint256 _quorum) = getStats(_id);
         require(proposals[_id].quorumRequired < _quorum, "!quorum");
@@ -166,6 +279,11 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         IExecutor(proposals[_id].executor).execute(_id, _for, _against, _quorum);
     }
 
+    /// @notice Called by anyone to obtain the voting process statistics for specific proposal
+    /// @param _id: ID of the proposal
+    /// @return _for: 'For' percentage in base points
+    /// @return _against: 'Against' percentage in base points
+    /// @return _quorum: Current quorum percentage in base points
     function getStats(uint256 _id)
         public
         view
@@ -187,7 +305,8 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         }
     }
 
-    // synonimus: countVotes
+    /// @notice Synonimus name: countVotes, called to stop voting process
+    /// @param _id: ID of the proposal to be closed
     function tallyVotes(uint256 _id) public {
         require(proposals[_id].open == true, "!open");
         require(proposals[_id].end < block.number, "!end");
@@ -201,10 +320,14 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         );
     }
 
+    /// @notice Called to obtain votes count for specific voter
+    /// @param _voter: To whom votes related
+    /// @return Governance token staked to governance contract as votes
     function votesOf(address _voter) public view returns(uint256) {
         return votes[_voter];
     }
 
+    /// @notice Registers new user as voter and adds his votes
     function register() public {
         require(voters[_msgSender()] == false, "voter");
         voters[_msgSender()] = true;
@@ -213,11 +336,12 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         emit RegisterVoter(_msgSender(), votes[_msgSender()], totalVotes);
     }
 
+    /// @notice Nullify (revoke) all the votes staked by msg.sender
     function revoke() public {
         require(voters[_msgSender()] == true, "!voter");
         voters[_msgSender()] = false;
         if (totalVotes < votes[_msgSender()]) {
-            //edge case, should be impossible, but this is defi
+            /// @notice Edge case, should be impossible, but this is defi
             totalVotes = 0;
         } else {
             totalVotes = totalVotes.sub(votes[_msgSender()]);
@@ -226,6 +350,8 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         votes[_msgSender()] = 0;
     }
 
+    /// @notice Allow registered voter to vote 'for' proposal
+    /// @param _id: Proposal id
     function voteFor(uint256 _id) public {
         require(proposals[_id].start < block.number , "<start");
         require(proposals[_id].end > block.number , ">end");
@@ -249,6 +375,8 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         emit Vote(_id, _msgSender(), true, vote);
     }
 
+    /// @notice Allow registered voter to vote 'against' proposal
+    /// @param _id: Proposal id
     function voteAgainst(uint256 _id) public {
         require(proposals[_id].start < block.number , "<start");
         require(proposals[_id].end > block.number , ">end");
@@ -272,6 +400,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         emit Vote(_id, _msgSender(), false, vote);
     }
 
+    /// @dev Modifier to update stats when reward either sent to governance contract or to voter
     modifier updateReward(address _account) {
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = lastTimeRewardApplicable();
@@ -282,10 +411,14 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         _;
     }
 
+    /// @notice Dynamic finish time getter
+    /// @return Recalculated time when voting process needs to be finished
     function lastTimeRewardApplicable() public view returns(uint256) {
         return Math.min(block.timestamp, periodFinish);
     }
 
+    /// @notice Dynamic reward per token amount getter
+    /// @return Recalculated amount of staking reward tokens per governance token
     function rewardPerToken() public view returns(uint256) {
         if (totalSupply() == 0) {
             return rewardPerTokenStored;
@@ -300,6 +433,9 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
             );
     }
 
+    /// @notice Calculate the size of reward for voter
+    /// @param _account: Voter address
+    /// @return Amount of exact staking reward tokens to be paid
     function earned(address _account) public view returns(uint256) {
         return
             balanceOf(_account)
@@ -308,6 +444,8 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
                 .add(rewards[_account]);
     }
 
+    /// @notice Allow to add new governance tokens to voter weight, simultaneosly it recalculates reward size according to new weight
+    /// @param _amount: Amount of governance token to stake
     function stake(uint256 _amount) public override updateReward(_msgSender()) {
         require(_amount > 0, "!stake 0");
         if (voters[_msgSender()] == true) {
@@ -318,22 +456,25 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         emit Staked(_msgSender(), _amount);
     }
 
+    /// @notice Allow to remove old governance tokens from voter weight, simultaneosly it recalculates reward size according to new weight
+    /// @param _amount: Amount of governance token to withdraw
     function withdraw(uint256 _amount) public override updateReward(_msgSender()) {
         require(_amount > 0, "!withdraw 0");
         if (voters[_msgSender()] == true) {
             votes[_msgSender()] = votes[_msgSender()].sub(_amount);
             totalVotes = totalVotes.sub(_amount);
         }
-        if (breaker == false) {
-            require(voteLock[_msgSender()] < block.number,"!locked");
+        if (!breaker) {
+            require(voteLock[_msgSender()] < block.number, "!locked");
         }
         super.withdraw(_amount);
         emit Withdrawn(_msgSender(), _amount);
     }
 
+    /// @notice Transfer staking reward tokens to voter (msg.sender), simultaneosly it recalculates reward size according to new weight and rewards remaining
     function getReward() public updateReward(_msgSender()) {
-        if (breaker == false) {
-            require(voteLock[_msgSender()] > block.number,"!voted");
+        if (!breaker) {
+            require(voteLock[_msgSender()] > block.number, "!voted");
         }
         uint256 reward = earned(_msgSender());
         if (reward > 0) {

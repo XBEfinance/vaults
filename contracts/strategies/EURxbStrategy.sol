@@ -54,21 +54,21 @@ contract EURxbStrategy is IStrategy, Governable, Initializable {
     }
 
 
-    /// @notice Usual setter with check if passet param is new
+    /// @notice Usual setter with check if param is new
     /// @param _newVault
     function setVault(address _newVault) override onlyGovernance external {
         require(vault != _newVault, "!old");
         vault = _newVault;
     }
 
-    /// @notice Usual setter with check if passet param is new
+    /// @notice Usual setter with check if param is new
     /// @param _newController
     function setController(address _newController) override onlyGovernance external {
         require(controller != _newController, "!old");
         controller = _newController;
     }
 
-    /// @notice Usual setter with check if passet param is new
+    /// @notice Usual setter with check if param is new
     /// @param _newWant
     function setWant(address _newWant) override onlyGovernance external {
         require(_eurxb != _newWant, "!old");

@@ -3,6 +3,7 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts/proxy/Initializable.sol";
 
 import "./interfaces/IController.sol";
 import "./interfaces/IStrategy.sol";
@@ -10,7 +11,6 @@ import "./interfaces/vault/IVaultCore.sol";
 import "./interfaces/vault/IVaultDelegated.sol";
 import "./interfaces/vault/IVaultWrapped.sol";
 import "./governance/Governable.sol";
-import "./templates/Initializable.sol";
 
 /// @title Registry
 /// @notice The contract is the middleman actor through which the Keeper

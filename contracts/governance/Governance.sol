@@ -3,12 +3,12 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/math/Math.sol";
+import "@openzeppelin/contracts/proxy/Initializable.sol";
 
 import "./Governable.sol";
 import "./LPTokenWrapper.sol";
 import "../interfaces/IRewardDistributionRecipient.sol";
 import "../interfaces/IExecutor.sol";
-import "../templates/Initializable.sol";
 
 
 /// @title Governance

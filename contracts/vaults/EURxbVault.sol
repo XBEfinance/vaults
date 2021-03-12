@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/proxy/Initializable.sol";
 
 import "../interfaces/vault/IVaultCore.sol";
 import "../interfaces/vault/IVaultTransfers.sol";
@@ -13,7 +14,6 @@ import "../interfaces/IStrategy.sol";
 import "../interfaces/IController.sol";
 
 import "../governance/Governable.sol";
-import "../templates/Initializable.sol";
 
 
 /// @title EURxbVault

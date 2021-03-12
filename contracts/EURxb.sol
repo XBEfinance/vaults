@@ -3,10 +3,10 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/proxy/Initializable.sol";
 
 import "./interfaces/IEURxb.sol";
 import "./libraries/LinkedList.sol";
-import "./templates/Initializable.sol";
 import "./templates/OverrideERC20.sol";
 
 import { TokenAccessRoles } from "./libraries/TokenAccessRoles.sol";

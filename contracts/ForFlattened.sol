@@ -1,7 +1,6 @@
 pragma solidity ^0.6.0;
 
 import "./EURxb.sol";
-import "./Router.sol";
 
 import "./governance/XBG.sol";
 import "./governance/Governance.sol";

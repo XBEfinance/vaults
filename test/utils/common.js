@@ -1,5 +1,7 @@
 const { BN, ether } = require('@openzeppelin/test-helpers');
 
+const MockToken = artifacts.require("MockToken");
+
 /* eslint-disable */
 function increaseTime(duration) {
   const id = Date.now();
@@ -37,9 +39,11 @@ const newBN = (value_str = '1.0') => new BN(web3.utils.toWei(value_str, 'ether')
 /* eslint-enable */
 
 const getMockTokenPrepared = async (mintTo, mockedAmount, from) => {
-  const mockToken = await MockToken.new('Mock Token', 'MT', ether('123'), {from: miris});
-  await mockToken.approve(mintTo, mockedAmount, {from});
-  await mockToken.transfer(mintTo, mockedAmount, {from});
+  const mockToken = await MockToken.new('Mock Token', 'MT', ether('123'), {from: from});
+  if (mintTo !== from) {
+    await mockToken.approve(mintTo, mockedAmount, {from});
+    await mockToken.transfer(mintTo, mockedAmount, {from});
+  }
   return mockToken;
 };
 

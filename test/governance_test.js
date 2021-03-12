@@ -641,6 +641,10 @@ contract('Governance', (accounts) => {
       governanceToken.address
     );
 
+    const someSumToStake = ether('1');
+    await governanceToken.approve(governanceContract.address, someSumToStake, {from: governance});
+    await governanceContract.stake(someSumToStake, {from: governance});
+
     rewardPerTokenStored = await governanceContract.rewardPerTokenStored({from: governance});
     const lastTimeRewardApplicable = await governanceContract.lastTimeRewardApplicable({from: governance});
     const lastUpdateTime = await governanceContract.lastUpdateTime({from: governance});
@@ -654,6 +658,8 @@ contract('Governance', (accounts) => {
     //   totalSupply.toString());
 
     rewardPerToken = await governanceContract.rewardPerToken({from: governance});
+
+    console.log(totalSupply.toString());
 
     const trueRewardPerToken = rewardPerTokenStored.add(
       lastTimeRewardApplicable

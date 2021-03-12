@@ -64,7 +64,8 @@ contract('EURxbStrategy', (accounts) => {
   });
 
   it('should deposit the balance', async () => {
-    await expectRevert(strategy.deposit(), "Not implemented");
+    await strategy.deposit();
+    // await expectRevert(, "Not implemented");
   });
 
   it('should withdraw the balance of the non-want token', async () => {

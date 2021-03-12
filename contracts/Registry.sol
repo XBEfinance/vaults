@@ -46,7 +46,7 @@ contract Registry is Governable, Initializable {
     }
 
     /// @notice Adds vault to address set containing ordinary vault
-    /// @param _vault: Deployed ordinary vault address
+    /// @param _vault Deployed ordinary vault address
     function addVault(address _vault) public onlyGovernance {
         _addVault(_vault);
         (address controller, , , , ) = _getVaultData(_vault);
@@ -54,7 +54,7 @@ contract Registry is Governable, Initializable {
     }
 
     /// @notice Adds vault first as ordinary then get unwrapped vault and mark it in wrapped vaults set
-    /// @param _vault: Deployed wrapped vault address
+    /// @param _vault Deployed wrapped vault address
     function addWrappedVault(address _vault) public onlyGovernance {
         addVault(_vault);
         address _wrappedVault = IVaultWrapped(_vault).vault();
@@ -71,7 +71,7 @@ contract Registry is Governable, Initializable {
     }
 
     /// @notice Adds vaults as ordinary then mark it as delegated vault
-    /// @param _vault: Deployed delegated vault address
+    /// @param _vault Deployed delegated vault address
     function addDelegatedVault(address _vault) public onlyGovernance {
         addVault(_vault);
         isDelegatedVault[_vault] = true;
@@ -83,7 +83,7 @@ contract Registry is Governable, Initializable {
     }
 
     /// @dev Checks if provided address is contract and if it is not added yet, then adding it.
-    /// @param _vault: Deployed vault address
+    /// @param _vault Deployed vault address
     function _addVault(address _vault) internal {
         require(_vault.isContract(), "!contract");
         // Checks if vault is already on the array
@@ -93,7 +93,7 @@ contract Registry is Governable, Initializable {
     }
 
     /// @dev Adding controller to set if it is not added yet
-    /// @param _controller: Deployed controller
+    /// @param _controller Deployed controller
     function _addController(address _controller) internal {
         // Adds Controller to controllers array
         if (!_controllers.contains(_controller)) {
@@ -102,19 +102,19 @@ contract Registry is Governable, Initializable {
     }
 
     /// @notice Removes given vault address from the set
-    /// @dev IMPORTANT: It does not remove the metadata (wrapped or delegated vault marks)!!!
-    /// @param _vault: Vault address to remove
+    /// @dev IMPORTANT It does not remove the metadata (wrapped or delegated vault marks)!!!
+    /// @param _vault Vault address to remove
     function removeVault(address _vault) public onlyGovernance {
         _vaults.remove(_vault);
     }
 
     /// @dev An internal function used to aggregate all data for a specific controller
-    /// @param _vault: Vault address to analyze
-    /// @return controller: Related to vault controller
-    /// @return token: Related to vault business logic token
-    /// @return strategy: Related to vault business logic strategy
-    /// @return isWrapped: Bool mark if the vault is wrapped
-    /// @return isDelegated: Bool mark if the vault is delegated
+    /// @param _vault Vault address to analyze
+    /// @return controller Related to vault controller
+    /// @return token Related to vault business logic token
+    /// @return strategy Related to vault business logic strategy
+    /// @return isWrapped Bool mark if the vault is wrapped
+    /// @return isDelegated Bool mark if the vault is delegated
     function _getVaultData(address _vault)
         internal
         view
@@ -181,7 +181,7 @@ contract Registry is Governable, Initializable {
     }
 
     /// @notice Used to return all addresses in order to iterate over them
-    /// @return memory: All vaults that are registered now
+    /// @return memory All vaults that are registered now
     function getVaults() external view returns(address[] memory) {
         address[] memory vaultsArray = new address[](_vaults.length());
         for (uint256 i = 0; i < _vaults.length(); i++) {
@@ -191,12 +191,12 @@ contract Registry is Governable, Initializable {
     }
 
     /// @notice A facade method for _getVaultData(...) method
-    /// @param _vault: Vault address to analyze
-    /// @return controller: Related to vault controller
-    /// @return token: Related to vault business logic token
-    /// @return strategy: Related to vault business logic strategy
-    /// @return isWrapped: Bool mark if the vault is wrapped
-    /// @return isDelegated: Bool mark if the vault is delegated
+    /// @param _vault Vault address to analyze
+    /// @return controller Related to vault controller
+    /// @return token Related to vault business logic token
+    /// @return strategy Related to vault business logic strategy
+    /// @return isWrapped Bool mark if the vault is wrapped
+    /// @return isDelegated Bool mark if the vault is delegated
     function getVaultInfo(address _vault)
         external
         view
@@ -214,12 +214,12 @@ contract Registry is Governable, Initializable {
 
     /// @notice Accumulates all the data containing in this registry
     /// @dev The structure returned is table-like, so all entries are bound by index
-    /// @return vaultsAddresses: All the vaults that are registered
-    /// @return controllerArray: All the controllers that are used
-    /// @return tokenArray: All the business tokens that are involved in vaults
-    /// @return strategyArray: All the strategies that are developed
-    /// @return isWrappedArray: All the marks of wrapped vaults
-    /// @return isDelegatedArray: All the marks of delegated vaults
+    /// @return vaultsAddresses All the vaults that are registered
+    /// @return controllerArray All the controllers that are used
+    /// @return tokenArray All the business tokens that are involved in vaults
+    /// @return strategyArray All the strategies that are developed
+    /// @return isWrappedArray All the marks of wrapped vaults
+    /// @return isDelegatedArray All the marks of delegated vaults
     function getVaultsInfo()
         external
         view

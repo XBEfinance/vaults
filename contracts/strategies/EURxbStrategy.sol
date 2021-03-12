@@ -40,9 +40,9 @@ contract EURxbStrategy is IStrategy, Governable, Initializable {
 
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
-    /// @param _eurxbAddress: address of eurxb instance
-    /// @param _controllerAddress: address of controller instance
-    /// @param _vaultAddress: address of vault related to this strategy (Link type: 1:1)
+    /// @param _eurxbAddress address of eurxb instance
+    /// @param _controllerAddress address of controller instance
+    /// @param _vaultAddress address of vault related to this strategy (Link type 1:1)
     function configure(
         address _eurxbAddress,
         address _controllerAddress,
@@ -55,21 +55,21 @@ contract EURxbStrategy is IStrategy, Governable, Initializable {
 
 
     /// @notice Usual setter with check if param is new
-    /// @param _newVault
+    /// @param _newVault New value
     function setVault(address _newVault) override onlyGovernance external {
         require(vault != _newVault, "!old");
         vault = _newVault;
     }
 
     /// @notice Usual setter with check if param is new
-    /// @param _newController
+    /// @param _newController New value
     function setController(address _newController) override onlyGovernance external {
         require(controller != _newController, "!old");
         controller = _newController;
     }
 
     /// @notice Usual setter with check if param is new
-    /// @param _newWant
+    /// @param _newWant New value
     function setWant(address _newWant) override onlyGovernance external {
         require(_eurxb != _newWant, "!old");
         _eurxb = _newWant;

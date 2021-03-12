@@ -26,13 +26,13 @@ contract LPTokenWrapper {
     }
 
     /// @notice Standard balanceOf method
-    /// @param _account: User address
+    /// @param _account User address
     function balanceOf(address _account) public view returns(uint256) {
         return _balances[_account];
     }
 
     /// @notice Standard deposit (stake) method
-    /// @param _amount: Amount governance tokens to stake (deposit)
+    /// @param _amount Amount governance tokens to stake (deposit)
     function stake(uint256 _amount) public virtual {
         _totalSupply = _totalSupply.add(_amount);
         _balances[msg.sender] = _balances[msg.sender].add(_amount);
@@ -40,7 +40,7 @@ contract LPTokenWrapper {
     }
 
     /// @notice Standard withdraw method
-    /// @param _amount: Amount governance tokens to withdraw
+    /// @param _amount Amount governance tokens to withdraw
     function withdraw(uint256 _amount) public virtual {
         _totalSupply = _totalSupply.sub(_amount);
         _balances[msg.sender] = _balances[msg.sender].sub(_amount);
@@ -48,7 +48,7 @@ contract LPTokenWrapper {
     }
 
     /// @notice Simple governance setter
-    /// @param newGovernanceToken
+    /// @param newGovernanceToken New value
     function _setGovernanceToken(address newGovernanceToken) internal {
         require(address(governanceToken) != newGovernanceToken, "!new");
         governanceToken = IERC20(newGovernanceToken);

@@ -8,13 +8,13 @@ import "./governance/Governable.sol";
 contract CloneFactory is Governable {
 
   /// @notice Emits when clone deployed
-  /// @param _clone: Clone address
-  /// @param _main: Address of base contract
+  /// @param _clone Clone address
+  /// @param _main Address of base contract
     event Cloned(address _clone, address _main);
 
     /// @notice Used to predict clone address before deployment
-    /// @param _impl: Base contract
-    /// @param _salt: Some entropy
+    /// @param _impl Base contract
+    /// @param _salt Some entropy
     /// @return Predicted address of future clone
     function predictCloneAddress(address _impl, bytes32 _salt)
         external
@@ -25,8 +25,8 @@ contract CloneFactory is Governable {
     }
 
     /// @notice Deploy clone
-    /// @param _impl: Base contract
-    /// @param _salt: Some entropy
+    /// @param _impl Base contract
+    /// @param _salt Some entropy
     function clone(address _impl, bytes32 _salt) onlyGovernance external {
         address _result = Clones.cloneDeterministic(_impl, _salt);
         emit Cloned(_result, _impl);

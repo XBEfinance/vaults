@@ -21,7 +21,7 @@ contract Controller is IController, Governable, Initializable {
     using SafeERC20 for IERC20;
 
     /// @notice Emits when funds are withdrawn fully from related to vault strategy
-    /// @param _token: Token address to be withdrawn
+    /// @param _token Token address to be withdrawn
     event WithdrawToVaultAll(address _token);
 
     /// @dev token => vault
@@ -62,8 +62,8 @@ contract Controller is IController, Governable, Initializable {
 
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
-    /// @param _initialTreasury: treasury contract address
-    /// @param _initialStrategist: strategist address
+    /// @param _initialTreasury treasury contract address
+    /// @param _initialStrategist strategist address
     function configure(
           address _initialTreasury,
           address _initialStrategist
@@ -73,35 +73,35 @@ contract Controller is IController, Governable, Initializable {
     }
 
     /// @notice Used only to rescue stuck funds from controller to msg.sender
-    /// @param _token: Token to rescue
-    /// @param _amount: Amount tokens to rescue
+    /// @param _token Token to rescue
+    /// @param _amount Amount tokens to rescue
     function inCaseTokensGetStuck(address _token, uint256 _amount) onlyGovernanceOrStrategist external {
         IERC20(_token).safeTransfer(_msgSender(), _amount);
     }
 
     /// @notice Used only to rescue stuck or unrelated funds from strategy to vault
-    /// @param _strategy: Strategy address
-    /// @param _token: Unrelated token address
+    /// @param _strategy Strategy address
+    /// @param _token Unrelated token address
     function inCaseStrategyTokenGetStuck(address _strategy, address _token) onlyGovernanceOrStrategist external {
         IStrategy(_strategy).withdraw(_token);
     }
 
     /// @notice Withdraws funds from strategy to related vault
-    /// @param _token: Token address to withdraw
-    /// @param _amount: Amount tokens
+    /// @param _token Token address to withdraw
+    /// @param _amount Amount tokens
     function withdraw(address _token, uint256 _amount) override external {
       IStrategy(_strategies[_token]).withdraw(_amount);
     }
 
     /// @notice Usual setter with check if param is new
-    /// @param _newParts
+    /// @param _newParts New value
     function setParts(uint256 _newParts) onlyGovernance external {
         require(parts != _newParts, "!old");
         parts = _newParts;
     }
 
     /// @notice Usual setter with additional checks
-    /// @param _newTreasury
+    /// @param _newTreasury New value
     function setRewards(address _newTreasury) onlyGovernance external {
         require(_treasury != _newTreasury, '!old');
         require(_newTreasury != address(0), '!treasury');
@@ -110,14 +110,14 @@ contract Controller is IController, Governable, Initializable {
     }
 
     /// @notice Usual setter with check if param is new
-    /// @param _newOneSplit
+    /// @param _newOneSplit New value
     function setOneSplit(address _newOneSplit) onlyGovernance external {
         require(oneSplit != _newOneSplit, '!old');
         oneSplit = _newOneSplit;
     }
 
     /// @notice Usual setter with check if param is new
-    /// @param _newStrategist
+    /// @param _newStrategist New value
     function setStrategist(address _newStrategist) onlyGovernance external {
         require(strategist != _newStrategist, '!old');
         strategist = _newStrategist;
@@ -142,8 +142,8 @@ contract Controller is IController, Governable, Initializable {
     }
 
     /// @notice Usual setter of vault in mapping with check if new vault is not address(0)
-    /// @param _token: Business logic token of the vault
-    /// @param _vault: Vault address
+    /// @param _token Business logic token of the vault
+    /// @param _vault Vault address
     function setVault(address _token, address _vault)
         override
         onlyGovernanceOrStrategist
@@ -154,9 +154,9 @@ contract Controller is IController, Governable, Initializable {
     }
 
     /// @notice Usual setter of converter contract, it implements the optimal logic to token conversion
-    /// @param _input: Input token address
-    /// @param _output: Output token address
-    /// @param _converter: Converter contract
+    /// @param _input Input token address
+    /// @param _output Output token address
+    /// @param _converter Converter contract
     function setConverter(
         address _input,
         address _output,
@@ -166,8 +166,8 @@ contract Controller is IController, Governable, Initializable {
     }
 
     /// @notice Sets new link between business logic token and strategy, and if strategy is already used, withdraws all funds from it to the vault
-    /// @param _token: Business logic token address
-    /// @param _strategy: Corresponded strategy contract address
+    /// @param _token Business logic token address
+    /// @param _strategy Corresponded strategy contract address
     function setStrategy(address _token, address _strategy) override onlyGovernanceOrStrategist external {
         require(_approvedStrategies[_token][_strategy], "!approved");
         address _current = _strategies[_token];
@@ -180,25 +180,25 @@ contract Controller is IController, Governable, Initializable {
 
 
     /// @notice Approves strategy to be added to mapping, needs to be done before setting strategy
-    /// @param _token: Business logic token address
-    /// @param _strategy: Strategy contract address
-    /// @param _status: Approved or not (bool)?
+    /// @param _token Business logic token address
+    /// @param _strategy Strategy contract address
+    /// @param _status Approved or not (bool)?
     function setApprovedStrategy(address _token, address _strategy, bool _status) onlyGovernance external {
         _approvedStrategies[_token][_strategy] = _status;
     }
 
     /// @notice Get approval status for strategy that corresponds to business logic token
-    /// @param _token: Business logic token address
-    /// @param _strategy: Strategy contract address
-    /// @return Boolean status: true - approved, false - not approved
+    /// @param _token Business logic token address
+    /// @param _strategy Strategy contract address
+    /// @return Boolean status true - approved, false - not approved
     function approvedStrategies(address _token, address _strategy) override external view returns(bool) {
         return _approvedStrategies[_token][_strategy];
     }
 
     /// @notice The method converts if needed given token to business logic strategy token,
     /// transfers converted tokens to strategy, and executes the business logic
-    /// @param _token: Given token address
-    /// @param _amount: Amount of given token address
+    /// @param _token Given token address
+    /// @param _amount Amount of given token address
     function earn(address _token, uint256 _amount) override public {
         address _strategy = _strategies[_token];
         address _want = IStrategy(_strategy).want();
@@ -216,8 +216,8 @@ contract Controller is IController, Governable, Initializable {
 
     /// @notice The method withdraws full balance of the strategy, cuts the profit if any exist,
     /// chops and channels it to treasury and reinvest the rest
-    /// @param _strategy: Strategy to action
-    /// @param _token: Token that we want to chop and reinvest (could be any, becuaise 1inch used for conversion)
+    /// @param _strategy Strategy to action
+    /// @param _token Token that we want to chop and reinvest (could be any, becuaise 1inch used for conversion)
     /// @dev Only allows to withdraw non-core strategy tokens ~ this is over and above normal yield
     function harvest(address _strategy, address _token) override onlyGovernanceOrStrategist external {
         address _want = IStrategy(_strategy).want();

@@ -20,7 +20,7 @@ contract Governable {
     }
 
     /// @notice Setter for governance address
-    /// @param _newGovernance
+    /// @param _newGovernance New value
     function setGovernance(address _newGovernance) public onlyGovernance {
         governance = _newGovernance;
     }

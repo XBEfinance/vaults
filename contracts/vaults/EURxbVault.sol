@@ -36,8 +36,8 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     /// @notice Hundred procent (in base points)
     uint256 public constant max = 10000;
 
-    /// @param typeName: Name of the vault token
-    /// @param typePrefix: Prefix of the vault token
+    /// @param typeName Name of the vault token
+    /// @param typePrefix Prefix of the vault token
     constructor(string memory typeName, string memory typePrefix)
         public
         ERC20(
@@ -50,8 +50,8 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
 
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
-    /// @param _initialToken: Business token logic address
-    /// @param _initialController: Controller instance address
+    /// @param _initialToken Business token logic address
+    /// @param _initialController Controller instance address
     function configure(
         address _initialToken,
         address _initialController
@@ -61,14 +61,14 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     }
 
     /// @notice Usual setter with check if passet param is new
-    /// @param _newMin
+    /// @param _newMin New value
     function setMin(uint256 _newMin) onlyGovernance external {
         require(min != _newMin, "!new");
         min = _newMin;
     }
 
     /// @notice Usual setter with check if passet param is new
-    /// @param _newController
+    /// @param _newController New value
     function setController(address _newController) public onlyGovernance {
         require(_controller != _newController, "!new");
         _controller = _newController;
@@ -108,7 +108,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     }
 
     /// @notice Allows to deposit business logic tokens and reveive vault tokens
-    /// @param _amount: Amount to deposit business logic tokens
+    /// @param _amount Amount to deposit business logic tokens
     function deposit(uint256 _amount) override public {
         uint256 _pool = balance();
         require(_token.transferFrom(_msgSender(), address(this), _amount), "!transferFrom");
@@ -128,7 +128,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     }
 
     /// @notice Allows exchange vault tokens to business logic tokens
-    /// @param _shares: Business logic tokens to withdraw
+    /// @param _shares Business logic tokens to withdraw
     function withdraw(uint256 _shares) override public {
         uint256 r = (balance().mul(_shares)).div(totalSupply());
         _burn(_msgSender(), _shares);

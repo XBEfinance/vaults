@@ -47,6 +47,16 @@ const getMockTokenPrepared = async (mintTo, mockedAmount, from) => {
   return mockToken;
 };
 
+const processEventArgs = async (result, eventName, processArgs) => {
+  if (result == null) {
+    throw new Error(`Result of tx is: ${result}`);
+  }
+  const filteredLogs = result.logs.filter(l => l.event === eventName);
+  const eventArgs = filteredLogs[0].args;
+  await processArgs(eventArgs);
+};
+
+
 module.exports = {
   increaseTime,
   currentTimestamp,
@@ -58,5 +68,6 @@ module.exports = {
   ZERO: new BN('0'),
   ONE: new BN('1'),
   CONVERSION_WEI_CONSTANT: ether('1'),
-  getMockTokenPrepared
+  getMockTokenPrepared,
+  processEventArgs
 };

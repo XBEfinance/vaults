@@ -133,7 +133,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     uint256 public totalVotes;
 
     /// @notice Token in which reward for voting will be paid
-    IERC20 public stakingRewardsToken;
+    IERC20 public rewardsToken;
 
     /// @notice Default duration of the voting process in milliseconds
     uint256 public constant DURATION = 7 days;
@@ -153,17 +153,17 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
     /// @param _startId Starting ID (default 0)
-    /// @param _stakingRewardsTokenAddress Token in which rewards are paid
+    /// @param _rewardsTokenAddress Token in which rewards are paid
     /// @param _governance Governance address
     /// @param _governanceToken Governance token address
     function configure(
             uint256 _startId,
-            address _stakingRewardsTokenAddress,
+            address _rewardsTokenAddress,
             address _governance,
             address _governanceToken
     ) external initializer {
         proposalCount = _startId;
-        stakingRewardsToken = IERC20(_stakingRewardsTokenAddress);
+        rewardsToken = IERC20(_rewardsTokenAddress);
         _setGovernanceToken(_governanceToken);
         setGovernance(_governance);
         setRewardDistribution(_governance);
@@ -173,7 +173,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @param _token Exact token to evacuate
     /// @param _amount Amount of token to evacuate
     function seize(IERC20 _token, uint256 _amount) external onlyGovernance {
-        require(_token != stakingRewardsToken, "!stakingRewardsToken");
+        require(_token != rewardsToken, "!rewardsToken");
         require(_token != governanceToken, "!governanceToken");
         _token.safeTransfer(governance, _amount);
     }
@@ -222,7 +222,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         override
         updateReward(address(0))
     {
-        IERC20(stakingRewardsToken).safeTransferFrom(_msgSender(), address(this), _reward);
+        IERC20(rewardsToken).safeTransferFrom(_msgSender(), address(this), _reward);
         if (block.timestamp >= periodFinish) {
             rewardRate = _reward.div(DURATION);
         } else {
@@ -477,7 +477,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         uint256 reward = earned(_msgSender());
         if (reward > 0) {
             rewards[_msgSender()] = 0;
-            stakingRewardsToken.transfer(_msgSender(), reward);
+            rewardsToken.transfer(_msgSender(), reward);
             emit RewardPaid(_msgSender(), reward);
         }
     }

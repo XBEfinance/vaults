@@ -1,4 +1,5 @@
 const { ether } = require('@openzeppelin/test-helpers');
+const { getMockTokenPrepared } = require('./common.js');
 
 const Governance = artifacts.require('Governance');
 const GovernanceToken = artifacts.require('XBG');
@@ -17,19 +18,25 @@ const activeActor = async (address, sum, governanceContract, governanceToken, go
 
 const deployAndConfigureGovernance = async (
     stardId,
-    initialTotalSupply,
-    governance
+    governanceTokenTotalSupply,
+    governance,
+    rewardDistribution,
+    rewardsTokenTotalSupply,
+    mintTo,
+    mockedAmount,
+    from
 ) => {
   const governanceContract = await Governance.new();
-  const stakingRewardsToken = await MockToken.new('Mock Token', 'MT', ether('123'));
-  const governanceToken = await GovernanceToken.new(initialTotalSupply);
+  const rewardsToken = await getMockTokenPrepared(mintTo, mockedAmount, rewardsTokenTotalSupply, from);
+  const governanceToken = await GovernanceToken.new(governanceTokenTotalSupply);
   await governanceContract.configure(
     stardId,
-    stakingRewardsToken.address,
+    rewardsToken.address,
     governance,
-    governanceToken.address
+    governanceToken.address,
+    rewardDistribution
   );
-  return [ governanceContract, governanceToken, stakingRewardsToken ];
+  return [ governanceContract, governanceToken, rewardsToken ];
 }
 
 module.exports = {

@@ -38,8 +38,8 @@ const Ether = value_str => new BN(web3.utils.toWei(value_str, 'ether'));
 const newBN = (value_str = '1.0') => new BN(web3.utils.toWei(value_str, 'ether'));
 /* eslint-enable */
 
-const getMockTokenPrepared = async (mintTo, mockedAmount, from) => {
-  const mockToken = await MockToken.new('Mock Token', 'MT', ether('123'), {from: from});
+const getMockTokenPrepared = async (mintTo, mockedAmount, totalSupply, from) => {
+  const mockToken = await MockToken.new('Mock Token', 'MT', totalSupply, {from: from});
   if (mintTo !== from) {
     await mockToken.approve(mintTo, mockedAmount, {from});
     await mockToken.transfer(mintTo, mockedAmount, {from});

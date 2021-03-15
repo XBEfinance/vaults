@@ -32,12 +32,12 @@ contract Treasury is Governable, Initializable, Context, ITreasury {
         address _oneSplit,
         address _governanceContract,
         address _rewardsToken
-      ) external initializer {
+    ) external initializer {
         setGovernance(_governance);
         setOneSplit(_oneSplit);
         setGovernanceContract(_governanceContract);
         setRewardsToken(_rewardsToken);
-        setAuthorized(_governance);
+        setAuthorized(_governance, true);
     }
 
     function setOneSplit(address _oneSplit) public onlyGovernance {
@@ -48,12 +48,8 @@ contract Treasury is Governable, Initializable, Context, ITreasury {
         rewardsToken = _rewardsToken;
     }
 
-    function setAuthorized(address _authorized) public onlyGovernance {
-        authorized[_authorized] = true;
-    }
-
-    function revokeAuthorized(address _authorized) external onlyGovernance {
-        authorized[_authorized] = false;
+    function setAuthorized(address _authorized, bool status) public onlyGovernance {
+        authorized[_authorized] = status;
     }
 
     function setGovernanceContract(address _governanceContract) public onlyGovernance {

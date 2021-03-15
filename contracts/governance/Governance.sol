@@ -160,13 +160,14 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
             uint256 _startId,
             address _rewardsTokenAddress,
             address _governance,
-            address _governanceToken
+            address _governanceToken,
+            address _rewardDistribution
     ) external initializer {
         proposalCount = _startId;
         rewardsToken = IERC20(_rewardsTokenAddress);
         _setGovernanceToken(_governanceToken);
         setGovernance(_governance);
-        setRewardDistribution(_governance);
+        setRewardDistribution(_rewardDistribution);
     }
 
     /// @dev This methods evacuates given funds to governance address
@@ -211,7 +212,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @notice Allows msg.sender exit from the whole governance process and withdraw all his rewards and governance tokens
     function exit() external {
         withdraw(balanceOf(_msgSender()));
-        // getReward(); Un-comment this to enable the rewards.
+        getReward();
     }
 
     /// @notice Adds to governance contract staking reward tokens to be sent to vote process participants.
@@ -453,6 +454,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         super.stake(_amount);
         emit Staked(_msgSender(), _amount);
     }
+
 
     /// @notice Allow to remove old governance tokens from voter weight, simultaneosly it recalculates reward size according to new weight
     /// @param _amount Amount of governance token to withdraw

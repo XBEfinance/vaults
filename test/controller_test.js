@@ -72,7 +72,7 @@ contract('Controller', (accounts) => {
     await expectRevert(controller.inCaseStrategyTokenGetStuck(strategy.address, revenueToken.address),
       "!want");
     const mockedBalance = ether('10');
-    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, miris);
+    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, ether('123'), miris);
     await controller.inCaseStrategyTokenGetStuck(strategy.address, mockToken.address);
     expect(await mockToken.balanceOf(controller.address)).to.be.bignumber.equal(mockedBalance);
 
@@ -158,7 +158,7 @@ contract('Controller', (accounts) => {
 
 
   it('should set vault by token', async () => {
-    var mockToken = await getMockTokenPrepared(strategy.address, ether('10'), miris);
+    var mockToken = await getMockTokenPrepared(strategy.address, ether('10'), ether('123'), miris);
     await expectRevert(controller.setVault(revenueToken.address, vault.address), '!vault 0');
     await controller.setVault(mockToken.address, mock.address);
     expect(await controller.vaults(mockToken.address)).to.be.equal(mock.address);
@@ -266,7 +266,7 @@ contract('Controller', (accounts) => {
   it('should harvest tokens from the strategy', async () => {
 
     const mockedBalance = ether('10');
-    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, miris);
+    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, ether('123'), miris);
 
     const wantCalldata = (await IStrategy.at(mock.address)).contract
       .methods.want().encodeABI();

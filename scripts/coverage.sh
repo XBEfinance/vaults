@@ -15,7 +15,14 @@ mkdir -p build/contracts/
 generate_truffle_config "0.6.3" ".\/contracts"
 
 #run coverage
-node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage
+if [[ $1 = "file" ]]; then
+  echo "File specified, proceeding..."
+  node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage --file $2
+else
+  echo "Total coverage requested..."
+  node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage
+fi
+
 
 # remove build
 rm -rf ./build

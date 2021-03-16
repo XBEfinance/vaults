@@ -257,9 +257,15 @@ contract('Governance', (accounts) => {
 
       await governanceContract.setPeriod(periodForVoting, {from: governance});
       var oldProposalCount = await governanceContract.proposalCount({from: governance});
+
+      await expectRevert(governanceContract.tallyVotes(oldProposalCount), "!open");
+
       await governanceContract.propose(alice, proposalHash, {from: alice});
       await governanceContract.voteFor(oldProposalCount, {from: alice});
       await governanceContract.voteAgainst(oldProposalCount, {from: bob});
+
+      await expectRevert(governanceContract.tallyVotes(oldProposalCount, {from: bob}), "!end")
+
       await time.increase(time.duration.hours(9));
       const receipt = await governanceContract.tallyVotes(oldProposalCount, {from: bob});
       expectEvent(receipt, 'ProposalFinished', {
@@ -603,6 +609,10 @@ contract('Governance', (accounts) => {
         _user: bob,
         _reward: reward
       });
+    });
+
+    it('should revert notify reward amount if sender is not reward distribution', async () => {
+      await expectRevert(governanceContract.notifyRewardAmount(ether('100'), {from: alice}), "!rewardDistribution");
     });
 
     it('should transfer reward amounts to reward distributor if period finished', async () => {

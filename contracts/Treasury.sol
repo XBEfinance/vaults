@@ -20,7 +20,7 @@ contract Treasury is Governable, Initializable, Context, ITreasury {
     address public governanceContract;
     address public rewardsToken;
 
-    mapping(address => bool) authorized;
+    mapping(address => bool) public authorized;
 
     modifier authorizedOnly {
       require(authorized[_msgSender()], "!authorized");

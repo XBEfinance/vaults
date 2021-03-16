@@ -204,7 +204,7 @@ contract('Controller', (accounts) => {
     const sumToEarn = ether('1');
     const sumToEarnInRevenueToken = ether('2');
 
-    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, miris);
+    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, ether('123'), miris);
 
     ////
     await controller.setApprovedStrategy(mockToken.address, strategy.address, true);

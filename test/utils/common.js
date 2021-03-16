@@ -1,4 +1,4 @@
-const { BN, ether } = require('@openzeppelin/test-helpers');
+const { BN, ether, expectRevert } = require('@openzeppelin/test-helpers');
 
 const MockToken = artifacts.require("MockToken");
 
@@ -56,6 +56,19 @@ const processEventArgs = async (result, eventName, processArgs) => {
   await processArgs(eventArgs);
 };
 
+const checkSetter = async (
+  setterMethodName,
+  getterName,
+  newValue,
+  validSender,
+  nonValidSender,
+  contractInstance,
+  revertMessage
+) => {
+  await contractInstance[setterMethodName](newValue, {from: validSender});
+  expect(await contractInstance[getterName]()).to.be.equal(newValue);
+  await expectRevert(contractInstance[setterMethodName](newValue, {from: nonValidSender}), revertMessage);
+}
 
 module.exports = {
   increaseTime,
@@ -69,5 +82,6 @@ module.exports = {
   ONE: new BN('1'),
   CONVERSION_WEI_CONSTANT: ether('1'),
   getMockTokenPrepared,
-  processEventArgs
+  processEventArgs,
+  checkSetter
 };

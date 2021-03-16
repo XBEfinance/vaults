@@ -48,12 +48,12 @@ contract Treasury is Governable, Initializable, Context, ITreasury {
         rewardsToken = _rewardsToken;
     }
 
-    function setAuthorized(address _authorized, bool status) public onlyGovernance {
-        authorized[_authorized] = status;
-    }
-
     function setGovernanceContract(address _governanceContract) public onlyGovernance {
         governanceContract = _governanceContract;
+    }
+
+    function setAuthorized(address _authorized, bool status) public onlyGovernance {
+        authorized[_authorized] = status;
     }
 
     function toGovernance(address _token, uint256 _amount) override external onlyGovernance {

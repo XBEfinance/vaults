@@ -11,7 +11,7 @@ const {
   time
 } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
-const { ZERO, ONE, getMockTokenPrepared, processEventArgs } = require('./utils/common');
+const { ZERO, ONE, getMockTokenPrepared, processEventArgs, checkSetter } = require('./utils/common');
 const { activeActor, actorStake, deployAndConfigureGovernance } = require(
   './utils/governance_redeploy'
 );
@@ -77,16 +77,151 @@ contract('Treasury', (accounts) => {
     expect(await governanceContract.rewardDistribution()).to.be.equal(treasury.address)
   });
 
+  describe('setters', () => {
+
+    it(`should check setter setOneSplit functional`, async () => {
+      await checkSetter(
+        'setOneSplit',
+        'oneSplit',
+        (await MockContract.new()).address,
+        governance,
+        alice,
+        treasury,
+        "!governance"
+      );
+    });
+
+    it(`should check setter setRewardsToken functional`, async () => {
+      await checkSetter(
+        'setRewardsToken',
+        'rewardsToken',
+        (await MockContract.new()).address,
+        governance,
+        alice,
+        treasury,
+        "!governance"
+      );
+    });
+
+    it(`should check setter setGovernanceContract functional`, async () => {
+      await checkSetter(
+        'setGovernanceContract',
+        'governanceContract',
+        (await MockContract.new()).address,
+        governance,
+        alice,
+        treasury,
+        "!governance"
+      );
+    });
+
+    it('should check authorized address setter', async () => {
+      const mockAddress = (await MockContract.new()).address;
+      await treasury.setAuthorized(mockAddress, true, {from: governance});
+      expect(await treasury.authorized(mockAddress)).to.be.equal(true);
+    });
+
+    it('should revert authorized address setter usage if sender != governance', async () => {
+      await expectRevert(treasury.setAuthorized((await MockContract.new()).address, true, {from: alice}), "!governance")
+    });
+
+  });
+
   it('should get expected return when swapping whole balance', async () => {
+
+    const balance = ether('1');
+    const totalSupply = ether('2');
+    const parts = new BN('100');
+    const fromToken = await getMockTokenPrepared(alice, balance, totalSupply, bob);
+    await fromToken.approve(treasury.address, balance, {from: alice});
+    await fromToken.transfer(treasury.address, balance, {from: alice});
+
+    const toToken = await MockContract.new();
+
+    const mockedExpectedReturn = ether('3');
+    const expectedReturnCalldata = (await IOneSplitAudit.at(oneSplitMock.address)).contract
+      .methods.getExpectedReturn(
+        fromToken.address,
+        toToken.address,
+        balance,
+        parts,
+        ZERO
+      ).encodeABI();
+
+    await oneSplitMock.givenCalldataReturn(
+      expectedReturnCalldata,
+      web3.eth.abi.encodeParameters(
+        ["uint256", "uint256[]"],
+        [mockedExpectedReturn, [ZERO, ZERO]]
+      )
+    );
+
+    expect(await treasury.getExpectedReturn(
+      fromToken.address,
+      toToken.address,
+      parts
+    )).to.be.bignumber.equal(mockedExpectedReturn);
 
   });
 
   it('should convert non-core tokens to rewards tokens', async () => {
+    const balance = ether('1');
+    const totalSupply = ether('2');
+    const parts = new BN('100');
+    const fromToken = await getMockTokenPrepared(alice, balance, totalSupply, bob);
+    await fromToken.approve(treasury.address, balance, {from: alice});
+    await fromToken.transfer(treasury.address, balance, {from: alice});
 
+    const mockedExpectedReturn = ether('3');
+    const expectedReturnCalldata = (await IOneSplitAudit.at(oneSplitMock.address)).contract
+      .methods.getExpectedReturn(
+        fromToken.address,
+        rewardsToken.address,
+        balance,
+        parts,
+        ZERO
+      ).encodeABI();
+
+    const mockedOneSplitDistribution = [ZERO, new BN('100')];
+
+    await oneSplitMock.givenCalldataReturn(
+      expectedReturnCalldata,
+      web3.eth.abi.encodeParameters(
+        ["uint256", "uint256[]"],
+        [mockedExpectedReturn, mockedOneSplitDistribution]
+      )
+    );
+
+    const swapCalldata = (await IOneSplitAudit.at(oneSplitMock.address)).contract
+      .methods.swap(
+        fromToken.address,
+        rewardsToken.address,
+        balance,
+        mockedExpectedReturn,
+        mockedOneSplitDistribution,
+        ZERO
+      ).encodeABI();
+
+    await expectRevert(treasury.convert(fromToken.address, parts, {from: alice}), "!authorized");
+
+    await treasury.convert(fromToken.address, parts, {from: governance});
+    expect(await fromToken.allowance(treasury.address, oneSplitMock.address)).to.be.bignumber.equal(balance);
   });
 
-  it('should send tokens to governance contract (voters)', async () => {
-
+  it('should send tokens to governance contract (#toVoters)', async () => {
+    const balance = ether('100');
+    await rewardsToken.approve(treasury.address, balance, {from: alice});
+    await rewardsToken.transfer(treasury.address, balance, {from: alice});
+    await treasury.toVoters();
+    expect(await rewardsToken.balanceOf(governanceContract.address)).to.be.bignumber.equal(balance);
   });
 
+  it('should send tokens to governance address (#toGovernance)', async () => {
+    const balance = ether('100');
+    const balanceToSendToGovernance = ether('50');
+    await rewardsToken.approve(treasury.address, balance, {from: alice});
+    await rewardsToken.transfer(treasury.address, balance, {from: alice});
+    await treasury.toGovernance(rewardsToken.address, balanceToSendToGovernance);
+    expect(await rewardsToken.balanceOf(governance)).to.be.bignumber.equal(balanceToSendToGovernance);
+  });
 });

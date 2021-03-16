@@ -255,7 +255,6 @@ contract('Governance', (accounts) => {
       await actorStake(bob, bobSum, governanceContract, governanceToken);
       await actorStake(alice, aliceSum, governanceContract, governanceToken);
 
-
       await governanceContract.setPeriod(periodForVoting, {from: governance});
       var oldProposalCount = await governanceContract.proposalCount({from: governance});
       await governanceContract.propose(alice, proposalHash, {from: alice});
@@ -359,27 +358,38 @@ contract('Governance', (accounts) => {
     });
 
     it('should exit from voting process', async () => {
+
+      await governanceContract.setPeriod(periodForVoting, {from: governance});
+      await governanceContract.setMinimum(minumumForVoting, {from: governance});
+      await governanceContract.setBreaker(true);
+
+      const someRandomReward = ether('100');
+      await stakingRewardsToken.approve(governanceContract.address, someRandomReward, {from: governance});
+      await governanceContract.notifyRewardAmount(someRandomReward, {from: governance});
+
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
       const oldBalance = await governanceToken.balanceOf(alice, {from: alice});
       await actorStake(alice, aliceSum.div(new BN('2')), governanceContract, governanceToken);
       await time.increase(time.duration.days(1));
       await actorStake(alice, aliceSum.div(new BN('2')), governanceContract, governanceToken);
+      await time.increase(time.duration.days(1));
 
-      await governanceContract.setPeriod(periodForVoting, {from: governance});
+      await activeActor(bob, bobSum, governanceContract, governanceToken, governance);
+      await actorStake(bob, bobSum, governanceContract, governanceToken);
+
       var oldProposalCount = await governanceContract.proposalCount({from: governance});
       await governanceContract.propose(alice, proposalHash, {from: alice});
       await governanceContract.voteFor(oldProposalCount, {from: alice});
+      await governanceContract.voteAgainst(oldProposalCount, {from: bob});
+      await time.increase(time.duration.hours(9));
+      await governanceContract.tallyVotes(oldProposalCount);
 
-      const someRandomReward = ether('1');
-      await stakingRewardsToken.approve(governanceContract.address, someRandomReward, {from: governance});
-      await governanceContract.notifyRewardAmount(someRandomReward, {from: governance});
-      await time.increase(time.duration.days(9));
-
-      console.log((await time.latestBlock()).toString());
+      const rewardsForAlice = await governanceContract.earned(alice);
 
       await governanceContract.exit({from: alice});
       const newBalance = await governanceToken.balanceOf(alice, {from: alice});
-      expect(newBalance.sub(oldBalance)).to.be.bignumber.equal(ZERO);
+      expect(oldBalance.sub(newBalance)).to.be.bignumber.equal(ZERO);
+      expect(await stakingRewardsToken.balanceOf(alice)).to.be.bignumber.equal(rewardsForAlice);
     });
 
     it('should revoke the voter tokens', async () => {

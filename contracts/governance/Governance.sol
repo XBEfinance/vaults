@@ -111,7 +111,8 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @dev voter => reward to pay
     mapping(address => uint256) public rewards;
 
-    /// @notice Stops governance token ability to withdraw when involved in some voting process
+    /// @notice Allow users to claim rewards instantly regardless of any voting process
+    /// @dev Link (https://gov.yearn.finance/t/yip-47-release-fee-rewards/6013)
     bool public breaker = false;
 
     /// @notice Exists to generate ids for new proposals

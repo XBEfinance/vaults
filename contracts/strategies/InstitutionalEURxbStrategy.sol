@@ -29,7 +29,7 @@ contract InstitutionalEURxbStrategy is EURxbStrategy {
     }
 
     function _withdrawSome(uint256 _amount) internal override returns(uint) {
-
+        return _amount;
     }
 
 }

@@ -6,5 +6,5 @@ import "./EURxbVault.sol";
 /// @notice Vault for consumers of the system
 contract ConsumerEURxbVault is EURxbVault {
     /// @notice Constructor that creates a consumer vault
-    constructor() EURxbVault("Consumer", "c") public {}
+    constructor() EURxbVault("Consumer", "co") public {}
 }

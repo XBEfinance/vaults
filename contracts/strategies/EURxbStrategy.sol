@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/GSN/Context.sol";
 
 import "../interfaces/IStrategy.sol";
 import "../interfaces/IController.sol";
+import "../interfaces/IConverter.sol";
+import "../interfaces/vault/IVaultCore.sol";
 
 import "../governance/Governable.sol";
 
@@ -18,8 +20,8 @@ abstract contract EURxbStrategy is IStrategy, Governable, Initializable, Context
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
-    /// @notice EURxb instance address
-    address private _eurxb;
+    /// @notice EURxb instance address or wrapper of EURxb instance
+    address internal _eurxb;
 
     /// @notice Controller instance getter, used to simplify controller-related actions
     address public controller;
@@ -41,7 +43,7 @@ abstract contract EURxbStrategy is IStrategy, Governable, Initializable, Context
 
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
-    /// @param _eurxbAddress address of eurxb instance
+    /// @param _eurxbAddress address of eurxb instance or address of TokenWrapper(EURxb) instance
     /// @param _controllerAddress address of controller instance
     /// @param _vaultAddress address of vault related to this strategy (Link type 1:1)
     function configure(
@@ -53,7 +55,6 @@ abstract contract EURxbStrategy is IStrategy, Governable, Initializable, Context
         controller = _controllerAddress;
         vault = _vaultAddress;
     }
-
 
     /// @notice Usual setter with check if param is new
     /// @param _newVault New value
@@ -100,11 +101,16 @@ abstract contract EURxbStrategy is IStrategy, Governable, Initializable, Context
         }
         address _vault = IController(controller).vaults(_eurxb);
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
+
+        address vaultToken = IVaultCore(_vault).token();
+        if (vaultToken != _eurxb) {
+            address converter = IController(controller).converters(vaultToken, _eurxb);
+            require(converter != address(0), "!converter");
+            require(IERC20(vaultToken).transfer(converter, _amount), "!transferConverterToken");
+            _amount = IConverter(converter).convert(address(this));
+        }
         require(IERC20(_eurxb).transfer(_vault, _amount), "!transferStrategy");
     }
-
-    /// @notice This function withdraw from business process the difference between balance and requested sum
-    function _withdrawSome(uint256 _amount) internal virtual returns(uint);
 
     /// @dev Controller | Vault role - withdraw should always return to Vault
     function withdrawAll() override onlyControllerOrVault external returns(uint256) {
@@ -112,6 +118,8 @@ abstract contract EURxbStrategy is IStrategy, Governable, Initializable, Context
         withdraw(_balance);
         return _balance;
     }
+
+    function _withdrawSome(uint256 _amount) virtual internal returns(uint) {}
 
     /// @notice balance of this address in "want" tokens
     function balanceOf() override external view returns(uint256) {

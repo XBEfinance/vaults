@@ -14,21 +14,19 @@ contract InstitutionalEURxbStrategy is EURxbStrategy {
 
     /// @dev To be realised
     function skim() override external {
-        revert("Not implemented");
     }
 
     /// @dev To be realised
     function deposit() override external {
-        revert('Not implemented');
     }
 
     /// @dev To be realised
     function withdrawalFee() override external view returns(uint256) {
-        // return 0;
-        revert("Not implemented");
+        return 0;
     }
 
-    function _withdrawSome(uint256 _amount) internal override returns(uint) {
+    function _withdrawSome(uint256 _amount) override internal returns(uint) {
+        // withdraw from business
         return _amount;
     }
 

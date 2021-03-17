@@ -13,7 +13,7 @@ import "../governance/Governable.sol";
 
 /// @title EURxbStrategy
 /// @notice This is base contract for yield farming strategy with EURxb token
-contract EURxbStrategy is IStrategy, Governable, Initializable, Context {
+abstract contract EURxbStrategy is IStrategy, Governable, Initializable, Context {
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
@@ -82,11 +82,6 @@ contract EURxbStrategy is IStrategy, Governable, Initializable, Context {
         return _eurxb;
     }
 
-    /// @dev To be realised
-    function deposit() override external {
-        revert('Not implemented');
-    }
-
     /// @notice must exclude any tokens used in the yield
     /// @dev Controller role - withdraw should return to Controller
     function withdraw(address _token) override onlyController external {
@@ -109,14 +104,7 @@ contract EURxbStrategy is IStrategy, Governable, Initializable, Context {
     }
 
     /// @notice This function withdraw from business process the difference between balance and requested sum
-    function _withdrawSome(uint256 _amount) internal returns(uint) {
-        return _amount;
-    }
-
-    /// @dev To be realised
-    function skim() override external {
-        revert("Not implemented");
-    }
+    function _withdrawSome(uint256 _amount) internal virtual returns(uint);
 
     /// @dev Controller | Vault role - withdraw should always return to Vault
     function withdrawAll() override onlyControllerOrVault external returns(uint256) {
@@ -130,9 +118,4 @@ contract EURxbStrategy is IStrategy, Governable, Initializable, Context {
         return IERC20(_eurxb).balanceOf(address(this));
     }
 
-    /// @notice balance of this address in "want" tokens
-    function withdrawalFee() override external view returns(uint256) {
-        // return 0;
-        revert("Not implemented");
-    }
 }

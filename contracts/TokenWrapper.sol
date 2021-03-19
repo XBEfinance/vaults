@@ -26,9 +26,9 @@ contract TokenWrapper is ERC20PresetMinterPauser, Initializable {
       wrappedToken = _wrappedToken;
   }
 
-  function mint(address _to, uint256 _amount) public override {
-      IERC20(wrappedToken).safeTransferFrom(_to, address(this), _amount);
-      super.mint(_to, _amount);
+  function mint(uint256 _amount) public onlyMinter {
+      IERC20(wrappedToken).safeTransferFrom(_msgSender(), address(this), _amount);
+      super.mint(_msgSender(), _amount);
   }
 
   function burn(uint256 _amount) public override onlyMinter {

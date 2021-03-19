@@ -22,7 +22,7 @@ else
 fi
 
 # run tests
-truffle test $@
+truffle test --stacktrace $@
 
 # remove config file
 rm -f $CONFIG_NAME

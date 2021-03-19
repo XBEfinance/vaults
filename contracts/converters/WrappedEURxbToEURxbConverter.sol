@@ -23,9 +23,9 @@ contract WrappedEURxbToEURxbConverter is IConverter, Initializable, Context {
     }
 
     function convert(address _strategy) override external returns(uint256) {
-        TokenWrapper wrapped = TokenWrapper(IStrategy(_strategy).want());
-        uint256 wrappedEURxbBalance = wrapped.balanceOf(address(this));
-        wrapped.burn(wrappedEURxbBalance);
+        TokenWrapper wrapper = TokenWrapper(IStrategy(_strategy).want());
+        uint256 wrappedEURxbBalance = wrapper.balanceOf(address(this));
+        wrapper.burn(wrappedEURxbBalance);
         IERC20(eurxb).safeTransfer(_msgSender(), wrappedEURxbBalance);
         return wrappedEURxbBalance;
     }

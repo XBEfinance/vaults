@@ -1,7 +1,7 @@
 // // const WETH9 = artifacts.require('WETH9'); // Wrapper Eth
-const UniswapV2Factory = artifacts.require('UniswapV2Factory'); // Uniswap Factory
-const UniswapV2Pair = artifacts.require('UniswapV2Pair'); // Uniswap Pair
-const UniswapV2Router02 = artifacts.require('UniswapV2Router02'); // Uniswap Router
+// const UniswapV2Factory = artifacts.require('UniswapV2Factory'); // Uniswap Factory
+// const UniswapV2Pair = artifacts.require('UniswapV2Pair'); // Uniswap Pair
+// const UniswapV2Router02 = artifacts.require('UniswapV2Router02'); // Uniswap Router
 //
 // const BFactory = artifacts.require('BFactory'); // Balancer
 // const BPool = artifacts.require('BPool'); // Balancer

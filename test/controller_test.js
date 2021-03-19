@@ -21,6 +21,8 @@ const IStrategy = artifacts.require("IStrategy");
 const MockToken = artifacts.require('MockToken');
 const IConverter = artifacts.require('IConverter');
 const IOneSplitAudit = artifacts.require('IOneSplitAudit');
+const InstitutionalEURxbStrategy = artifacts.require('InstitutionalEURxbStrategy');
+const InstitutionalEURxbVault = artifacts.require('InstitutionalEURxbVault');
 
 const MockContract = artifacts.require("MockContract");
 
@@ -40,7 +42,9 @@ contract('Controller', (accounts) => {
   beforeEach(async () => {
     [mock, controller, strategy, vault, revenueToken] = await vaultInfrastructureRedeploy(
       governance,
-      strategist
+      strategist,
+      InstitutionalEURxbStrategy,
+      InstitutionalEURxbVault
     );
   });
 

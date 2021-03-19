@@ -24,6 +24,9 @@ const Registry = artifacts.require('Registry');
 const IVaultCore = artifacts.require('IVaultCore');
 const IVaultWrapped = artifacts.require('IVaultWrapped');
 
+const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
+const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
+
 const MockContract = artifacts.require("MockContract");
 
 contract('Registry', (accounts) => {
@@ -50,7 +53,9 @@ contract('Registry', (accounts) => {
   beforeEach(async () => {
     [mock, controller, strategy, vault, revenueToken] = await vaultInfrastructureRedeploy(
       governance,
-      strategist
+      strategist,
+      InstitutionalEURxbStrategy,
+      InstitutionalEURxbVault
     );
     registry = await Registry.new();
   });

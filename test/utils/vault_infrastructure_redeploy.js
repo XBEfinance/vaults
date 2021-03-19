@@ -4,7 +4,7 @@ const { ZERO_ADDRESS } = constants;
 const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
 const ConsumerEURxbVault = artifacts.require("ConsumerEURxbVault");
 
-const EURxbStrategy = artifacts.require("EURxbStrategy");
+const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
 const Controller = artifacts.require("Controller");
 const IERC20 = artifacts.require("ERC20");
 const MockContract = artifacts.require("MockContract");
@@ -61,18 +61,14 @@ const configureMainParts = async (
 const vaultInfrastructureRedeploy = async (
   governance,
   strategist,
-  useTokenProxy
+  strategyType,
+  vaultType
 ) => {
   const mock = await MockContract.new();
 
   const controller = await Controller.new();
-  const strategy = await EURxbStrategy.new();
-  var vault;
-  if (!useTokenProxy) {
-    vault = await InstitutionalEURxbVault.new();
-  } else {
-    vault = await ConsumerEURxbVault.new();
-  }
+  const strategy = await strategyType.new();
+  const vault = await vaultType.new();
   var revenueToken = await IERC20.at(mock.address);
 
   // TODO: it's a temporal address, change it when treasury contract is ready
@@ -88,12 +84,7 @@ const vaultInfrastructureRedeploy = async (
     strategist
   );
 
-  if (useTokenProxy) {
-    const cloneFactory = await CloneFactory.new();
-    return [ mock, controller, strategy, vault, revenueToken, cloneFactory ]
-  } else {
-    return [ mock, controller, strategy, vault, revenueToken ]
-  }
+  return [ mock, controller, strategy, vault, revenueToken ]
 };
 
 module.exports = { vaultInfrastructureRedeploy };

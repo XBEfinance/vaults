@@ -1,9 +1,9 @@
 /* eslint no-unused-vars: 0 */
 /* eslint eqeqeq: 0 */
 
-const { vaultTestSuite } = require('./eurxb_vault_test');
+const { strategyTestSuite } = require("./eurxb_strategy_test.js");
 const ConsumerEURxbStrategy = artifacts.require("ConsumerEURxbStrategy");
 const ConsumerEURxbVault = artifacts.require("ConsumerEURxbVault");
-contract('ConsumerEURxbVault',
-  vaultTestSuite(ConsumerEURxbStrategy, ConsumerEURxbVault)
+contract('ConsumerEURxbStrategy',
+    strategyTestSuite(ConsumerEURxbStrategy, ConsumerEURxbVault)
 );

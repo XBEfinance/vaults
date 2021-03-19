@@ -28,15 +28,22 @@ const mnemonic = fs.readFileSync('.secret').toString().trim();
 const rinkebyNetworkConfig = {
   provider: () => new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/v3/${process.env.INFURA_ID}`),
   network_id: 4, // Rinkeby's id
+  networkCheckTimeout: 10000000,
+  gasLimit: 5000000,
   from: process.env.DEPLOYER_ACCOUNT, // contracts owner address
   websockets: true,
+  gasPrice: 25000000000,
 };
 
-const ganacheNetworkConfig = {
-  host: "127.0.0.1",
-  port: 8545,
-  network_id: "*",
-  websockets: true
+const mainnetNetworkConfig = {
+  provider: () => new HDWalletProvider(mnemonic, `https://mainnet.infura.io/v3/${process.env.INFURA_ID}`),
+  network_id: 1,
+  networkCheckTimeout: 10000000,
+  gasLimit: 5000000,
+  from: process.env.DEPLOYER_ACCOUNT, // contracts owner address
+  websockets: true,
+  confirmations: 2,
+  gasPrice: 125000000000,
 };
 
 module.exports = {

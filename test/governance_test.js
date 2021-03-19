@@ -25,7 +25,7 @@ const MockToken = artifacts.require('MockToken');
 const ExecutorMock = artifacts.require('ExecutorMock');
 
 const governanceSetterTest = (
-    stardId,
+    startId,
     initialTotalSupply,
     governance,
     setterName,
@@ -40,7 +40,7 @@ const governanceSetterTest = (
 
     beforeEach(async () => {
       [this.governanceContract, _, _] = await deployAndConfigureGovernance(
-        stardId,
+        startId,
         initialTotalSupply,
         governance,
         governance,
@@ -74,7 +74,7 @@ contract('Governance', (accounts) => {
   const fool = accounts[4];
   const charlie = accounts[5];
 
-  const stardId = ZERO;
+  const startId = ZERO;
   const initialTotalSupply = ether('15000');
 
   var governanceContract;
@@ -105,7 +105,7 @@ contract('Governance', (accounts) => {
   const waitingDuration = time.duration.hours(7);
 
   governanceSetterTest(
-    stardId,
+    startId,
     initialTotalSupply,
     governance,
     'setBreaker',
@@ -116,7 +116,7 @@ contract('Governance', (accounts) => {
   );
 
   governanceSetterTest(
-    stardId,
+    startId,
     initialTotalSupply,
     governance,
     'setQuorum',
@@ -127,7 +127,7 @@ contract('Governance', (accounts) => {
   );
 
   governanceSetterTest(
-    stardId,
+    startId,
     initialTotalSupply,
     governance,
     'setMinimum',
@@ -138,7 +138,7 @@ contract('Governance', (accounts) => {
   );
 
   governanceSetterTest(
-    stardId,
+    startId,
     initialTotalSupply,
     governance,
     'setPeriod',
@@ -149,7 +149,7 @@ contract('Governance', (accounts) => {
   );
 
   governanceSetterTest(
-    stardId,
+    startId,
     initialTotalSupply,
     governance,
     'setLock',
@@ -162,7 +162,7 @@ contract('Governance', (accounts) => {
   describe('re-deploy each unit test', () => {
     beforeEach(async () => {
       [ governanceContract, governanceToken, stakingRewardsToken ] = await deployAndConfigureGovernance(
-        stardId,
+        startId,
         initialTotalSupply,
         governance,
         governance,
@@ -174,7 +174,7 @@ contract('Governance', (accounts) => {
     });
 
     it('should be configured', async () => {
-      expect(await governanceContract.proposalCount()).to.be.bignumber.equal(stardId);
+      expect(await governanceContract.proposalCount()).to.be.bignumber.equal(startId);
       expect(await governanceContract.governance()).to.be.equal(governance);
       expect(await governanceContract.rewardsToken()).to.be.equal(stakingRewardsToken.address);
       expect(await governanceContract.governanceToken()).to.be.equal(governanceToken.address);
@@ -667,7 +667,7 @@ contract('Governance', (accounts) => {
     var governanceToken = await GovernanceToken.new(0, {from: governance});
     var governanceContract = await Governance.new();
     await governanceContract.configure(
-      stardId,
+      startId,
       stakingRewardsToken.address,
       governance,
       governanceToken.address,
@@ -681,7 +681,7 @@ contract('Governance', (accounts) => {
     governanceToken = await GovernanceToken.new(initialTotalSupply, {from: governance});
     governanceContract = await Governance.new();
     await governanceContract.configure(
-      stardId,
+      startId,
       stakingRewardsToken.address,
       governance,
       governanceToken.address,
@@ -725,7 +725,7 @@ contract('Governance', (accounts) => {
     const governanceContract = await Governance.new();
     const mockedGovernanceToken = await GovernanceToken.at(mock.address);
     await governanceContract.configure(
-      stardId,
+      startId,
       stakingRewardsToken.address,
       governance,
       mockedGovernanceToken.address,

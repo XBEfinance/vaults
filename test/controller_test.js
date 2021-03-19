@@ -37,10 +37,11 @@ contract('Controller', (accounts) => {
   var controller;
   var strategy;
   var vault;
+  var treasury
   var mock;
 
   beforeEach(async () => {
-    [mock, controller, strategy, vault, revenueToken] = await vaultInfrastructureRedeploy(
+    [mock, controller, strategy, vault, revenueToken, treasury] = await vaultInfrastructureRedeploy(
       governance,
       strategist,
       InstitutionalEURxbStrategy,
@@ -50,7 +51,7 @@ contract('Controller', (accounts) => {
 
   it('should configure properly', async () => {
     expect(await controller.strategist()).to.be.equal(strategist);
-    expect(await controller.rewards()).to.be.equal(vault.address);
+    expect(await controller.rewards()).to.be.equal(treasury.address);
   });
 
   it('should evacuate tokens from controller', async () => {
@@ -60,6 +61,12 @@ contract('Controller', (accounts) => {
     const mockToken = await MockToken.new('Mock Token', 'MT', ether('123'), {from: miris});
     mockToken.approve(controller.address, amount, {from: miris});
     mockToken.transfer(controller.address, amount, {from: miris});
+
+    await expectRevert(controller.inCaseTokensGetStuck(
+      mockToken.address, toEvacuateByGovernance,
+      {from: miris}
+    ), "!governance|strategist");
+
     await controller.inCaseTokensGetStuck(
       mockToken.address, toEvacuateByGovernance,
       {from: governance}
@@ -77,6 +84,16 @@ contract('Controller', (accounts) => {
       "!want");
     const mockedBalance = ether('10');
     var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, ether('123'), miris);
+
+    await expectRevert(
+      controller.inCaseStrategyTokenGetStuck(
+        strategy.address,
+        mockToken.address,
+        {from: miris}
+      ),
+      "!governance|strategist"
+    );
+
     await controller.inCaseStrategyTokenGetStuck(strategy.address, mockToken.address);
     expect(await mockToken.balanceOf(controller.address)).to.be.bignumber.equal(mockedBalance);
 
@@ -148,8 +165,7 @@ contract('Controller', (accounts) => {
   });
 
   it('should get treasury address', async () => {
-    // it could be any contract address, I just picked up vault randomly
-    expect(await controller.rewards()).to.be.equal(vault.address);
+    expect(await controller.rewards()).to.be.equal(treasury.address);
   });
 
   it('should get vault by token', async () => {
@@ -246,55 +262,67 @@ contract('Controller', (accounts) => {
     await mock.givenCalldataReturnUint(converterCalldata, sumToEarnInRevenueToken);
 
     const transferCalldata = (await IERC20.at(mock.address)).contract
-      .methods.transfer(mock.address, sumToEarnInRevenueToken).encodeABI();
+      .methods.transfer(ZERO_ADDRESS, ZERO).encodeABI();
 
     await secondMock.givenMethodReturnBool(transferSecondMockCalldata, true);
 
-
-    await mock.givenCalldataReturnBool(transferCalldata, false);
+    await mock.givenMethodReturnBool(transferCalldata, false);
     await expectRevert(controller.earn(secondMock.address, sumToEarn, {from: miris}), '!transferStrategyWant');
+
+    await mock.givenMethodReturnBool(transferCalldata, true);
+
+    var receipt = await controller.earn(secondMock.address, sumToEarn, {from: miris});
+    await expectEvent(receipt, "Earn");
     ////
 
     ///
     const vaultTransferCalldata = revenueToken.contract.
       methods.transfer(vault.address, 0).encodeABI();
     await mock.givenMethodReturnBool(vaultTransferCalldata, true);
-    const transferMockCalldata = revenueToken.contract
+    var transferMockCalldata = revenueToken.contract
       .methods.transfer(mock.address, 0).encodeABI();
     await mock.givenMethodReturnBool(transferMockCalldata, false);
     await expectRevert(controller.earn(revenueToken.address, sumToEarnInRevenueToken), '!transferStrategyToken');
     ///
 
+    transferMockCalldata = revenueToken.contract
+      .methods.transfer(mock.address, 0).encodeABI();
+    await mock.givenMethodReturnBool(transferMockCalldata, true);
+    receipt = await controller.earn(revenueToken.address, sumToEarnInRevenueToken);
+    await expectEvent(receipt, "Earn", {
+      _token: revenueToken.address,
+      _amount: sumToEarnInRevenueToken
+    });
+
   });
 
-  it('should harvest tokens from the strategy', async () => {
+  const getMockTokenForStrategy = async () => {
+    const tokensForStrategy = ether('10');
+    return await getMockTokenPrepared(strategy.address, tokensForStrategy, ether('20'), miris);
+  };
 
-    const mockedBalance = ether('10');
-    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, ether('123'), miris);
+  it('should reject harvest if strategy want token is token passed into parameters', async () => {
+    const mockToken = await getMockTokenForStrategy();
 
     const wantCalldata = (await IStrategy.at(mock.address)).contract
       .methods.want().encodeABI();
     await mock.givenMethodReturnAddress(wantCalldata, mockToken.address);
     await expectRevert(controller.harvest(mock.address, mockToken.address), '!want');
+  });
 
-    await mock.reset();
+  it('should emit no events if withdraw from strategy does not return any tokens', async () => {
+    const mockToken = await getMockTokenForStrategy();
+    var receipt = await controller.harvest(mock.address, mockToken.address);
+    await expectEvent.notEmitted(receipt, "Transfer");
+  });
 
-    const tokensForStrategy = ether('2');
-
-    await mockToken.approve(strategy.address, tokensForStrategy, {from: miris});
-    await mockToken.transfer(strategy.address, tokensForStrategy, {from: miris});
-
-    await controller.setOneSplit(mock.address);
-
+  const prepareOneSplitCalls = async (swappedToWantAmount) => {
     const swapCalldata = (await IOneSplitAudit.at(mock.address)).contract
-      .methods.swap(mock.address, mock.address, 0, 0, [], 0).encodeABI();
+      .methods.swap(ZERO_ADDRESS, ZERO_ADDRESS, 0, 0, [], 0).encodeABI();
+    await mock.givenMethodReturnUint(swapCalldata, swappedToWantAmount);
 
     const expectedReturnCalldata = (await IOneSplitAudit.at(mock.address)).contract
-      .methods.getExpectedReturn(mock.address, mock.address, 0, 0, 0).encodeABI();
-
-    const swappedToWantAmount = ether('3');
-
-    await mock.givenMethodReturnUint(swapCalldata, swappedToWantAmount);
+      .methods.getExpectedReturn(ZERO_ADDRESS, ZERO_ADDRESS, 0, 0, 0).encodeABI();
     await mock.givenMethodReturn(
       expectedReturnCalldata,
       web3.eth.abi.encodeParameters(
@@ -302,20 +330,85 @@ contract('Controller', (accounts) => {
         [swappedToWantAmount, [ZERO, ZERO]]
       )
     );
+  };
 
-    const transferCalldata = revenueToken.contract
-      .methods.transfer(mock.address, 0).encodeABI();
+  const setBalanceOfWantToken = async (balanceOfWant) => {
+    const balanceOfCalldata = revenueToken.contract
+      .methods.balanceOf(ZERO_ADDRESS).encodeABI();
+    await mock.givenMethodReturnUint(balanceOfCalldata, balanceOfWant);
+  };
 
+  it('should not emit Harvest event when #harvest() if one split return less tokens', async () => {
+    const mockToken = await getMockTokenForStrategy();
+
+    await controller.setOneSplit(mock.address);
+
+    const swappedToWantAmount = ether('1');
+    const balanceOfWant = ether('1.5');
+
+    await prepareOneSplitCalls(swappedToWantAmount);
+    await setBalanceOfWantToken(balanceOfWant);
+
+    receipt = await controller.harvest(strategy.address, mockToken.address);
+    await expectEvent.notEmitted(receipt, "Harvest");
+  });
+
+  const setEarnTransferStatus = async (swappedToWantAmount, balanceOfWant, status) => {
     const split = await controller.split();
     const max = await controller.max();
 
-    const earnTransferCalldata = revenueToken.contract
-      .methods.transfer(strategy.address, swappedToWantAmount.mul(split).div(max)).encodeABI();
+    const amount = swappedToWantAmount.sub(balanceOfWant);
+    const rewardToSendToTreasury = amount.mul(split).div(max);
 
-    await mock.givenMethodReturnBool(transferCalldata, false);
-    await mock.givenCalldataReturnBool(earnTransferCalldata, true);
+    const earnTransferCalldata = revenueToken.contract
+      .methods.transfer(strategy.address, amount.sub(rewardToSendToTreasury)).encodeABI();
+    await mock.givenCalldataReturnBool(earnTransferCalldata, status);
+  };
+
+  const setWantTokenTransferStatus = async (status) => {
+    const transferCalldata = revenueToken.contract
+      .methods.transfer(ZERO_ADDRESS, ZERO).encodeABI();
+    await mock.givenMethodReturnBool(transferCalldata, status);
+  };
+
+  it('should reject when #harvest() when transfer to treasury failed', async () => {
+    const mockToken = await getMockTokenForStrategy();
+    await controller.setOneSplit(mock.address);
+
+
+    const swappedToWantAmount = ether('1');
+    const balanceOfWant = ether('0.1');
+
+    await prepareOneSplitCalls(swappedToWantAmount);
+    await setBalanceOfWantToken(balanceOfWant);
+    await setEarnTransferStatus(swappedToWantAmount, balanceOfWant, true);
+    await setWantTokenTransferStatus(false);
 
     await expectRevert(controller.harvest(strategy.address, mockToken.address), "!transferTreasury");
+  });
+
+  it('should revert if #harvest() called not by governance or strategy contract', async () => {
+    await expectRevert(controller.harvest(ZERO_ADDRESS, ZERO_ADDRESS, {from: miris}), "!governance|strategist");
+  });
+
+  it('should harvest tokens from the strategy', async () => {
+
+    const mockToken = await getMockTokenForStrategy();
+    await controller.setOneSplit(mock.address);
+
+    const swappedToWantAmount = ether('1');
+    const balanceOfWant = ether('0.1');
+
+    await prepareOneSplitCalls(swappedToWantAmount);
+    await setBalanceOfWantToken(balanceOfWant);
+    await setEarnTransferStatus(swappedToWantAmount, balanceOfWant, true);
+    await setWantTokenTransferStatus(true);
+
+    receipt = await controller.harvest(strategy.address, mockToken.address);
+    await expectEvent(receipt, "Harvest", {
+      _strategy: strategy.address,
+      _token: mockToken.address
+    });
 
   });
 

@@ -24,8 +24,11 @@ const ConsumerEURxbVault = artifacts.require("ConsumerEURxbVault");
 const EURxbStrategy = artifacts.require("EURxbStrategy");
 const Controller = artifacts.require("Controller");
 const Registry = artifacts.require("Registry");
-const CloneFactory = artifacts.require("CloneFactory");
-const Clones = artifacts.require("Clones");
+
+const EURxbToWrappedEURxbConverter = artifacts.require("EURxbToWrappedEURxbConverter");
+const WrappedEURxbToEURxbConverter = artifacts.require("WrappedEURxbToEURxbConverter");
+
+const TokenWrapper = artifacts.require("TokenWrapper");
 //
 // const Router = artifacts.require('Router');
 // const StakingManager = artifacts.require('StakingManager');

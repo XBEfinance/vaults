@@ -7,4 +7,3 @@ import "./vaults/InstitutionalEURxbVault.sol";
 import "./strategies/EURxbStrategy.sol";
 import "./Controller.sol";
 import "./Registry.sol";
-import "./CloneFactory.sol";

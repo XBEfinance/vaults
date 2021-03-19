@@ -25,6 +25,9 @@ contract Controller is IController, Governable, Initializable, Context {
     /// @param _token Token address to be withdrawn
     event WithdrawToVaultAll(address _token);
 
+    event Earn(address _token, uint256 _amount);
+    event Harvest(address _strategy, address _token);
+
     /// @dev token => vault
     mapping(address => address) private _vaults;
 
@@ -219,6 +222,7 @@ contract Controller is IController, Governable, Initializable, Context {
             require(IERC20(_token).transfer(_strategy, _amount), "!transferStrategyToken");
         }
         IStrategy(_strategy).deposit();
+        emit Earn(_token, _amount);
     }
 
     /// @notice The method withdraws full balance of the strategy, cuts the profit if any exist,
@@ -260,6 +264,7 @@ contract Controller is IController, Governable, Initializable, Context {
                 uint256 _reward = _amount.mul(split).div(max);
                 earn(_want, _amount.sub(_reward));
                 require(IERC20(_want).transfer(_treasury, _reward), '!transferTreasury');
+                emit Harvest(_strategy, _token);
             }
         }
     }

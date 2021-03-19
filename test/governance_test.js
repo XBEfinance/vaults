@@ -370,6 +370,16 @@ contract('Governance', (accounts) => {
       await governanceContract.setBreaker(true);
 
       const someRandomReward = ether('100');
+
+      const currentTime = await time.latest();
+      const actualRewardsDuration = await governanceContract.DURATION();
+      const oldRewardRate = await governanceContract.rewardRate();
+      const periodFinish = await governanceContract.periodFinish();
+
+      const remaining = periodFinish.sub(currentTime);
+      const leftover = remaining.mul(oldRewardRate);
+      const expectedRate = someRandomReward.add(leftover).div(actualRewardsDuration);
+
       await stakingRewardsToken.approve(governanceContract.address, someRandomReward, {from: governance});
       await governanceContract.notifyRewardAmount(someRandomReward, {from: governance});
 
@@ -390,41 +400,16 @@ contract('Governance', (accounts) => {
       await time.increase(time.duration.hours(9));
       await governanceContract.tallyVotes(oldProposalCount);
 
-      // const rewardsForAlice = await governanceContract.earned(alice);
-
-      const currentTime = await time.latest();
-      const actualRewardsDuration = await governanceContract.DURATION();
-      const oldRewardRate = await governanceContract.rewardRate();
-      const periodFinish = await governanceContract.periodFinish();
-
-      const remaining = periodFinish.sub(currentTime);
-      const leftover = remaining.mul(oldRewardRate);
-      const expectedRate = someRandomReward.add(leftover).div(actualRewardsDuration);
 
       await governanceContract.exit({from: alice});
       const actualRate = await governanceContract.rewardRate();
-      // await provideReward(rewardPart);
-      //
-      // // Formula debugging logs
-      // // console.log('---');
-      // // console.log('periodFinish', periodFinish.toString());
-      // // console.log('currentTime', currentTime.toString());
-      // // console.log('remaining', remaining.toString());
-      // // console.log('oldRewardRate', oldRewardRate.toString());
-      // // console.log('leftover', leftover.toString());
-      // // console.log('reward', rewardPart.toString());
-      // // console.log('rewardsDuration', actualRewardsDuration.toString());
-      // // console.log('rewardRate', expectedRate.toString());
-      // // console.log('---');
-      //
-      // // its an error that created by difference in block.timestamp and currentTime in 1 second
+
+      // its an error that created by difference in block.timestamp and currentTime in 1 second
       const oneSecondError = new BN('837245');
       expect(actualRate.sub(expectedRate).abs()).to.be.bignumber.at.most(oneSecondError)
 
       const newBalance = await governanceToken.balanceOf(alice, {from: alice});
       expect(oldBalance.sub(newBalance)).to.be.bignumber.equal(ZERO);
-
-      // expect(await stakingRewardsToken.balanceOf(alice)).to.be.bignumber.equal(rewardsForAlice);
     });
 
     it('should revoke the voter tokens', async () => {

@@ -3,21 +3,23 @@ const { ZERO_ADDRESS } = constants;
 
 const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
 const ConsumerEURxbVault = artifacts.require("ConsumerEURxbVault");
+const Treasury = artifacts.require("Treasury");
 
 const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
 const Controller = artifacts.require("Controller");
 const IERC20 = artifacts.require("ERC20");
 const MockContract = artifacts.require("MockContract");
-const CloneFactory = artifacts.require("CloneFactory");
 
 const configureMainParts = async (
   strategy,
   controller,
   revenueToken,
   vault,
-  treasuryAddress,
+  treasury,
   governance,
-  strategist
+  strategist,
+  oneSplitAddress,
+  governanceContract
 ) => {
   await strategy.configure(
     revenueToken.address,
@@ -27,7 +29,7 @@ const configureMainParts = async (
   );
 
   await controller.configure(
-    treasuryAddress,
+    treasury.address,
     strategist,
     {from: governance}
   );
@@ -56,6 +58,14 @@ const configureMainParts = async (
     strategy.address,
     {from: governance}
   );
+
+  await treasury.configure(
+    governance,
+    oneSplitAddress,
+    governanceContract.address,
+    revenueToken.address,
+    {from: governance}
+  );
 }
 
 const vaultInfrastructureRedeploy = async (
@@ -69,22 +79,24 @@ const vaultInfrastructureRedeploy = async (
   const controller = await Controller.new();
   const strategy = await strategyType.new();
   const vault = await vaultType.new();
+  const treasury = await Treasury.new();
   var revenueToken = await IERC20.at(mock.address);
 
-  // TODO: it's a temporal address, change it when treasury contract is ready
-  var treasuryAddress = vault.address;
+  var treasuryAddress = treasury.address;
 
   await configureMainParts(
     strategy,
     controller,
     revenueToken,
     vault,
-    treasuryAddress,
+    treasury,
     governance,
-    strategist
+    strategist,
+    mock.address,
+    mock
   );
 
-  return [ mock, controller, strategy, vault, revenueToken ]
+  return [ mock, controller, strategy, vault, revenueToken, treasury ]
 };
 
 module.exports = { vaultInfrastructureRedeploy };

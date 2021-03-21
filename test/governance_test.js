@@ -16,13 +16,14 @@ const { activeActor, actorStake, deployAndConfigureGovernance } = require(
   './utils/governance_redeploy'
 );
 
-const { ZERO, CONVERSION_WEI_CONSTANT } = require('./utils/common');
+const { ZERO, ONE, CONVERSION_WEI_CONSTANT, takeSnapshot, revertToSnapShot } = require('./utils/common');
 
 const Governance = artifacts.require('Governance');
 const GovernanceToken = artifacts.require('XBG');
 const MockContract = artifacts.require("MockContract");
 const MockToken = artifacts.require('MockToken');
 const ExecutorMock = artifacts.require('ExecutorMock');
+const IERC20 = artifacts.require('IERC20');
 
 const governanceSetterTest = (
     stardId,
@@ -294,22 +295,32 @@ contract('Governance', (accounts) => {
         await activeActor(bob, bobSum, governanceContract, governanceToken, governance);
         await actorStake(bob, bobSum, governanceContract, governanceToken);
 
-
         await governanceContract.setPeriod(periodForVoting, {from: governance});
-        const oldProposalCount = await governanceContract.proposalCount({from: governance});
+        var oldProposalCount = await governanceContract.proposalCount({from: governance});
         await governanceContract.propose(executorMock.address, proposalHash, {from: alice});
         await governanceContract.voteFor(oldProposalCount, {from: alice});
         await governanceContract.voteAgainst(oldProposalCount, {from: bob});
         await time.increase(time.duration.hours(9));
-        const receipt = await governanceContract.execute(oldProposalCount, {from: alice});
+        var receipt = await governanceContract.execute(oldProposalCount, {from: alice});
+
         const aliceProcentsFor = new BN('4975');
         const bobProcentsAgainst = new BN('5024');
+
         expectEvent(receipt, 'ProposalFinished', {
           _id: oldProposalCount,
           _for: aliceProcentsFor, // for value from getStats() - 40%
           _against: bobProcentsAgainst, // against value from getStats() - 60%
           _quorumReached: true
         });
+
+        var oldProposalCount = await governanceContract.proposalCount({from: governance});
+        await governanceContract.propose(executorMock.address, proposalHash, {from: alice});
+        await governanceContract.voteFor(oldProposalCount, {from: alice});
+        await governanceContract.voteAgainst(oldProposalCount, {from: bob});
+        await time.increase(time.duration.hours(9));
+        await governanceContract.tallyVotes(oldProposalCount, {from: governance});
+        receipt = await governanceContract.execute(oldProposalCount, {from: alice});
+        await expectEvent.notEmitted(receipt, "ProposalFinished");
       });
 
       it('should not execute an executor function if quorum not reached', async () => {
@@ -433,14 +444,13 @@ contract('Governance', (accounts) => {
     });
 
     it('should vote for', async () => {
-
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
       await actorStake(alice, aliceSum, governanceContract, governanceToken);
 
       await governanceContract.setPeriod(periodForVoting, {from: governance});
       var oldProposalCount = await governanceContract.proposalCount({from: governance});
       await governanceContract.propose(alice, proposalHash, {from: alice});
-      const receipt = await governanceContract.voteFor(oldProposalCount, {from: alice});
+      var receipt = await governanceContract.voteFor(oldProposalCount, {from: alice});
       expectEvent(receipt, 'Vote', {
         _id: oldProposalCount,
         _voter: alice,
@@ -466,6 +476,42 @@ contract('Governance', (accounts) => {
       });
     });
 
+    it('should vote for even if firstly voted against', async () => {
+      await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+      await actorStake(alice, aliceSum, governanceContract, governanceToken);
+
+      await governanceContract.setPeriod(periodForVoting, {from: governance});
+      var oldProposalCount = await governanceContract.proposalCount({from: governance});
+      await governanceContract.propose(alice, proposalHash, {from: alice});
+      await governanceContract.voteAgainst(oldProposalCount, {from: alice});
+      var receipt = await governanceContract.voteFor(oldProposalCount, {from: alice});
+      expectEvent(receipt, 'Vote', {
+        _id: oldProposalCount,
+        _voter: alice,
+        _vote: true,
+        _weight: new BN('102000000000000000000')
+      });
+    });
+
+    it('should vote against even if firstly voted for', async () => {
+
+      await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+      await actorStake(alice, aliceSum, governanceContract, governanceToken);
+
+      await governanceContract.setPeriod(periodForVoting, {from: governance});
+      var oldProposalCount = await governanceContract.proposalCount({from: governance});
+      await governanceContract.propose(alice, proposalHash, {from: alice});
+      await governanceContract.voteFor(oldProposalCount, {from: alice});
+      const receipt = await governanceContract.voteAgainst(oldProposalCount, {from: alice});
+      expectEvent(receipt, 'Vote', {
+        _id: oldProposalCount,
+        _voter: alice,
+        _vote: false,
+        _weight: new BN('102000000000000000000')
+      });
+    });
+
+
     it('should not vote against when time has passed', async () => {
 
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
@@ -474,11 +520,10 @@ contract('Governance', (accounts) => {
       await governanceContract.setPeriod(periodForVoting, {from: governance});
       var oldProposalCount = await governanceContract.proposalCount({from: governance});
       await governanceContract.propose(alice, proposalHash, {from: alice});
-      await time.increase(time.duration.days(1));
-      await time.advanceBlock();
-      await time.advanceBlock();
-      await time.advanceBlock();
-      await time.advanceBlock();
+
+      const latestBlockNumber = await time.latestBlock();
+      await time.advanceBlockTo(latestBlockNumber.add(periodForVoting.add(ONE)));
+
       await expectRevert(governanceContract.voteAgainst(oldProposalCount, {from: alice}), '>end');
     });
 
@@ -490,13 +535,29 @@ contract('Governance', (accounts) => {
       await governanceContract.setPeriod(periodForVoting, {from: governance});
       var oldProposalCount = await governanceContract.proposalCount({from: governance});
       await governanceContract.propose(alice, proposalHash, {from: alice});
-      await time.increase(time.duration.days(1));
-      await time.advanceBlock();
-      await time.advanceBlock();
-      await time.advanceBlock();
-      await time.advanceBlock();
+
+      const latestBlockNumber = await time.latestBlock();
+      await time.advanceBlockTo(latestBlockNumber.add(periodForVoting.add(ONE)));
+
       await expectRevert(governanceContract.voteFor(oldProposalCount, {from: alice}), '>end');
     });
+
+    // it('should not vote for when block number is altered to past value relative to proposal', async () => {
+    //   const pastSnapshotId = (await takeSnapshot())['result'];
+    //
+    //   await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+    //   await actorStake(alice, aliceSum, governanceContract, governanceToken);
+    //
+    //   await governanceContract.setPeriod(periodForVoting, {from: governance});
+    //
+    //   var oldProposalCount = await governanceContract.proposalCount({from: governance});
+    //
+    //   await governanceContract.propose(alice, proposalHash, {from: alice});
+    //
+    //   await revertToSnapShot(pastSnapshotId);
+    //
+    //   await expectRevert(governanceContract.voteFor(oldProposalCount, {from: alice}), '<start');
+    // });
 
     it('should get stats of the votes', async () => {
 
@@ -504,7 +565,6 @@ contract('Governance', (accounts) => {
       await actorStake(alice, aliceSum, governanceContract, governanceToken);
       await activeActor(bob, bobSum, governanceContract, governanceToken, governance);
       await actorStake(bob, bobSum, governanceContract, governanceToken);
-
 
       var oldProposalCount = await governanceContract.proposalCount({from: governance});
       await governanceContract.propose(alice, proposalHash, {from: alice});
@@ -554,22 +614,61 @@ contract('Governance', (accounts) => {
       expect(await governanceContract.totalVotes({from: governance})).to.be.bignumber.equal(oldTotalVotes.add(bobSum));
     });
 
-    it('should withdraw governance tokens', async () => {
+    it('should withdraw governance tokens when breaker is true', async () => {
 
       await activeActor(bob, bobSum, governanceContract, governanceToken, governance);
 
       await governanceContract.setBreaker(true, {from: governance});
       await governanceToken.approve(governanceContract.address, bobSum, {from: bob});
-      const oldBalance = await governanceToken.balanceOf(bob, {from: bob});
       await governanceContract.stake(bobSum, {from: bob});
       const oldTotalVotes = await governanceContract.totalVotes({from: governance});
       const receipt = await governanceContract.withdraw(bobSum, {from: bob});
-      // event Withdrawn(address indexed _user, uint256 _amount);
-      expectEvent(receipt, 'Withdrawn', {
+      await expectEvent(receipt, 'Withdrawn', {
         _user: bob,
         _amount: bobSum
       });
       expect(await governanceContract.totalVotes({from: governance})).to.be.bignumber.equal(oldTotalVotes.sub(bobSum));
+    });
+
+    it('should reject withdraw if tokens are locked in proposal vote', async () => {
+      await activeActor(bob, bobSum, governanceContract, governanceToken, governance);
+
+      await governanceToken.approve(governanceContract.address, bobSum, {from: bob});
+      await governanceContract.stake(bobSum, {from: bob});
+      const oldTotalVotes = await governanceContract.totalVotes({from: governance});
+
+      const oldProposalCount = await governanceContract.proposalCount({from: governance});
+      await governanceContract.propose(bob, proposalHash, {from: bob});
+      await governanceContract.voteFor(oldProposalCount, {from: bob});
+
+      await expectRevert(governanceContract.withdraw(bobSum, {from: bob}), "!locked");
+    });
+
+    it('should withdraw governance tokens when breaker is false', async () => {
+      await activeActor(bob, bobSum, governanceContract, governanceToken, governance);
+
+      await governanceToken.approve(governanceContract.address, bobSum, {from: bob});
+      await governanceContract.stake(bobSum, {from: bob});
+      const oldTotalVotes = await governanceContract.totalVotes({from: governance});
+      const receipt = await governanceContract.withdraw(bobSum, {from: bob});
+      await expectEvent(receipt, 'Withdrawn', {
+        _user: bob,
+        _amount: bobSum
+      });
+      expect(await governanceContract.totalVotes({from: governance})).to.be.bignumber.equal(oldTotalVotes.sub(bobSum));
+    });
+
+    it('should withdraw governance tokens if sender is not a voter', async () => {
+      await governanceToken.approve(bob, bobSum, {from: governance});
+      await governanceToken.transfer(bob, bobSum, {from: governance});
+      await governanceToken.approve(governanceContract.address, bobSum, {from: bob});
+      await governanceContract.stake(bobSum, {from: bob});
+      const oldTotalVotes = await governanceContract.totalVotes({from: governance});
+      const receipt = await governanceContract.withdraw(bobSum, {from: bob});
+      await expectEvent(receipt, 'Withdrawn', {
+        _user: bob,
+        _amount: bobSum
+      });
     });
 
     it('should not withdraw governance tokens if zero provided', async () => {
@@ -592,6 +691,24 @@ contract('Governance', (accounts) => {
 
     it('should not transfer reward amounts to caller if locked', async () => {
         await expectRevert(governanceContract.getReward({from: bob}), '!voted');
+    });
+
+    it('should not transfer reward if caller does not earned it', async () => {
+      const someRandomReward = ether('1');
+      await stakingRewardsToken.approve(governanceContract.address, someRandomReward, {from: governance});
+      await governanceContract.notifyRewardAmount(someRandomReward, {from: governance});
+      await time.increase(time.duration.days(9));
+
+      await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
+      await actorStake(alice, aliceSum, governanceContract, governanceToken);
+
+      await governanceContract.setPeriod(periodForVoting, {from: governance});
+      var oldProposalCount = await governanceContract.proposalCount({from: governance});
+      await governanceContract.propose(alice, proposalHash, {from: alice});
+      await governanceContract.voteAgainst(oldProposalCount, {from: alice});
+
+      const receipt = await governanceContract.getReward({from: alice});
+      await expectEvent.notEmitted(receipt, "RewardPaid");
     });
 
     it('should transfer reward amounts to caller', async () => {

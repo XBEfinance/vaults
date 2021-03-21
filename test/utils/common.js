@@ -32,6 +32,33 @@ async function currentTimestamp() {
   return Math.trunc(timestamp / 1000);
 }
 
+const revertToSnapShot = (id) => {
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send({
+      jsonrpc: '2.0',
+      method: 'evm_revert',
+      params: [id],
+      id: new Date().getTime()
+    }, (err, result) => {
+      if (err) { return reject(err); }
+      return resolve(result);
+    });
+  });
+};
+
+const takeSnapshot = () => {
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send({
+      jsonrpc: '2.0',
+      method: 'evm_snapshot',
+      id: new Date().getTime()
+    }, (err, snapshotId) => {
+      if (err) { return reject(err); }
+      return resolve(snapshotId);
+    });
+  });
+};
+
 /* eslint-disable */
 const compactView = value_BN => web3.utils.fromWei(value_BN.toString(), 'ether');
 const Ether = value_str => new BN(web3.utils.toWei(value_str, 'ether'));
@@ -83,5 +110,7 @@ module.exports = {
   CONVERSION_WEI_CONSTANT: ether('1'),
   getMockTokenPrepared,
   processEventArgs,
-  checkSetter
+  checkSetter,
+  revertToSnapShot,
+  takeSnapshot
 };

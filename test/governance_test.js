@@ -542,23 +542,6 @@ contract('Governance', (accounts) => {
       await expectRevert(governanceContract.voteFor(oldProposalCount, {from: alice}), '>end');
     });
 
-    // it('should not vote for when block number is altered to past value relative to proposal', async () => {
-    //   const pastSnapshotId = (await takeSnapshot())['result'];
-    //
-    //   await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);
-    //   await actorStake(alice, aliceSum, governanceContract, governanceToken);
-    //
-    //   await governanceContract.setPeriod(periodForVoting, {from: governance});
-    //
-    //   var oldProposalCount = await governanceContract.proposalCount({from: governance});
-    //
-    //   await governanceContract.propose(alice, proposalHash, {from: alice});
-    //
-    //   await revertToSnapShot(pastSnapshotId);
-    //
-    //   await expectRevert(governanceContract.voteFor(oldProposalCount, {from: alice}), '<start');
-    // });
-
     it('should get stats of the votes', async () => {
 
       await activeActor(alice, aliceSum, governanceContract, governanceToken, governance);

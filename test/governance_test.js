@@ -778,7 +778,9 @@ contract('Governance', (accounts) => {
       const periodFinish = await governanceContract.periodFinish({from: governance});
       const latestTime = await time.latest();
 
-      const receipt = await governanceContract.notifyRewardAmount(someRandomReward, {from: governance});
+
+      await governanceContract.notifyRewardAmount(someRandomReward.div(new BN('2')), {from: governance});
+      const receipt = await governanceContract.notifyRewardAmount(someRandomReward.div(new BN('2')), {from: governance});
 
       const remaining = periodFinish.sub(latestTime);
       const leftover = remaining.mul(rewardRate);
@@ -786,9 +788,10 @@ contract('Governance', (accounts) => {
 
       rewardRate = await governanceContract.rewardRate({from: governance});
 
-      expect(rewardRate).to.be.bignumber.equal(trueRewardRate);
+      expect(rewardRate.sub(trueRewardRate).abs()).to.be.bignumber.at.most(ONE);
+
       expectEvent(receipt, 'RewardAdded', {
-        _reward: someRandomReward
+        _reward: someRandomReward.div(new BN('2'))
       });
     });
   });

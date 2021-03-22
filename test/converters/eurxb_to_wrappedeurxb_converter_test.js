@@ -57,7 +57,7 @@ contract('EURxbToWrappedEURxbConverter', (accounts) => {
     await mock.givenMethodReturnAddress(wantCalldata, wrapper.address);
 
     const oldBalance = await wrapper.balanceOf(alice);
-    await converter.convert(mock.address);
+    await converter.convert(mock.address, {from: alice});
     const newBalance = await wrapper.balanceOf(alice);
 
     expect(oldBalance.sub(newBalance).abs()).to.be.bignumber.equal(tokensToWrap);

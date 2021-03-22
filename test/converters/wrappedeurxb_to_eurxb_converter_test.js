@@ -49,7 +49,9 @@ contract('WrappedEURxbToEURxbConverter', (accounts) => {
   it('should convert wrapped eurxb to eurxb', async () => {
     const tokensToUnwrap = ether('5');
     await tokenToWrap.approve(wrapper.address, tokensToUnwrap, {from: alice});
-    await wrapper.mint(alice, tokensToUnwrap, {from: alice});
+
+    await wrapper.methods["mint(uint256)"](tokensToUnwrap, {from: alice});
+
     await wrapper.approve(converter.address, tokensToUnwrap, {from: alice});
     await wrapper.transfer(converter.address, tokensToUnwrap, {from: alice});
 
@@ -58,7 +60,7 @@ contract('WrappedEURxbToEURxbConverter', (accounts) => {
     await mock.givenMethodReturnAddress(wantCalldata, wrapper.address);
 
     const oldBalance = await tokenToWrap.balanceOf(alice);
-    await converter.convert(mock.address);
+    await converter.convert(mock.address, {from: alice});
     const newBalance = await tokenToWrap.balanceOf(alice);
 
     expect(oldBalance.sub(newBalance).abs()).to.be.bignumber.equal(tokensToUnwrap);

@@ -4,7 +4,6 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
-import "@openzeppelin/contracts/GSN/Context.sol";
 
 import "../interfaces/IConverter.sol";
 import "../interfaces/IStrategy.sol";
@@ -12,7 +11,7 @@ import "../interfaces/IStrategy.sol";
 import "../TokenWrapper.sol";
 
 
-contract WrappedEURxbToEURxbConverter is IConverter, Initializable, Context {
+contract WrappedEURxbToEURxbConverter is IConverter, Initializable {
 
     using SafeERC20 for IERC20;
 

@@ -130,7 +130,7 @@ contract('Controller', (accounts) => {
     await mock.givenMethodReturnBool(transferCalldata, false);
 
     await expectRevert(controller.withdraw(revenueToken.address, toWithdraw),
-      "!transferStrategy");
+      "!transferVault");
   });
 
   it('should set one split parts', async () => {

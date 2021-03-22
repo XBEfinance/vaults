@@ -20,6 +20,8 @@ abstract contract EURxbStrategy is IStrategy, Governable, Initializable, Context
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
+    event Withdrawn(address indexed _token, uint256 indexed _amount, address indexed _to);
+
     /// @notice EURxb instance address or wrapper of EURxb instance
     address internal _eurxb;
 
@@ -89,6 +91,7 @@ abstract contract EURxbStrategy is IStrategy, Governable, Initializable, Context
         require(address(_token) != address(_eurxb), "!want");
         uint256 balance = IERC20(_token).balanceOf(address(this));
         require(IERC20(_token).transfer(controller, balance), "!transfer");
+        emit Withdrawn(_token, balance, controller);
     }
 
     /// @notice Withdraw partial funds, normally used with a vault withdrawal
@@ -109,7 +112,8 @@ abstract contract EURxbStrategy is IStrategy, Governable, Initializable, Context
             require(IERC20(vaultToken).transfer(converter, _amount), "!transferConverterToken");
             _amount = IConverter(converter).convert(address(this));
         }
-        require(IERC20(_eurxb).transfer(_vault, _amount), "!transferStrategy");
+        require(IERC20(_eurxb).transfer(_vault, _amount), "!transferVault");
+        emit Withdrawn(_eurxb, _amount, _vault);
     }
 
     /// @dev Controller | Vault role - withdraw should always return to Vault
@@ -119,7 +123,7 @@ abstract contract EURxbStrategy is IStrategy, Governable, Initializable, Context
         return _balance;
     }
 
-    function _withdrawSome(uint256 _amount) virtual internal returns(uint) {}
+    function _withdrawSome(uint256 _amount) virtual internal returns(uint);
 
     /// @notice balance of this address in "want" tokens
     function balanceOf() override external view returns(uint256) {

@@ -174,10 +174,22 @@ contract Registry is Governable, Initializable {
         return _vaults.at(index);
     }
 
+    /// @notice Obtain controller by it's index in EnumerableSet
+    /// @return Requested controller address
+    function getController(uint256 index) external view returns(address) {
+        return _controllers.at(index);
+    }
+
     /// @notice Calculates and returns current size of the vaults address set
     /// @return Vaults set size
     function getVaultsLength() external view returns(uint256) {
         return _vaults.length();
+    }
+
+    /// @notice Calculates and returns current size of the controllers address set
+    /// @return Controllers set size
+    function getControllersLength() external view returns(uint256) {
+        return _controllers.length();
     }
 
     /// @notice Used to return all addresses in order to iterate over them

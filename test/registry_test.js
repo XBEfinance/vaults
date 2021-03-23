@@ -107,46 +107,88 @@ contract('Registry', (accounts) => {
     await expectRevert(registry.addVault(secondMock.address), "!strategyTokenMatch");
   });
 
+  const setupVaultMock = async (addImmidieately, defaultControllerMock=null) => {
+    const vaultMock = await MockContract.new();
+    const strategyMock = await MockContract.new();
+    const controllerMock = defaultControllerMock ? defaultControllerMock : await MockContract.new();
+    const mockToken = await MockContract.new();
+
+    const getControllerCalldata = (await IVaultCore.at(vaultMock.address)).contract
+      .methods.controller().encodeABI();
+    await vaultMock.givenCalldataReturnAddress(getControllerCalldata, controllerMock.address);
+
+    const getTokenCalldata = (await IVaultCore.at(vaultMock.address)).contract
+      .methods.token().encodeABI();
+    await vaultMock.givenCalldataReturnAddress(getTokenCalldata, mockToken.address);
+
+    const getVaultsCalldata = (await IController.at(controllerMock.address)).contract
+      .methods.vaults(mockToken.address).encodeABI();
+    await controllerMock.givenCalldataReturnAddress(getVaultsCalldata, vaultMock.address);
+
+    const getStrategiesCalldata = (await IController.at(controllerMock.address)).contract
+      .methods.strategies(mockToken.address).encodeABI();
+    await controllerMock.givenCalldataReturnAddress(getStrategiesCalldata, strategyMock.address);
+
+    const wantCalldata = (await IStrategy.at(strategyMock.address)).contract
+      .methods.want().encodeABI();
+    await strategyMock.givenCalldataReturnAddress(wantCalldata, mockToken.address);
+
+    if (addImmidieately) {
+      await registry.addVault(vaultMock.address);
+    }
+
+    return [vaultMock, strategyMock, controllerMock, mockToken];
+  };
+
   it('should add wrapped vault properly', async () => {
 
-    const secondMock = await MockContract.new();
-    const thirdMock = await MockContract.new();
-    const mockToken = await MockContract.new();
-    const otherMockToken = await MockContract.new();
+    var _, firstVault;
 
-    const getControllerCalldata = (await IVaultCore.at(secondMock.address)).contract
+    [firstVault, _, _, _] = await setupVaultMock(false);
+
+    const wrappedVaultsCalldata = (await IVaultWrapped.at(firstVault.address)).contract
+      .methods.vault().encodeABI();
+    await firstVault.givenCalldataReturnAddress(wrappedVaultsCalldata, miris);
+
+    await expectRevert(registry.addWrappedVault(firstVault.address), "!contractWrapped");
+
+    await firstVault.givenCalldataReturnAddress(wrappedVaultsCalldata, firstVault.address);
+
+    // The test is wrap vault into itself
+    await registry.addWrappedVault(firstVault.address);
+    expect(await registry.wrappedVaults(firstVault.address)).to.be.equal(firstVault.address);
+  });
+
+  it('should add vault with same controller', async () => {
+    var _;
+    var firstVaultMock;
+    var firstStrategyMock;
+    var mockToken;
+
+    var secondVaultMock;
+    var secondStrategyMock;
+    var otherMockToken;
+
+    var controllerMock = await MockContract.new();
+
+    [firstVaultMock, firstStrategyMock, _, mockToken] = await setupVaultMock(false, controllerMock);
+    [secondVaultMock, secondStrategyMock, _, otherMockToken] = await setupVaultMock(false, controllerMock);
+
+
+    const getControllerCalldata = (await IVaultCore.at(firstVaultMock.address)).contract
       .methods.controller().encodeABI();
-    await secondMock.givenCalldataReturnAddress(getControllerCalldata, thirdMock.address);
 
-    const getTokenCalldata = (await IVaultCore.at(secondMock.address)).contract
-      .methods.token().encodeABI();
-    await secondMock.givenCalldataReturnAddress(getTokenCalldata, mockToken.address);
+    await firstVaultMock.givenCalldataReturnAddress(getControllerCalldata, controllerMock.address);
+    await secondVaultMock.givenCalldataReturnAddress(getControllerCalldata, controllerMock.address);
 
-    var getVaultsCalldata = (await IController.at(thirdMock.address)).contract
-      .methods.vaults(mockToken.address).encodeABI();
-    await thirdMock.givenCalldataReturnAddress(getVaultsCalldata, secondMock.address);
+    await registry.addVault(firstVaultMock.address);
+    await registry.addVault(secondVaultMock.address);
 
-    const getStrategiesCalldata = (await IController.at(thirdMock.address)).contract
-      .methods.strategies(mockToken.address).encodeABI();
-    await thirdMock.givenCalldataReturnAddress(getStrategiesCalldata, mock.address);
+    expect(await registry.getControllersLength()).to.be.bignumber.equal(ONE);
+  });
 
-    const wantCalldata = (await IStrategy.at(mock.address)).contract
-      .methods.want().encodeABI();
-    await mock.givenCalldataReturnAddress(wantCalldata, mockToken.address);
-
-    var wrappedVaultsCalldata = (await IVaultWrapped.at(secondMock.address)).contract
-      .methods.vault().encodeABI();
-    await secondMock.givenCalldataReturnAddress(wrappedVaultsCalldata, miris);
-
-    await expectRevert(registry.addWrappedVault(secondMock.address), "!contractWrapped");
-
-    wrappedVaultsCalldata = (await IVaultWrapped.at(secondMock.address)).contract
-      .methods.vault().encodeABI();
-    await secondMock.givenCalldataReturnAddress(wrappedVaultsCalldata, secondMock.address);
-
-    // The test is temporary wrap itself
-    await registry.addWrappedVault(secondMock.address);
-    expect(await registry.wrappedVaults(secondMock.address)).to.be.equal(secondMock.address);
+  it('should get vault stats if vault is wrapped', async () => {
+    
   });
 
   it('should add delegated vault properly', async () => {
@@ -165,9 +207,19 @@ contract('Registry', (accounts) => {
     expect(await registry.getVault(ZERO)).to.be.equal(vault.address);
   });
 
-  it('should get vaults length properly', async () => {
+  it('should get controller properly', async () => {
+    await registry.addVault(vault.address);
+    expect(await registry.getController(ZERO)).to.be.equal(controller.address);
+  });
+
+  it('should get vaults set length properly', async () => {
     await registry.addVault(vault.address);
     expect(await registry.getVaultsLength()).to.be.bignumber.equal(ONE);
+  });
+
+  it('should get controllers set length properly', async () => {
+    await registry.addVault(vault.address);
+    expect(await registry.getControllersLength()).to.be.bignumber.equal(ONE);
   });
 
   it('should return vaults array (address array)', async () => {

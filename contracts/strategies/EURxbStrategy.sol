@@ -8,18 +8,20 @@ import "@openzeppelin/contracts/GSN/Context.sol";
 
 import "../interfaces/IStrategy.sol";
 import "../interfaces/IController.sol";
+import "../interfaces/IConverter.sol";
+import "../interfaces/vault/IVaultCore.sol";
 
 import "../governance/Governable.sol";
 
 /// @title EURxbStrategy
 /// @notice This is base contract for yield farming strategy with EURxb token
-contract EURxbStrategy is IStrategy, Governable, Initializable, Context {
+abstract contract EURxbStrategy is IStrategy, Governable, Initializable, Context {
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
-    /// @notice EURxb instance address
-    address private _eurxb;
+    /// @notice EURxb instance address or wrapper of EURxb instance
+    address internal _eurxb;
 
     /// @notice Controller instance getter, used to simplify controller-related actions
     address public controller;
@@ -41,7 +43,7 @@ contract EURxbStrategy is IStrategy, Governable, Initializable, Context {
 
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
-    /// @param _eurxbAddress address of eurxb instance
+    /// @param _eurxbAddress address of eurxb instance or address of TokenWrapper(EURxb) instance
     /// @param _controllerAddress address of controller instance
     /// @param _vaultAddress address of vault related to this strategy (Link type 1:1)
     function configure(
@@ -53,7 +55,6 @@ contract EURxbStrategy is IStrategy, Governable, Initializable, Context {
         controller = _controllerAddress;
         vault = _vaultAddress;
     }
-
 
     /// @notice Usual setter with check if param is new
     /// @param _newVault New value
@@ -82,11 +83,6 @@ contract EURxbStrategy is IStrategy, Governable, Initializable, Context {
         return _eurxb;
     }
 
-    /// @dev To be realised
-    function deposit() override external {
-        revert('Not implemented');
-    }
-
     /// @notice must exclude any tokens used in the yield
     /// @dev Controller role - withdraw should return to Controller
     function withdraw(address _token) override onlyController external {
@@ -105,17 +101,15 @@ contract EURxbStrategy is IStrategy, Governable, Initializable, Context {
         }
         address _vault = IController(controller).vaults(_eurxb);
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
+
+        address vaultToken = IVaultCore(_vault).token();
+        if (vaultToken != _eurxb) {
+            address converter = IController(controller).converters(vaultToken, _eurxb);
+            require(converter != address(0), "!converter");
+            require(IERC20(vaultToken).transfer(converter, _amount), "!transferConverterToken");
+            _amount = IConverter(converter).convert(address(this));
+        }
         require(IERC20(_eurxb).transfer(_vault, _amount), "!transferStrategy");
-    }
-
-    /// @notice This function withdraw from business process the difference between balance and requested sum
-    function _withdrawSome(uint256 _amount) internal returns(uint) {
-        return _amount;
-    }
-
-    /// @dev To be realised
-    function skim() override external {
-        revert("Not implemented");
     }
 
     /// @dev Controller | Vault role - withdraw should always return to Vault
@@ -125,14 +119,11 @@ contract EURxbStrategy is IStrategy, Governable, Initializable, Context {
         return _balance;
     }
 
+    function _withdrawSome(uint256 _amount) virtual internal returns(uint) {}
+
     /// @notice balance of this address in "want" tokens
     function balanceOf() override external view returns(uint256) {
         return IERC20(_eurxb).balanceOf(address(this));
     }
 
-    /// @notice balance of this address in "want" tokens
-    function withdrawalFee() override external view returns(uint256) {
-        // return 0;
-        revert("Not implemented");
-    }
 }

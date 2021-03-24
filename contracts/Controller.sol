@@ -32,7 +32,7 @@ contract Controller is IController, Governable, Initializable, Context {
     mapping(address => address) private _strategies;
 
     /// @dev from => to => converter address
-    mapping(address => mapping(address => address)) public converters;
+    mapping(address => mapping(address => address)) private _converters;
 
     /// @dev token => strategy => is strategy approved
     mapping(address => mapping(address => bool)) private _approvedStrategies;
@@ -91,7 +91,7 @@ contract Controller is IController, Governable, Initializable, Context {
     /// @param _token Token address to withdraw
     /// @param _amount Amount tokens
     function withdraw(address _token, uint256 _amount) override external {
-      IStrategy(_strategies[_token]).withdraw(_amount);
+        IStrategy(_strategies[_token]).withdraw(_amount);
     }
 
     /// @notice Usual setter with check if param is new
@@ -142,6 +142,12 @@ contract Controller is IController, Governable, Initializable, Context {
         return _strategies[_token];
     }
 
+    /// @notice Getter for converters mapping
+    /// @return Corresponding to given path converter
+    function converters(address _fromToken, address _toToken) override external view returns(address) {
+        return _converters[_fromToken][_toToken];
+    }
+
     /// @notice Usual setter of vault in mapping with check if new vault is not address(0)
     /// @param _token Business logic token of the vault
     /// @param _vault Vault address
@@ -163,7 +169,7 @@ contract Controller is IController, Governable, Initializable, Context {
         address _output,
         address _converter
     ) onlyGovernanceOrStrategist external {
-        converters[_input][_output] = _converter;
+        _converters[_input][_output] = _converter;
     }
 
     /// @notice Sets new link between business logic token and strategy, and if strategy is already used, withdraws all funds from it to the vault
@@ -204,7 +210,7 @@ contract Controller is IController, Governable, Initializable, Context {
         address _strategy = _strategies[_token];
         address _want = IStrategy(_strategy).want();
         if (_want != _token) {
-            address converter = converters[_token][_want];
+            address converter = _converters[_token][_want];
             require(converter != address(0), '!converter');
             require(IERC20(_token).transfer(converter, _amount), "!transferConverterToken");
             _amount = IConverter(converter).convert(_strategy);

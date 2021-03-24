@@ -34,7 +34,7 @@ contract('Treasury', (accounts) => {
 
   const rewardsTokenTotalSupply = ether('1000');
   const governanceTokenTotalSupply = ether('3000');
-  const stardId = ZERO;
+  const startId = ZERO;
 
   var treasury;
   var governanceContract;
@@ -49,7 +49,7 @@ contract('Treasury', (accounts) => {
     oneSplitMock = await MockContract.new();
 
     [ governanceContract, governanceToken, rewardsToken ] = await deployAndConfigureGovernance(
-      stardId,
+      startId,
       governanceTokenTotalSupply,
       governance,
       treasury.address,

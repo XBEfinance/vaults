@@ -17,7 +17,7 @@ const activeActor = async (address, sum, governanceContract, governanceToken, go
 };
 
 const deployAndConfigureGovernance = async (
-    stardId,
+    startId,
     governanceTokenTotalSupply,
     governance,
     rewardDistribution,
@@ -30,7 +30,7 @@ const deployAndConfigureGovernance = async (
   const rewardsToken = await getMockTokenPrepared(mintTo, mockedAmount, rewardsTokenTotalSupply, from);
   const governanceToken = await GovernanceToken.new(governanceTokenTotalSupply);
   await governanceContract.configure(
-    stardId,
+    startId,
     rewardsToken.address,
     governance,
     governanceToken.address,

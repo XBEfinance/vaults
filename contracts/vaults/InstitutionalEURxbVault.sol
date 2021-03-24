@@ -6,5 +6,5 @@ import "./EURxbVault.sol";
 /// @notice Vault for investors of the system
 contract InstitutionalEURxbVault is EURxbVault {
     /// @notice Constructor that creates a vault for investors
-    constructor() EURxbVault("Institutional", "i") public {}
+    constructor() EURxbVault("Institutional", "in") public {}
 }

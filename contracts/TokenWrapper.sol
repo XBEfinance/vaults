@@ -15,7 +15,7 @@ contract TokenWrapper is ERC20PresetMinterPauser, Initializable {
   address public wrappedToken;
 
   modifier onlyMinter {
-    require(hasRole(MINTER_ROLE, _msgSender()), "!minter");
+    require(hasRole(MINTER_ROLE, msg.sender), "!minter");
     _;
   }
 
@@ -26,13 +26,13 @@ contract TokenWrapper is ERC20PresetMinterPauser, Initializable {
       wrappedToken = _wrappedToken;
   }
 
-  function mint(address _to, uint256 _amount) public override {
-      IERC20(wrappedToken).safeTransferFrom(_to, address(this), _amount);
-      super.mint(_to, _amount);
+  function mint(uint256 _amount) public onlyMinter {
+      IERC20(wrappedToken).safeTransferFrom(msg.sender, address(this), _amount);
+      _mint(msg.sender, _amount);
   }
 
   function burn(uint256 _amount) public override onlyMinter {
-      super.burn(_amount);
-      IERC20(wrappedToken).safeTransfer(_msgSender(), _amount);
+      _burn(msg.sender, _amount);
+      IERC20(wrappedToken).safeTransfer(msg.sender, _amount);
   }
 }

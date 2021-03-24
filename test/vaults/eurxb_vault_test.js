@@ -19,9 +19,12 @@ const IERC20 = artifacts.require("IERC20");
 const IStrategy = artifacts.require("IStrategy");
 const MockToken = artifacts.require('MockToken');
 
+const ConsumerEURxbStrategy = artifacts.require("ConsumerEURxbStrategy");
+const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
+
 const MockContract = artifacts.require("MockContract");
 
-const testsWithProxy = (useTokenProxy) => {
+const vaultTestSuite = (strategyType, vaultType) => {
   return (accounts) => {
 
     const governance = accounts[0];
@@ -35,55 +38,21 @@ const testsWithProxy = (useTokenProxy) => {
     var strategy;
     var vault;
     var mock;
-    var cloneFactory;
 
     beforeEach(async () => {
-      if (useTokenProxy) {
-        [
-          mock,
-          controller,
-          strategy,
-          vault,
-          revenueToken,
-          cloneFactory
-        ] = await vaultInfrastructureRedeploy(
-          governance,
-          strategist,
-          true
-        );
-      } else {
-        [
-          mock,
-          controller,
-          strategy,
-          vault,
-          revenueToken
-        ] = await vaultInfrastructureRedeploy(
-          governance,
-          strategist,
-          false
-        );
-      }
+      [
+        mock,
+        controller,
+        strategy,
+        vault,
+        revenueToken
+      ] = await vaultInfrastructureRedeploy(
+        governance,
+        strategist,
+        strategyType,
+        vaultType
+      );
     });
-
-    if (useTokenProxy) {
-      it('should clone token properly', async () => {
-
-        const mockedSum = ether('10');
-        const newMock = await MockToken.new("Mock Token", "MT", mockedSum);
-
-        const salt = web3.utils.utf8ToHex('some salt');
-        const miniCloneAddress = await cloneFactory.predictCloneAddress(newMock.address, salt);
-        const receipt = await cloneFactory.clone(newMock.address, salt);
-        expectEvent(receipt, "Cloned", {
-          _clone: miniCloneAddress,
-          _main: newMock.address
-        });
-        const miniClone = await MockToken.at(miniCloneAddress);
-        await miniClone.mintSender(mockedSum);
-        expect(await miniClone.balanceOf(governance)).to.be.bignumber.equal(mockedSum);
-      });
-    }
 
     it('should configure successfully', async () => {
       expect(await vault.controller()).to.be.equal(controller.address);
@@ -386,7 +355,7 @@ const testsWithProxy = (useTokenProxy) => {
       await mock.givenCalldataReturnUint(balanceOfCalldata,
         mockedRevenueTokenBalance);
       const available = await vault.available();
-      await expectRevert(vault.earn(), "Not implemented");
+      await vault.earn();
     };
 
     it('should earn correctly without converter', async () => {
@@ -399,4 +368,4 @@ const testsWithProxy = (useTokenProxy) => {
   }
 };
 
-module.exports = { testsWithProxy };
+module.exports = { vaultTestSuite };

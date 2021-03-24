@@ -273,7 +273,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         (uint256 _for, uint256 _against, uint256 _quorum) = getStats(_id);
         require(proposals[_id].quorumRequired < _quorum, "!quorum");
         require(proposals[_id].end < block.number , "!end");
-        if (proposals[_id].open == true) {
+        if (proposals[_id].open) {
             tallyVotes(_id);
         }
         IExecutor(proposals[_id].executor).execute(_id, _for, _against, _quorum);
@@ -308,7 +308,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @notice Synonimus name countVotes, called to stop voting process
     /// @param _id ID of the proposal to be closed
     function tallyVotes(uint256 _id) public {
-        require(proposals[_id].open == true, "!open");
+        require(proposals[_id].open, "!open");
         require(proposals[_id].end < block.number, "!end");
         (uint256 _for, uint256 _against,) = getStats(_id);
         proposals[_id].open = false;
@@ -329,7 +329,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
 
     /// @notice Registers new user as voter and adds his votes
     function register() public {
-        require(voters[_msgSender()] == false, "voter");
+        require(!voters[_msgSender()], "voter");
         voters[_msgSender()] = true;
         votes[_msgSender()] = balanceOf(_msgSender());
         totalVotes = totalVotes.add(votes[_msgSender()]);
@@ -338,14 +338,13 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
 
     /// @notice Nullify (revoke) all the votes staked by msg.sender
     function revoke() public {
-        require(voters[_msgSender()] == true, "!voter");
+        require(voters[_msgSender()], "!voter");
         voters[_msgSender()] = false;
-        if (totalVotes < votes[_msgSender()]) {
-            /// @notice Edge case, should be impossible, but this is defi
-            totalVotes = 0;
-        } else {
-            totalVotes = totalVotes.sub(votes[_msgSender()]);
-        }
+
+        /// @notice Edge case dealt with in openzeppelin trySub methods.
+        /// The case should be impossible, but this is defi.
+        (,totalVotes) = totalVotes.trySub(votes[_msgSender()]);
+
         emit RevokeVoter(_msgSender(), votes[_msgSender()], totalVotes);
         votes[_msgSender()] = 0;
     }
@@ -353,8 +352,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @notice Allow registered voter to vote 'for' proposal
     /// @param _id Proposal id
     function voteFor(uint256 _id) public {
-        require(proposals[_id].start < block.number , "<start");
-        require(proposals[_id].end > block.number , ">end");
+        require(proposals[_id].end > block.number && proposals[_id].start < block.number, ">end&<start");
 
         uint256 _against = proposals[_id].againstVotes[_msgSender()];
         if (_against > 0) {
@@ -378,8 +376,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @notice Allow registered voter to vote 'against' proposal
     /// @param _id Proposal id
     function voteAgainst(uint256 _id) public {
-        require(proposals[_id].start < block.number , "<start");
-        require(proposals[_id].end > block.number , ">end");
+        require(proposals[_id].end > block.number && proposals[_id].start < block.number, ">end&<start");
 
         uint256 _for = proposals[_id].forVotes[_msgSender()];
         if (_for > 0) {
@@ -448,7 +445,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @param _amount Amount of governance token to stake
     function stake(uint256 _amount) public override updateReward(_msgSender()) {
         require(_amount > 0, "!stake 0");
-        if (voters[_msgSender()] == true) {
+        if (voters[_msgSender()]) {
             votes[_msgSender()] = votes[_msgSender()].add(_amount);
             totalVotes = totalVotes.add(_amount);
         }
@@ -461,7 +458,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @param _amount Amount of governance token to withdraw
     function withdraw(uint256 _amount) public override updateReward(_msgSender()) {
         require(_amount > 0, "!withdraw 0");
-        if (voters[_msgSender()] == true) {
+        if (voters[_msgSender()]) {
             votes[_msgSender()] = votes[_msgSender()].sub(_amount);
             totalVotes = totalVotes.sub(_amount);
         }

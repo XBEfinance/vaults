@@ -16,7 +16,7 @@ generate_truffle_config "0.6.3" ".\/contracts"
 
 #run coverage
 if [[ $1 = "file" ]]; then
-  echo "File specified, proceeding..."
+  echo "File pattern specified, proceeding..."
   node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage --file $2
 else
   echo "Total coverage requested..."

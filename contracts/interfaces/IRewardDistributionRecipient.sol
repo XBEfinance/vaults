@@ -10,7 +10,7 @@ abstract contract IRewardDistributionRecipient is Ownable {
     function notifyRewardAmount(uint256 reward) external virtual;
 
     modifier onlyRewardDistribution {
-        require(msg.sender == rewardDistribution, "Caller is not reward distribution.");
+        require(msg.sender == rewardDistribution, "!rewardDistribution");
         _;
     }
 

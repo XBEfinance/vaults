@@ -4,17 +4,18 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/proxy/Initializable.sol";
+import "@openzeppelin/contracts/GSN/Context.sol";
 
 import "./interfaces/IController.sol";
 import "./governance/Governable.sol";
-import "./templates/Initializable.sol";
 import "./interfaces/IStrategy.sol";
 import "./interfaces/IConverter.sol";
 import "./interfaces/IOneSplitAudit.sol";
 
 /// @title Controller
 /// @notice The contract is the middleman between vault and strategy, it balances and trigger earn processes
-contract Controller is IController, Governable, Initializable {
+contract Controller is IController, Governable, Initializable, Context {
 
     using Address for address;
     using SafeMath for uint256;

@@ -3,12 +3,12 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/math/Math.sol";
+import "@openzeppelin/contracts/proxy/Initializable.sol";
 
 import "./Governable.sol";
 import "./LPTokenWrapper.sol";
 import "../interfaces/IRewardDistributionRecipient.sol";
 import "../interfaces/IExecutor.sol";
-import "../templates/Initializable.sol";
 
 
 /// @title Governance
@@ -111,7 +111,8 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @dev voter => reward to pay
     mapping(address => uint256) public rewards;
 
-    /// @notice Stops governance token ability to withdraw when involved in some voting process
+    /// @notice Allow users to claim rewards instantly regardless of any voting process
+    /// @dev Link (https://gov.yearn.finance/t/yip-47-release-fee-rewards/6013)
     bool public breaker = false;
 
     /// @notice Exists to generate ids for new proposals
@@ -133,7 +134,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     uint256 public totalVotes;
 
     /// @notice Token in which reward for voting will be paid
-    IERC20 public stakingRewardsToken;
+    IERC20 public rewardsToken;
 
     /// @notice Default duration of the voting process in milliseconds
     uint256 public constant DURATION = 7 days;
@@ -153,27 +154,28 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
     /// @param _startId Starting ID (default 0)
-    /// @param _stakingRewardsTokenAddress Token in which rewards are paid
+    /// @param _rewardsTokenAddress Token in which rewards are paid
     /// @param _governance Governance address
     /// @param _governanceToken Governance token address
     function configure(
             uint256 _startId,
-            address _stakingRewardsTokenAddress,
+            address _rewardsTokenAddress,
             address _governance,
-            address _governanceToken
+            address _governanceToken,
+            address _rewardDistribution
     ) external initializer {
         proposalCount = _startId;
-        stakingRewardsToken = IERC20(_stakingRewardsTokenAddress);
+        rewardsToken = IERC20(_rewardsTokenAddress);
         _setGovernanceToken(_governanceToken);
         setGovernance(_governance);
-        setRewardDistribution(_governance);
+        setRewardDistribution(_rewardDistribution);
     }
 
     /// @dev This methods evacuates given funds to governance address
     /// @param _token Exact token to evacuate
     /// @param _amount Amount of token to evacuate
     function seize(IERC20 _token, uint256 _amount) external onlyGovernance {
-        require(_token != stakingRewardsToken, "!stakingRewardsToken");
+        require(_token != rewardsToken, "!rewardsToken");
         require(_token != governanceToken, "!governanceToken");
         _token.safeTransfer(governance, _amount);
     }
@@ -211,7 +213,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @notice Allows msg.sender exit from the whole governance process and withdraw all his rewards and governance tokens
     function exit() external {
         withdraw(balanceOf(_msgSender()));
-        // getReward(); Un-comment this to enable the rewards.
+        getReward();
     }
 
     /// @notice Adds to governance contract staking reward tokens to be sent to vote process participants.
@@ -222,7 +224,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         override
         updateReward(address(0))
     {
-        IERC20(stakingRewardsToken).safeTransferFrom(_msgSender(), address(this), _reward);
+        IERC20(rewardsToken).safeTransferFrom(_msgSender(), address(this), _reward);
         if (block.timestamp >= periodFinish) {
             rewardRate = _reward.div(DURATION);
         } else {
@@ -454,6 +456,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         emit Staked(_msgSender(), _amount);
     }
 
+
     /// @notice Allow to remove old governance tokens from voter weight, simultaneosly it recalculates reward size according to new weight
     /// @param _amount Amount of governance token to withdraw
     function withdraw(uint256 _amount) public override updateReward(_msgSender()) {
@@ -477,7 +480,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
         uint256 reward = earned(_msgSender());
         if (reward > 0) {
             rewards[_msgSender()] = 0;
-            stakingRewardsToken.transfer(_msgSender(), reward);
+            rewardsToken.transfer(_msgSender(), reward);
             emit RewardPaid(_msgSender(), reward);
         }
     }

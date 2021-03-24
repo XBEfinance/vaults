@@ -3,16 +3,17 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/proxy/Initializable.sol";
+import "@openzeppelin/contracts/GSN/Context.sol";
 
 import "../interfaces/IStrategy.sol";
 import "../interfaces/IController.sol";
 
 import "../governance/Governable.sol";
-import "../templates/Initializable.sol";
 
 /// @title EURxbStrategy
 /// @notice This is base contract for yield farming strategy with EURxb token
-contract EURxbStrategy is IStrategy, Governable, Initializable {
+contract EURxbStrategy is IStrategy, Governable, Initializable, Context {
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
@@ -131,6 +132,7 @@ contract EURxbStrategy is IStrategy, Governable, Initializable {
 
     /// @notice balance of this address in "want" tokens
     function withdrawalFee() override external view returns(uint256) {
+        // return 0;
         revert("Not implemented");
     }
 }

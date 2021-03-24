@@ -48,9 +48,8 @@ contract LPTokenWrapper {
     }
 
     /// @notice Simple governance setter
-    /// @param newGovernanceToken New value
-    function _setGovernanceToken(address newGovernanceToken) internal {
-        require(address(governanceToken) != newGovernanceToken, "!new");
-        governanceToken = IERC20(newGovernanceToken);
+    /// @param _newGovernanceToken New value
+    function _setGovernanceToken(address _newGovernanceToken) internal {
+        governanceToken = IERC20(_newGovernanceToken);
     }
 }

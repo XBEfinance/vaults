@@ -2,7 +2,7 @@ const { ether } = require('@openzeppelin/test-helpers');
 const { getMockTokenPrepared } = require('./common.js');
 
 const Governance = artifacts.require('Governance');
-const GovernanceToken = artifacts.require('XBG');
+const GovernanceToken = artifacts.require('XBE');
 const MockToken = artifacts.require('MockToken');
 
 const actorStake = async (address, sum, governanceContract, governanceToken) => {

@@ -106,9 +106,6 @@ module.exports = {
   getMockTokenPrepared,
   processEventArgs,
   checkSetter,
-<<<<<<< HEAD
-=======
   revertToSnapShot,
   takeSnapshot
->>>>>>> fix/governance_only
 };

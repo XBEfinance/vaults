@@ -19,7 +19,7 @@ const { activeActor, actorStake, deployAndConfigureGovernance } = require(
 const { ZERO, ONE, CONVERSION_WEI_CONSTANT, takeSnapshot, revertToSnapShot } = require('./utils/common');
 
 const Governance = artifacts.require('Governance');
-const GovernanceToken = artifacts.require('XBG');
+const GovernanceToken = artifacts.require('XBE');
 const MockContract = artifacts.require("MockContract");
 const MockToken = artifacts.require('MockToken');
 const ExecutorMock = artifacts.require('ExecutorMock');

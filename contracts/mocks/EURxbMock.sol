@@ -11,6 +11,7 @@ contract EURxbMock is IEURxb, ERC20 {
     event BurnInvoked(address burn, uint256 value);
     event AddNewMaturityInvoked(uint256 amount, uint256 maturityEnd);
     event RemoveMaturityInvoked(uint256 amount, uint256 maturityEnd);
+    event AccrueInterest();
 
     constructor () ERC20("EURxbMock", "EXB") public {}
 
@@ -30,5 +31,13 @@ contract EURxbMock is IEURxb, ERC20 {
 
     function removeMaturity(uint256 amount, uint256 maturityEnd) external override {
         emit RemoveMaturityInvoked(amount, maturityEnd);
+    }
+
+    function expIndex() external view override returns (uint256) {
+        return 10*18;
+    }
+
+    function accrueInterest() external override {
+        emit AccrueInterest();
     }
 }

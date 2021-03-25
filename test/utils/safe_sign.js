@@ -41,7 +41,7 @@ const checkTxEvent = (transaction, eventName, contract, exists, subject) => {
   return exists ? logs[0] : null;
 }
 
-var executeTransactionWithSigner = async (signer, safe, subject, accounts, to, value, data, operation, executor, opts) => {
+const executeTransactionWithSigner = async (signer, safe, subject, accounts, to, value, data, operation, executor, opts) => {
   var options = opts || {};
   var txFailed = options.fails || false;
   var txGasToken = options.gasToken || 0;
@@ -96,7 +96,7 @@ var executeTransactionWithSigner = async (signer, safe, subject, accounts, to, v
   var tx = await safe.execTransaction(
       to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, sigs, {from: executor, gas: estimate + txGasEstimate + 10000, gasPrice: gasPrice}
   );
-  var events = utils.checkTxEvent(tx, 'ExecutionFailed', safe.address, txFailed, subject);
+  var events = checkTxEvent(tx, 'ExecutionFailed', safe.address, txFailed, subject);
   if (txFailed) {
       var transactionHash = await safe.getTransactionHash(to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, nonce);
       assert.equal(transactionHash, events.args.txHash);
@@ -165,7 +165,15 @@ const signer = async (confirmingAccounts, safeAddress, to, value, data, operatio
   return signatureBytes;
 }
 
+const CALL = 0;
+const DELEGATE_CALL = 1;
+const CREATE = 2;
+
 module.exports = {
   signTypedData,
-  signBy
+  signer,
+  executeTransactionWithSigner,
+  CALL,
+  CREATE,
+  DELEGATE_CALL
 };

@@ -81,7 +81,10 @@ module.exports = {
     // Use this network for part one of the deployment with free infura.
     rinkeby_part_one: rinkebyNetworkConfig,
     // Use this network for part two of the deployment with free infura.
-    rinkeby_part_two: rinkebyNetworkConfig
+    rinkeby_part_two: rinkebyNetworkConfig,
+
+    // Use this network to test safe interaction
+    rinkeby_safe_test: rinkebyNetworkConfig,
 
     // Useful for private networks
     // private: {
@@ -92,11 +95,11 @@ module.exports = {
   },
 
   // Set default mocha options here, use special reporters etc.
-  mocha: {
-    reporter: 'eth-gas-reporter',
-    gasReporter: { 'gasPrice': 1 },
-    timeout: 20000000
-  },
+  // mocha: {
+  //   reporter: 'eth-gas-reporter',
+  //   gasReporter: { 'gasPrice': 1 },
+  //   timeout: 20000000
+  // },
 
   api_keys: {
     etherscan: process.env.ETHERSCAN_API_KEY,

@@ -50,7 +50,7 @@ contract('TestExecutor', (accounts) => {
   var proposalId;
 
   const proposalHash = "some proposal hash";
-  const minumumForVoting = ether('0.1');
+  const minumumForVoting = ether('0.01');
   const quorumForVoting = ONE;
   const periodForVoting = ONE;
   const lockForVoting = ZERO;
@@ -76,7 +76,6 @@ contract('TestExecutor', (accounts) => {
 
     await executor.configure(
       mockToken.address,
-      governanceContract.address,
       safe.address,
       alice,
       aliceAmount
@@ -91,6 +90,10 @@ contract('TestExecutor', (accounts) => {
     await governanceContract.setLock(lockForVoting);
 
     await governanceContract.register();
+
+    await mockToken.approve(governanceContract.address, minumumForVoting, {from: firstOwner});
+    await governanceContract.stake(minumumForVoting, {from: firstOwner});
+
 
     proposalId = await governanceContract.proposalCount();
     await governanceContract.propose(executor.address, proposalHash);

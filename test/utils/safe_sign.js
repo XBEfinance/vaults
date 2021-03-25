@@ -1,3 +1,9 @@
+const { assert } = require('chai');
+
+const BigNumber = require('bignumber.js');
+
+const GAS_PRICE = web3.utils.toWei('100', 'gwei');
+
 const baseGasValue = (hexValue) => {
   switch(hexValue) {
     case "0x": return 0;
@@ -7,8 +13,8 @@ const baseGasValue = (hexValue) => {
 }
 
 const estimatebaseGasCosts = (dataString) => {
-  const reducer = (accumulator, currentValue) => accumulator += baseGasValue(currentValue)
-  return dataString.match(/.{2}/g).reduce(reducer, 0)
+  const reducer = (accumulator, currentValue) => accumulator += baseGasValue(currentValue);
+  return dataString.match(/.{2}/g).reduce(reducer, 0);
 }
 
 const estimateBaseGas = (safe, to, value, data, operation, txGasEstimate, gasToken, refundReceiver, signatureCount, nonce) => {
@@ -29,7 +35,7 @@ const logGasUsage = (subject, transactionOrReceipt) => {
 }
 
 const checkTxEvent = (transaction, eventName, contract, exists, subject) => {
-  assert.isObject(transaction)
+  assert.isObject(transaction);
   if (subject && subject != null) {
       logGasUsage(subject, transaction);
   }

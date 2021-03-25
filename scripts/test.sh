@@ -21,8 +21,14 @@ else
   ./scripts/third_party_build.sh
 fi
 
-# run tests
-truffle test --stacktrace $@
+if [[ $1 = "network" ]]; then
+  # run tests
+  truffle test --network $2 --stacktrace $@
+else
+  # run tests
+  truffle test --stacktrace $@
+fi
+
 
 # remove config file
 rm -f $CONFIG_NAME

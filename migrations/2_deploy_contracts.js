@@ -67,7 +67,7 @@ module.exports = function (deployer, network, accounts) {
       const safe = await IGnosisSafe.at(safeAddress);
 
       const mock = await deployer.deploy(MockContract);
-      const mockToken = await deployer.deploy(MockToken, "Some Token", "ST", web3.utils.toWei(50, 'ether'));
+      const mockToken = await deployer.deploy(MockToken, "Some Token", "ST", web3.utils.toWei('50', 'ether'));
       const governanceContract = await deployer.deploy(Governance);
       const executor = await deployer.deploy(TestExecutor);
 

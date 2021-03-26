@@ -52,6 +52,8 @@ contract Bank is Context, Initializable, ERC20 {
     /// @param _amount tokens
     function deposit(uint256 _amount) external {
         require(_amount > 0, "_amount must be greater than zero");
+        IERC20(eurxb).transferFrom(_msgSender(), address(this), _amount);
+
         uint256 amountDeposit = deposits[_msgSender()];
 
         IEURxb(eurxb).accrueInterest();
@@ -64,8 +66,6 @@ contract Bank is Context, Initializable, ERC20 {
         }
 
         _mint(_msgSender(), _amount);
-        IERC20(eurxb).transferFrom(_msgSender(), address(this), _amount);
-
         deposits[_msgSender()] = deposits[_msgSender()].add(_amount);
         holderIndex[_msgSender()] = expIndex;
 

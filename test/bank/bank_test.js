@@ -12,6 +12,7 @@ const EURxbMock = artifacts.require('EURxbMock');
 contract('Bank', (accounts) => {
     const minter = accounts[1];
     const client = accounts[2];
+    const alice = accounts[3];
 
     beforeEach(async () => {
         this.eurxb = await EURxbMock.new();
@@ -130,6 +131,34 @@ contract('Bank', (accounts) => {
             expIndex = await this.eurxb.expIndex();
             expect(expIndex).to.be.bignumber.equal(newIndex);
             expect(newIndex).to.be.bignumber.not.equal(firstIndex);
+        });
+
+        it('should return correct amount withdraw, if there are more bank tokens', async () => {
+            await this.eurxb.transfer(client, ether('100.0'), { from: minter });
+            await this.eurxb.approve(this.bank.address, ether('100.0'), { from: client });
+            await this.bank.deposit(ether('100.0'), { from: client });
+
+            await this.eurxb.transfer(alice, ether('100.0'), { from: minter });
+            await this.eurxb.approve(this.bank.address, ether('100.0'), { from: alice });
+            await this.bank.deposit(ether('100.0'), { from: alice });
+
+            await this.bank.transfer(client, ether('100.0'), { from: alice });
+
+            await time.increase(time.duration.years('1'));
+
+            await this.bank.withdraw(ether('200.0'), { from: client });
+
+            const balance = await this.eurxb.balanceOf(client);
+            expect(balance).to.be.bignumber.lt(ether('107.000001'));
+            expect(balance).to.be.bignumber.gt(ether('106.999999'));
+
+            // Amount of user deposits
+            const amountDeposit = await this.bank.getDeposit(client);
+            expect(amountDeposit).to.be.bignumber.equal(ether('0'));
+
+            // Amount of user Bank tokens
+            const amountBankToken = await this.bank.balanceOf(client);
+            expect(amountBankToken).to.be.bignumber.equal(ether('100.0'));
         });
     });
 

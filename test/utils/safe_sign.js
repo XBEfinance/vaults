@@ -1,4 +1,8 @@
 const { assert } = require('chai');
+const { constants } = require('@openzeppelin/test-helpers');
+const { ZERO_ADDRESS } = constants;
+const ethUtils = require('ethereumjs-util');
+
 
 const BigNumber = require('bignumber.js');
 
@@ -18,13 +22,20 @@ const estimatebaseGasCosts = (dataString) => {
 }
 
 const estimateBaseGas = (safe, to, value, data, operation, txGasEstimate, gasToken, refundReceiver, signatureCount, nonce) => {
+  if (gasToken == 0) {
+    gasToken = ZERO_ADDRESS;
+  }
+  if (refundReceiver == 0) {
+    refundReceiver = ZERO_ADDRESS;
+  }
+
   // numbers < 256 are 192 -> 31 * 4 + 68
   // numbers < 65k are 256 -> 30 * 4 + 2 * 68
   // For signature array length and baseGasEstimate we already calculated the 0 bytes so we just add 64 for each non-zero byte
   var signatureCost = signatureCount * (68 + 2176 + 2176 + 6000); // (array count (3 -> r, s, v) + ecrecover costs) * signature count
-  var payload = safe.contract.execTransaction.getData(
+  var payload = safe.contract.methods.execTransaction(
       to, value, data, operation, txGasEstimate, 0, GAS_PRICE, gasToken, refundReceiver, "0x"
-  );
+  ).encodeABI();
   var baseGasEstimate = estimatebaseGasCosts(payload) + signatureCost + (nonce > 0 ? 5000 : 20000) + 1500; // 1500 -> hash generation costs
   return baseGasEstimate + 32000; // Add aditional gas costs (e.g. base tx costs, transfer costs)
 }
@@ -47,7 +58,7 @@ const checkTxEvent = (transaction, eventName, contract, exists, subject) => {
   return exists ? logs[0] : null;
 }
 
-const executeTransactionWithSigner = async (signer, safe, subject, accounts, to, value, data, operation, executor, opts) => {
+const executeTransactionWithSigner = async (signer, safe, subject, accountsAndPKeys, to, value, data, operation, executor, opts) => {
   var options = opts || {};
   var txFailed = options.fails || false;
   var txGasToken = options.gasToken || 0;
@@ -56,7 +67,7 @@ const executeTransactionWithSigner = async (signer, safe, subject, accounts, to,
   // Estimate safe transaction (need to be called with from set to the safe address)
   var txGasEstimate = 0;
   try {
-    var estimateData = safe.contract.requiredTxGas.getData(to, value, data, operation);
+    var estimateData = safe.contract.methods.requiredTxGas(to, value, data, operation).encodeABI();
     var estimateResponse = await web3.eth.call({to: safe.address, from: safe.address, data: estimateData, gasPrice: 0});
     txGasEstimate = new BigNumber(estimateResponse.substring(138), 16);
     // Add 10k else we will fail in case of nested calls
@@ -65,7 +76,8 @@ const executeTransactionWithSigner = async (signer, safe, subject, accounts, to,
   } catch(e) {
     console.log("    Could not estimate " + subject + "; cause: " + e);
   }
-  var nonce = await safe.nonce();
+  var nonce = new BigNumber(await web3.eth.getTransactionCount(safe.address));
+  console.log(nonce.toString(), nonce.toNumber());
 
   var baseGasEstimate = estimateBaseGas(safe, to, value, data, operation, txGasEstimate, txGasToken, refundReceiver, accounts.length, nonce);
   console.log("    Base Gas estimate: " + baseGasEstimate);
@@ -76,11 +88,12 @@ const executeTransactionWithSigner = async (signer, safe, subject, accounts, to,
   }
   gasPrice = options.gasPrice || gasPrice;
 
-  var sigs = await signer(to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, nonce);
+  console.log(nonce.toString(), nonce.toNumber());
+  var sigs = await signer(accountsAndPKeys, safe, to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, nonce, options);
 
-  var payload = safe.contract.execTransaction.getData(
+  var payload = safe.contract.methods.execTransaction(
     to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, sigs
-  );
+  ).encodeABI();
   console.log("    Data costs: " + estimatebaseGasCosts(payload));
 
   // Estimate gas of paying transaction
@@ -126,7 +139,56 @@ const signTypedData = async (account, data) => {
     });
 }
 
-const signer = async (confirmingAccounts, safeAddress, to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, nonce) => {
+const ethSign = async (account, data) => {
+    return new Promise(function (resolve, reject) {
+        web3.currentProvider.sendAsync({
+            jsonrpc: "2.0",
+            method: "eth_sign",
+            params: [account, data],
+            id: new Date().getTime()
+        }, function(err, response) {
+            if (err) {
+                return reject(err);
+            }
+            resolve(response.result);
+        });
+    });
+}
+
+const ecdsaSign = (data, privateKey) => {
+  const dataBuffer = new Uint8Array(Buffer.from(data, "utf8"));
+  const pkBuffer = new Uint8Array(Buffer.from(privateKey, "utf8"));
+  const ecdsa = ethUtils.ecsign(dataBuffer, pkBuffer);
+  return ecdsa.r.toString('hex') + ecdsa.s.toString('hex') + ecdsa.v.toString(16);
+}
+
+const eowSigner = async (confirmingAccountsAndPKeys, safe, to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, nonce, options) => {
+  const transactionHash = await safe.getTransactionHash(
+    to,
+    value,
+    data,
+    operation,
+    txGasEstimate,
+    baseGasEstimate,
+    gasPrice,
+    txGasToken,
+    refundReceiver,
+    nonce
+  );
+  var signatureBytes = "0x";
+  confirmingAccountsAndPKeys.sort(
+    (a, b) => {
+      return a[0] > b[0];
+    }
+  );
+  for (var i = 0; i < confirmingAccountsAndPKeys.length; i++) {
+      signatureBytes += await ecdsaSign(transactionHash, confirmingAccountsAndPKeys[1]);
+  }
+  return signatureBytes;
+}
+
+const eip712signer = async (confirmingAccountsAndPKeys, safe, to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, nonce, options) => {
+  console.log(nonce);
   const typedData = {
     types: {
       EIP712Domain: [
@@ -147,7 +209,7 @@ const signer = async (confirmingAccounts, safeAddress, to, value, data, operatio
       ]
     },
     domain: {
-      verifyingContract: safeAddress
+      verifyingContract: safe.address
     },
     primaryType: "SafeTx",
     message: {
@@ -164,9 +226,13 @@ const signer = async (confirmingAccounts, safeAddress, to, value, data, operatio
     }
   };
   var signatureBytes = "0x";
-  confirmingAccounts.sort();
-  for (var i = 0; i < confirmingAccounts.length; i++) {
-      signatureBytes += (await signTypedData(confirmingAccounts[i], typedData)).replace('0x', '');
+  confirmingAccountsAndPKeys.sort(
+    (a, b) => {
+      return a[0] > b[0];
+    }
+  );
+  for (var i = 0; i < confirmingAccountsAndPKeys.length; i++) {
+      signatureBytes += (await signTypedData(confirmingAccountsAndPKeys[i][0], typedData)).replace('0x', '');
   }
   return signatureBytes;
 }
@@ -177,7 +243,10 @@ const CREATE = 2;
 
 module.exports = {
   signTypedData,
-  signer,
+  ethSign,
+  ecdsaSign,
+  eip712signer,
+  eowSigner,
   executeTransactionWithSigner,
   CALL,
   CREATE,

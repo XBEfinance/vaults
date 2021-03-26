@@ -16,8 +16,9 @@ const { activeActor, actorStake, deployAndConfigureGovernance } = require(
   './utils/governance_redeploy'
 );
 const {
-  signTypedData,
-  signer,
+  ecdsaSign,
+  eip712signer,
+  eowSigner,
   executeTransactionWithSigner,
   CALL,
   CREATE,
@@ -36,8 +37,14 @@ contract('TestExecutor', (accounts) => {
   const secondOwner = accounts[1];
   const thirdOwner = accounts[2];
 
+  const ownersPrivateKeys = [
+    "e5c8ff0a2acbbe1ac2b2af56a52c08152ac6ceb61b624b1e3310a7b970547bcb",
+    "6475573347e9ee14813796817f16ef3632d290e15b8cedde0fe859782830a8d2",
+    "7a22592e44a2a1d1b22aea6ea534219285601eb644fddd34f1042ce953644bc0"
+  ];
+
   const alice = accounts[3];
-  const aliceAmount = ether('0.01');
+  const aliceAmount = ether('0.013');
 
   const thirdPartyTxExecutor = accounts[4]; // can be anyone, even owner
 
@@ -50,16 +57,20 @@ contract('TestExecutor', (accounts) => {
   var proposalId;
 
   const proposalHash = "some proposal hash";
-  const minumumForVoting = ether('0.01');
+  const minumumForVoting = ether('0.012');
   const quorumForVoting = ONE;
-  const periodForVoting = ONE;
-  const lockForVoting = ZERO;
+  const periodForVoting = new BN('2');
+  const lockForVoting = new BN('2');
+
 
   const timeout = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   before(async () => {
+
+    console.log(await ecdsaSign(firstOwner, ownersPrivateKeys[0], "hello!"));
+
     mock = await MockContract.deployed();
     mockToken = await MockToken.deployed();
     governanceContract = await Governance.deployed();
@@ -91,9 +102,12 @@ contract('TestExecutor', (accounts) => {
 
     await governanceContract.register();
 
-    await mockToken.approve(governanceContract.address, minumumForVoting, {from: firstOwner});
-    await governanceContract.stake(minumumForVoting, {from: firstOwner});
+    const votingBalance = minumumForVoting.add(ether('0.002'));
+    await mockToken.approve(governanceContract.address, votingBalance, {from: firstOwner});
+    await governanceContract.stake(votingBalance, {from: firstOwner});
 
+    // console.log((await governanceContract.votes(firstOwner)).toString());
+    // console.log((await governanceContract.voters(firstOwner)).toString());
 
     proposalId = await governanceContract.proposalCount();
     await governanceContract.propose(executor.address, proposalHash);
@@ -105,28 +119,38 @@ contract('TestExecutor', (accounts) => {
 
   it('should execute an executor from safe name', async () => {
     await executeTransactionWithSigner(
-      signer,
-      safe.address,
+      eowSigner,
+      safe,
       'executeTransaction call approve method',
-      [firstOwner, secondOwner, thirdOwner],
+      [
+        [firstOwner, ownersPrivateKeys[0]],
+        [secondOwner, ownersPrivateKeys[1]],
+        [thirdOwner, ownersPrivateKeys[2]]
+      ],
       mockToken.address,
       ZERO,
-      mockToken.contract.approve.getData(alice, aliceAmount),
+      mockToken.contract.methods.approve(alice, aliceAmount).encodeABI(),
       CALL,
       thirdPartyTxExecutor
     );
 
-    await timeout(30000); // avg block mining time is 15s, but we go 30 just to be sure
+    await timeout(60000); // avg block mining time is 15s, but we go 30 just to be sure
 
     await governanceContract.execute(proposalId, {from: thirdPartyTxExecutor});
 
     // safe operation just to be able to reproduce the tests
     await executeTransactionWithSigner(
-      signer, safe.address, 'executeTransaction call Executor method',
-      [firstOwner, secondOwner, thirdOwner],
+      eowSigner,
+      safe,
+      'executeTransaction set governance',
+      [
+        [firstOwner, ownersPrivateKeys[0]],
+        [secondOwner, ownersPrivateKeys[1]],
+        [thirdOwner, ownersPrivateKeys[2]]
+      ],
       mockToken.address,
       ZERO,
-      governanceContract.contract.setGovernance.getData(firstOwner),
+      governanceContract.contract.methods.setGovernance(firstOwner).encodeABI(),
       CALL,
       thirdPartyTxExecutor
     );

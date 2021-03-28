@@ -69,7 +69,7 @@ contract('TestExecutor', (accounts) => {
 
   before(async () => {
 
-    console.log(await ecdsaSign(firstOwner, ownersPrivateKeys[0], "hello!"));
+    // console.log(await ecdsaSign(firstOwner, ownersPrivateKeys[0], "hello!"));
 
     mock = await MockContract.deployed();
     mockToken = await MockToken.deployed();
@@ -111,22 +111,25 @@ contract('TestExecutor', (accounts) => {
 
     proposalId = await governanceContract.proposalCount();
     await governanceContract.propose(executor.address, proposalHash);
+    // await timeout(10000);
     await governanceContract.voteFor(proposalId);
 
     await governanceContract.setGovernance(safe.address);
 
   });
 
+  // [
+  //   [firstOwner, ownersPrivateKeys[0]],
+  //   [secondOwner, ownersPrivateKeys[1]],
+  //   [thirdOwner, ownersPrivateKeys[2]]
+  // ],
+
   it('should execute an executor from safe name', async () => {
     await executeTransactionWithSigner(
       eowSigner,
       safe,
       'executeTransaction call approve method',
-      [
-        [firstOwner, ownersPrivateKeys[0]],
-        [secondOwner, ownersPrivateKeys[1]],
-        [thirdOwner, ownersPrivateKeys[2]]
-      ],
+      [firstOwner, secondOwner, thirdOwner],
       mockToken.address,
       ZERO,
       mockToken.contract.methods.approve(alice, aliceAmount).encodeABI(),
@@ -143,11 +146,7 @@ contract('TestExecutor', (accounts) => {
       eowSigner,
       safe,
       'executeTransaction set governance',
-      [
-        [firstOwner, ownersPrivateKeys[0]],
-        [secondOwner, ownersPrivateKeys[1]],
-        [thirdOwner, ownersPrivateKeys[2]]
-      ],
+      [firstOwner, secondOwner, thirdOwner],
       mockToken.address,
       ZERO,
       governanceContract.contract.methods.setGovernance(firstOwner).encodeABI(),

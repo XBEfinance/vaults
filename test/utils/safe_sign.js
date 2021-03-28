@@ -77,9 +77,8 @@ const executeTransactionWithSigner = async (signer, safe, subject, accountsAndPK
     console.log("    Could not estimate " + subject + "; cause: " + e);
   }
   var nonce = new BigNumber(await web3.eth.getTransactionCount(safe.address));
-  console.log(nonce.toString(), nonce.toNumber());
 
-  var baseGasEstimate = estimateBaseGas(safe, to, value, data, operation, txGasEstimate, txGasToken, refundReceiver, accounts.length, nonce);
+  var baseGasEstimate = estimateBaseGas(safe, to, value, data, operation, txGasEstimate, txGasToken, refundReceiver, accountsAndPKeys.length, nonce);
   console.log("    Base Gas estimate: " + baseGasEstimate);
 
   var gasPrice = GAS_PRICE;
@@ -88,8 +87,15 @@ const executeTransactionWithSigner = async (signer, safe, subject, accountsAndPK
   }
   gasPrice = options.gasPrice || gasPrice;
 
-  console.log(nonce.toString(), nonce.toNumber());
+  console.log(accountsAndPKeys);
   var sigs = await signer(accountsAndPKeys, safe, to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, nonce, options);
+
+  if (txGasToken == 0) {
+    txGasToken = ZERO_ADDRESS;
+  }
+  if (refundReceiver == 0) {
+    refundReceiver = ZERO_ADDRESS;
+  }
 
   var payload = safe.contract.methods.execTransaction(
     to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, sigs
@@ -155,14 +161,19 @@ const ethSign = async (account, data) => {
     });
 }
 
-const ecdsaSign = (data, privateKey) => {
-  const dataBuffer = new Uint8Array(Buffer.from(data, "utf8"));
-  const pkBuffer = new Uint8Array(Buffer.from(privateKey, "utf8"));
-  const ecdsa = ethUtils.ecsign(dataBuffer, pkBuffer);
+const ecdsaSign = async (data, account) => {
+  const signed = await web3.eth.sign(data, account);
+  const ecdsa = ethUtils.fromRpcSig(signed);
   return ecdsa.r.toString('hex') + ecdsa.s.toString('hex') + ecdsa.v.toString(16);
 }
 
 const eowSigner = async (confirmingAccountsAndPKeys, safe, to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, nonce, options) => {
+  if (txGasToken == 0) {
+    txGasToken = ZERO_ADDRESS;
+  }
+  if (refundReceiver == 0) {
+    refundReceiver = ZERO_ADDRESS;
+  }
   const transactionHash = await safe.getTransactionHash(
     to,
     value,
@@ -176,19 +187,20 @@ const eowSigner = async (confirmingAccountsAndPKeys, safe, to, value, data, oper
     nonce
   );
   var signatureBytes = "0x";
-  confirmingAccountsAndPKeys.sort(
-    (a, b) => {
-      return a[0] > b[0];
-    }
-  );
+  confirmingAccountsAndPKeys.sort();
   for (var i = 0; i < confirmingAccountsAndPKeys.length; i++) {
-      signatureBytes += await ecdsaSign(transactionHash, confirmingAccountsAndPKeys[1]);
+    signatureBytes += await ecdsaSign(transactionHash, confirmingAccountsAndPKeys[i]);
   }
   return signatureBytes;
 }
 
 const eip712signer = async (confirmingAccountsAndPKeys, safe, to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, nonce, options) => {
-  console.log(nonce);
+  if (gasToken == 0) {
+    gasToken = ZERO_ADDRESS;
+  }
+  if (refundReceiver == 0) {
+    refundReceiver = ZERO_ADDRESS;
+  }
   const typedData = {
     types: {
       EIP712Domain: [
@@ -196,16 +208,16 @@ const eip712signer = async (confirmingAccountsAndPKeys, safe, to, value, data, o
       ],
       // "SafeTx(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,uint256 nonce)"
       SafeTx: [
-          { type: "address", name: "to" },
-          { type: "uint256", name: "value" },
-          { type: "bytes", name: "data" },
-          { type: "uint8", name: "operation" },
-          { type: "uint256", name: "safeTxGas" },
-          { type: "uint256", name: "baseGas" },
-          { type: "uint256", name: "gasPrice" },
-          { type: "address", name: "gasToken" },
-          { type: "address", name: "refundReceiver" },
-          { type: "uint256", name: "nonce" },
+        { type: "address", name: "to" },
+        { type: "uint256", name: "value" },
+        { type: "bytes", name: "data" },
+        { type: "uint8", name: "operation" },
+        { type: "uint256", name: "safeTxGas" },
+        { type: "uint256", name: "baseGas" },
+        { type: "uint256", name: "gasPrice" },
+        { type: "address", name: "gasToken" },
+        { type: "address", name: "refundReceiver" },
+        { type: "uint256", name: "nonce" },
       ]
     },
     domain: {
@@ -232,7 +244,7 @@ const eip712signer = async (confirmingAccountsAndPKeys, safe, to, value, data, o
     }
   );
   for (var i = 0; i < confirmingAccountsAndPKeys.length; i++) {
-      signatureBytes += (await signTypedData(confirmingAccountsAndPKeys[i][0], typedData)).replace('0x', '');
+    signatureBytes += (await signTypedData(confirmingAccountsAndPKeys[i][0], typedData)).replace('0x', '');
   }
   return signatureBytes;
 }

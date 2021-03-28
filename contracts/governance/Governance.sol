@@ -352,7 +352,8 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @notice Allow registered voter to vote 'for' proposal
     /// @param _id Proposal id
     function voteFor(uint256 _id) public {
-        require(proposals[_id].end > block.number && proposals[_id].start < block.number, ">end&<start");
+        require(proposals[_id].start < block.number, "<start");
+        require(proposals[_id].end > block.number, ">end");
 
         uint256 _against = proposals[_id].againstVotes[_msgSender()];
         if (_against > 0) {
@@ -376,7 +377,8 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @notice Allow registered voter to vote 'against' proposal
     /// @param _id Proposal id
     function voteAgainst(uint256 _id) public {
-        require(proposals[_id].end > block.number && proposals[_id].start < block.number, ">end&<start");
+        require(proposals[_id].start < block.number, "<start");
+        require(proposals[_id].end > block.number, ">end");
 
         uint256 _for = proposals[_id].forVotes[_msgSender()];
         if (_for > 0) {

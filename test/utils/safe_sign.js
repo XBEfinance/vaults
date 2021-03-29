@@ -2,6 +2,7 @@ const { assert } = require('chai');
 const { constants } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 const ethUtils = require('ethereumjs-util');
+const bitwise = require('bitwise');
 
 
 const BigNumber = require('bignumber.js');
@@ -87,7 +88,6 @@ const executeTransactionWithSigner = async (signer, safe, subject, accountsAndPK
   }
   gasPrice = options.gasPrice || gasPrice;
 
-  console.log(accountsAndPKeys);
   var sigs = await signer(accountsAndPKeys, safe, to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, nonce, options);
 
   if (txGasToken == 0) {
@@ -161,9 +161,13 @@ const ethSign = async (account, data) => {
     });
 }
 
-const ecdsaSign = async (data, account) => {
+const rawEcdsaSign = async (data, account) => {
   const signed = await web3.eth.sign(data, account);
-  const ecdsa = ethUtils.fromRpcSig(signed);
+  return ethUtils.fromRpcSig(signed);
+};
+
+const ecdsaSign = async (data, account) => {
+  const ecdsa = await rawEcdsaSign(data, account)
   return ecdsa.r.toString('hex') + ecdsa.s.toString('hex') + ecdsa.v.toString(16);
 }
 
@@ -186,8 +190,39 @@ const eowSigner = async (confirmingAccountsAndPKeys, safe, to, value, data, oper
     refundReceiver,
     nonce
   );
+
+  console.log('check');
+  console.log(transactionHash.slice(2));
+  // console.log(confirmingAccountsAndPKeys[0]);
+  const rawEcdsa = await rawEcdsaSign(transactionHash, confirmingAccountsAndPKeys[0]);
+  // console.log(rawEcdsa.v.toString(16), rawEcdsa.r.toString("hex"), rawEcdsa.s.toString("hex"));
+
+  const arr = new Uint8Array(
+    transactionHash.slice(2).match(/(..?)/g).map(
+      (e) => parseInt(e, 16)
+    )
+  );
+
+  console.log(arr);
+
+  console.log((new Buffer.from(arr)).toString("hex"));
+  console.log('check');
+
+  const temp = ethUtils.ecrecover(
+    arr,
+    rawEcdsa.v,
+    rawEcdsa.r,
+    rawEcdsa.s
+  );
+  console.log(temp);
+  console.log(temp.toString("hex"));
+  const isTempOwner = await safe.isOwner(temp.toString("hex"));
+  console.log(isTempOwner);
+
   var signatureBytes = "0x";
+  // console.log(confirmingAccountsAndPKeys);
   confirmingAccountsAndPKeys.sort();
+  // console.log(confirmingAccountsAndPKeys);
   for (var i = 0; i < confirmingAccountsAndPKeys.length; i++) {
     signatureBytes += await ecdsaSign(transactionHash, confirmingAccountsAndPKeys[i]);
   }

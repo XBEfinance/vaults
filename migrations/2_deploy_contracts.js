@@ -30,7 +30,12 @@ const TokenWrapper = artifacts.require("TokenWrapper");
 // const zeroAddress = '0x0000000000000000000000000000000000000000';
 //
 // const usd = (n) => web3.utils.toWei(n, 'Mwei');
-// const ether = (n) => web3.utils.toWei(n, 'ether');
+
+const { BN } = require('@openzeppelin/test-helpers');
+
+const ether = (n) => new BN(web3.utils.toWei(n, 'ether'));
+const ONE = new BN('1');
+const ZERO = new BN('0');
 //
 module.exports = function (deployer, network, accounts) {
   deployer.then(async () => {
@@ -66,6 +71,7 @@ module.exports = function (deployer, network, accounts) {
 
       const safe = await IGnosisSafe.at(safeAddress);
 
+      const safe = await IGnosisSafe.at("0xD78D94634d8F2E3eFADE97A5D13Da04c92440e67");
       const mock = await deployer.deploy(MockContract);
       const mockToken = await deployer.deploy(MockToken, "Some Token", "ST", web3.utils.toWei('50', 'ether'));
       const governanceContract = await deployer.deploy(Governance);

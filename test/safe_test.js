@@ -46,7 +46,7 @@ contract('TestExecutor', (accounts) => {
   const alice = accounts[3];
   const aliceAmount = ether('0.013');
 
-  const thirdPartyTxExecutor = accounts[4]; // can be anyone, even owner
+  const thirdPartyTxExecutor = firstOwner; // can be anyone, even owner
 
   var mock;
   var mockToken;
@@ -68,8 +68,6 @@ contract('TestExecutor', (accounts) => {
   }
 
   before(async () => {
-
-    // console.log(await ecdsaSign(firstOwner, ownersPrivateKeys[0], "hello!"));
 
     mock = await MockContract.deployed();
     mockToken = await MockToken.deployed();
@@ -125,6 +123,9 @@ contract('TestExecutor', (accounts) => {
   // ],
 
   it('should execute an executor from safe name', async () => {
+
+    // console.log(await safe.getOwners());
+
     await executeTransactionWithSigner(
       eowSigner,
       safe,

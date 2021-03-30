@@ -85,9 +85,7 @@ contract('TestExecutor', (accounts) => {
 
     await executor.configure(
       mockToken.address,
-      safe.address,
-      alice,
-      aliceAmount
+      alice
     );
 
     await mockToken.approve(safe.address, aliceAmount, {from: firstOwner});
@@ -104,9 +102,6 @@ contract('TestExecutor', (accounts) => {
     await mockToken.approve(governanceContract.address, votingBalance, {from: firstOwner});
     await governanceContract.stake(votingBalance, {from: firstOwner});
 
-    // console.log((await governanceContract.votes(firstOwner)).toString());
-    // console.log((await governanceContract.voters(firstOwner)).toString());
-
     proposalId = await governanceContract.proposalCount();
     await governanceContract.propose(executor.address, proposalHash);
     // await timeout(10000);
@@ -116,35 +111,39 @@ contract('TestExecutor', (accounts) => {
 
   });
 
-  // [
-  //   [firstOwner, ownersPrivateKeys[0]],
-  //   [secondOwner, ownersPrivateKeys[1]],
-  //   [thirdOwner, ownersPrivateKeys[2]]
-  // ],
-
   it('should execute an executor from safe name', async () => {
 
-    // console.log(await safe.getOwners());
-
     await executeTransactionWithSigner(
-      eowSigner,
+      eip712signer,
       safe,
       'executeTransaction call approve method',
       [firstOwner, secondOwner, thirdOwner],
       mockToken.address,
       ZERO,
-      mockToken.contract.methods.approve(alice, aliceAmount).encodeABI(),
+      mockToken.contract.methods.approve(executor.address, aliceAmount).encodeABI(),
       CALL,
       thirdPartyTxExecutor
     );
 
-    await timeout(60000); // avg block mining time is 15s, but we go 30 just to be sure
+    await executeTransactionWithSigner(
+      eip712signer,
+      safe,
+      'executeTransaction call approve method',
+      [firstOwner, secondOwner, thirdOwner],
+      mockToken.address,
+      ZERO,
+      mockToken.contract.methods.transfer(executor.address, aliceAmount).encodeABI(),
+      CALL,
+      thirdPartyTxExecutor
+    );
+
+    await timeout(15000); // avg block mining time is 15s, but we go 30 just to be sure
 
     await governanceContract.execute(proposalId, {from: thirdPartyTxExecutor});
 
     // safe operation just to be able to reproduce the tests
     await executeTransactionWithSigner(
-      eowSigner,
+      eip712signer,
       safe,
       'executeTransaction set governance',
       [firstOwner, secondOwner, thirdOwner],

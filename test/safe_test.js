@@ -114,7 +114,7 @@ contract('TestExecutor', (accounts) => {
   it('should execute an executor from safe name', async () => {
 
     await executeTransactionWithSigner(
-      eip712signer,
+      eowSigner,
       safe,
       'executeTransaction call approve method',
       [firstOwner, secondOwner, thirdOwner],
@@ -126,9 +126,9 @@ contract('TestExecutor', (accounts) => {
     );
 
     await executeTransactionWithSigner(
-      eip712signer,
+      eowSigner,
       safe,
-      'executeTransaction call approve method',
+      'executeTransaction call transfer method',
       [firstOwner, secondOwner, thirdOwner],
       mockToken.address,
       ZERO,
@@ -143,7 +143,7 @@ contract('TestExecutor', (accounts) => {
 
     // safe operation just to be able to reproduce the tests
     await executeTransactionWithSigner(
-      eip712signer,
+      eowSigner,
       safe,
       'executeTransaction set governance',
       [firstOwner, secondOwner, thirdOwner],

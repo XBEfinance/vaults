@@ -171,7 +171,7 @@ const ecdsaSign = async (account, data) => {
   return ecdsa.r.toString('hex') + ecdsa.s.toString('hex') + ecdsa.v.toString(16);
 }
 
-const eowSigner = async (confirmingAccountsAndPKeys, safe, to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, nonce, options) => {
+const eowSigner = async (confirmingAccounts, safe, to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, nonce, options) => {
   if (txGasToken == 0) {
     txGasToken = ZERO_ADDRESS;
   }
@@ -191,45 +191,15 @@ const eowSigner = async (confirmingAccountsAndPKeys, safe, to, value, data, oper
     nonce
   );
 
-  // console.log('check');
-  // console.log(transactionHash.slice(2));
-  // console.log(confirmingAccountsAndPKeys[0]);
-  // const rawEcdsa = await rawEcdsaSign(confirmingAccountsAndPKeys[0], transactionHash);
-  // console.log(rawEcdsa.v.toString(16), rawEcdsa.r.toString("hex"), rawEcdsa.s.toString("hex"));
-
-  // const arr = new Uint8Array(
-  //   transactionHash.slice(2).match(/(..?)/g).map(
-  //     (e) => parseInt(e, 16)
-  //   )
-  // );
-  //
-  // console.log(arr);
-  //
-  // console.log((new Buffer.from(arr)).toString("hex"));
-  // console.log('check');
-  //
-  // const temp = ethUtils.ecrecover(
-  //   arr,
-  //   rawEcdsa.v,
-  //   rawEcdsa.r,
-  //   rawEcdsa.s
-  // );
-  // console.log(temp);
-  // console.log(temp.toString("hex"));
-  // const isTempOwner = await safe.isOwner(temp.toString("hex"));
-  // console.log(isTempOwner);
-
   var signatureBytes = "0x";
-  // console.log(confirmingAccountsAndPKeys);
-  confirmingAccountsAndPKeys.sort();
-  // console.log(confirmingAccountsAndPKeys);
-  for (var i = 0; i < confirmingAccountsAndPKeys.length; i++) {
-    signatureBytes += await ecdsaSign(confirmingAccountsAndPKeys[i], transactionHash);
+  confirmingAccounts.sort();
+  for (var i = 0; i < confirmingAccounts.length; i++) {
+    signatureBytes += await ecdsaSign(confirmingAccounts[i], transactionHash);
   }
   return signatureBytes;
 }
 
-const eip712signer = async (confirmingAccountsAndPKeys, safe, to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, nonce, options) => {
+const eip712signer = async (confirmingAccounts, safe, to, value, data, operation, txGasEstimate, baseGasEstimate, gasPrice, txGasToken, refundReceiver, nonce, options) => {
   if (txGasToken == 0) {
     txGasToken = ZERO_ADDRESS;
   }
@@ -273,13 +243,13 @@ const eip712signer = async (confirmingAccountsAndPKeys, safe, to, value, data, o
     }
   };
   var signatureBytes = "0x";
-  confirmingAccountsAndPKeys.sort(
+  confirmingAccounts.sort(
     (a, b) => {
       return a[0] > b[0];
     }
   );
-  for (var i = 0; i < confirmingAccountsAndPKeys.length; i++) {
-    signatureBytes += (await ethSign(confirmingAccountsAndPKeys[i], typedData)).replace('0x', '');
+  for (var i = 0; i < confirmingAccounts.length; i++) {
+    signatureBytes += (await signTypedData(confirmingAccounts[i], typedData)).replace('0x', '');
   }
   return signatureBytes;
 }

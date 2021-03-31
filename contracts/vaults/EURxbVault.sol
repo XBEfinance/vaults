@@ -123,7 +123,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     }
 
     /// @notice Allows to deposit full balance of the business logic token and reveice vault tokens
-    function depositAll() override virtual external {
+    function depositAll() override virtual public {
         deposit(_token.balanceOf(_msgSender()));
     }
 
@@ -147,7 +147,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     }
 
     /// @notice Same as withdraw only with full balance of vault tokens
-    function withdrawAll() override virtual external {
+    function withdrawAll() override virtual public {
         withdraw(_token.balanceOf(_msgSender()));
     }
 

@@ -37,7 +37,7 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
     }
 
     /// @notice Allows to deposit full balance of the business logic token and reveice vault tokens
-    function depositAll() override onlyInvestor external {
+    function depositAll() override onlyInvestor public {
         super.depositAll();
     }
 
@@ -48,7 +48,7 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
     }
 
     /// @notice Same as withdraw only with full balance of vault tokens
-    function withdrawAll() override onlyInvestor external {
+    function withdrawAll() override onlyInvestor public {
         super.withdrawAll();
     }
 

@@ -11,7 +11,9 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
     bytes32 public constant INVESTOR = keccak256("INVESTOR");
 
     /// @notice Constructor that creates a vault for investors
-    constructor() EURxbVault("Institutional", "in") public {}
+    constructor() EURxbVault("Institutional", "in") public {
+       _setupRole(DEFAULT_ADMIN_ROLE, governance);
+    }
 
     modifier onlyInvestor {
         require(hasRole(INVESTOR, _msgSender()), "!investor");
@@ -26,8 +28,8 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
         revokeRole(INVESTOR, _investor);
     }
 
-    function renounceInvestor(address _investor) external onlyGovernance {
-        renounceRole(INVESTOR, _investor);
+    function renounceInvestor() external {
+        renounceRole(INVESTOR, _msgSender());
     }
 
     /// @notice Allows to deposit business logic tokens and reveive vault tokens

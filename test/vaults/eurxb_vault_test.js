@@ -65,6 +65,32 @@ const vaultTestSuite = (strategyType, vaultType) => {
       expect(await controller.strategies(revenueToken.address)).to.be.equal(strategy.address);
     });
 
+    if (vaultType.contractName == InstitutionalEURxbVault.contractName) {
+
+      const investor = accounts[3];
+
+      it('should allow investor', async () => {
+        const role = await vault.INVESTOR();
+        await vault.allowInvestor(investor);
+        expect(await vault.hasRole(role, investor)).to.be.equal(true);
+      });
+
+      it('should disallow investor', async () => {
+        const role = await vault.INVESTOR();
+        await vault.allowInvestor(investor);
+        await vault.disallowInvestor(investor);
+        expect(await vault.hasRole(role, investor)).to.be.equal(false);
+      });
+
+      it('should renounce investor', async () => {
+        const role = await vault.INVESTOR();
+        await vault.allowInvestor(investor);
+        await vault.renounceInvestor({from: investor});
+        expect(await vault.hasRole(role, investor)).to.be.equal(false);
+      });
+
+    }
+
     it('should set min', async () => {
       await vault.setMin(testMin, {from: governance});
       expect(await vault.min()).to.be.bignumber.equal(testMin);
@@ -150,6 +176,9 @@ const vaultTestSuite = (strategyType, vaultType) => {
       await mock.givenCalldataReturnUint(balanceOfVaultCalldata,
         mockedAmount);
 
+      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        await vault.allowInvestor(miris);
+      }
       await vault.deposit(mockedAmount, {from: miris});
 
       const balance = await vault.balance();
@@ -160,7 +189,13 @@ const vaultTestSuite = (strategyType, vaultType) => {
     });
 
     it('should deposit correctly', async () => {
+
       const mockedAmount = ether('10');
+
+      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        await expectRevert(vault.deposit(mockedAmount, {from: miris}), "!investor");
+        await vault.allowInvestor(miris);
+      }
 
       const revenueTokenERC20 = await IERC20.at(revenueToken.address);
 
@@ -191,6 +226,9 @@ const vaultTestSuite = (strategyType, vaultType) => {
       await mock.givenCalldataReturnUint(balanceOfGovernanceCalldata,
         mockedAmount);
 
+      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        await vault.allowInvestor(miris);
+      }
       await vault.deposit(mockedAmount, {from: miris});
 
       var balance = await vault.balance();
@@ -200,6 +238,9 @@ const vaultTestSuite = (strategyType, vaultType) => {
       expect(totalSupply).to.be.bignumber.equal(mockedAmount);
       expect(await vault.balanceOf(miris)).to.be.bignumber.equal(mockedAmount);
 
+      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        await vault.allowInvestor(governance);
+      }
       await vault.deposit(mockedAmount, {from: governance});
 
       balance = await vault.balance();
@@ -213,6 +254,11 @@ const vaultTestSuite = (strategyType, vaultType) => {
 
     it('should deposit all correctly', async () => {
       const mockedAmount = ether('10');
+
+      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        await expectRevert(vault.depositAll({from: miris}), "!investor");
+        await vault.allowInvestor(miris);
+      }
 
       const revenueTokenERC20 = await IERC20.at(revenueToken.address);
 
@@ -229,6 +275,10 @@ const vaultTestSuite = (strategyType, vaultType) => {
         mockedAmount);
       await mock.givenCalldataReturnUint(balanceOfMirisCalldata,
         mockedAmount);
+
+      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        await vault.allowInvestor(miris);
+      }
 
       await vault.depositAll({from: miris});
       const actualVaultTokens = await vault.balanceOf(miris);
@@ -254,9 +304,15 @@ const vaultTestSuite = (strategyType, vaultType) => {
       await mock.givenCalldataReturnUint(balanceOfMirisCalldata,
         mockedAmount);
 
+      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        await vault.allowInvestor(miris);
+      }
 
       await vault.depositAll({from: miris});
 
+      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        await vault.disallowInvestor(miris);
+      }
 
       const vaultBalance = await vault.balance();
       const vaultTotalSupply = await vault.totalSupply();
@@ -269,8 +325,16 @@ const vaultTestSuite = (strategyType, vaultType) => {
         true);
 
       if (!isTestingAll) {
+        if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+          await expectRevert(vault.withdraw(mockedAmount, {from: miris}), "!investor");
+          await vault.allowInvestor(miris);
+        }
         await vault.withdraw(mockedAmount, {from: miris});
       } else {
+        if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+          await expectRevert(vault.withdrawAll({from: miris}), "!investor");
+          await vault.allowInvestor(miris);
+        }
         await vault.withdrawAll({from: miris});
       }
 
@@ -304,8 +368,15 @@ const vaultTestSuite = (strategyType, vaultType) => {
       await mock.givenCalldataReturnUint(balanceOfMirisCalldata,
         mockedAmount);
 
+      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        await vault.allowInvestor(miris);
+      }
+
       await vault.depositAll({from: miris});
 
+      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        await vault.disallowInvestor(miris);
+      }
 
       const difference = ether('1');
 
@@ -320,8 +391,16 @@ const vaultTestSuite = (strategyType, vaultType) => {
         difference);
 
       if (!isTestingAll) {
+        if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+          await expectRevert(vault.withdraw(mockedAmount, {from: miris}), "!investor");
+          await vault.allowInvestor(miris);
+        }
         await vault.withdraw(mockedAmount, {from: miris});
       } else {
+        if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+          await expectRevert(vault.withdrawAll({from: miris}), "!investor");
+          await vault.allowInvestor(miris);
+        }
         await vault.withdrawAll({from: miris});
       }
 

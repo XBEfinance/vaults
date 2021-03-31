@@ -32,6 +32,26 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
         renounceRole(INVESTOR, _msgSender());
     }
 
+    function depositUnwrapped(uint256 _amount) override onlyInvestor public {
+      // get converted routine bEURxb -> wbEURxb
+      deposit(_amount);
+    }
+
+    function withdrawUnwrapped(uint256 _amount) override onlyInvestor public {
+      withdraw(_amount);
+      // get converted routine wbEURxb -> bEURxb
+    }
+
+    function depositAllUnwrapped(uint256 _amount) override onlyInvestor public {
+      // get converted routine bEURxb -> wbEURxb
+      depositAll();
+    }
+
+    function withdrawAllUnwrapped(uint256 _amount) override onlyInvestor public {
+      withdrawAll();
+      // get converted routine wbEURxb -> bEURxb
+    }
+
     /// @notice Allows to deposit business logic tokens and reveive vault tokens
     /// @param _amount Amount to deposit business logic tokens
     function deposit(uint256 _amount) override onlyInvestor public {
@@ -53,6 +73,5 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
     function withdrawAll() override onlyInvestor public {
         super.withdrawAll();
     }
-
 
 }

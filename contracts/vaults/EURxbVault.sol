@@ -109,7 +109,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
 
     /// @notice Allows to deposit business logic tokens and reveive vault tokens
     /// @param _amount Amount to deposit business logic tokens
-    function deposit(uint256 _amount) override public {
+    function deposit(uint256 _amount) override virtual public {
         uint256 _pool = balance();
         require(_token.transferFrom(_msgSender(), address(this), _amount), "!transferFrom");
         _amount = _token.balanceOf(address(this));
@@ -123,13 +123,13 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     }
 
     /// @notice Allows to deposit full balance of the business logic token and reveice vault tokens
-    function depositAll() override external {
+    function depositAll() override virtual external {
         deposit(_token.balanceOf(_msgSender()));
     }
 
     /// @notice Allows exchange vault tokens to business logic tokens
     /// @param _shares Business logic tokens to withdraw
-    function withdraw(uint256 _shares) override public {
+    function withdraw(uint256 _shares) override virtual public {
         uint256 r = (balance().mul(_shares)).div(totalSupply());
         _burn(_msgSender(), _shares);
         // Check balance
@@ -147,15 +147,15 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     }
 
     /// @notice Same as withdraw only with full balance of vault tokens
-    function withdrawAll() override external {
+    function withdrawAll() override virtual external {
         withdraw(_token.balanceOf(_msgSender()));
     }
 
     /// @notice Transfer tokens to controller, controller transfers it to strategy and earn (farm)
     function earn() override external {
-      uint256 _bal = available();
-      require(_token.transfer(_controller, _bal), "!transfer");
-      IController(_controller).earn(address(_token), _bal);
+        uint256 _bal = available();
+        require(_token.transfer(_controller, _bal), "!transfer");
+        IController(_controller).earn(address(_token), _bal);
     }
 
 }

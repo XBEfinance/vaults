@@ -22,6 +22,9 @@ const MockToken = artifacts.require('MockToken');
 const ConsumerEURxbStrategy = artifacts.require("ConsumerEURxbStrategy");
 const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
 
+const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
+const ConsumerEURxbVault = artifacts.require("ConsumerEURxbVault");
+
 const MockContract = artifacts.require("MockContract");
 
 const vaultTestSuite = (strategyType, vaultType) => {

@@ -37,8 +37,12 @@ contract('UnwrappedToWrappedTokenConverter', (accounts) => {
     converter = await UnwrappedToWrappedTokenConverter.new();
     await converter.configure(tokenToWrap.address);
 
-    wrapper = await TokenWrapper.new();
-    await wrapper.configure(tokenToWrap.address, alice);
+    wrapper = await TokenWrapper.new(
+      "Banked EURxb",
+      "bEURxb",
+      tokenToWrap.address,
+      alice
+    );
     const MINTER_ROLE = await wrapper.MINTER_ROLE();
     await wrapper.grantRole(MINTER_ROLE, converter.address);
   });

@@ -1,14 +1,13 @@
 pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol";
-import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 
 /// @title TokenWrapper
 /// @notice local wrapper for mediocre purposes only
-contract TokenWrapper is ERC20PresetMinterPauser, Initializable {
+contract TokenWrapper is ERC20PresetMinterPauser {
 
   using SafeERC20 for IERC20;
 
@@ -19,11 +18,20 @@ contract TokenWrapper is ERC20PresetMinterPauser, Initializable {
     _;
   }
 
-  constructor () public ERC20PresetMinterPauser("TokenWrapper", "TW") {}
-
-  function configure(address _wrappedToken, address _strategy) external initializer {
-      _setupRole(MINTER_ROLE, _strategy);
-      wrappedToken = _wrappedToken;
+  constructor(
+    string memory tokenName,
+    string memory tokenSymbol,
+    address _wrappedToken,
+    address _entity
+  )
+    public
+    ERC20PresetMinterPauser(
+      string(abi.encodePacked(tokenName, ' Wrapped')),
+      string(abi.encodePacked('w', tokenSymbol))
+    )
+  {
+    _setupRole(MINTER_ROLE, _entity);
+    wrappedToken = _wrappedToken;
   }
 
   function mint(uint256 _amount) public onlyMinter {

@@ -36,7 +36,7 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
         address _initialToken,
         address _initialController,
         address _initialTokenUnwrapped
-    ) external initializer override {
+    ) external initializer {
         super.configure(_initialToken, _initialController);
         tokenUnwrapped = _initialTokenUnwrapped;
     }
@@ -53,8 +53,8 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
         renounceRole(INVESTOR, _msgSender());
     }
 
-    function _convert(address _from, address _to, address _amount, bool _usingTransferFrom) internal returns(uint256) {
-        Controller currentController = IController(_controller);
+    function _convert(address _from, address _to, uint256 _amount, bool _usingTransferFrom) internal returns(uint256) {
+        IController currentController = IController(_controller);
         address converterAddress = currentController.converters(_from, _to);
         require(converterAddress != address(0), "!converter");
         IConverter converter = IConverter(converterAddress);
@@ -66,22 +66,22 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
         return converter.convert(currentController.strategies(_to));
     }
 
-    function depositUnwrapped(uint256 _amount) override onlyInvestor public {
-        deposit(_convert(tokenUnwrapped, _token, _amount, true));
+    function depositUnwrapped(uint256 _amount) onlyInvestor public {
+        deposit(_convert(tokenUnwrapped, address(_token), _amount, true));
     }
 
-    function depositAllUnwrapped() override onlyInvestor public {
+    function depositAllUnwrapped() onlyInvestor public {
         depositUnwrapped(IERC20(tokenUnwrapped).balanceOf(_msgSender()));
     }
 
-    function withdrawUnwrapped(uint256 _amount) override onlyInvestor public {
+    function withdrawUnwrapped(uint256 _amount) onlyInvestor public {
         withdraw(_amount);
-        uint256 unwrappedAmount = _convert(_token, tokenUnwrapped, _amount, false);
+        uint256 unwrappedAmount = _convert(address(_token), tokenUnwrapped, _amount, false);
         IERC20(tokenUnwrapped).safeTransfer(_msgSender(), unwrappedAmount);
     }
 
-    function withdrawAllUnwrapped() override onlyInvestor public {
-        withdrawUnwrapped(IERC20(_token).balanceOf(_msgSender()));
+    function withdrawAllUnwrapped() onlyInvestor public {
+        withdrawUnwrapped(_token.balanceOf(_msgSender()));
     }
 
     /// @notice Allows to deposit business logic tokens and reveive vault tokens

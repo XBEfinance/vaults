@@ -55,7 +55,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     function configure(
         address _initialToken,
         address _initialController
-    ) external initializer virtual {
+    ) public initializer {
         _token = IERC20(_initialToken);
         setController(_initialController);
     }

@@ -39,13 +39,11 @@ contract('TokenWrapper', (accounts) => {
   beforeEach(async () => {
     mock = await MockContract.new();
     tokenToWrap = await getMockTokenPrepared(alice, ether('10'), ether('20'), owner);
-    wrapper = await TokenWrapper.new();
+    wrapper = await TokenWrapper.new("Banked EURxb", "bEURxb", tokenToWrap.address, alice);
     MINTER_ROLE = await wrapper.MINTER_ROLE();
-    await wrapper.configure(tokenToWrap.address, alice);
-
   });
 
-  it('should configure properly', async () => {
+  it('should be configured properly', async () => {
     expect(await wrapper.wrappedToken()).to.be.equal(tokenToWrap.address);
     expect(await wrapper.hasRole(MINTER_ROLE, alice)).to.be.equal(true);
   });

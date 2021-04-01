@@ -36,6 +36,9 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     /// @notice Hundred procent (in base points)
     uint256 public constant max = 10000;
 
+    event Deposit(uint256 indexed _shares);
+    event Withdraw(uint256 indexed _amount);
+
     /// @param typeName Name of the vault token
     /// @param typePrefix Prefix of the vault token
     constructor(string memory typeName, string memory typePrefix)
@@ -107,11 +110,11 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
         return balance().mul(1e18).div(totalSupply());
     }
 
-    /// @notice Allows to deposit business logic tokens and reveive vault tokens
-    /// @param _amount Amount to deposit business logic tokens
-    function deposit(uint256 _amount) override virtual public {
+    function _deposit(address _from, uint256 _amount) internal {
         uint256 _pool = balance();
-        require(_token.transferFrom(_msgSender(), address(this), _amount), "!transferFrom");
+        if (address(this) != _from) {
+          require(_token.transferFrom(_from, address(this), _amount), "!transferFrom");
+        }
         _amount = _token.balanceOf(address(this));
         uint256 shares = 0;
         if (totalSupply() == 0) {
@@ -119,7 +122,14 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
         } else {
             shares = (_amount.mul(totalSupply())).div(_pool);
         }
-        _mint(_msgSender(), shares);
+        _mint(_from, shares);
+        emit Deposit(shares);
+    }
+
+    /// @notice Allows to deposit business logic tokens and reveive vault tokens
+    /// @param _amount Amount to deposit business logic tokens
+    function deposit(uint256 _amount) override virtual public {
+        _deposit(_msgSender(), _amount);
     }
 
     /// @notice Allows to deposit full balance of the business logic token and reveice vault tokens
@@ -127,23 +137,30 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
         deposit(_token.balanceOf(_msgSender()));
     }
 
+    function _withdraw(address _to, uint256 _shares) internal {
+      uint256 r = (balance().mul(_shares)).div(totalSupply());
+      _burn(_to, _shares);
+      // Check balance
+      uint256 b = _token.balanceOf(address(this));
+      if (b < r) {
+          uint256 _withdraw = r.sub(b);
+          IController(_controller).withdraw(address(_token), _withdraw);
+          uint256 _after = _token.balanceOf(address(this));
+          uint256 _diff = _after.sub(b);
+          if (_diff < _withdraw) {
+              r = b.add(_diff);
+          }
+      }
+      if (_to != address(this)) {
+        require(_token.transfer(_to, r), "!transfer");
+      }
+      emit Withdraw(r);
+    }
+
     /// @notice Allows exchange vault tokens to business logic tokens
     /// @param _shares Business logic tokens to withdraw
     function withdraw(uint256 _shares) override virtual public {
-        uint256 r = (balance().mul(_shares)).div(totalSupply());
-        _burn(_msgSender(), _shares);
-        // Check balance
-        uint256 b = _token.balanceOf(address(this));
-        if (b < r) {
-            uint256 _withdraw = r.sub(b);
-            IController(_controller).withdraw(address(_token), _withdraw);
-            uint256 _after = _token.balanceOf(address(this));
-            uint256 _diff = _after.sub(b);
-            if (_diff < _withdraw) {
-                r = b.add(_diff);
-            }
-        }
-        require(_token.transfer(_msgSender(), r), "!transfer");
+        _withdraw(_msgSender(), _shares);
     }
 
     /// @notice Same as withdraw only with full balance of vault tokens

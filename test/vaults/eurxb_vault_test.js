@@ -12,15 +12,20 @@ const {
 } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
-const { ZERO, CONVERSION_WEI_CONSTANT } = require('../utils/common');
+const { ZERO, CONVERSION_WEI_CONSTANT, getMockTokenPrepared } = require('../utils/common');
 const { vaultInfrastructureRedeploy } = require('../utils/vault_infrastructure_redeploy');
 
 const IERC20 = artifacts.require("IERC20");
 const IStrategy = artifacts.require("IStrategy");
-const MockToken = artifacts.require('MockToken');
+const MockToken = artifacts.require("MockToken");
+const Controller = artifacts.require("Controller");
 
 const ConsumerEURxbStrategy = artifacts.require("ConsumerEURxbStrategy");
 const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
+const UnwrappedToWrappedTokenConverter = artifacts.require("UnwrappedToWrappedTokenConverter");
+const WrappedToUnwrappedTokenConverter = artifacts.require("WrappedToUnwrappedTokenConverter");
+const TokenWrapper = artifacts.require("TokenWrapper");
+
 
 const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
 const ConsumerEURxbVault = artifacts.require("ConsumerEURxbVault");
@@ -33,6 +38,7 @@ const vaultTestSuite = (strategyType, vaultType) => {
     const governance = accounts[0];
     const miris = accounts[1];
     const strategist = accounts[2];
+    const alice = accounts[3];
 
     const testMin = new BN('9600');
 
@@ -68,27 +74,155 @@ const vaultTestSuite = (strategyType, vaultType) => {
     if (vaultType.contractName == InstitutionalEURxbVault.contractName) {
 
       const investor = accounts[3];
+      var role;
 
-      it('should allow investor', async () => {
-        const role = await vault.INVESTOR();
-        await vault.allowInvestor(investor);
-        expect(await vault.hasRole(role, investor)).to.be.equal(true);
+      describe('investor role management', () => {
+
+        beforeEach(async () => {
+          role = await vault.INVESTOR();
+          await vault.allowInvestor(investor);
+        });
+
+        it('should allow investor', async () => {
+          expect(await vault.hasRole(role, investor)).to.be.equal(true);
+        });
+
+        it('should disallow investor', async () => {
+          await vault.disallowInvestor(investor);
+          expect(await vault.hasRole(role, investor)).to.be.equal(false);
+        });
+
+        it('should renounce investor', async () => {
+          await vault.renounceInvestor({from: investor});
+          expect(await vault.hasRole(role, investor)).to.be.equal(false);
+        });
       });
 
-      it('should disallow investor', async () => {
-        const role = await vault.INVESTOR();
-        await vault.allowInvestor(investor);
-        await vault.disallowInvestor(investor);
-        expect(await vault.hasRole(role, investor)).to.be.equal(false);
-      });
+      describe('wrapping/unwrapping functional', () => {
 
-      it('should renounce investor', async () => {
-        const role = await vault.INVESTOR();
-        await vault.allowInvestor(investor);
-        await vault.renounceInvestor({from: investor});
-        expect(await vault.hasRole(role, investor)).to.be.equal(false);
-      });
+        var wrapConverter;
+        var unwrapConverter;
+        var tokenToWrap;
+        var wrapper;
+        var aliceAmount = ether('5');
 
+        beforeEach(async () => {
+
+          tokenToWrap = await getMockTokenPrepared(alice, ether('10'), ether('20'), governance);
+
+          wrapConverter = await UnwrappedToWrappedTokenConverter.new();
+          await wrapConverter.configure(tokenToWrap.address);
+
+          unwrapConverter = await WrappedToUnwrappedTokenConverter.new();
+          await unwrapConverter.configure(tokenToWrap.address);
+
+          wrapper = await TokenWrapper.new(
+            "Banked EURxb",
+            "bEURxb",
+            tokenToWrap.address,
+            alice
+          );
+          const MINTER_ROLE = await wrapper.MINTER_ROLE();
+          await wrapper.grantRole(MINTER_ROLE, wrapConverter.address);
+          await wrapper.grantRole(MINTER_ROLE, unwrapConverter.address);
+
+
+          vault = await vaultType.new();
+          strategy = await strategyType.new();
+          controller = await Controller.new();
+
+          await strategy.configure(
+            wrapper.address,
+            controller.address,
+            vault.address,
+            {from: governance}
+          );
+
+          await controller.configure(
+            ZERO_ADDRESS,
+            ZERO_ADDRESS,
+            {from: governance}
+          );
+
+          await controller.setVault(
+            wrapper.address,
+            vault.address,
+            {from: governance}
+          );
+
+          await controller.setApprovedStrategy(
+            wrapper.address,
+            strategy.address,
+            true,
+            {from: governance}
+          );
+
+          await controller.setStrategy(
+            wrapper.address,
+            strategy.address,
+            {from: governance}
+          );
+
+          await controller.setApprovedStrategy(
+            tokenToWrap.address,
+            strategy.address,
+            true,
+            {from: governance}
+          );
+
+          await controller.setStrategy(
+            tokenToWrap.address,
+            strategy.address,
+            {from: governance}
+          );
+
+          await controller.setConverter(tokenToWrap.address, wrapper.address, wrapConverter.address);
+          await controller.setConverter(wrapper.address, tokenToWrap.address, unwrapConverter.address);
+
+          await vault.configure(
+              wrapper.address,
+              controller.address,
+              tokenToWrap.address
+          );
+
+          await vault.allowInvestor(alice);
+        });
+
+        it('should deposit unwrapped', async () => {
+          await tokenToWrap.approve(vault.address, aliceAmount, {from: alice});
+          await vault.depositUnwrapped(aliceAmount, {from: alice});
+          expect(await wrapper.balanceOf(vault.address)).to.be.bignumber.equal(aliceAmount);
+        });
+
+        it('should deposit unwrapped all', async () => {
+          const aliceBalance = await tokenToWrap.balanceOf(alice);
+          await tokenToWrap.approve(vault.address, aliceBalance, {from: alice});
+          await vault.depositAllUnwrapped({from: alice});
+          expect(await wrapper.balanceOf(vault.address)).to.be.bignumber.equal(aliceBalance);
+        });
+
+        it('should withdraw unwrapped', async () => {
+          await tokenToWrap.approve(vault.address, aliceAmount, {from: alice});
+          await vault.depositUnwrapped(aliceAmount, {from: alice});
+          await vault.withdrawUnwrapped(aliceAmount, {from: alice});
+
+          const aliceBalance = await tokenToWrap.balanceOf(alice);
+          expect(await tokenToWrap.balanceOf(alice)).to.be.bignumber.equal(aliceBalance);
+        });
+
+        it('should withdraw unwrapped all', async () => {
+          const aliceBalance = await tokenToWrap.balanceOf(alice);
+          await tokenToWrap.approve(vault.address, aliceBalance, {from: alice});
+          await vault.depositAllUnwrapped({from: alice});
+          expect(await tokenToWrap.balanceOf(alice)).to.be.bignumber.equal(ZERO);
+          expect(await wrapper.balanceOf(vault.address)).to.be.bignumber.equal(aliceBalance);
+          await vault.withdrawAllUnwrapped({from: alice});
+          expect(await wrapper.balanceOf(vault.address)).to.be.bignumber.equal(ZERO);
+          expect(await tokenToWrap.balanceOf(alice)).to.be.bignumber.equal(aliceBalance);
+
+        });
+
+      });
     }
 
     it('should set min', async () => {

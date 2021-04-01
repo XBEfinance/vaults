@@ -53,21 +53,18 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
         renounceRole(INVESTOR, _msgSender());
     }
 
-    function _convert(address _from, address _to, uint256 _amount, bool _usingTransferFrom) internal returns(uint256) {
+    function _convert(address _from, address _to, uint256 _amount) internal returns(uint256) {
         IController currentController = IController(_controller);
         address converterAddress = currentController.converters(_from, _to);
         require(converterAddress != address(0), "!converter");
         IConverter converter = IConverter(converterAddress);
-        if (_usingTransferFrom) {
-            IERC20(_from).safeTransferFrom(_msgSender(), converterAddress, _amount);
-        } else {
-            IERC20(_from).safeTransfer(converterAddress, _amount);
-        }
+        IERC20(_from).safeTransfer(converterAddress, _amount);
         return converter.convert(currentController.strategies(_to));
     }
 
     function depositUnwrapped(uint256 _amount) onlyInvestor public {
-        deposit(_convert(tokenUnwrapped, address(_token), _amount, true));
+        IERC20(tokenUnwrapped).safeTransferFrom(_msgSender(), address(this), _amount);
+        _deposit(address(this), _convert(tokenUnwrapped, address(_token), _amount));
     }
 
     function depositAllUnwrapped() onlyInvestor public {
@@ -75,8 +72,8 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
     }
 
     function withdrawUnwrapped(uint256 _amount) onlyInvestor public {
-        withdraw(_amount);
-        uint256 unwrappedAmount = _convert(address(_token), tokenUnwrapped, _amount, false);
+        _withdraw(address(this), _amount);
+        uint256 unwrappedAmount = _convert(address(_token), tokenUnwrapped, _amount);
         IERC20(tokenUnwrapped).safeTransfer(_msgSender(), unwrappedAmount);
     }
 

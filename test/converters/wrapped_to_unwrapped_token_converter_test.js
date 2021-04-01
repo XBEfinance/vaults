@@ -11,16 +11,15 @@ const {
   time
 } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
-const { ZERO, ONE, getMockTokenPrepared } = require('../utils/common');
+const { ZERO, ONE, getMockTokenPrepared} = require('../utils/common');
 
-const IERC20 = artifacts.require("IERC20");
 const IStrategy = artifacts.require("IStrategy");
-const EURxbToWrappedEURxbConverter = artifacts.require('EURxbToWrappedEURxbConverter');
+const WrappedToUnwrappedTokenConverter = artifacts.require('WrappedToUnwrappedTokenConverter');
 const TokenWrapper = artifacts.require('TokenWrapper');
 
 const MockContract = artifacts.require("MockContract");
 
-contract('EURxbToWrappedEURxbConverter', (accounts) => {
+contract('WrappedToUnwrappedTokenConverter', (accounts) => {
 
   const owner = accounts[0];
   const alice = accounts[1];
@@ -34,7 +33,7 @@ contract('EURxbToWrappedEURxbConverter', (accounts) => {
     mock = await MockContract.new();
     tokenToWrap = await getMockTokenPrepared(alice, ether('10'), ether('20'), owner);
 
-    converter = await EURxbToWrappedEURxbConverter.new();
+    converter = await WrappedToUnwrappedTokenConverter.new();
     await converter.configure(tokenToWrap.address);
 
     wrapper = await TokenWrapper.new();
@@ -47,20 +46,25 @@ contract('EURxbToWrappedEURxbConverter', (accounts) => {
     expect(await converter.eurxb()).to.be.equal(tokenToWrap.address);
   });
 
-  it('should convert eurxb to wrapped eurxb', async () => {
-    const tokensToWrap = ether('5');
-    await tokenToWrap.approve(converter.address, tokensToWrap, {from: alice});
-    await tokenToWrap.transfer(converter.address, tokensToWrap, {from: alice});
+  it('should convert wrapped eurxb to eurxb', async () => {
+    const tokensToUnwrap = ether('5');
+    await tokenToWrap.approve(wrapper.address, tokensToUnwrap, {from: alice});
+
+    await wrapper.methods["mint(uint256)"](tokensToUnwrap, {from: alice});
+
+    await wrapper.approve(converter.address, tokensToUnwrap, {from: alice});
+    await wrapper.transfer(converter.address, tokensToUnwrap, {from: alice});
 
     const wantCalldata = (await IStrategy.at(mock.address)).contract
       .methods.want().encodeABI();
     await mock.givenMethodReturnAddress(wantCalldata, wrapper.address);
 
-    const oldBalance = await wrapper.balanceOf(alice);
+    const oldBalance = await tokenToWrap.balanceOf(alice);
     await converter.convert(mock.address, {from: alice});
-    const newBalance = await wrapper.balanceOf(alice);
+    const newBalance = await tokenToWrap.balanceOf(alice);
 
-    expect(oldBalance.sub(newBalance).abs()).to.be.bignumber.equal(tokensToWrap);
+    expect(oldBalance.sub(newBalance).abs()).to.be.bignumber.equal(tokensToUnwrap);
+
   });
 
 });

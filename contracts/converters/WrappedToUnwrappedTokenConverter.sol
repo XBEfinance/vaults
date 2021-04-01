@@ -11,21 +11,21 @@ import "../interfaces/IStrategy.sol";
 import "../TokenWrapper.sol";
 
 
-contract WrappedEURxbToEURxbConverter is IConverter, Initializable {
+contract WrappedToUnwrappedTokenConverter is IConverter, Initializable {
 
     using SafeERC20 for IERC20;
 
-    address public eurxb;
+    address public token;
 
-    function configure(address _eurxb) external initializer {
-        eurxb = _eurxb;
+    function configure(address _token) external initializer {
+        token = _token;
     }
 
     function convert(address _strategy) override external returns(uint256) {
         TokenWrapper wrapper = TokenWrapper(IStrategy(_strategy).want());
-        uint256 wrappedEURxbBalance = wrapper.balanceOf(address(this));
-        wrapper.burn(wrappedEURxbBalance);
-        IERC20(eurxb).safeTransfer(msg.sender, wrappedEURxbBalance);
-        return wrappedEURxbBalance;
+        uint256 wrappedtokenBalance = wrapper.balanceOf(address(this));
+        wrapper.burn(wrappedtokenBalance);
+        IERC20(token).safeTransfer(msg.sender, wrappedtokenBalance);
+        return wrappedtokenBalance;
     }
 }

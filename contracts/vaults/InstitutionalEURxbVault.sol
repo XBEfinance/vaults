@@ -1,14 +1,22 @@
 pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import "./EURxbVault.sol";
+import "../interfaces/IController.sol";
+import "../interfaces/IConverter.sol";
 
 /// @title InstitutionalEURxbVault
 /// @notice Vault for investors of the system
 contract InstitutionalEURxbVault is EURxbVault, AccessControl {
 
+    using SafeERC20 for IERC20;
+
     bytes32 public constant INVESTOR = keccak256("INVESTOR");
+
+    address public tokenUnwrapped;
 
     /// @notice Constructor that creates a vault for investors
     constructor() EURxbVault("Institutional", "in") public {
@@ -18,6 +26,19 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
     modifier onlyInvestor {
         require(hasRole(INVESTOR, _msgSender()), "!investor");
         _;
+    }
+
+    /// @notice Default initialize method for solving migration linearization problem
+    /// @dev Called once only by deployer
+    /// @param _initialToken Business token logic address
+    /// @param _initialController Controller instance address
+    function configure(
+        address _initialToken,
+        address _initialController,
+        address _initialTokenUnwrapped
+    ) external initializer override {
+        super.configure(_initialToken, _initialController);
+        tokenUnwrapped = _initialTokenUnwrapped;
     }
 
     function allowInvestor(address _investor) external onlyGovernance {
@@ -32,24 +53,35 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
         renounceRole(INVESTOR, _msgSender());
     }
 
+    function _convert(address _from, address _to, address _amount, bool _usingTransferFrom) internal returns(uint256) {
+        Controller currentController = IController(_controller);
+        address converterAddress = currentController.converters(_from, _to);
+        require(converterAddress != address(0), "!converter");
+        IConverter converter = IConverter(converterAddress);
+        if (_usingTransferFrom) {
+            IERC20(_from).safeTransferFrom(_msgSender(), converterAddress, _amount);
+        } else {
+            IERC20(_from).safeTransfer(converterAddress, _amount);
+        }
+        return converter.convert(currentController.strategies(_to));
+    }
+
     function depositUnwrapped(uint256 _amount) override onlyInvestor public {
-      // get converted routine bEURxb -> wbEURxb
-      deposit(_amount);
+        deposit(_convert(tokenUnwrapped, _token, _amount, true));
+    }
+
+    function depositAllUnwrapped() override onlyInvestor public {
+        depositUnwrapped(IERC20(tokenUnwrapped).balanceOf(_msgSender()));
     }
 
     function withdrawUnwrapped(uint256 _amount) override onlyInvestor public {
-      withdraw(_amount);
-      // get converted routine wbEURxb -> bEURxb
+        withdraw(_amount);
+        uint256 unwrappedAmount = _convert(_token, tokenUnwrapped, _amount, false);
+        IERC20(tokenUnwrapped).safeTransfer(_msgSender(), unwrappedAmount);
     }
 
-    function depositAllUnwrapped(uint256 _amount) override onlyInvestor public {
-      // get converted routine bEURxb -> wbEURxb
-      depositAll();
-    }
-
-    function withdrawAllUnwrapped(uint256 _amount) override onlyInvestor public {
-      withdrawAll();
-      // get converted routine wbEURxb -> bEURxb
+    function withdrawAllUnwrapped() override onlyInvestor public {
+        withdrawUnwrapped(IERC20(_token).balanceOf(_msgSender()));
     }
 
     /// @notice Allows to deposit business logic tokens and reveive vault tokens

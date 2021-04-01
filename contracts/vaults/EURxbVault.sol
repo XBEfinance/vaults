@@ -25,10 +25,10 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     using SafeMath for uint256;
 
     /// @notice Controller instance, to simplify controller-related actions
-    address private _controller;
+    address internal _controller;
 
     /// @notice Token which will be transfered to strategy and used in business logic
-    IERC20 private _token;
+    IERC20 internal _token;
 
     /// @notice Minimum percentage to be in business? (in base points)
     uint256 public min = 9500;
@@ -55,7 +55,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     function configure(
         address _initialToken,
         address _initialController
-    ) external initializer {
+    ) external initializer virtual {
         _token = IERC20(_initialToken);
         setController(_initialController);
     }
@@ -91,13 +91,13 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
 
     /// @notice Business logic token getter
     /// @return Business logic token address
-    function token() override external view returns(address) {
+    function token() override public view returns(address) {
         return address(_token);
     }
 
     /// @notice Controller getter
     /// @return Controller address
-    function controller() override external view returns(address) {
+    function controller() override public view returns(address) {
         return _controller;
     }
 

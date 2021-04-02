@@ -113,7 +113,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     function _deposit(address _from, uint256 _amount) internal returns(uint256 shares) {
         uint256 _pool = balance();
         if (address(this) != _from) {
-          require(_token.transferFrom(_from, address(this), _amount), "!transferFrom");
+          _token.safeTransferFrom(_from, address(this), _amount);
         }
         _amount = _token.balanceOf(address(this));
         shares = 0;
@@ -152,7 +152,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
             }
         }
         if (_to != address(this)) {
-          require(_token.transfer(_to, r), "!transfer");
+          _token.safeTransfer(_to, r);
         }
         emit Withdraw(r);
     }
@@ -171,7 +171,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     /// @notice Transfer tokens to controller, controller transfers it to strategy and earn (farm)
     function earn() override external {
         uint256 _bal = available();
-        require(_token.transfer(_controller, _bal), "!transfer");
+        _token.safeTransfer(_controller, _bal);
         IController(_controller).earn(address(_token), _bal);
     }
 

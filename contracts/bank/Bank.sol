@@ -27,7 +27,7 @@ contract Bank is Context, Initializable, ERC20 {
     event WithdrawInterestEUR(address _user, uint256 _amount);
     event WithdrawInterestBank(address _user, uint256 _amount);
 
-    constructor() public ERC20("bEURxb", "bEURxb") {}
+    constructor() public ERC20("Banked EURxb", "bEURxb") {}
 
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer

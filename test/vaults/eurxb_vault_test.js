@@ -61,6 +61,21 @@ const vaultTestSuite = (strategyType, vaultType) => {
         strategyType,
         vaultType
       );
+      if (vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        await vault.configure(
+          revenueToken.address,
+          controller.address,
+          ZERO_ADDRESS,
+          {from: governance}
+        );
+      } else {
+        await vault.configure(
+          revenueToken.address,
+          controller.address,
+          {from: governance}
+        );
+      }
+
     });
 
     it('should configure successfully', async () => {
@@ -176,9 +191,6 @@ const vaultTestSuite = (strategyType, vaultType) => {
             {from: governance}
           );
 
-          await controller.setConverter(tokenToWrap.address, wrapper.address, wrapConverter.address);
-          await controller.setConverter(wrapper.address, tokenToWrap.address, unwrapConverter.address);
-
           await vault.configure(
               wrapper.address,
               controller.address,
@@ -188,7 +200,15 @@ const vaultTestSuite = (strategyType, vaultType) => {
           await vault.allowInvestor(alice);
         });
 
+        it('should revert if suiting converter is not found', async () => {
+          const aliceBalance = await tokenToWrap.balanceOf(alice);
+          await tokenToWrap.approve(vault.address, aliceAmount, {from: alice});
+          await expectRevert(vault.depositUnwrapped(aliceAmount, {from: alice}), "!converter");
+        });
+
         it('should deposit unwrapped', async () => {
+          await controller.setConverter(tokenToWrap.address, wrapper.address, wrapConverter.address);
+          await controller.setConverter(wrapper.address, tokenToWrap.address, unwrapConverter.address);
           const aliceBalance = await tokenToWrap.balanceOf(alice);
           await tokenToWrap.approve(vault.address, aliceAmount, {from: alice});
           await vault.depositUnwrapped(aliceAmount, {from: alice});
@@ -199,6 +219,8 @@ const vaultTestSuite = (strategyType, vaultType) => {
         });
 
         it('should deposit unwrapped all', async () => {
+          await controller.setConverter(tokenToWrap.address, wrapper.address, wrapConverter.address);
+          await controller.setConverter(wrapper.address, tokenToWrap.address, unwrapConverter.address);
           const aliceBalance = await tokenToWrap.balanceOf(alice);
           await tokenToWrap.approve(vault.address, aliceBalance, {from: alice});
           await vault.depositAllUnwrapped({from: alice});
@@ -209,6 +231,8 @@ const vaultTestSuite = (strategyType, vaultType) => {
         });
 
         it('should withdraw unwrapped', async () => {
+          await controller.setConverter(tokenToWrap.address, wrapper.address, wrapConverter.address);
+          await controller.setConverter(wrapper.address, tokenToWrap.address, unwrapConverter.address);
           const aliceBalance = await tokenToWrap.balanceOf(alice);
           await tokenToWrap.approve(vault.address, aliceAmount, {from: alice});
           await vault.depositUnwrapped(aliceAmount, {from: alice});
@@ -228,6 +252,8 @@ const vaultTestSuite = (strategyType, vaultType) => {
         });
 
         it('should withdraw unwrapped all', async () => {
+          await controller.setConverter(tokenToWrap.address, wrapper.address, wrapConverter.address);
+          await controller.setConverter(wrapper.address, tokenToWrap.address, unwrapConverter.address);
           const aliceBalance = await tokenToWrap.balanceOf(alice);
           await tokenToWrap.approve(vault.address, aliceBalance, {from: alice});
           await vault.depositAllUnwrapped({from: alice});
@@ -565,11 +591,11 @@ const vaultTestSuite = (strategyType, vaultType) => {
       expect(await vault.balanceOf(miris)).to.be.bignumber.equal(ZERO);
     };
 
-    it('should withdraw correctly when revenue token is equal to vault token', async () => {
+    it('should withdraw correctly when revenue token amount is equal to vault token amount', async () => {
       await withdrawsTestWithEqualAmounts(false);
     });
 
-    it('should withdraw correctly when revenue token is not equal to vault token', async () => {
+    it('should withdraw correctly when revenue token amount is not equal to vault token amount', async () => {
       await withdrawsTestWithoutEqualAmounts(false);
     });
 

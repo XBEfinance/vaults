@@ -34,12 +34,6 @@ const configureMainParts = async (
     {from: governance}
   );
 
-  await vault.configure(
-    revenueToken.address,
-    controller.address,
-    {from: governance}
-  );
-
   await controller.setVault(
     revenueToken.address,
     vault.address,

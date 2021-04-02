@@ -189,8 +189,12 @@ const vaultTestSuite = (strategyType, vaultType) => {
         });
 
         it('should deposit unwrapped', async () => {
+          const aliceBalance = await tokenToWrap.balanceOf(alice);
           await tokenToWrap.approve(vault.address, aliceAmount, {from: alice});
           await vault.depositUnwrapped(aliceAmount, {from: alice});
+          expect(await vault.balanceOf(alice)).to.be.bignumber.equal(aliceAmount);
+          expect(await tokenToWrap.balanceOf(alice)).to.be.bignumber.equal(aliceBalance.sub(aliceAmount));
+          expect(await tokenToWrap.balanceOf(wrapper.address)).to.be.bignumber.equal(aliceAmount);
           expect(await wrapper.balanceOf(vault.address)).to.be.bignumber.equal(aliceAmount);
         });
 
@@ -198,27 +202,47 @@ const vaultTestSuite = (strategyType, vaultType) => {
           const aliceBalance = await tokenToWrap.balanceOf(alice);
           await tokenToWrap.approve(vault.address, aliceBalance, {from: alice});
           await vault.depositAllUnwrapped({from: alice});
+          expect(await vault.balanceOf(alice)).to.be.bignumber.equal(aliceBalance);
+          expect(await tokenToWrap.balanceOf(alice)).to.be.bignumber.equal(ZERO);
+          expect(await tokenToWrap.balanceOf(wrapper.address)).to.be.bignumber.equal(aliceBalance);
           expect(await wrapper.balanceOf(vault.address)).to.be.bignumber.equal(aliceBalance);
         });
 
         it('should withdraw unwrapped', async () => {
+          const aliceBalance = await tokenToWrap.balanceOf(alice);
           await tokenToWrap.approve(vault.address, aliceAmount, {from: alice});
           await vault.depositUnwrapped(aliceAmount, {from: alice});
+
+          expect(await vault.balanceOf(alice)).to.be.bignumber.equal(aliceAmount);
+          expect(await tokenToWrap.balanceOf(alice)).to.be.bignumber.equal(aliceBalance.sub(aliceAmount));
+          expect(await tokenToWrap.balanceOf(wrapper.address)).to.be.bignumber.equal(aliceAmount);
+          expect(await wrapper.balanceOf(vault.address)).to.be.bignumber.equal(aliceAmount);
+
           await vault.withdrawUnwrapped(aliceAmount, {from: alice});
 
-          const aliceBalance = await tokenToWrap.balanceOf(alice);
+          expect(await vault.balanceOf(alice)).to.be.bignumber.equal(ZERO);
           expect(await tokenToWrap.balanceOf(alice)).to.be.bignumber.equal(aliceBalance);
+          expect(await tokenToWrap.balanceOf(wrapper.address)).to.be.bignumber.equal(ZERO);
+          expect(await wrapper.balanceOf(vault.address)).to.be.bignumber.equal(ZERO);
+
         });
 
         it('should withdraw unwrapped all', async () => {
           const aliceBalance = await tokenToWrap.balanceOf(alice);
           await tokenToWrap.approve(vault.address, aliceBalance, {from: alice});
           await vault.depositAllUnwrapped({from: alice});
+
+          expect(await vault.balanceOf(alice)).to.be.bignumber.equal(aliceBalance);
           expect(await tokenToWrap.balanceOf(alice)).to.be.bignumber.equal(ZERO);
+          expect(await tokenToWrap.balanceOf(wrapper.address)).to.be.bignumber.equal(aliceBalance);
           expect(await wrapper.balanceOf(vault.address)).to.be.bignumber.equal(aliceBalance);
+
           await vault.withdrawAllUnwrapped({from: alice});
-          expect(await wrapper.balanceOf(vault.address)).to.be.bignumber.equal(ZERO);
+
+          expect(await vault.balanceOf(alice)).to.be.bignumber.equal(ZERO);
           expect(await tokenToWrap.balanceOf(alice)).to.be.bignumber.equal(aliceBalance);
+          expect(await tokenToWrap.balanceOf(wrapper.address)).to.be.bignumber.equal(ZERO);
+          expect(await wrapper.balanceOf(vault.address)).to.be.bignumber.equal(ZERO);
 
         });
 

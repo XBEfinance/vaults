@@ -64,7 +64,11 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
 
     function depositUnwrapped(uint256 _amount) onlyInvestor public {
         IERC20(tokenUnwrapped).safeTransferFrom(_msgSender(), address(this), _amount);
-        _deposit(address(this), _convert(tokenUnwrapped, address(_token), _amount));
+        uint256 shares = _deposit(
+          address(this),
+          _convert(tokenUnwrapped, address(_token), _amount)
+        );
+        _transfer(address(this), _msgSender(), shares);
     }
 
     function depositAllUnwrapped() onlyInvestor public {
@@ -72,13 +76,14 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
     }
 
     function withdrawUnwrapped(uint256 _amount) onlyInvestor public {
-        _withdraw(address(this), _amount);
-        uint256 unwrappedAmount = _convert(address(_token), tokenUnwrapped, _amount);
+        _transfer(_msgSender(), address(this), _amount);
+        uint256 withdrawn = _withdraw(address(this), _amount);
+        uint256 unwrappedAmount = _convert(address(_token), tokenUnwrapped, withdrawn);
         IERC20(tokenUnwrapped).safeTransfer(_msgSender(), unwrappedAmount);
     }
 
     function withdrawAllUnwrapped() onlyInvestor public {
-        withdrawUnwrapped(_token.balanceOf(_msgSender()));
+        withdrawUnwrapped(balanceOf(_msgSender()));
     }
 
     /// @notice Allows to deposit business logic tokens and reveive vault tokens

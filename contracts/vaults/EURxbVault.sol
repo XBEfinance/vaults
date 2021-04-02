@@ -110,13 +110,13 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
         return balance().mul(1e18).div(totalSupply());
     }
 
-    function _deposit(address _from, uint256 _amount) internal {
+    function _deposit(address _from, uint256 _amount) internal returns(uint256 shares) {
         uint256 _pool = balance();
         if (address(this) != _from) {
           require(_token.transferFrom(_from, address(this), _amount), "!transferFrom");
         }
         _amount = _token.balanceOf(address(this));
-        uint256 shares = 0;
+        shares = 0;
         if (totalSupply() == 0) {
             shares = _amount;
         } else {
@@ -134,27 +134,27 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
 
     /// @notice Allows to deposit full balance of the business logic token and reveice vault tokens
     function depositAll() override virtual public {
-        deposit(_token.balanceOf(_msgSender()));
+        _deposit(_msgSender(), _token.balanceOf(_msgSender()));
     }
 
-    function _withdraw(address _to, uint256 _shares) internal {
-      uint256 r = (balance().mul(_shares)).div(totalSupply());
-      _burn(_to, _shares);
-      // Check balance
-      uint256 b = _token.balanceOf(address(this));
-      if (b < r) {
-          uint256 _withdraw = r.sub(b);
-          IController(_controller).withdraw(address(_token), _withdraw);
-          uint256 _after = _token.balanceOf(address(this));
-          uint256 _diff = _after.sub(b);
-          if (_diff < _withdraw) {
-              r = b.add(_diff);
-          }
-      }
-      if (_to != address(this)) {
-        require(_token.transfer(_to, r), "!transfer");
-      }
-      emit Withdraw(r);
+    function _withdraw(address _to, uint256 _shares) internal returns(uint256 r) {
+        r = (balance().mul(_shares)).div(totalSupply());
+        _burn(_to, _shares);
+        // Check balance
+        uint256 b = _token.balanceOf(address(this));
+        if (b < r) {
+            uint256 _withdraw = r.sub(b);
+            IController(_controller).withdraw(address(_token), _withdraw);
+            uint256 _after = _token.balanceOf(address(this));
+            uint256 _diff = _after.sub(b);
+            if (_diff < _withdraw) {
+                r = b.add(_diff);
+            }
+        }
+        if (_to != address(this)) {
+          require(_token.transfer(_to, r), "!transfer");
+        }
+        emit Withdraw(r);
     }
 
     /// @notice Allows exchange vault tokens to business logic tokens
@@ -165,7 +165,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
 
     /// @notice Same as withdraw only with full balance of vault tokens
     function withdrawAll() override virtual public {
-        withdraw(_token.balanceOf(_msgSender()));
+        _withdraw(_msgSender(), balanceOf(_msgSender()));
     }
 
     /// @notice Transfer tokens to controller, controller transfers it to strategy and earn (farm)

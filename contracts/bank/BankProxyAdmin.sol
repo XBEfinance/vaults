@@ -6,8 +6,8 @@ import "../governance/Governable.sol";
 
 contract BankProxyAdmin is ProxyAdmin, Governable {
 
-    constructor(address _governable) external {
-        transferOwnership(Governable(_governable).governance);
+    constructor(address _governable) public {
+        transferOwnership(Governable(_governable).governance());
     }
 
 }

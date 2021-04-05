@@ -11,9 +11,9 @@ const {
   time
 } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
-const { ZERO, ONE, getMockTokenPrepared, processEventArgs, checkSetter } = require('./utils/common');
+const { ZERO, ONE, getMockTokenPrepared, processEventArgs, checkSetter } = require('../utils/common');
 const { activeActor, actorStake, deployAndConfigureGovernance } = require(
-  './utils/governance_redeploy'
+  '../utils/governance_redeploy'
 );
 
 const Bank = artifacts.require("Bank");
@@ -26,7 +26,6 @@ contract('BankTransparentProxy', (accounts) => {
 
   const owner = accounts[0];
   const alice = accounts[1];
-  const fool = accounts[2];
 
   var bank;
   var bankProxy;
@@ -38,27 +37,30 @@ contract('BankTransparentProxy', (accounts) => {
   beforeEach(async () => {
     mock = await MockContract.new();
     governable = await Governable.at(mock.address);
-    mockToken = await getMockTokenPrepared();
+    mockToken = await getMockTokenPrepared(alice, ether('10'), ether('20'), owner);
 
     const governanceCalldata = governable.contract.methods.governance().encodeABI();
     await mock.givenCalldataReturnAddress(governanceCalldata, owner);
 
     bank = await Bank.new();
+    await bank.configure(mockToken.address);
     bankProxyAdmin = await BankProxyAdmin.new(governable.address);
     bankProxy = await BankTransparentProxy.new(bank.address, bankProxyAdmin.address);
   });
 
   it('should be configured right', async () => {
-    expect(await bankProxy.admin()).to.be.equal(owner);
-    expect(await bankProxy.implementation()).to.be.equal(bank.address);
+    expect(await bankProxyAdmin.getProxyAdmin(bankProxy.address)).to.be.equal(bankProxyAdmin.address);
+    expect(await bankProxyAdmin.getProxyImplementation(bankProxy.address)).to.be.equal(bank.address);
   });
 
   it('should upgrade bank if called by admin', async () => {
-
-  });
-
-  it('should reject upgrade bank if called not by admin', async () => {
-
+    const newMock = await MockContract.new();
+    const newMockToken = await getMockTokenPrepared(alice, ether('10'), ether('20'), owner);
+    const eurxbCalldata = (await Bank.at(newMock.address)).contract.methods
+      .eurxb().encodeABI();
+    await newMock.givenCalldataReturnAddress(eurxbCalldata, newMockToken.address);
+    await bankProxyAdmin.upgrade(bankProxy.address, newMock.address);
+    expect(await (await Bank.at(bankProxy.address)).eurxb()).to.be.equal(newMockToken.address);
   });
 
 });

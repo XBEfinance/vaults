@@ -7,7 +7,7 @@ abstract contract BaseExecutor is IExecutor {
 
   using SafeMath for uint256;
 
-  uint256 private constant FIFTY_ONE_PROCENTS = 5100;
+  uint256 private constant FIFTY_PROCENTS = 5000;
 
   function execute(
       uint256 _id,
@@ -15,9 +15,9 @@ abstract contract BaseExecutor is IExecutor {
       uint256 _against,
       uint256 _quorum
   ) external override {
-      if (_for > FIFTY_ONE_PROCENTS && _against < FIFTY_ONE_PROCENTS) {
+      if (_for > FIFTY_PROCENTS && _against < FIFTY_PROCENTS) {
           _ifPassed(_id, _for, _against, _quorum);
-      } else if (_for == FIFTY_ONE_PROCENTS && _against == FIFTY_ONE_PROCENTS) {
+      } else if (_for == FIFTY_PROCENTS && _against == FIFTY_PROCENTS) {
           _ifStale(_id, _for, _against, _quorum);
       } else {
           _ifNotPassed(_id, _for, _against, _quorum);

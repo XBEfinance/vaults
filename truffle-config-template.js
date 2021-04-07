@@ -26,7 +26,7 @@ const mnemonic = fs.readFileSync('.secret').toString().trim();
 
 // NB: It's important to wrap the provider as a function.
 const rinkebyNetworkConfig = {
-  provider: () => new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/v3/${process.env.INFURA_ID}`),
+  provider: () => new HDWalletProvider(mnemonic, `wss://rinkeby.infura.io/ws/v3/${process.env.INFURA_ID}`),
   network_id: 4, // Rinkeby's id
   networkCheckTimeout: 10000000,
   gasLimit: 5000000,
@@ -36,7 +36,7 @@ const rinkebyNetworkConfig = {
 };
 
 const mainnetNetworkConfig = {
-  provider: () => new HDWalletProvider(mnemonic, `https://mainnet.infura.io/v3/${process.env.INFURA_ID}`),
+  provider: () => new HDWalletProvider(mnemonic, `wss://mainnet.infura.io/ws/v3/${process.env.INFURA_ID}`),
   network_id: 1,
   networkCheckTimeout: 10000000,
   gasLimit: 5000000,
@@ -77,11 +77,8 @@ module.exports = {
     // },
     // Useful for deploying to a public network.
     rinkeby: rinkebyNetworkConfig,
-
-    // Use this network for part one of the deployment with free infura.
-    rinkeby_part_one: rinkebyNetworkConfig,
-    // Use this network for part two of the deployment with free infura.
-    rinkeby_part_two: rinkebyNetworkConfig,
+    // Useful for deploying to a public network.
+    mainnet: mainnetNetworkConfig,
 
     // Use this network to test safe interaction
     rinkeby_safe_test: rinkebyNetworkConfig,

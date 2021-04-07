@@ -13,8 +13,9 @@ else
     truffle run verify $1 --network rinkeby
   else
     if [[ $1 = "all" ]]; then
-      truffle run verify Governance --network $2
-      truffle run verify Treasury --network $2
+      truffle run verify Bank --network $2
+      truffle run verify BankProxyAdmin --network $2
+      truffle run verify BankTransparentProxy --network $2
     else
       truffle run verify $1 --network $2
     fi

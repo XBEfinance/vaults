@@ -17,7 +17,7 @@ abstract contract BaseExecutor is IExecutor {
   ) external override {
       if (_for > FIFTY_ONE_PROCENTS && _against < FIFTY_ONE_PROCENTS) {
           _ifPassed(_id, _for, _against, _quorum);
-      } else (_for == FIFTY_ONE_PROCENTS && _against == FIFTY_ONE_PROCENTS) {
+      } else if (_for == FIFTY_ONE_PROCENTS && _against == FIFTY_ONE_PROCENTS) {
           _ifStale(_id, _for, _against, _quorum);
       } else {
           _ifNotPassed(_id, _for, _against, _quorum);

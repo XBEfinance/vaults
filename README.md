@@ -1,4 +1,4 @@
-Miris Contract
+EURxb Bonds Contract
 =================
 **The system of Smart-Contracts for bonds digitization** 
 

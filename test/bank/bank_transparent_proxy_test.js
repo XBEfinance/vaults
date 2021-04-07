@@ -54,13 +54,12 @@ contract('BankTransparentProxy', (accounts) => {
   });
 
   it('should upgrade bank if called by admin', async () => {
-    const newMock = await MockContract.new();
     const newMockToken = await getMockTokenPrepared(alice, ether('10'), ether('20'), owner);
-    const eurxbCalldata = (await Bank.at(newMock.address)).contract.methods
-      .eurxb().encodeABI();
-    await newMock.givenCalldataReturnAddress(eurxbCalldata, newMockToken.address);
-    await bankProxyAdmin.upgrade(bankProxy.address, newMock.address);
-    expect(await (await Bank.at(bankProxy.address)).eurxb()).to.be.equal(newMockToken.address);
+    bank = await Bank.new();
+    await bankProxyAdmin.upgrade(bankProxy.address, bank.address);
+    const bankProxyWithBankInterface = await Bank.at(bankProxy.address);
+    await bankProxyWithBankInterface.configure(newMockToken.address);
+    expect(await bankProxyWithBankInterface.eurxb()).to.be.equal(newMockToken.address);
   });
 
 });

@@ -38,7 +38,7 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @param _id ID of the proposal
     /// @param _creator Address of proposal creator
     /// @param _start Voting process start timestamp
-    /// @param _duration Milliseconds during which the voting process occurs
+    /// @param _duration Seconds during which the voting process occurs
     /// @param _executor Address of the the executor contract
     event NewProposal(uint256 _id, address _creator, uint256 _start, uint256 _duration, address _executor);
 
@@ -136,10 +136,10 @@ contract Governance is Governable, IRewardDistributionRecipient, LPTokenWrapper,
     /// @notice Token in which reward for voting will be paid
     IERC20 public rewardsToken;
 
-    /// @notice Default duration of the voting process in milliseconds
+    /// @notice Default duration of the voting process in seconds
     uint256 public constant DURATION = 7 days;
 
-    /// @notice Time period in milliseconds during which rewards are paid
+    /// @notice Time period in seconds during which rewards are paid
     uint256 public periodFinish = 0;
 
     /// @notice This variable regulates amount of staking reward token to be paid, it depends from period finish. The last claims the lowest reward

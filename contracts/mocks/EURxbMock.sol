@@ -120,7 +120,7 @@ contract EURxbMock is OverrideERC20, IEURxb {
      * @dev Return user balance
      * @param account user address
      */
-    function balanceOf(address account) public override view returns (uint256) {
+    function balanceOf(address account) public override(IERC20, OverrideERC20) view returns (uint256) {
         return balanceByTime(account, block.timestamp);
     }
 

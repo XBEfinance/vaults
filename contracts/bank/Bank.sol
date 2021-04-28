@@ -1,6 +1,5 @@
 pragma solidity ^0.6.0;
 
-import "@openzeppelin/contracts/GSN/Context.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
@@ -14,7 +13,6 @@ contract Bank is Initializable, ERC20 {
 
     /// @notice EURxb token address
     IEURxb public eurxb;
-    address public proxyAdmin;
 
     /// @dev address => deposits
     mapping (address => uint256) private deposits;
@@ -32,16 +30,7 @@ contract Bank is Initializable, ERC20 {
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
     /// @param _eurxb token address
-    function configure(address _eurxb, address _proxyAdmin) external initializer {
-        eurxb = IEURxb(_eurxb);
-        proxyAdmin = _proxyAdmin;
-    }
-
-    /// @notice Method used for reconfiguration of the proxy storage
-    /// @dev Called once only by proxyAdmin when contract is upgraded
-    /// @param _eurxb token address
-    function reconfigure(address _eurxb) external {
-        require(_msgSender() == proxyAdmin, "!proxyAdmin");
+    function configure(address _eurxb) external initializer {
         eurxb = IEURxb(_eurxb);
     }
 

@@ -21,6 +21,7 @@ const BankProxyAdmin = artifacts.require("BankProxyAdmin");
 const BankTransparentProxy = artifacts.require("BankTransparentProxy");
 const MockContract = artifacts.require("MockContract");
 const Governable = artifacts.require("Governable");
+const BankV2Mock = artifacts.require("BankV2Mock");
 
 contract('BankTransparentProxy', (accounts) => {
 
@@ -43,8 +44,8 @@ contract('BankTransparentProxy', (accounts) => {
     await mock.givenCalldataReturnAddress(governanceCalldata, owner);
 
     bank = await Bank.new();
+    const configureCalldata = bank.contract.methods.configure(mockToken.address).encodeABI();
     bankProxyAdmin = await BankProxyAdmin.new(governable.address);
-    const configureCalldata = bank.contract.methods.configure(mockToken.address, bankProxyAdmin.address).encodeABI();
     bankProxy = await BankTransparentProxy.new(bank.address, bankProxyAdmin.address, configureCalldata);
   });
 
@@ -56,8 +57,8 @@ contract('BankTransparentProxy', (accounts) => {
 
   it('should upgrade bank if called by admin', async () => {
     const newMockToken = await getMockTokenPrepared(alice, ether('10'), ether('20'), owner);
-    bank = await Bank.new();
-    const configureCalldata = bank.contract.methods.reconfigure(newMockToken.address).encodeABI();
+    bank = await BankV2Mock.new();
+    const configureCalldata = bank.contract.methods.newConfigure(newMockToken.address, new BN('101')).encodeABI();
     await bankProxyAdmin.upgradeAndCall(bankProxy.address, bank.address, configureCalldata);
     const bankProxyWithBankInterface = await Bank.at(bankProxy.address);
     expect(await bankProxyWithBankInterface.eurxb()).to.be.equal(newMockToken.address);

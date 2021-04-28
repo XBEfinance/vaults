@@ -43,22 +43,23 @@ contract('BankTransparentProxy', (accounts) => {
     await mock.givenCalldataReturnAddress(governanceCalldata, owner);
 
     bank = await Bank.new();
-    await bank.configure(mockToken.address);
     bankProxyAdmin = await BankProxyAdmin.new(governable.address);
-    bankProxy = await BankTransparentProxy.new(bank.address, bankProxyAdmin.address);
+    const configureCalldata = bank.contract.methods.configure(mockToken.address, bankProxyAdmin.address).encodeABI();
+    bankProxy = await BankTransparentProxy.new(bank.address, bankProxyAdmin.address, configureCalldata);
   });
 
   it('should be configured right', async () => {
     expect(await bankProxyAdmin.getProxyAdmin(bankProxy.address)).to.be.equal(bankProxyAdmin.address);
     expect(await bankProxyAdmin.getProxyImplementation(bankProxy.address)).to.be.equal(bank.address);
+    expect(await (await Bank.at(bankProxy.address)).eurxb()).to.be.equal(mockToken.address);
   });
 
   it('should upgrade bank if called by admin', async () => {
     const newMockToken = await getMockTokenPrepared(alice, ether('10'), ether('20'), owner);
     bank = await Bank.new();
-    await bankProxyAdmin.upgrade(bankProxy.address, bank.address);
+    const configureCalldata = bank.contract.methods.reconfigure(newMockToken.address).encodeABI();
+    await bankProxyAdmin.upgradeAndCall(bankProxy.address, bank.address, configureCalldata);
     const bankProxyWithBankInterface = await Bank.at(bankProxy.address);
-    await bankProxyWithBankInterface.configure(newMockToken.address);
     expect(await bankProxyWithBankInterface.eurxb()).to.be.equal(newMockToken.address);
   });
 

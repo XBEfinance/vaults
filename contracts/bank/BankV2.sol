@@ -1,6 +1,7 @@
 pragma solidity ^0.6.0;
 
 import "../interfaces/IBankV2.sol";
+import "../interfaces/vault/IVaultTransfers.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "smart-bond/contracts/EURxb.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -12,28 +13,37 @@ contract BankV2 is IBankV2, ERC20, Initializable {
     address private ddp;
     address private vault;
 
+    mapping(address => uint256) deposits;
+
     event Deposit(address _user, uint256 _amount);
 
+    constructor() public ERC20("Banked (V2) xbEURO", "xbEURO") {}
 
-    constructor() public ERC20("Banked (V2) xbEURO", "xbEURO") {
-    }
-
-    function configure(address _eurxb, address _ddp, address _vault)  external initializer {
+    function configure(address _eurxb, address _ddp, address _vault) external initializer {
         eurxb = EURxb(_eurxb);
         ddp = _ddp;
         vault = _vault;
     }
 
-
     function setVault(address vault) public {}
 
     function deposit(address _eurx, uint256 amount, uint256 timestamp) override external {
         require(amount > 0, "BankV2: amount must be greater than 0");
-        address msgSender = _msgSender(); // gas saving
+        address msgSender = _msgSender();
+        // gas saving
 
         EURxb(_eurx).transferFrom(msgSender, address(this), amount);
-        uint256 xbEURamount = EURxb(_eurx).balanceByTime(msgSender, timestamp);
-        _mint(vault, xbEURamount);
+
+        uint256 xbEUROamount = EURxb(_eurx).balanceByTime(msgSender, timestamp);
+
+        deposits[msgSender] += amount;
+
+        _mint(msgSender, xbEUROamount);
+        _approve(msgSender, address(this), xbEUROamount);
+        _transfer(msgSender, address(this), xbEUROamount);
+        _approve(address(this), vault, xbEUROamount);
+
+        IVaultTransfers(vault).deposit(0);
 
         emit Deposit(msgSender, amount);
     }

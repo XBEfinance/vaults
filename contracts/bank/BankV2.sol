@@ -15,7 +15,7 @@ contract BankV2 is IBankV2, ERC20, Initializable {
     event Deposit(address _user, uint256 _amount);
 
 
-    constructor() public ERC20("Banked (V2) xbEUR", "xbEUR") {
+    constructor() public ERC20("Banked (V2) xbEURO", "xbEURO") {
     }
 
     function configure(address _eurxb, address _ddp, address _vault)  external initializer {

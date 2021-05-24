@@ -43,7 +43,7 @@ contract BankV2 is IBankV2, ERC20, Initializable {
         _transfer(msgSender, address(this), xbEUROamount);
         _approve(address(this), vault, xbEUROamount);
 
-        IVaultTransfers(vault).deposit(0);
+        IVaultTransfers(vault).deposit(xbEUROamount0);
 
         emit Deposit(msgSender, amount);
     }

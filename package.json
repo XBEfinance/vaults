@@ -22,13 +22,14 @@
   "license": "ISC",
   "dependencies": {
     "@openzeppelin/contracts": "^3.4.1",
-    "@openzeppelin/test-helpers": "^0.5.10",
+    "@openzeppelin/test-helpers": "^0.5.11",
     "@openzeppelin/upgrades": "^2.8.0",
     "@truffle/hdwallet-provider": "=1.2.2",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "audit": "0.0.6",
     "dotenv": "^8.2.0",
-    "ethereumjs-util": "^6.2.1"
+    "ethereumjs-util": "^6.2.1",
+    "smart-bond": "github:EURxbfinance/SmartBond"
   },
   "devDependencies": {
     "@ethersproject/solidity": "^5.0.7",
@@ -51,6 +52,7 @@
     "eth-gas-reporter": "^0.2.20",
     "ethereumjs-testrpc-sc": "^6.5.1-sc.1",
     "fs-extra": "^9.0.1",
+    "ganache-cli": "^6.12.2",
     "karma": "^5.2.3",
     "lodash": "^4.17.20",
     "prettier": "^2.1.2",

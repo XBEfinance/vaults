@@ -6,6 +6,7 @@ const {
   BN,
   time,
 } = require('@openzeppelin/test-helpers');
+const { vaultInfrastructureRedeploy } = require('../utils/vault_infrastructure_redeploy');
 
 const BankV2 = artifacts.require('BankV2');
 const EURxb = artifacts.require('EURxb');
@@ -13,7 +14,8 @@ const DDP = artifacts.require('DDP');
 const BondToken = artifacts.require('BondToken');
 const SecurityAssetToken = artifacts.require('SecurityAssetToken');
 const AllowList = artifacts.require('AllowList');
-const EURxbVault = artifacts.require('EURxbVault');
+const ConsumerEURxbStrategy = artifacts.require('ConsumerEURxbStrategy');
+const ConsumerEURxbVault = artifacts.require('ConsumerEURxbVault');
 
 contract('BankV2', (accounts) => {
   const owner = accounts[0];
@@ -34,13 +36,31 @@ contract('BankV2', (accounts) => {
     this.bond = await BondToken.new('http://google.com', { from: owner });
     this.sat = await SecurityAssetToken.new('http://google.com', owner, this.bond.address, this.list.address, { from: owner });
     this.bankV2 = await BankV2.new({ from: owner });
-    this.vault = await EURxbVault.new('xbEURO', 'xbEURO');
+    // this.vault = await EURxbVault.new('xbEURO', 'xbEURO');
 
+    let revenueToken;
+    let controller;
+    let strategy;
+    let vault;
+    let mock;
+    [
+      mock,
+      controller,
+      strategy,
+      vault,
+      revenueToken,
+    ] = await vaultInfrastructureRedeploy(
+      owner,
+      owner,
+      ConsumerEURxbStrategy,
+      ConsumerEURxbVault,
+    );
+    this.vault = vault;
     await this.ddp.configure(this.bond.address, this.eurxb.address, this.list.address);
     await this.bond.configure(this.list.address, this.sat.address, this.ddp.address);
     await this.eurxb.configure(this.ddp.address, { from: owner });
     await this.bankV2.configure(this.eurxb.address, this.ddp.address, this.vault.address, { from: owner });
-    await this.vault.configure(this.bankV2.address, '0x0000000000000000000000000000000000000002', { from: owner });
+    await this.vault.configure(this.bankV2.address, controller.address, { from: owner });
 
     await this.list.allowAccount(client);
   });

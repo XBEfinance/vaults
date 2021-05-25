@@ -93,4 +93,35 @@ const vaultInfrastructureRedeploy = async (
   return [ mock, controller, strategy, vault, revenueToken, treasury ]
 };
 
-module.exports = { vaultInfrastructureRedeploy };
+const vaultInfrastructureRedeployWithRevenueToken = async (
+  governance,
+  strategist,
+  strategyType,
+  vaultType,
+  revenueToken
+) => {
+  const mock = await MockContract.new();
+
+  const controller = await Controller.new();
+  const strategy = await strategyType.new();
+  const vault = await vaultType.new();
+  const treasury = await Treasury.new();
+
+  var treasuryAddress = treasury.address;
+
+  await configureMainParts(
+    strategy,
+    controller,
+    revenueToken,
+    vault,
+    treasury,
+    governance,
+    strategist,
+    mock.address,
+    mock
+  );
+
+  return [ mock, controller, strategy, vault, revenueToken, treasury ]
+};
+
+module.exports = { vaultInfrastructureRedeploy, vaultInfrastructureRedeployWithRevenueToken };

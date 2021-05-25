@@ -6,7 +6,7 @@ const {
   BN,
   time,
 } = require('@openzeppelin/test-helpers');
-const { vaultInfrastructureRedeploy } = require('../utils/vault_infrastructure_redeploy');
+const { vaultInfrastructureRedeployWithRevenueToken } = require('../utils/vault_infrastructure_redeploy');
 
 const BankV2 = artifacts.require('BankV2');
 const EURxb = artifacts.require('EURxb');
@@ -49,11 +49,12 @@ contract('BankV2', (accounts) => {
       strategy,
       vault,
       revenueToken,
-    ] = await vaultInfrastructureRedeploy(
+    ] = await vaultInfrastructureRedeployWithRevenueToken(
       owner,
       owner,
       ConsumerEURxbStrategy,
       ConsumerEURxbVault,
+      this.bankV2
     );
     this.vault = vault;
     await this.ddp.configure(this.bond.address, this.eurxb.address, this.list.address);

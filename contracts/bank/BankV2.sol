@@ -46,7 +46,11 @@ contract BankV2 is IBankV2, ERC20, Initializable {
         emit Deposit(msgSender, amount);
     }
 
-    function redeemBond(uint256 bondId) override external {
+    function redeemBondInTime(uint256 bondId) override external {
+
+    }
+
+    function redeemBondExpired(uint256 bondId) override external {
 
     }
 }

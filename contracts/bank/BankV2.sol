@@ -38,9 +38,7 @@ contract BankV2 is IBankV2, ERC20, Initializable {
 
         deposits[msgSender] += amount;
 
-        _mint(msgSender, xbEUROamount);
-        _approve(msgSender, address(this), xbEUROamount);
-        _transfer(msgSender, address(this), xbEUROamount);
+        _mint(address(this), xbEUROamount);
         _approve(address(this), vault, xbEUROamount);
 
         IVaultTransfers(vault).deposit(xbEUROamount);
@@ -48,7 +46,7 @@ contract BankV2 is IBankV2, ERC20, Initializable {
         emit Deposit(msgSender, amount);
     }
 
-    function redeemBondInTime(uint256 bondId) override external {}
+    function redeemBond(uint256 bondId) override external {
 
-    function redeemBondExpired(uint256 bondId) override external {}
+    }
 }

@@ -1,19 +1,19 @@
 pragma solidity ^0.6.0;
 
 import "../interfaces/IBankV2.sol";
+import "../interfaces/IDDP.sol";
 import "../interfaces/vault/IVaultTransfers.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "smart-bond/contracts/EURxb.sol";
 import "smart-bond/contracts/templates/Initializable.sol";
-import "smart-bond/contracts/DDP.sol";
 import "smart-bond/contracts/interfaces/IBondToken.sol";
 
 contract BankV2 is IBankV2, ERC20, Initializable, Ownable {
     using SafeMath for uint256;
     EURxb public eurxb;
-    DDP public ddp;
+    IDDP public ddp;
     IBondToken public bond;
     address public vault;
 
@@ -27,7 +27,7 @@ contract BankV2 is IBankV2, ERC20, Initializable, Ownable {
 
     function configure(address _eurxb, address _ddp, address _vault, address _bond) override external initializer {
         eurxb = EURxb(_eurxb);
-        ddp = DDP(_ddp);
+        ddp = IDDP(_ddp);
         vault = _vault;
         bond = IBondToken(_bond);
     }

@@ -60,7 +60,7 @@ contract('BankV2', (accounts) => {
     await this.ddp.configure(this.bond.address, this.eurxb.address, this.list.address);
     await this.bond.configure(this.list.address, this.sat.address, this.ddp.address);
     await this.eurxb.configure(this.ddp.address, { from: owner });
-    await this.bankV2.configure(this.eurxb.address, this.ddp.address, this.vault.address, { from: owner });
+    await this.bankV2.configure(this.eurxb.address, this.ddp.address, this.vault.address, this.bond.address, { from: owner });
     await this.vault.configure(this.bankV2.address, controller.address, { from: owner });
 
     await this.list.allowAccount(client);

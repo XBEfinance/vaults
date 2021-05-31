@@ -1,6 +1,6 @@
 const { BN, ether, expectRevert } = require('@openzeppelin/test-helpers');
 
-const MockToken = artifacts.require("MockToken");
+const MockToken = artifacts.require('MockToken');
 
 /* eslint-disable */
 function increaseTime(duration) {
@@ -90,7 +90,7 @@ const checkSetter = async (
   validSender,
   nonValidSender,
   contractInstance,
-  revertMessage
+  revertMessage,
 ) => {
   await contractInstance[setterMethodName](newValue, { from: validSender });
   expect(await contractInstance[getterName]()).to.be.equal(newValue);
@@ -99,6 +99,8 @@ const checkSetter = async (
 
 module.exports = {
   DAY: 86400,
+  YEAR: 86400 * 365,
+  MONTH: 86400 * 30,
   HOUR: 3600,
   ZERO: new BN('0'),
   ONE: new BN('1'),
@@ -107,5 +109,7 @@ module.exports = {
   processEventArgs,
   checkSetter,
   revertToSnapShot,
-  takeSnapshot
+  takeSnapshot,
+  currentTimestamp,
+  increaseTime,
 };

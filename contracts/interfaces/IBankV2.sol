@@ -2,10 +2,11 @@ pragma solidity ^0.6.0;
 
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 /// @title BankV2
 /// @notice Bond operations contract
-interface IBankV2 is IERC20 {
+interface IBankV2 is IERC20, IERC721Receiver {
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
     /// @param _eurxb token address
@@ -25,4 +26,7 @@ interface IBankV2 is IERC20 {
 
     //   @notice Method for redeeming the bond
     function redeemBond(uint256 bondId) external;
+
+    //   @notice Method to use instead of EURxX.balanceByTime
+    function balanceByTime(address _eurx, uint256 amount, uint256 timestamp) override external;
 }

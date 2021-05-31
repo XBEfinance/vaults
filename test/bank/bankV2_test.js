@@ -1,4 +1,4 @@
-const { expect } = require('chai');
+const { expect, assert } = require('chai');
 const {
   expectEvent,
   expectRevert,
@@ -7,7 +7,13 @@ const {
   time,
 } = require('@openzeppelin/test-helpers');
 const { vaultInfrastructureRedeployWithRevenueToken } = require('../utils/vault_infrastructure_redeploy');
-const { increaseTime } = require('../utils/common');
+const {
+  increaseTime,
+  currentTimestamp,
+  DAY,
+  YEAR,
+  MONTH,
+} = require('../utils/common');
 
 const BankV2 = artifacts.require('BankV2');
 const EURxb = artifacts.require('EURxb');
@@ -25,6 +31,7 @@ contract('BankV2', (accounts) => {
   const alice = accounts[3];
 
   beforeEach(async () => {
+    this.timestamp = await currentTimestamp();
     this.ETHER_100 = web3.utils.toWei('100', 'ether');
     this.ETHER_0 = web3.utils.toWei('0', 'ether');
     this.DATE_SHIFT = new BN('10000');
@@ -90,7 +97,7 @@ contract('BankV2', (accounts) => {
       console.log(bf.toString());
 
       await this.eurxb.approve(this.bankV2.address, ether('1'), { from: client });
-      await this.bankV2.deposit(this.eurxb.address, ether('1'), '1758069828', { from: client });
+      await this.bankV2.deposit(this.eurxb.address, ether('1'), this.timestamp + 4 * YEAR, { from: client });
       const balance = await this.bankV2.balanceOf.call(this.vault.address);
       console.log(balance.toString());
     });
@@ -102,7 +109,7 @@ contract('BankV2', (accounts) => {
         !(await this.bond.hasToken(this.TOKEN_1)),
         'bond token must not exist at this time point',
       );
-      await this.sat.mint(client, this.ETHER_100, 1748069828, { from: owner });
+      await this.sat.mint(client, this.ETHER_100, 4 * YEAR, { from: owner });
       // await this.eurxb.transfer(client, ether('1.5'), { from: minter });
       const ts = await this.eurxb.totalSupply.call();
       console.log(ts.toString());
@@ -110,41 +117,39 @@ contract('BankV2', (accounts) => {
       console.log(bf.toString());
 
       await this.eurxb.approve(this.bankV2.address, ether('1'), { from: client });
-      await this.bankV2.deposit(this.eurxb.address, ether('1'), '1758069828', { from: client });
-      let balance = await this.bankV2.balanceOf.call(this.vault.address);
-      console.log(balance.toString());
+      await this.bankV2.deposit(this.eurxb.address, ether('1'), this.timestamp + 4 * YEAR, { from: client });
 
-      await this.bankV2.withdraw('95332004363901572735', { from: client });
-      balance = await this.bankV2.balanceOf.call(client);
-      console.log(balance.toString());
+      const xbEURObalance = await this.bankV2.xbEUROvault.call(client, { from: client });
+      await this.bankV2.withdraw(xbEURObalance, { from: client });
+      const clientXBEURObalance = await this.bankV2.balanceOf.call(client);
+      assert.equal(clientXBEURObalance.toString(), xbEURObalance.toString());
     });
   });
 
   describe('redeemBond', () => {
     it('should be ok', async () => {
-      await this.sat.mint(client, this.ETHER_100, 1748069828, { from: owner });
-      // await this.eurxb.transfer(client, ether('1.5'), { from: minter });
-      const ts = await this.eurxb.totalSupply.call();
-      console.log(ts.toString());
+      await this.sat.mint(client, this.ETHER_100, 4 * YEAR, { from: owner });
       const bf = await this.eurxb.balanceOf.call(client);
-      console.log(bf.toString());
+      assert.equal(bf.toString(), ether('75'));
 
-      await this.eurxb.approve(this.bankV2.address, ether('75'), { from: client });
-      await this.bankV2.deposit(this.eurxb.address, ether('75'), '1758069828', { from: client });
+      const tokenInfo = await this.bond.getTokenInfo(1, { from: client });
+      assert.equal(tokenInfo[0].toString(), ether('75'));
+      assert(this.timestamp + 4 * YEAR + DAY > tokenInfo[2].toString() && tokenInfo[2].toString() > this.timestamp + 4 * YEAR);
+
+      await this.eurxb.approve(this.bankV2.address, bf, { from: client });
+      await this.bankV2.deposit(this.eurxb.address, bf, this.timestamp + 4 * YEAR, { from: client });
       let balance = await this.eurxb.balanceOf.call(this.bankV2.address);
-      console.log(balance.toString());
+      assert.equal(balance.toString(), ether('75'));
 
-      await increaseTime(3370274222);
+      await increaseTime(4 * YEAR + 2 * DAY + MONTH);
+
+      let xbEURO = await this.bankV2.xbEUROvault.call(client, { from: client });
+      console.log(xbEURO.toString());
 
       await this.bankV2.withdraw(ether('90'), { from: client });
       balance = await this.bankV2.balanceOf.call(client);
       console.log(balance.toString());
 
-      const tokenInfo = await this.bond.getTokenInfo(1, { from: client });
-      console.log(tokenInfo[0].toString());
-      console.log(tokenInfo[1].toString());
-      console.log(tokenInfo[2].toString());
-      console.log(time.toString());
       await this.bankV2.redeemBond(1, { from: client });
     });
   });

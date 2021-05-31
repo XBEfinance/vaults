@@ -41,7 +41,7 @@ const ZERO = new BN('0');
 //
 module.exports = function (deployer, network, accounts) {
   deployer.then(async () => {
-    if (network === 'test' || network === 'dev' || network === 'soliditycoverage') {
+    if (network === 'test' || network === 'dev' || network === 'development' || network === 'soliditycoverage') {
       await deployer.deploy(LinkedList);
       await deployer.link(LinkedList, MockLinkedList);
       await deployer.link(LinkedList, EURxb);

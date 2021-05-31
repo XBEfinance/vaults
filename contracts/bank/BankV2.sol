@@ -6,11 +6,12 @@ import "../interfaces/vault/IVaultTransfers.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
 import "smart-bond/contracts/EURxb.sol";
 import "smart-bond/contracts/templates/Initializable.sol";
 import "smart-bond/contracts/interfaces/IBondToken.sol";
 
-contract BankV2 is IBankV2, ERC20, Initializable, Ownable {
+contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
     using SafeMath for uint256;
     EURxb public eurxb;
     IDDP public ddp;
@@ -24,6 +25,20 @@ contract BankV2 is IBankV2, ERC20, Initializable, Ownable {
     event Withdraw(address _user, uint256 _amount);
 
     constructor() public ERC20("Banked (V2) xbEURO", "xbEURO") {}
+
+    struct BalanceByTimeInternalDataStore {
+        EURxb EURxb;
+    } // gas saving in balanceByTime
+
+    struct BalanceByTimeEURxbDataStore {
+        uint256 currentTotalActiveValue;
+        uint256 currentExpIndex;
+        uint256 head;
+        uint256 currentAccrualTimestamp;
+        uint256 amount;
+        uint256 maturityEnd;
+        uint256 next;
+    }  // gas saving in balanceByTime
 
     function configure(address _eurxb, address _ddp, address _vault, address _bond) override external initializer {
         eurxb = EURxb(_eurxb);
@@ -42,13 +57,13 @@ contract BankV2 is IBankV2, ERC20, Initializable, Ownable {
 
     function deposit(address _eurx, uint256 amount, uint256 timestamp) override external {
         require(amount > 0, "BankV2: amount < 0");
-        address msgSender = _msgSender(); // gas saving
-
-        EURxb(_eurx).transferFrom(msgSender, address(this), amount);
+        address msgSender = _msgSender();        // gas saving
 
         uint256 xbEUROamount = EURxb(_eurx).balanceByTime(msgSender, timestamp);
+        xbEUROamount = xbEUROamount.mul(amount).div(EURxb(_eurx).balanceOf(msgSender));
+        EURxb(_eurx).transferFrom(msgSender, address(this), amount);
 
-        xbEUROvault[msgSender] += xbEUROvault[msgSender].add(xbEUROamount);
+        xbEUROvault[msgSender] = xbEUROvault[msgSender].add(xbEUROamount);
 
         _mint(address(this), xbEUROamount);
         _approve(address(this), vault, xbEUROamount);
@@ -59,23 +74,35 @@ contract BankV2 is IBankV2, ERC20, Initializable, Ownable {
     }
 
     function withdraw(uint256 _amount) override external {
-        address msgSender = _msgSender(); // gas saving
+        address msgSender = _msgSender();        // gas saving
         require(_amount > 0, "BankV2: amount < 0");
-        require(xbEUROvault[msgSender] > _amount, "BankV2: not enough funds");
+        require(xbEUROvault[msgSender] >= _amount, "BankV2: not enough funds");
         IVaultTransfers(vault).withdraw(_amount);
         _transfer(address(this), msgSender, _amount);
     }
 
     function redeemBond(uint256 bondId) override external {
-        (uint256 tokenValue, , uint256 maturity) = bond.getTokenInfo(bondId);
+        (uint256 tokenValue,, uint256 maturity) = bond.getTokenInfo(bondId);
         require(block.timestamp > maturity, "BankV2: bond is not mature yet");
 
-        address msgSender = _msgSender(); // gas saving
+        address msgSender = _msgSender();        // gas saving
         uint256 endPeriod = maturity.add(ddp.getClaimPeriod());
         if (msgSender != bondOwner[bondId]) {
             require(block.timestamp > endPeriod, "BankV2: claim period is not finished yet");
         }
         ddp.withdraw(bondId);
         _burn(msgSender, tokenValue);
+    }
+
+    function balanceByTime(address _eurx, uint256 amount, uint256 timestamp) override external {
+        BalanceByTimeInternalDataStore internalData; // gas saving
+        BalanceByTimeEURxbDataStore EURxbData; // gas saving
+        internalData.EURxb = EURxb(_eurx);
+        EURxbData.currentTotalActiveValue = internalData.EURxb.totalActiveValue();
+        EURxbData.currentExpIndex = internalData.EURxb.expIndex();
+        EURxbData.head = internalData.EURxb.getFirstMaturityId();
+        EURxbData.currentAccrualTimestamp = internalData.EURxb.accrualTimestamp();
+        (EURxbData.amount, EURxbData.maturityEnd, , EURxbDATA.next) = internalData.EURxb.getMaturityInfo();
+
     }
 }

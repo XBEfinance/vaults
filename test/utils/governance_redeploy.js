@@ -1,9 +1,10 @@
 const { ether } = require('@openzeppelin/test-helpers');
+const { accounts, contract } = require('@openzeppelin/test-environment');
 const { getMockTokenPrepared } = require('./common.js');
 
-const Governance = artifacts.require('Governance');
-const GovernanceToken = artifacts.require('XBE');
-const MockToken = artifacts.require('MockToken');
+const Governance = contract.fromArtifact('Governance');
+const GovernanceToken = contract.fromArtifact('XBE');
+const MockToken = contract.fromArtifact('MockToken');
 
 const actorStake = async (address, sum, governanceContract, governanceToken) => {
   await governanceToken.approve(governanceContract.address, sum, {from: address});
@@ -26,15 +27,17 @@ const deployAndConfigureGovernance = async (
     mockedAmount,
     from
 ) => {
-  const governanceContract = await Governance.new();
+  const [ owner ] = accounts;
+  const governanceContract = await Governance.new({ from: owner });
   const rewardsToken = await getMockTokenPrepared(mintTo, mockedAmount, rewardsTokenTotalSupply, from);
-  const governanceToken = await GovernanceToken.new(governanceTokenTotalSupply);
+  const governanceToken = await GovernanceToken.new(governanceTokenTotalSupply, { from: owner });
   await governanceContract.configure(
     startId,
     rewardsToken.address,
     governance,
     governanceToken.address,
-    rewardDistribution
+    rewardDistribution,
+    { from: owner }
   );
   return [ governanceContract, governanceToken, rewardsToken ];
 }

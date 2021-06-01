@@ -1,14 +1,15 @@
 const { constants } = require('@openzeppelin/test-helpers');
+const { accounts, contract } = require('@openzeppelin/test-environment');
 const { ZERO_ADDRESS } = constants;
 
-const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
-const ConsumerEURxbVault = artifacts.require("ConsumerEURxbVault");
-const Treasury = artifacts.require("Treasury");
+const InstitutionalEURxbVault = contract.fromArtifact("InstitutionalEURxbVault");
+const ConsumerEURxbVault = contract.fromArtifact("ConsumerEURxbVault");
+const Treasury = contract.fromArtifact("Treasury");
 
-const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
-const Controller = artifacts.require("Controller");
-const IERC20 = artifacts.require("ERC20");
-const MockContract = artifacts.require("MockContract");
+const InstitutionalEURxbStrategy = contract.fromArtifact("InstitutionalEURxbStrategy");
+const Controller = contract.fromArtifact("Controller");
+const IERC20 = contract.fromArtifact("ERC20");
+const MockContract = contract.fromArtifact("MockContract");
 
 const configureMainParts = async (
   strategy,
@@ -68,12 +69,13 @@ const vaultInfrastructureRedeploy = async (
   strategyType,
   vaultType
 ) => {
-  const mock = await MockContract.new();
+  const [owner] = accounts;
+  const mock = await MockContract.new({ from: owner});
 
-  const controller = await Controller.new();
-  const strategy = await strategyType.new();
-  const vault = await vaultType.new();
-  const treasury = await Treasury.new();
+  const controller = await Controller.new({ from: owner});
+  const strategy = await strategyType.new({ from: owner});
+  const vault = await vaultType.new({ from: owner});
+  const treasury = await Treasury.new({ from: owner});
   var revenueToken = await IERC20.at(mock.address);
 
   var treasuryAddress = treasury.address;

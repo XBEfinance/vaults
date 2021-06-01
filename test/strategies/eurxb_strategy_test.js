@@ -10,19 +10,20 @@ const {
   ether,
   time
 } = require('@openzeppelin/test-helpers');
+const { accounts, contract } = require('@openzeppelin/test-environment');
 const { ZERO_ADDRESS } = constants;
 const { ZERO, ONE } = require('../utils/common');
 const { vaultInfrastructureRedeploy } = require('../utils/vault_infrastructure_redeploy');
 
-const IController = artifacts.require("IController");
-const IERC20 = artifacts.require("IERC20");
-const IConverter = artifacts.require("IConverter");
-const IVaultCore = artifacts.require("IVaultCore");
+const IController = contract.fromArtifact("IController");
+const IERC20 = contract.fromArtifact("IERC20");
+const IConverter = contract.fromArtifact("IConverter");
+const IVaultCore = contract.fromArtifact("IVaultCore");
 
-const MockContract = artifacts.require("MockContract");
+const MockContract = contract.fromArtifact("MockContract");
 
 const strategyTestSuite = (strategyType, vaultType) => {
-  return (accounts) => {
+  return () => {
 
     const governance = accounts[0];
     const miris = accounts[1];

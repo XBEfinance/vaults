@@ -44,8 +44,8 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     constructor(string memory typeName, string memory typePrefix)
         public
         ERC20(
-            string(abi.encodePacked(typeName, ' EURxb')),
-            string(abi.encodePacked(typePrefix, 'EURxb'))
+            string(abi.encodePacked(typeName, ' xbEURO')),
+            string(abi.encodePacked(typePrefix, 'xbEURO'))
         )
         Initializable()
         Governable()

@@ -1,6 +1,8 @@
 const { BN, ether, expectRevert } = require('@openzeppelin/test-helpers');
 
-const MockToken = artifacts.require("MockToken");
+const { accounts, contract } = require('@openzeppelin/test-environment');
+
+const MockToken = contract.fromArtifact("MockToken");
 
 /* eslint-disable */
 function increaseTime(duration) {

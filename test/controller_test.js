@@ -10,23 +10,24 @@ const {
   ether,
   time
 } = require('@openzeppelin/test-helpers');
+const { accounts, contract } = require('@openzeppelin/test-environment');
 const { ZERO_ADDRESS } = constants;
 
 const { ZERO, CONVERSION_WEI_CONSTANT, getMockTokenPrepared } = require('./utils/common');
 const { vaultInfrastructureRedeploy } = require('./utils/vault_infrastructure_redeploy');
 
-const Controller = artifacts.require("Controller");
-const IERC20 = artifacts.require("IERC20");
-const IStrategy = artifacts.require("IStrategy");
-const MockToken = artifacts.require('MockToken');
-const IConverter = artifacts.require('IConverter');
-const IOneSplitAudit = artifacts.require('IOneSplitAudit');
-const InstitutionalEURxbStrategy = artifacts.require('InstitutionalEURxbStrategy');
-const InstitutionalEURxbVault = artifacts.require('InstitutionalEURxbVault');
+const Controller = contract.fromArtifact("Controller");
+const IERC20 = contract.fromArtifact("IERC20");
+const IStrategy = contract.fromArtifact("IStrategy");
+const MockToken = contract.fromArtifact('MockToken');
+const IConverter = contract.fromArtifact('IConverter');
+const IOneSplitAudit = contract.fromArtifact('IOneSplitAudit');
+const InstitutionalEURxbStrategy = contract.fromArtifact('InstitutionalEURxbStrategy');
+const InstitutionalEURxbVault = contract.fromArtifact('InstitutionalEURxbVault');
 
-const MockContract = artifacts.require("MockContract");
+const MockContract = contract.fromArtifact("MockContract");
 
-contract('Controller', (accounts) => {
+describe('Controller', () => {
 
   const governance = accounts[0];
   const miris = accounts[1];

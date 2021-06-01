@@ -10,6 +10,7 @@ const {
   ether,
   time
 } = require('@openzeppelin/test-helpers');
+const { accounts, contract } = require('@openzeppelin/test-environment');
 const { ZERO_ADDRESS } = constants;
 
 const { activeActor, actorStake, deployAndConfigureGovernance } = require(
@@ -18,12 +19,12 @@ const { activeActor, actorStake, deployAndConfigureGovernance } = require(
 
 const { ZERO, ONE, CONVERSION_WEI_CONSTANT, takeSnapshot, revertToSnapShot } = require('./utils/common');
 
-const Governance = artifacts.require('Governance');
-const GovernanceToken = artifacts.require('XBE');
-const MockContract = artifacts.require("MockContract");
-const MockToken = artifacts.require('MockToken');
-const ExecutorMock = artifacts.require('ExecutorMock');
-const IERC20 = artifacts.require('IERC20');
+const Governance = contract.fromArtifact('Governance');
+const GovernanceToken = contract.fromArtifact('XBE');
+const MockContract = contract.fromArtifact("MockContract");
+const MockToken = contract.fromArtifact('MockToken');
+const ExecutorMock = contract.fromArtifact('ExecutorMock');
+const IERC20 = contract.fromArtifact('IERC20');
 
 const governanceSetterTest = (
     startId,
@@ -66,7 +67,7 @@ const governanceSetterTest = (
   });
 };
 
-contract('Governance', (accounts) => {
+describe('Governance', () => {
 
   const governance = accounts[0];
   const miris = accounts[1];

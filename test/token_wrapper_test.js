@@ -10,21 +10,22 @@ const {
   ether,
   time
 } = require('@openzeppelin/test-helpers');
+const { accounts, contract } = require('@openzeppelin/test-environment');
 const { ZERO_ADDRESS } = constants;
 const { ZERO, ONE, getMockTokenPrepared, processEventArgs, checkSetter } = require('./utils/common');
 const { activeActor, actorStake, deployAndConfigureGovernance } = require(
   './utils/governance_redeploy'
 );
 
-const IERC20 = artifacts.require("IERC20");
-const IStrategy = artifacts.require("IStrategy");
-const MockToken = artifacts.require('MockToken');
-const IOneSplitAudit = artifacts.require('IOneSplitAudit');
-const TokenWrapper = artifacts.require('TokenWrapper');
+const IERC20 = contract.fromArtifact("IERC20");
+const IStrategy = contract.fromArtifact("IStrategy");
+const MockToken = contract.fromArtifact('MockToken');
+const IOneSplitAudit = contract.fromArtifact('IOneSplitAudit');
+const TokenWrapper = contract.fromArtifact('TokenWrapper');
 
-const MockContract = artifacts.require("MockContract");
+const MockContract = contract.fromArtifact("MockContract");
 
-contract('TokenWrapper', (accounts) => {
+describe('TokenWrapper', () => {
 
   const owner = accounts[0];
   const alice = accounts[1];

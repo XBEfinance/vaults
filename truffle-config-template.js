@@ -92,11 +92,11 @@ module.exports = {
   },
 
   // Set default mocha options here, use special reporters etc.
-  // mocha: {
-  //   reporter: 'eth-gas-reporter',
-  //   gasReporter: { 'gasPrice': 1 },
-  //   timeout: 20000000
-  // },
+  mocha: {
+    // reporter: 'eth-gas-reporter',
+    // gasReporter: { 'gasPrice': 1 },
+    timeout: 20000000
+  },
 
   api_keys: {
     etherscan: process.env.ETHERSCAN_API_KEY,

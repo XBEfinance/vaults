@@ -1,7 +1,8 @@
-const Treasury = artifacts.require('Treasury');
-const Governance = artifacts.require('Governance');
-const XBE = artifacts.require('XBE');
-const TokenWrapper = artifacts.require('TokenWrapper');
+const { accounts, contract } = require('@openzeppelin/test-environment');
+const Treasury = contract.fromArtifact('Treasury');
+const Governance = contract.fromArtifact('Governance');
+const XBE = contract.fromArtifact('XBE');
+const TokenWrapper = contract.fromArtifact('TokenWrapper');
 
 const { BN } = require('@openzeppelin/test-helpers');
 
@@ -14,10 +15,10 @@ module.exports = function (deployer, network, accounts) {
     if (network === 'test' || network === 'soliditycoverage') {
       // do nothing
     } else if (network === 'rinkeby_safe_test') {
-      const TestExecutor = artifacts.require('TestExecutor');
-      const MockContract = artifacts.require('MockContract');
-      const MockToken = artifacts.require('MockToken');
-      const IGnosisSafe = artifacts.require('IGnosisSafe');
+      const TestExecutor = contract.fromArtifact('TestExecutor');
+      const MockContract = contract.fromArtifact('MockContract');
+      const MockToken = contract.fromArtifact('MockToken');
+      const IGnosisSafe = contract.fromArtifact('IGnosisSafe');
 
       const firstOwner = accounts[0];
       const alice = accounts[3];

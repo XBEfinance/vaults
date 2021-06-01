@@ -103,7 +103,7 @@ abstract contract EURxbStrategy is IStrategy, Governable, Initializable, Context
             _amount = _amount.add(_balance);
         }
         address _vault = IController(controller).vaults(_eurxb);
-        require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
+        require(_vault != address(0), "!vault 0"); // additional protection so we don't burn the funds
 
         address vaultToken = IVaultCore(_vault).token();
         if (vaultToken != _eurxb) {

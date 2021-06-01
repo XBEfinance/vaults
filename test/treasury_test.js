@@ -46,8 +46,8 @@ describe('Treasury', () => {
 
   beforeEach(async () => {
 
-    treasury = await Treasury.new();
-    oneSplitMock = await MockContract.new();
+    treasury = await Treasury.new({from: governance});
+    oneSplitMock = await MockContract.new({from: governance});
 
     [ governanceContract, governanceToken, rewardsToken ] = await deployAndConfigureGovernance(
       startId,
@@ -64,7 +64,8 @@ describe('Treasury', () => {
       governance,
       oneSplitMock.address,
       governanceContract.address,
-      rewardsToken.address
+      rewardsToken.address,
+      {from: governance}
     );
 
   });
@@ -222,7 +223,7 @@ describe('Treasury', () => {
     const balanceToSendToGovernance = ether('50');
     await rewardsToken.approve(treasury.address, balance, {from: alice});
     await rewardsToken.transfer(treasury.address, balance, {from: alice});
-    await treasury.toGovernance(rewardsToken.address, balanceToSendToGovernance);
+    await treasury.toGovernance(rewardsToken.address, balanceToSendToGovernance, {from: governance});
     expect(await rewardsToken.balanceOf(governance)).to.be.bignumber.equal(balanceToSendToGovernance);
   });
 });

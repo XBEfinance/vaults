@@ -379,7 +379,7 @@ describe('Governance', () => {
 
       await governanceContract.setPeriod(periodForVoting, {from: governance});
       await governanceContract.setMinimum(minumumForVoting, {from: governance});
-      await governanceContract.setBreaker(true);
+      await governanceContract.setBreaker(true, {from: governance});
 
       const someRandomReward = ether('100');
 

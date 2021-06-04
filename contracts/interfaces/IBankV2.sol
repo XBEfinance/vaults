@@ -9,10 +9,11 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 interface IBankV2 is IERC20, IERC721Receiver {
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
-    /// @param _eurxb token address
-    function configure(address _eurxb, address _ddp, address _vault, address _bond) external;
+    function configure(address _vault) external;
 
-    function setBondHolder(uint256 _bondId, address _owner) external;
+    function setBondDDP(address bond, address _ddp) external;
+
+    function setBondHolder(address bondAddress, uint256 _bondId, address _owner) external;
 
     function setVault(address _vault) external;
 
@@ -25,8 +26,5 @@ interface IBankV2 is IERC20, IERC721Receiver {
     function deposit(address _eurx, uint256 amount, uint256 timestamp) external;
 
     //   @notice Method for redeeming the bond
-    function redeemBond(uint256 bondId) external;
-
-    //   @notice Method to use instead of EURxX.balanceByTime
-    function balanceByTime(address _eurx, uint256 amount, uint256 timestamp) override external;
+    function redeemBond(address bondAddress, uint256 bondId) external ;
 }

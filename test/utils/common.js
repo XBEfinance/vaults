@@ -1,4 +1,8 @@
-const { BN, ether, expectRevert } = require('@openzeppelin/test-helpers');
+const {
+  BN,
+  ether,
+  expectRevert
+} = require('@openzeppelin/test-helpers');
 
 const MockToken = artifacts.require('MockToken');
 
@@ -25,6 +29,7 @@ function increaseTime(duration) {
     });
   });
 }
+
 /* eslint-enable */
 
 async function currentTimestamp() {
@@ -32,32 +37,40 @@ async function currentTimestamp() {
   return Math.trunc(timestamp / 1000);
 }
 
-const revertToSnapShot = (id) => {
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send({
-      jsonrpc: '2.0',
-      method: 'evm_revert',
-      params: [id],
-      id: new Date().getTime()
-    }, (err, result) => {
-      if (err) { return reject(err); }
-      return resolve(result);
-    });
-  });
-};
+/* eslint-enable */
 
-const takeSnapshot = () => {
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send({
-      jsonrpc: '2.0',
-      method: 'evm_snapshot',
-      id: new Date().getTime()
-    }, (err, snapshotId) => {
-      if (err) { return reject(err); }
-      return resolve(snapshotId);
-    });
+async function lastBlockTimestamp() {
+  const blockNum = await web3.eth.getBlockNumber();
+  const block = await web3.eth.getBlock(blockNum);
+  return block.timestamp;
+}
+
+const revertToSnapShot = (id) => new Promise((resolve, reject) => {
+  web3.currentProvider.send({
+    jsonrpc: '2.0',
+    method: 'evm_revert',
+    params: [id],
+    id: new Date().getTime(),
+  }, (err, result) => {
+    if (err) {
+      return reject(err);
+    }
+    return resolve(result);
   });
-};
+});
+
+const takeSnapshot = () => new Promise((resolve, reject) => {
+  web3.currentProvider.send({
+    jsonrpc: '2.0',
+    method: 'evm_snapshot',
+    id: new Date().getTime(),
+  }, (err, snapshotId) => {
+    if (err) {
+      return reject(err);
+    }
+    return resolve(snapshotId);
+  });
+});
 
 /* eslint-disable */
 const compactView = value_BN => web3.utils.fromWei(value_BN.toString(), 'ether');
@@ -93,9 +106,12 @@ const checkSetter = async (
   revertMessage,
 ) => {
   await contractInstance[setterMethodName](newValue, { from: validSender });
-  expect(await contractInstance[getterName]()).to.be.equal(newValue);
+  expect(await contractInstance[getterName]())
+    .to
+    .be
+    .equal(newValue);
   await expectRevert(contractInstance[setterMethodName](newValue, { from: nonValidSender }), revertMessage);
-}
+};
 
 module.exports = {
   DAY: 86400,
@@ -110,6 +126,7 @@ module.exports = {
   checkSetter,
   revertToSnapShot,
   takeSnapshot,
+  lastBlockTimestamp,
   currentTimestamp,
   increaseTime,
 };

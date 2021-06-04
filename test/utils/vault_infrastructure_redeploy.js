@@ -1,14 +1,14 @@
 const { constants } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
-const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
-const ConsumerEURxbVault = artifacts.require("ConsumerEURxbVault");
-const Treasury = artifacts.require("Treasury");
+const InstitutionalEURxbVault = artifacts.require('InstitutionalEURxbVault');
+const ConsumerEURxbVault = artifacts.require('ConsumerEURxbVault');
+const Treasury = artifacts.require('Treasury');
 
-const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
-const Controller = artifacts.require("Controller");
-const IERC20 = artifacts.require("ERC20");
-const MockContract = artifacts.require("MockContract");
+const InstitutionalEURxbStrategy = artifacts.require('InstitutionalEURxbStrategy');
+const Controller = artifacts.require('Controller');
+const IERC20 = artifacts.require('ERC20');
+const MockContract = artifacts.require('MockContract');
 
 const configureMainParts = async (
   strategy,
@@ -19,38 +19,38 @@ const configureMainParts = async (
   governance,
   strategist,
   oneSplitAddress,
-  governanceContract
+  governanceContract,
 ) => {
   await strategy.configure(
     revenueToken.address,
     controller.address,
     vault.address,
-    {from: governance}
+    { from: governance },
   );
 
   await controller.configure(
     treasury.address,
     strategist,
-    {from: governance}
+    { from: governance },
   );
 
   await controller.setVault(
     revenueToken.address,
     vault.address,
-    {from: governance}
+    { from: governance },
   );
 
   await controller.setApprovedStrategy(
     revenueToken.address,
     strategy.address,
     true,
-    {from: governance}
+    { from: governance },
   );
 
   await controller.setStrategy(
     revenueToken.address,
     strategy.address,
-    {from: governance}
+    { from: governance },
   );
 
   await treasury.configure(
@@ -58,15 +58,15 @@ const configureMainParts = async (
     oneSplitAddress,
     governanceContract.address,
     revenueToken.address,
-    {from: governance}
+    { from: governance },
   );
-}
+};
 
 const vaultInfrastructureRedeploy = async (
   governance,
   strategist,
   strategyType,
-  vaultType
+  vaultType,
 ) => {
   const mock = await MockContract.new();
 
@@ -87,10 +87,10 @@ const vaultInfrastructureRedeploy = async (
     governance,
     strategist,
     mock.address,
-    mock
+    mock,
   );
 
-  return [ mock, controller, strategy, vault, revenueToken, treasury ]
+  return [mock, controller, strategy, vault, revenueToken, treasury];
 };
 
 const vaultInfrastructureRedeployWithRevenueToken = async (
@@ -98,7 +98,7 @@ const vaultInfrastructureRedeployWithRevenueToken = async (
   strategist,
   strategyType,
   vaultType,
-  revenueToken
+  revenueToken,
 ) => {
   const mock = await MockContract.new();
 
@@ -118,10 +118,13 @@ const vaultInfrastructureRedeployWithRevenueToken = async (
     governance,
     strategist,
     mock.address,
-    mock
+    mock,
   );
 
-  return [ mock, controller, strategy, vault, revenueToken, treasury ]
+  return [mock, controller, strategy, vault, revenueToken, treasury];
 };
 
-module.exports = { vaultInfrastructureRedeploy, vaultInfrastructureRedeployWithRevenueToken };
+module.exports = {
+  vaultInfrastructureRedeploy,
+  vaultInfrastructureRedeployWithRevenueToken,
+};

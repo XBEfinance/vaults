@@ -17,7 +17,6 @@ import "./governance/Governable.sol";
 /// bot queries the vaults and strategies addresses to call harvest method.
 /// It also keep track of every working available vault and controller versions.
 contract Registry is Governable, Initializable {
-
     using Address for address;
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -62,10 +61,6 @@ contract Registry is Governable, Initializable {
         require(_wrappedVault.isContract(), "!contractWrapped");
         wrappedVaults[_vault] = _wrappedVault;
 
-        // (address controller, , , , ) = _getVaultData(_vault);
-
-        // Adds to controllers array
-        // _addController(controller);
         // TODO Add and track tokens and strategies? [historical]
         // (current ones can be obtained via getVaults + getVaultInfo)
     }
@@ -75,9 +70,7 @@ contract Registry is Governable, Initializable {
     function addDelegatedVault(address _vault) public onlyGovernance {
         addVault(_vault);
         isDelegatedVault[_vault] = true;
-        // (address controller, , , , ) = _getVaultData(_vault);
-        // Adds to controllers array
-        // _addController(controller);
+
         // TODO Add and track tokens and strategies? [historical]
         // (current ones can be obtained via getVaults + getVaultInfo)
     }

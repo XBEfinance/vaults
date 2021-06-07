@@ -129,5 +129,4 @@ abstract contract EURxbStrategy is IStrategy, Governable, Initializable, Context
     function balanceOf() override external view returns(uint256) {
         return IERC20(_eurxb).balanceOf(address(this));
     }
-
 }

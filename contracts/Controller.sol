@@ -16,7 +16,6 @@ import "./interfaces/IOneSplitAudit.sol";
 /// @title Controller
 /// @notice The contract is the middleman between vault and strategy, it balances and trigger earn processes
 contract Controller is IController, Governable, Initializable, Context {
-
     using Address for address;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -29,16 +28,16 @@ contract Controller is IController, Governable, Initializable, Context {
     event Harvest(address _strategy, address _token);
 
     /// @dev token => vault
-    mapping(address => address) private _vaults;
+    mapping(address => address) public vaults;
 
     /// @dev token => strategy
-    mapping(address => address) private _strategies;
+    mapping(address => address) public strategies;
 
     /// @dev from => to => converter address
-    mapping(address => mapping(address => address)) private _converters;
+    mapping(address => mapping(address => address)) public converters;
 
     /// @dev token => strategy => is strategy approved
-    mapping(address => mapping(address => bool)) private _approvedStrategies;
+    mapping(address => mapping(address => bool)) public approvedStrategies;
 
     /// @notice Strategist is an actor who created the strategies and he is receiving fees from strategies execution
     address public strategist;
@@ -50,7 +49,7 @@ contract Controller is IController, Governable, Initializable, Context {
     address private _treasury;
 
     /// @notice procents (in base points) to send to treasury
-    uint256 public split = 5000;
+    uint256 public split = 500;
 
     /// @notice Utility constant, 100% (in base points)
     uint256 public constant max = 10000;
@@ -80,7 +79,7 @@ contract Controller is IController, Governable, Initializable, Context {
     /// @param _token Token to rescue
     /// @param _amount Amount tokens to rescue
     function inCaseTokensGetStuck(address _token, uint256 _amount) onlyGovernanceOrStrategist external {
-        IERC20(_token).safeTransfer(_msgSender(), _amount);
+        IERC20(_token).transfer(_msgSender(), _amount);
     }
 
     /// @notice Used only to rescue stuck or unrelated funds from strategy to vault
@@ -94,7 +93,8 @@ contract Controller is IController, Governable, Initializable, Context {
     /// @param _token Token address to withdraw
     /// @param _amount Amount tokens
     function withdraw(address _token, uint256 _amount) override external {
-        IStrategy(_strategies[_token]).withdraw(_amount);
+        require(_msgSender() == vaults[_token], "!vault");
+        IStrategy(strategies[_token]).withdraw(_amount);
     }
 
     /// @notice Usual setter with check if param is new
@@ -109,7 +109,6 @@ contract Controller is IController, Governable, Initializable, Context {
     function setRewards(address _newTreasury) onlyGovernance external {
         require(_treasury != _newTreasury, '!old');
         require(_newTreasury != address(0), '!treasury');
-        require(_newTreasury.isContract(), '!contract');
         _treasury = _newTreasury;
     }
 
@@ -133,24 +132,6 @@ contract Controller is IController, Governable, Initializable, Context {
         return _treasury;
     }
 
-    /// @notice Getter for vaults mapping
-    /// @return Corresponding to token vault address
-    function vaults(address _token) override external view returns(address) {
-        return _vaults[_token];
-    }
-
-    /// @notice Getter for strategies mapping
-    /// @return Corresponding to token strategy address
-    function strategies(address _token) override external view returns(address) {
-        return _strategies[_token];
-    }
-
-    /// @notice Getter for converters mapping
-    /// @return Corresponding to given path converter
-    function converters(address _fromToken, address _toToken) override external view returns(address) {
-        return _converters[_fromToken][_toToken];
-    }
-
     /// @notice Usual setter of vault in mapping with check if new vault is not address(0)
     /// @param _token Business logic token of the vault
     /// @param _vault Vault address
@@ -159,8 +140,8 @@ contract Controller is IController, Governable, Initializable, Context {
         onlyGovernanceOrStrategist
         external
     {
-        require(_vaults[_token] == address(0), "!vault 0");
-        _vaults[_token] = _vault;
+        require(vaults[_token] == address(0), "!vault");
+        vaults[_token] = _vault;
     }
 
     /// @notice Usual setter of converter contract, it implements the optimal logic to token conversion
@@ -172,20 +153,20 @@ contract Controller is IController, Governable, Initializable, Context {
         address _output,
         address _converter
     ) onlyGovernanceOrStrategist external {
-        _converters[_input][_output] = _converter;
+        converters[_input][_output] = _converter;
     }
 
     /// @notice Sets new link between business logic token and strategy, and if strategy is already used, withdraws all funds from it to the vault
     /// @param _token Business logic token address
     /// @param _strategy Corresponded strategy contract address
     function setStrategy(address _token, address _strategy) override onlyGovernanceOrStrategist external {
-        require(_approvedStrategies[_token][_strategy], "!approved");
-        address _current = _strategies[_token];
+        require(approvedStrategies[_token][_strategy], "!approved");
+        address _current = strategies[_token];
         if (_current != address(0)) {
             IStrategy(_current).withdrawAll();
             emit WithdrawToVaultAll(_token);
         }
-        _strategies[_token] = _strategy;
+        strategies[_token] = _strategy;
     }
 
 
@@ -194,15 +175,7 @@ contract Controller is IController, Governable, Initializable, Context {
     /// @param _strategy Strategy contract address
     /// @param _status Approved or not (bool)?
     function setApprovedStrategy(address _token, address _strategy, bool _status) onlyGovernance external {
-        _approvedStrategies[_token][_strategy] = _status;
-    }
-
-    /// @notice Get approval status for strategy that corresponds to business logic token
-    /// @param _token Business logic token address
-    /// @param _strategy Strategy contract address
-    /// @return Boolean status true - approved, false - not approved
-    function approvedStrategies(address _token, address _strategy) override external view returns(bool) {
-        return _approvedStrategies[_token][_strategy];
+        approvedStrategies[_token][_strategy] = _status;
     }
 
     /// @notice The method converts if needed given token to business logic strategy token,
@@ -213,7 +186,7 @@ contract Controller is IController, Governable, Initializable, Context {
         address _strategy = _strategies[_token];
         address _want = IStrategy(_strategy).want();
         if (_want != _token) {
-            address converter = _converters[_token][_want];
+            address converter = converters[_token][_want];
             require(converter != address(0), '!converter');
             require(IERC20(_token).transfer(converter, _amount), "!transferConverterToken");
             _amount = IConverter(converter).convert(_strategy);
@@ -231,14 +204,13 @@ contract Controller is IController, Governable, Initializable, Context {
     /// @param _token Token that we want to chop and reinvest (could be any, becuaise 1inch used for conversion)
     /// @dev Only allows to withdraw non-core strategy tokens ~ this is over and above normal yield
     function harvest(address _strategy, address _token) override onlyGovernanceOrStrategist external {
-        address _want = IStrategy(_strategy).want();
-        require(_token != _want, "!want");
         // This contract should never have value in it, but just incase since this is a public call
         uint256 _before = IERC20(_token).balanceOf(address(this));
         IStrategy(_strategy).withdraw(_token);
-        uint256 _after =  IERC20(_token).balanceOf(address(this));
+        uint256 _after = IERC20(_token).balanceOf(address(this));
         if (_after > _before) {
             uint256 _amount = _after.sub(_before);
+            address _want = IStrategy(_strategy).want();
             uint256[] memory _distribution;
             uint256 _expected;
             _before = IERC20(_want).balanceOf(address(this));
@@ -251,7 +223,7 @@ contract Controller is IController, Governable, Initializable, Context {
                 parts,
                 0
             );
-            _after = IOneSplitAudit(oneSplit).swap(
+            IOneSplitAudit(oneSplit).swap(
                 _token,
                 _want,
                 _amount,
@@ -259,6 +231,7 @@ contract Controller is IController, Governable, Initializable, Context {
                 _distribution,
                 0
             );
+            _after = IERC20(_want).balanceOf(address(this));
             if (_after > _before) {
                 _amount = _after.sub(_before);
                 uint256 _reward = _amount.mul(split).div(max);

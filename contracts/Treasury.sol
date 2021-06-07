@@ -13,7 +13,6 @@ import "./interfaces/IOneSplitAudit.sol";
 /// @title Treasury
 /// @notice Realisation of ITreasury for channeling managing fees from strategies to gov and governance address
 contract Treasury is Governable, Initializable, Context, ITreasury {
-
     using SafeERC20 for IERC20;
 
     address public oneSplit;

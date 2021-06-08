@@ -109,25 +109,36 @@ module.exports = function (deployer, network, accounts) {
 
 
     } else if (network.startsWith('rinkeby')) {
-      if (process.env.RINKEBY_OWNER_ACCOUNT && process.env.REWARD_DISTRIBUTION_RINKEBY_ACCOUNT) {
-        const xbe = await XBE.at('0xfaC2D38F064A35b5C0636a7eDB4B6Cc13bD8D278');
-        const governance = await deployer.deploy(Governance);
-        await governance.configure(
-          '0',
-          xbe.address, // Reward token
-          process.env.RINKEBY_OWNER_ACCOUNT,
-          xbe.address, // Governance token
-          process.env.REWARD_DISTRIBUTION_RINKEBY_ACCOUNT,
-        );
+      const Bank = artifacts.require("Bank");
+      const BankProxyAdmin = artifacts.require("BankProxyAdmin");
+      const BankTransparentProxy = artifacts.require("BankTransparentProxy");
+      const MockToken = artifacts.require("MockToken");
+      const eurxb = await MockToken.at('0x49Fdb5C0DC55195b5f7AC731e5f5d389925C8c03');
+      const treasury = await Treasury.at('0x8D77234fC07167380fE0b776342B9bB4f46cE4a4');
+      const bank = await deployer.deploy(Bank);
+      const configureCalldata = bank.contract.methods.configure(eurxb.address).encodeABI();
+      const bankProxyAdmin = await deployer.deploy(BankProxyAdmin, treasury.address);
+      await deployer.deploy(BankTransparentProxy, bank.address, bankProxyAdmin.address, configureCalldata);
 
-        const treasury = await deployer.deploy(Treasury);
-        await treasury.configure(
-          process.env.RINKEBY_OWNER_ACCOUNT,
-          '0x0000000000000000000000000000000000000000', // testnet OneSplit account
-          governance.address,
-          xbe.address, // Reward token
-        );
-      }
+      // if (process.env.RINKEBY_OWNER_ACCOUNT && process.env.REWARD_DISTRIBUTION_RINKEBY_ACCOUNT) {
+      //   const xbe = await XBE.at('0xfaC2D38F064A35b5C0636a7eDB4B6Cc13bD8D278');
+      //   const governance = await deployer.deploy(Governance);
+      //   await governance.configure(
+      //     '0',
+      //     xbe.address, // Reward token
+      //     process.env.RINKEBY_OWNER_ACCOUNT,
+      //     xbe.address, // Governance token
+      //     process.env.REWARD_DISTRIBUTION_RINKEBY_ACCOUNT,
+      //   );
+      //
+      //   const treasury = await deployer.deploy(Treasury);
+      //   await treasury.configure(
+      //     process.env.RINKEBY_OWNER_ACCOUNT,
+      //     '0x0000000000000000000000000000000000000000', // testnet OneSplit account
+      //     governance.address,
+      //     xbe.address, // Reward token
+      //   );
+      // }
     }
   });
 }

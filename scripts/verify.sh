@@ -5,8 +5,9 @@ source ./scripts/utils/generate_truffle_config.sh
 generate_truffle_config "0.6.3" ".\/contracts"
 
 if [ -z $1 ]; then
-  truffle run verify Governance --network rinkeby
-  truffle run verify Treasury --network rinkeby
+  truffle run verify Bank --network rinkeby
+  truffle run verify BankProxyAdmin --network rinkeby
+  truffle run verify BankTransparentProxy --network rinkeby
 else
   if [ -z $2 ]; then
     truffle run verify $1 --network rinkeby

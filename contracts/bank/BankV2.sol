@@ -43,37 +43,38 @@ contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
 
     function deposit(address _eurx, uint256 amount, uint256 timestamp) override external {
         require(amount > 0, "BankV2: amount < 0");
-        address msgSender = _msgSender();   // gas saving
-        EURxb eurx = EURxb(_eurx);          // gas saving
+        address msgSender = _msgSender();        // gas saving
+        EURxb eurx = EURxb(_eurx);        // gas saving
 
         uint256 xbEUROamount = eurx.balanceByTime(msgSender, timestamp);
         xbEUROamount = xbEUROamount.mul(amount).div(eurx.balanceOf(msgSender));
         eurx.transferFrom(msgSender, address(this), amount);
-
         xbEUROvault[msgSender] = xbEUROvault[msgSender].add(xbEUROamount);
-
         _mint(address(this), xbEUROamount);
         _approve(address(this), vault, xbEUROamount);
-
         IVaultTransfers(vault).deposit(xbEUROamount);
 
         emit Deposit(msgSender, amount);
     }
 
     function withdraw(uint256 _amount) override external {
-        address msgSender = _msgSender();        // gas saving
+        address msgSender = _msgSender();                   // gas saving
+        uint256 _xbEUROavailable = xbEUROvault[msgSender];  // gas saving
 
         require(_amount > 0, "BankV2: amount < 0");
-        require(xbEUROvault[msgSender] >= _amount, "BankV2: not enough funds");
+        require(_xbEUROavailable >= _amount, "BankV2: not enough funds");
         IVaultTransfers(vault).withdraw(_amount);
+        xbEUROvault[msgSender] = _xbEUROavailable.sub(_amount);
         _transfer(address(this), msgSender, _amount);
+
+        emit Withdraw(msgSender, _amount);
     }
 
     function redeemBond(address bondAddress, uint256 bondId) override external {
         (uint256 tokenValue,, uint256 maturity) = IBondToken(bondAddress).getTokenInfo(bondId);
 
         address msgSender = _msgSender();        // gas saving
-        IDDP _ddp = IDDP(bondDDP[bondAddress]);  // gas saving
+        IDDP _ddp = IDDP(bondDDP[bondAddress]);        // gas saving
 
         uint256 endPeriod = maturity.add(_ddp.getClaimPeriod());
         if (msgSender != bondOwner[bondAddress][bondId]) {
@@ -83,64 +84,4 @@ contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
         _ddp.withdraw(bondId);
         _burn(msgSender, tokenValue);
     }
-
-
-    //    struct BalanceByTimeInternalDataStore {
-    //        EURxb EURxbContract;
-    //        uint256 currentTotalActiveValue;
-    //        uint256 currentExpIndex;
-    //        uint256 head;
-    //        uint256 currentAccrualTimestamp;
-    //        uint256 amount;
-    //        uint256 maturityEnd;
-    //        uint256 next;
-    //        uint256 deleteAmount;
-    //    } // gas saving in balanceByTime
-    //
-    //    struct BalanceByTimeEURxbDataStore {
-    //        uint256 totalActiveValue;
-    //        uint256 expIndex;
-    //        uint256 annualInterest;
-    //        uint256 accrualTimestamp;
-    //        uint256 deletedMaturity;
-    //    }  // gas saving in balanceByTime
-
-    //    function balanceByTime(address _eurx, uint256 amount, uint256 timestamp) override public
-    //    view
-    //    returns (uint256) {
-    //        BalanceByTimeInternalDataStore internalData;
-    //        // gas saving
-    //        BalanceByTimeEURxbDataStore EURxbData;
-    //        // gas saving
-    //
-    //        internalData.currentTotalActiveValue = EURxbData.totalActiveValue;
-    //        internalData.currentExpIndex = EURxbData.expIndex;
-    //        internalData.currentAccrualTimestamp = EURxbData.accrualTimestamp;
-    //        internalData.head =;
-    //        (internalData.amount, internalData.maturityEnd,, internalData.next) =;
-    //
-    //        while (
-    //            _list.listExists() && maturityEnd <= timestamp && currentAccrualTimestamp < maturityEnd
-    //        ) {
-    //           internalData.currentExpIndex = _calculateInterest(
-    //                maturityEnd,
-    //                _annualInterest.mul(currentTotalActiveValue),
-    //                currentExpIndex,
-    //                currentAccrualTimestamp
-    //            );
-    //            currentAccrualTimestamp = maturityEnd;
-    //
-    //            uint256 deleteAmount = _deletedMaturity[maturityEnd];
-    //            currentTotalActiveValue = currentTotalActiveValue.sub(amount.sub(deleteAmount));
-    //
-    //            if (next == 0) {
-    //                break;
-    //            }
-    //
-    //            (amount, maturityEnd, , next) = _list.getNodeValue(next);
-    //        }
-    //
-    //
-    //    return 0;
-    //    }
 }

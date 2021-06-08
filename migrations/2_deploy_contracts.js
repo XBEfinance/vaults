@@ -85,25 +85,46 @@ module.exports = function (deployer, network, accounts) {
       console.log(governanceContract.contract.methods.execute(proposalId).encodeABI());
       console.log('===============================================');
     } else if (network.startsWith('rinkeby')) {
-      if (process.env.RINKEBY_OWNER_ACCOUNT && process.env.REWARD_DISTRIBUTION_RINKEBY_ACCOUNT) {
-        const xbe = await XBE.at('0xfaC2D38F064A35b5C0636a7eDB4B6Cc13bD8D278');
-        const governance = await deployer.deploy(Governance);
-        // const treasury = await deployer.deploy(Treasury);
+      const eurxb = await MockToken.at('0x49Fdb5C0DC55195b5f7AC731e5f5d389925C8c03');
+      const treasury = await Treasury.at('0x8D77234fC07167380fE0b776342B9bB4f46cE4a4');
+      const controller = await deployer.deploy(Controller);
+      await controller.configure(treasury.address, process.env.RINKEBY_STRATEGIST);
+      const registry = await deployer.deploy(Registry);
+      const eToW = await deployer.deploy(EURxbToWrappedEURxbConverter);
+      eToW.configure(eurxb.address);
+      const wToE = await deployer.deploy(WrappedEURxbToEURxbConverter);
+      wToE.configure(eurxb.address);
 
-        await governance.configure(
-          '0',
-          xbe.address, // Reward token
-          process.env.RINKEBY_OWNER_ACCOUNT,
-          xbe.address, // Governance token
-          process.env.REWARD_DISTRIBUTION_RINKEBY_ACCOUNT, // if treasury contract is exist then change that to treasury.address
-        );
-        // await treasury.configure(
-        //   process.env.RINKEBY_OWNER_ACCOUNT,
-        //   '0x0000000000000000000000000000000000000000', // testnet OneSplit account
-        //   governance.address,
-        //   xbe.address, // Reward token
-        // );
-      }
+      const cVault = await deployer.deploy(ConsumerEURxbVault);
+      await cVault.configure(eurxb.address, controller.address);
+      const iVault = await deployer.deploy(InstitutionalEURxbVault);
+      await iVault.configure(eurxb.address, controller.address);
+      await registry.addVault(cVault.address);
+      await registry.addVault(iVault.address);
+      await controller.setConverter(cVault.address, eurxb.address, wToE.address);
+      await controller.setConverter(eurxb.address, cVault.address, eToW.address);
+      await controller.setConverter(iVault.address, eurxb.address, wToE.address);
+      await controller.setConverter(eurxb.address, iVault.address, eToW.address);
+      await controller.setVault(eurxb.address, cVault.address);
+
+
+      // const xbe = await XBE.at('0xfaC2D38F064A35b5C0636a7eDB4B6Cc13bD8D278');
+      // const governance = await deployer.deploy(Governance);
+      // const treasury = await deployer.deploy(Treasury);
+
+      // await governance.configure(
+      //   '0',
+      //   xbe.address, // Reward token
+      //   process.env.RINKEBY_OWNER_ACCOUNT,
+      //   xbe.address, // Governance token
+      //   process.env.REWARD_DISTRIBUTION_RINKEBY_ACCOUNT, // if treasury contract is exist then change that to treasury.address
+      // );
+      // await treasury.configure(
+      //   process.env.RINKEBY_OWNER_ACCOUNT,
+      //   '0x0000000000000000000000000000000000000000', // testnet OneSplit account
+      //   governance.address,
+      //   xbe.address, // Reward token
+      // );
     } else if (network.startsWith('mainnet')) {
       const xbe = await XBE.at('0x5DE7Cc4BcBCa31c473F6D2F27825Cfb09cc0Bb16');
       const governance = await deployer.deploy(Governance);

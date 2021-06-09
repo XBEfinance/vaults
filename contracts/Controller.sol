@@ -13,6 +13,7 @@ import "./interfaces/IStrategy.sol";
 import "./interfaces/IConverter.sol";
 import "./interfaces/IOneSplitAudit.sol";
 
+
 /// @title Controller
 /// @notice The contract is the middleman between vault and strategy, it balances and trigger earn processes
 contract Controller is IController, Governable, Initializable, Context {
@@ -93,7 +94,6 @@ contract Controller is IController, Governable, Initializable, Context {
     /// @param _token Token address to withdraw
     /// @param _amount Amount tokens
     function withdraw(address _token, uint256 _amount) override external {
-        require(_msgSender() == vaults[_token], "!vault");
         IStrategy(strategies[_token]).withdraw(_amount);
     }
 
@@ -109,6 +109,7 @@ contract Controller is IController, Governable, Initializable, Context {
     function setRewards(address _newTreasury) onlyGovernance external {
         require(_treasury != _newTreasury, '!old');
         require(_newTreasury != address(0), '!treasury');
+        require(_newTreasury.isContract(), '!contract');
         _treasury = _newTreasury;
     }
 
@@ -140,7 +141,7 @@ contract Controller is IController, Governable, Initializable, Context {
         onlyGovernanceOrStrategist
         external
     {
-        require(vaults[_token] == address(0), "!vault");
+        require(vaults[_token] == address(0), "!vault 0");
         vaults[_token] = _vault;
     }
 
@@ -223,7 +224,7 @@ contract Controller is IController, Governable, Initializable, Context {
                 parts,
                 0
             );
-            IOneSplitAudit(oneSplit).swap(
+            _after = IOneSplitAudit(oneSplit).swap(
                 _token,
                 _want,
                 _amount,
@@ -231,7 +232,6 @@ contract Controller is IController, Governable, Initializable, Context {
                 _distribution,
                 0
             );
-            _after = IERC20(_want).balanceOf(address(this));
             if (_after > _before) {
                 _amount = _after.sub(_before);
                 uint256 _reward = _amount.mul(split).div(max);

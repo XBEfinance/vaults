@@ -24,6 +24,8 @@ const IConverter = contract.fromArtifact('IConverter');
 const IOneSplitAudit = contract.fromArtifact('IOneSplitAudit');
 const InstitutionalEURxbStrategy = contract.fromArtifact('InstitutionalEURxbStrategy');
 const InstitutionalEURxbVault = contract.fromArtifact('InstitutionalEURxbVault');
+const UnwrappedToWrappedTokenConverter = contract.fromArtifact('UnwrappedToWrappedTokenConverter');
+const TokenWrapper = contract.fromArtifact('TokenWrapper');
 
 const MockContract = contract.fromArtifact("MockContract");
 
@@ -40,6 +42,7 @@ describe('Controller', () => {
   var vault;
   var treasury
   var mock;
+  var wrapper;
 
   beforeEach(async () => {
     [mock, controller, strategy, vault, revenueToken, treasury] = await vaultInfrastructureRedeploy(
@@ -47,6 +50,19 @@ describe('Controller', () => {
       strategist,
       InstitutionalEURxbStrategy,
       InstitutionalEURxbVault
+    );
+    wrapper = await TokenWrapper.new(
+      "Banked EURxb",
+      "bEURxb",
+      revenueToken.address,
+      strategy.address
+    );
+
+    await vault.configure(
+      revenueToken.address,
+      controller.address,
+      wrapper.address,
+      {from: governance}
     );
   });
 
@@ -130,6 +146,9 @@ describe('Controller', () => {
       .methods.transfer(miris, 0).encodeABI();
 
     await mock.givenMethodReturnBool(transferCalldata, false);
+
+    const converter = await UnwrappedToWrappedTokenConverter.new();
+    await converter.configure(revenueToken.address);
 
     await expectRevert(controller.withdraw(revenueToken.address, toWithdraw),
       "!transferVault");
@@ -304,12 +323,7 @@ describe('Controller', () => {
   };
 
   it('should reject harvest if strategy want token is token passed into parameters', async () => {
-    const mockToken = await getMockTokenForStrategy();
-
-    const wantCalldata = (await IStrategy.at(mock.address)).contract
-      .methods.want().encodeABI();
-    await mock.givenMethodReturnAddress(wantCalldata, mockToken.address);
-    await expectRevert(controller.harvest(mock.address, mockToken.address, {from: governance}), '!want');
+    await expectRevert(controller.harvest(strategy.address, revenueToken.address, {from: governance}), '!want');
   });
 
   it('should emit no events if withdraw from strategy does not return any tokens', async () => {
@@ -377,8 +391,7 @@ describe('Controller', () => {
     const mockToken = await getMockTokenForStrategy();
     await controller.setOneSplit(mock.address, {from: governance});
 
-
-    const swappedToWantAmount = ether('1');
+    const swappedToWantAmount = ether('12');
     const balanceOfWant = ether('0.1');
 
     await prepareOneSplitCalls(swappedToWantAmount);
@@ -386,7 +399,14 @@ describe('Controller', () => {
     await setEarnTransferStatus(swappedToWantAmount, balanceOfWant, true);
     await setWantTokenTransferStatus(false);
 
-    await expectRevert(controller.harvest(strategy.address, mockToken.address, {from: governance}), "!transferTreasury");
+    await expectRevert(
+      controller.harvest(
+        strategy.address,
+        mockToken.address,
+        {from: governance}
+      ),
+      "!transferTreasury"
+    );
   });
 
   it('should revert if #harvest() called not by governance or strategy contract', async () => {

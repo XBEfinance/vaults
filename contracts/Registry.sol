@@ -12,6 +12,8 @@ import "./interfaces/vault/IVaultDelegated.sol";
 import "./interfaces/vault/IVaultWrapped.sol";
 import "./governance/Governable.sol";
 
+import "./mocks/StringsConcatenations.sol";
+
 /// @title Registry
 /// @notice The contract is the middleman actor through which the Keeper
 /// bot queries the vaults and strategies addresses to call harvest method.
@@ -147,6 +149,11 @@ contract Registry is Governable, Initializable {
         } else {
             controllerVault = IController(controller).vaults(token);
         }
+        // revert(StringsConcatenations.strConcat(
+        //   StringsConcatenations.address2str(controllerVault),
+        //   " ",
+        //   StringsConcatenations.address2str(vault)
+        // ));
         require(controllerVault == vault, "!controllerVaultMatch"); // Might happen on Proxy Vaults
 
         // Check if strategy has the same token as vault

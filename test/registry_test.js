@@ -25,6 +25,7 @@ const Registry = contract.fromArtifact('Registry');
 const IVaultCore = contract.fromArtifact('IVaultCore');
 const IVaultWrapped = contract.fromArtifact('IVaultWrapped');
 const IVaultDelegated = contract.fromArtifact('IVaultDelegated');
+const TokenWrapper = contract.fromArtifact("TokenWrapper");
 
 const InstitutionalEURxbStrategy = contract.fromArtifact("InstitutionalEURxbStrategy");
 const InstitutionalEURxbVault = contract.fromArtifact("InstitutionalEURxbVault");
@@ -43,11 +44,12 @@ describe('Registry', () => {
   var vault;
   var mock;
   var registry;
+  var wrapper;
 
   const addVaults = async () => {
     const vaults = [vault.address];
     for (i = 0; i < vaults.length; i++) {
-        await registry.addVault(vaults[i]);
+        await registry.addVault(vaults[i], {from: governance});
     }
     return vaults;
   }
@@ -59,7 +61,30 @@ describe('Registry', () => {
       InstitutionalEURxbStrategy,
       InstitutionalEURxbVault
     );
-    registry = await Registry.new();
+    registry = await Registry.new({from: governance});
+    wrapper = await TokenWrapper.new(
+      "Banked EURxb",
+      "bEURxb",
+      revenueToken.address,
+      governance,
+      {from: governance}
+    );
+    await vault.configure(
+        wrapper.address,
+        controller.address,
+        revenueToken.address,
+        {from: governance}
+    );
+    await controller.setVault(wrapper.address, vault.address, {from: governance});
+    await strategy.setWant(wrapper.address, {from: governance});
+    await controller.setApprovedStrategy(
+      wrapper.address,
+      strategy.address,
+      true,
+      {from: governance}
+    );
+    await controller.setStrategy(wrapper.address, strategy.address, {from: governance});
+
   });
 
   it('should get name of the registry', async () => {
@@ -67,11 +92,11 @@ describe('Registry', () => {
   });
 
   it('should revert if try add non-contract or clone-contract vault', async () => {
-    await expectRevert(registry.addVault(miris), "!contract");
+    await expectRevert(registry.addVault(miris, {from: governance}), "!contract");
     expect(await registry.isDelegatedVault(vault.address)).to.be.equal(false);
     expect(await registry.wrappedVaults(vault.address)).to.be.equal(ZERO_ADDRESS);
-    await registry.addVault(vault.address);
-    await expectRevert(registry.addVault(vault.address), "exists");
+    await registry.addVault(vault.address, {from: governance});
+    await expectRevert(registry.addVault(vault.address, {from: governance}), "exists");
   });
 
   it('should revert if try add and controllers entries are not as given', async () => {
@@ -92,7 +117,7 @@ describe('Registry', () => {
       .methods.vaults(mockToken.address).encodeABI();
     await thirdMock.givenCalldataReturnAddress(getVaultsCalldata, thirdMock.address);
 
-    await expectRevert(registry.addVault(secondMock.address), "!controllerVaultMatch");
+    await expectRevert(registry.addVault(secondMock.address, {from: governance}), "!controllerVaultMatch");
 
     getVaultsCalldata = (await IController.at(thirdMock.address)).contract
       .methods.vaults(mockToken.address).encodeABI();
@@ -106,7 +131,7 @@ describe('Registry', () => {
       .methods.want().encodeABI();
     await mock.givenCalldataReturnAddress(wantCalldata, otherMockToken.address);
 
-    await expectRevert(registry.addVault(secondMock.address), "!strategyTokenMatch");
+    await expectRevert(registry.addVault(secondMock.address, {from: governance}), "!strategyTokenMatch");
   });
 
   const setupVaultMock = async (addImmidieately, defaultControllerMock=null) => {
@@ -152,12 +177,12 @@ describe('Registry', () => {
       .methods.vault().encodeABI();
     await firstVault.givenCalldataReturnAddress(wrappedVaultsCalldata, miris);
 
-    await expectRevert(registry.addWrappedVault(firstVault.address), "!contractWrapped");
+    await expectRevert(registry.addWrappedVault(firstVault.address, {from: governance}), "!contractWrapped");
 
     await firstVault.givenCalldataReturnAddress(wrappedVaultsCalldata, firstVault.address);
 
     // The test is wrap vault into itself
-    await registry.addWrappedVault(firstVault.address);
+    await registry.addWrappedVault(firstVault.address, {from: governance});
     expect(await registry.wrappedVaults(firstVault.address)).to.be.equal(firstVault.address);
   });
 
@@ -183,8 +208,8 @@ describe('Registry', () => {
     await firstVaultMock.givenCalldataReturnAddress(getControllerCalldata, controllerMock.address);
     await secondVaultMock.givenCalldataReturnAddress(getControllerCalldata, controllerMock.address);
 
-    await registry.addVault(firstVaultMock.address);
-    await registry.addVault(secondVaultMock.address);
+    await registry.addVault(firstVaultMock.address, {from: governance});
+    await registry.addVault(secondVaultMock.address, {from: governance});
 
     expect(await registry.getControllersLength()).to.be.bignumber.equal(ONE);
   });
@@ -207,7 +232,7 @@ describe('Registry', () => {
 
     await vaultMock.givenCalldataReturnAddress(underlyingVaultCalldata, mockToken.address);
 
-    await registry.addWrappedVault(vaultMock.address);
+    await registry.addWrappedVault(vaultMock.address, {from: governance});
 
     await vaultMock.givenCalldataReturnAddress(underlyingVaultCalldata, ZERO_ADDRESS);
 
@@ -235,7 +260,7 @@ describe('Registry', () => {
       .methods.vaults(strategyMock.address).encodeABI();
     await controllerMock.givenCalldataReturnAddress(vaultsStrategyCalldata, vaultMock.address);
 
-    await registry.addDelegatedVault(vaultMock.address);
+    await registry.addDelegatedVault(vaultMock.address, {from: governance});
 
 
     const result = await registry.getVaultInfo(vaultMock.address);
@@ -259,7 +284,7 @@ describe('Registry', () => {
       .methods.vaults(strategyMock.address).encodeABI();
     await controllerMock.givenCalldataReturnAddress(vaultsStrategyCalldata, vaultMock.address);
 
-    await registry.addDelegatedVault(vaultMock.address);
+    await registry.addDelegatedVault(vaultMock.address, {from: governance});
 
     const result = await registry.getVaultInfo(vaultMock.address);
 
@@ -268,33 +293,33 @@ describe('Registry', () => {
 
 
   it('should add delegated vault properly', async () => {
-    await registry.addDelegatedVault(vault.address);
+    await registry.addDelegatedVault(vault.address, {from: governance});
     expect(await registry.isDelegatedVault(vault.address)).to.be.equal(true);
   });
 
   it('should remove vault properly', async () => {
-    await registry.addVault(vault.address);
-    await registry.removeVault(vault.address);
+    await registry.addVault(vault.address, {from: governance});
+    await registry.removeVault(vault.address, {from: governance});
     expect(await registry.getVaultsLength()).to.be.bignumber.equal(ZERO);
   });
 
   it('should get vault properly', async () => {
-    await registry.addVault(vault.address);
+    await registry.addVault(vault.address, {from: governance});
     expect(await registry.getVault(ZERO)).to.be.equal(vault.address);
   });
 
   it('should get controller properly', async () => {
-    await registry.addVault(vault.address);
+    await registry.addVault(vault.address, {from: governance});
     expect(await registry.getController(ZERO)).to.be.equal(controller.address);
   });
 
   it('should get vaults set length properly', async () => {
-    await registry.addVault(vault.address);
+    await registry.addVault(vault.address, {from: governance});
     expect(await registry.getVaultsLength()).to.be.bignumber.equal(ONE);
   });
 
   it('should get controllers set length properly', async () => {
-    await registry.addVault(vault.address);
+    await registry.addVault(vault.address, {from: governance});
     expect(await registry.getControllersLength()).to.be.bignumber.equal(ONE);
   });
 
@@ -312,7 +337,7 @@ describe('Registry', () => {
     for (var i = 0; i < vaults.length; i++) {
       const vaultInfo = await registry.getVaultInfo(vaults[i]);
       expect(vaultInfo[0]).to.be.equal(controller.address);
-      expect(vaultInfo[1]).to.be.equal(revenueToken.address);
+      expect(vaultInfo[1]).to.be.equal(wrapper.address);
       expect(vaultInfo[2]).to.be.equal(strategy.address);
       expect(vaultInfo[3]).to.be.equal(false);
       expect(vaultInfo[4]).to.be.equal(false);
@@ -325,7 +350,7 @@ describe('Registry', () => {
     for (var i = 0; i < vaults.length; i++) {
       expect(vaultsInfo[0][i]).to.be.equal(vaults[i]);
       expect(vaultsInfo[1][i]).to.be.equal(controller.address);
-      expect(vaultsInfo[2][i]).to.be.equal(revenueToken.address);
+      expect(vaultsInfo[2][i]).to.be.equal(wrapper.address);
       expect(vaultsInfo[3][i]).to.be.equal(strategy.address);
       expect(vaultsInfo[4][i]).to.be.equal(false);
       expect(vaultsInfo[5][i]).to.be.equal(false);

@@ -6,5 +6,5 @@ const { strategyTestSuite } = require("./eurxb_strategy_test.js");
 const ConsumerEURxbStrategy = contract.fromArtifact("ConsumerEURxbStrategy");
 const ConsumerEURxbVault = contract.fromArtifact("ConsumerEURxbVault");
 describe('ConsumerEURxbStrategy',
-    strategyTestSuite(ConsumerEURxbStrategy, ConsumerEURxbVault)
+    strategyTestSuite(ConsumerEURxbStrategy, ConsumerEURxbVault, false)
 );

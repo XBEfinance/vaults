@@ -48,7 +48,7 @@ describe('WrappedToUnwrappedTokenConverter', () => {
   });
 
   it('should configure properly', async () => {
-    expect(await converter.eurxb()).to.be.equal(tokenToWrap.address);
+    expect(await converter.token()).to.be.equal(tokenToWrap.address);
   });
 
   it('should convert wrapped eurxb to eurxb', async () => {

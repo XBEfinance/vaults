@@ -33,7 +33,7 @@ const ConsumerEURxbVault = contract.fromArtifact("ConsumerEURxbVault");
 
 const MockContract = contract.fromArtifact("MockContract");
 
-const vaultTestSuite = (strategyType, vaultType) => {
+const vaultTestSuite = (strategyType, vaultType, isInstitutional) => {
   return () => {
     const governance = accounts[0];
     const miris = accounts[1];
@@ -61,7 +61,7 @@ const vaultTestSuite = (strategyType, vaultType) => {
         strategyType,
         vaultType
       );
-      if (vaultType.contractName == InstitutionalEURxbVault.contractName) {
+      if (isInstitutional) {
         await vault.configure(
           revenueToken.address,
           controller.address,
@@ -86,7 +86,7 @@ const vaultTestSuite = (strategyType, vaultType) => {
       expect(await controller.strategies(revenueToken.address)).to.be.equal(strategy.address);
     });
 
-    if (vaultType.contractName == InstitutionalEURxbVault.contractName) {
+    if (isInstitutional) {
 
       const investor = accounts[3];
       var role;
@@ -95,7 +95,7 @@ const vaultTestSuite = (strategyType, vaultType) => {
 
         beforeEach(async () => {
           role = await vault.INVESTOR();
-          await vault.allowInvestor(investor);
+          await vault.allowInvestor(investor, {from: governance});
         });
 
         it('should allow investor', async () => {
@@ -103,7 +103,7 @@ const vaultTestSuite = (strategyType, vaultType) => {
         });
 
         it('should disallow investor', async () => {
-          await vault.disallowInvestor(investor);
+          await vault.disallowInvestor(investor, {from: governance});
           expect(await vault.hasRole(role, investor)).to.be.equal(false);
         });
 
@@ -126,20 +126,21 @@ const vaultTestSuite = (strategyType, vaultType) => {
           tokenToWrap = await getMockTokenPrepared(alice, ether('10'), ether('20'), governance);
 
           wrapConverter = await UnwrappedToWrappedTokenConverter.new();
-          await wrapConverter.configure(tokenToWrap.address);
+          await wrapConverter.configure(tokenToWrap.address, {from: governance});
 
           unwrapConverter = await WrappedToUnwrappedTokenConverter.new();
-          await unwrapConverter.configure(tokenToWrap.address);
+          await unwrapConverter.configure(tokenToWrap.address, {from: governance});
 
           wrapper = await TokenWrapper.new(
             "Banked EURxb",
             "bEURxb",
             tokenToWrap.address,
-            alice
+            alice,
+            {from: governance}
           );
           const MINTER_ROLE = await wrapper.MINTER_ROLE();
-          await wrapper.grantRole(MINTER_ROLE, wrapConverter.address);
-          await wrapper.grantRole(MINTER_ROLE, unwrapConverter.address);
+          await wrapper.grantRole(MINTER_ROLE, wrapConverter.address, {from: governance});
+          await wrapper.grantRole(MINTER_ROLE, unwrapConverter.address, {from: governance});
 
 
           vault = await vaultType.new({from: governance});
@@ -194,10 +195,11 @@ const vaultTestSuite = (strategyType, vaultType) => {
           await vault.configure(
               wrapper.address,
               controller.address,
-              tokenToWrap.address
+              tokenToWrap.address,
+              {from: governance}
           );
 
-          await vault.allowInvestor(alice);
+          await vault.allowInvestor(alice, {from: governance});
         });
 
         it('should revert if suiting converter is not found', async () => {
@@ -207,8 +209,8 @@ const vaultTestSuite = (strategyType, vaultType) => {
         });
 
         it('should deposit unwrapped', async () => {
-          await controller.setConverter(tokenToWrap.address, wrapper.address, wrapConverter.address);
-          await controller.setConverter(wrapper.address, tokenToWrap.address, unwrapConverter.address);
+          await controller.setConverter(tokenToWrap.address, wrapper.address, wrapConverter.address, {from: governance});
+          await controller.setConverter(wrapper.address, tokenToWrap.address, unwrapConverter.address, {from: governance});
           const aliceBalance = await tokenToWrap.balanceOf(alice);
           await tokenToWrap.approve(vault.address, aliceAmount, {from: alice});
           await vault.depositUnwrapped(aliceAmount, {from: alice});
@@ -219,8 +221,8 @@ const vaultTestSuite = (strategyType, vaultType) => {
         });
 
         it('should deposit unwrapped all', async () => {
-          await controller.setConverter(tokenToWrap.address, wrapper.address, wrapConverter.address);
-          await controller.setConverter(wrapper.address, tokenToWrap.address, unwrapConverter.address);
+          await controller.setConverter(tokenToWrap.address, wrapper.address, wrapConverter.address, {from: governance});
+          await controller.setConverter(wrapper.address, tokenToWrap.address, unwrapConverter.address, {from: governance});
           const aliceBalance = await tokenToWrap.balanceOf(alice);
           await tokenToWrap.approve(vault.address, aliceBalance, {from: alice});
           await vault.depositAllUnwrapped({from: alice});
@@ -231,8 +233,8 @@ const vaultTestSuite = (strategyType, vaultType) => {
         });
 
         it('should withdraw unwrapped', async () => {
-          await controller.setConverter(tokenToWrap.address, wrapper.address, wrapConverter.address);
-          await controller.setConverter(wrapper.address, tokenToWrap.address, unwrapConverter.address);
+          await controller.setConverter(tokenToWrap.address, wrapper.address, wrapConverter.address, {from: governance});
+          await controller.setConverter(wrapper.address, tokenToWrap.address, unwrapConverter.address, {from: governance});
           const aliceBalance = await tokenToWrap.balanceOf(alice);
           await tokenToWrap.approve(vault.address, aliceAmount, {from: alice});
           await vault.depositUnwrapped(aliceAmount, {from: alice});
@@ -252,8 +254,8 @@ const vaultTestSuite = (strategyType, vaultType) => {
         });
 
         it('should withdraw unwrapped all', async () => {
-          await controller.setConverter(tokenToWrap.address, wrapper.address, wrapConverter.address);
-          await controller.setConverter(wrapper.address, tokenToWrap.address, unwrapConverter.address);
+          await controller.setConverter(tokenToWrap.address, wrapper.address, wrapConverter.address, {from: governance});
+          await controller.setConverter(wrapper.address, tokenToWrap.address, unwrapConverter.address, {from: governance});
           const aliceBalance = await tokenToWrap.balanceOf(alice);
           await tokenToWrap.approve(vault.address, aliceBalance, {from: alice});
           await vault.depositAllUnwrapped({from: alice});
@@ -360,8 +362,8 @@ const vaultTestSuite = (strategyType, vaultType) => {
       await mock.givenCalldataReturnUint(balanceOfVaultCalldata,
         mockedAmount);
 
-      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
-        await vault.allowInvestor(miris);
+      if(isInstitutional) {
+        await vault.allowInvestor(miris, {from: governance});
       }
       await vault.deposit(mockedAmount, {from: miris});
 
@@ -376,9 +378,9 @@ const vaultTestSuite = (strategyType, vaultType) => {
 
       const mockedAmount = ether('10');
 
-      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+      if(isInstitutional) {
         await expectRevert(vault.deposit(mockedAmount, {from: miris}), "!investor");
-        await vault.allowInvestor(miris);
+        await vault.allowInvestor(miris, {from: governance});
       }
 
       const revenueTokenERC20 = await IERC20.at(revenueToken.address);
@@ -410,8 +412,8 @@ const vaultTestSuite = (strategyType, vaultType) => {
       await mock.givenCalldataReturnUint(balanceOfGovernanceCalldata,
         mockedAmount);
 
-      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
-        await vault.allowInvestor(miris);
+      if(isInstitutional) {
+        await vault.allowInvestor(miris, {from: governance});
       }
       await vault.deposit(mockedAmount, {from: miris});
 
@@ -422,8 +424,8 @@ const vaultTestSuite = (strategyType, vaultType) => {
       expect(totalSupply).to.be.bignumber.equal(mockedAmount);
       expect(await vault.balanceOf(miris)).to.be.bignumber.equal(mockedAmount);
 
-      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
-        await vault.allowInvestor(governance);
+      if(isInstitutional) {
+        await vault.allowInvestor(governance, {from: governance});
       }
       await vault.deposit(mockedAmount, {from: governance});
 
@@ -439,9 +441,9 @@ const vaultTestSuite = (strategyType, vaultType) => {
     it('should deposit all correctly', async () => {
       const mockedAmount = ether('10');
 
-      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+      if(isInstitutional) {
         await expectRevert(vault.depositAll({from: miris}), "!investor");
-        await vault.allowInvestor(miris);
+        await vault.allowInvestor(miris, {from: governance});
       }
 
       const revenueTokenERC20 = await IERC20.at(revenueToken.address);
@@ -460,8 +462,8 @@ const vaultTestSuite = (strategyType, vaultType) => {
       await mock.givenCalldataReturnUint(balanceOfMirisCalldata,
         mockedAmount);
 
-      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
-        await vault.allowInvestor(miris);
+      if(isInstitutional) {
+        await vault.allowInvestor(miris, {from: governance});
       }
 
       await vault.depositAll({from: miris});
@@ -488,14 +490,14 @@ const vaultTestSuite = (strategyType, vaultType) => {
       await mock.givenCalldataReturnUint(balanceOfMirisCalldata,
         mockedAmount);
 
-      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
-        await vault.allowInvestor(miris);
+      if(isInstitutional) {
+        await vault.allowInvestor(miris, {from: governance});
       }
 
       await vault.depositAll({from: miris});
 
-      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
-        await vault.disallowInvestor(miris);
+      if(isInstitutional) {
+        await vault.disallowInvestor(miris, {from: governance});
       }
 
       const vaultBalance = await vault.balance();
@@ -509,15 +511,15 @@ const vaultTestSuite = (strategyType, vaultType) => {
         true);
 
       if (!isTestingAll) {
-        if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        if(isInstitutional) {
           await expectRevert(vault.withdraw(mockedAmount, {from: miris}), "!investor");
-          await vault.allowInvestor(miris);
+          await vault.allowInvestor(miris, {from: governance});
         }
         await vault.withdraw(mockedAmount, {from: miris});
       } else {
-        if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        if(isInstitutional) {
           await expectRevert(vault.withdrawAll({from: miris}), "!investor");
-          await vault.allowInvestor(miris);
+          await vault.allowInvestor(miris, {from: governance});
         }
         await vault.withdrawAll({from: miris});
       }
@@ -552,14 +554,14 @@ const vaultTestSuite = (strategyType, vaultType) => {
       await mock.givenCalldataReturnUint(balanceOfMirisCalldata,
         mockedAmount);
 
-      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
-        await vault.allowInvestor(miris);
+      if(isInstitutional) {
+        await vault.allowInvestor(miris, {from: governance});
       }
 
       await vault.depositAll({from: miris});
 
-      if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
-        await vault.disallowInvestor(miris);
+      if(isInstitutional) {
+        await vault.disallowInvestor(miris, {from: governance});
       }
 
       const difference = ether('1');
@@ -575,15 +577,15 @@ const vaultTestSuite = (strategyType, vaultType) => {
         difference);
 
       if (!isTestingAll) {
-        if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        if(isInstitutional) {
           await expectRevert(vault.withdraw(mockedAmount, {from: miris}), "!investor");
-          await vault.allowInvestor(miris);
+          await vault.allowInvestor(miris, {from: governance});
         }
         await vault.withdraw(mockedAmount, {from: miris});
       } else {
-        if(vaultType.contractName == InstitutionalEURxbVault.contractName) {
+        if(isInstitutional) {
           await expectRevert(vault.withdrawAll({from: miris}), "!investor");
-          await vault.allowInvestor(miris);
+          await vault.allowInvestor(miris, {from: governance});
         }
         await vault.withdrawAll({from: miris});
       }

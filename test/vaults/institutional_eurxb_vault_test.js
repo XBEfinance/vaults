@@ -7,5 +7,5 @@ const { vaultTestSuite } = require('./eurxb_vault_test');
 const InstitutionalEURxbStrategy = contract.fromArtifact("InstitutionalEURxbStrategy");
 const InstitutionalEURxbVault = contract.fromArtifact("InstitutionalEURxbVault");
 describe('InstitutionalEURxbVault',
-  vaultTestSuite(InstitutionalEURxbStrategy, InstitutionalEURxbVault)
+  vaultTestSuite(InstitutionalEURxbStrategy, InstitutionalEURxbVault, true)
 );

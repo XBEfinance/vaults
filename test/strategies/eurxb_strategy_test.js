@@ -19,10 +19,13 @@ const IController = contract.fromArtifact("IController");
 const IERC20 = contract.fromArtifact("IERC20");
 const IConverter = contract.fromArtifact("IConverter");
 const IVaultCore = contract.fromArtifact("IVaultCore");
+const InstitutionalEURxbStrategy = contract.fromArtifact("InstitutionalEURxbStrategy");
+const ConsumerEURxbStrategy = contract.fromArtifact("ConsumerEURxbStrategy");
+const TokenWrapper = contract.fromArtifact("TokenWrapper");
 
 const MockContract = contract.fromArtifact("MockContract");
 
-const strategyTestSuite = (strategyType, vaultType) => {
+const strategyTestSuite = (strategyType, vaultType, isInstitutional) => {
   return () => {
 
     const governance = accounts[0];
@@ -34,6 +37,7 @@ const strategyTestSuite = (strategyType, vaultType) => {
     var strategy;
     var vault;
     var mock;
+    var wrapper;
 
     beforeEach(async () => {
       // console.log(strategyType);
@@ -115,18 +119,52 @@ const strategyTestSuite = (strategyType, vaultType) => {
       await expectRevert(strategy.methods["withdraw(uint256)"](mockedBalance, {from: governance}), "!vault 0");
     });
 
+    const configureVault = async () => {
+      if (isInstitutional) {
+        wrapper = await TokenWrapper.new(
+          "Banked EURxb",
+          "bEURxb",
+          revenueToken.address,
+          governance,
+          {from: governance}
+        );
+        await vault.configure(
+          wrapper.address,
+          controller.address,
+          revenueToken.address,
+          {from: governance}
+        );
+        await controller.setVault(wrapper.address, vault.address, {from: governance});
+        await strategy.setWant(wrapper.address, {from: governance});
+        await controller.setApprovedStrategy(
+          wrapper.address,
+          strategy.address,
+          true,
+          {from: governance}
+        );
+        await controller.setStrategy(wrapper.address, strategy.address, {from: governance});
+      } else {
+        await vault.configure(
+          revenueToken.address,
+          controller.address,
+          {from: governance}
+        );
+      }
+    };
+
     it('should reject withdraw the amount of \"want\" token if transfer to vault failed', async () => {
       const mockedBalance = ether('10');
 
+      await configureVault();
       await strategy.setController(mock.address, {from: governance});
       await strategy.setVault(governance, {from: governance});
 
       const vaultsCalldata = (await IController.at(mock.address)).contract
-        .methods.vaults(revenueToken.address).encodeABI();
-      await mock.givenCalldataReturnAddress(vaultsCalldata, vault.address);
+        .methods.vaults(ZERO).encodeABI();
+      await mock.givenMethodReturnAddress(vaultsCalldata, vault.address);
 
       const transferCallback = revenueToken.contract
-        .methods.transfer(ZERO_ADDRESS, 0).encodeABI();
+        .methods.transfer(ZERO_ADDRESS, ZERO).encodeABI();
       await mock.givenMethodReturnBool(transferCallback, false);
 
       await expectRevert(strategy.methods["withdraw(uint256)"](mockedBalance, {from: governance}), "!transferVault");
@@ -175,6 +213,8 @@ const strategyTestSuite = (strategyType, vaultType) => {
       const transferCallback = revenueToken.contract
         .methods.transfer(ZERO_ADDRESS, 0).encodeABI();
       await mock.givenMethodReturnBool(transferCallback, false);
+
+      await configureVault();
 
       await expectRevert(strategy.methods["withdraw(uint256)"](mockedBalance, {from: governance}), "!transferConverterToken");
     });
@@ -249,6 +289,8 @@ const strategyTestSuite = (strategyType, vaultType) => {
         .methods.transfer(ZERO_ADDRESS, 0).encodeABI();
       await mockWant.givenMethodReturnBool(transferOfWantMockCallback, true);
 
+      await configureVault();
+
       const receipt = await strategy.methods["withdraw(uint256)"](mockedBalance, {from: governance});
       await expectEvent(receipt, "Withdrawn", {
         _token: mockWant.address,
@@ -271,6 +313,8 @@ const strategyTestSuite = (strategyType, vaultType) => {
       const transferCallback = revenueToken.contract
         .methods.transfer(ZERO_ADDRESS, 0).encodeABI();
       await mock.givenMethodReturnBool(transferCallback, true);
+
+      await configureVault();
 
       const receipt = await strategy.methods["withdraw(uint256)"](mockedBalance, {from: governance});
       await expectEvent(receipt, "Withdrawn", {
@@ -301,6 +345,8 @@ const strategyTestSuite = (strategyType, vaultType) => {
       const transferCallback = revenueToken.contract
         .methods.transfer(ZERO_ADDRESS, 0).encodeABI();
       await mock.givenMethodReturnBool(transferCallback, true);
+
+      await configureVault();
 
       const receipt = await strategy.withdrawAll({from: governance});
       await expectEvent(receipt, "Withdrawn", {

@@ -5,11 +5,12 @@ const {
   ether,
   time
 } = require('@openzeppelin/test-helpers');
+const { accounts, contract } = require('@openzeppelin/test-environment');
 
-const Bank = artifacts.require('Bank');
-const EURxbMock = artifacts.require('EURxbMock');
+const Bank = contract.fromArtifact('Bank');
+const EURxbMock = contract.fromArtifact('EURxbMock');
 
-contract('Bank', (accounts) => {
+describe('Bank', () => {
     const minter = accounts[1];
     const client = accounts[2];
     const alice = accounts[3];

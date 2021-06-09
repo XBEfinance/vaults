@@ -10,17 +10,18 @@ const {
   ether,
   time
 } = require('@openzeppelin/test-helpers');
+const { accounts, contract } = require('@openzeppelin/test-environment');
 const { ZERO_ADDRESS } = constants;
 const { ZERO, ONE, getMockTokenPrepared } = require('../utils/common');
 
-const IERC20 = artifacts.require("IERC20");
-const IStrategy = artifacts.require("IStrategy");
-const UnwrappedToWrappedTokenConverter = artifacts.require('UnwrappedToWrappedTokenConverter');
-const TokenWrapper = artifacts.require('TokenWrapper');
+const IERC20 = contract.fromArtifact("IERC20");
+const IStrategy = contract.fromArtifact("IStrategy");
+const UnwrappedToWrappedTokenConverter = contract.fromArtifact('UnwrappedToWrappedTokenConverter');
+const TokenWrapper = contract.fromArtifact('TokenWrapper');
 
-const MockContract = artifacts.require("MockContract");
+const MockContract = contract.fromArtifact("MockContract");
 
-contract('UnwrappedToWrappedTokenConverter', (accounts) => {
+describe('UnwrappedToWrappedTokenConverter', () => {
 
   const owner = accounts[0];
   const alice = accounts[1];

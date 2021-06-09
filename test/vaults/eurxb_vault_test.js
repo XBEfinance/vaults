@@ -10,31 +10,31 @@ const {
   ether,
   time
 } = require('@openzeppelin/test-helpers');
+const { accounts, contract } = require('@openzeppelin/test-environment');
 const { ZERO_ADDRESS } = constants;
 
 const { ZERO, CONVERSION_WEI_CONSTANT, getMockTokenPrepared } = require('../utils/common');
 const { vaultInfrastructureRedeploy } = require('../utils/vault_infrastructure_redeploy');
 
-const IERC20 = artifacts.require("IERC20");
-const IStrategy = artifacts.require("IStrategy");
-const MockToken = artifacts.require("MockToken");
-const Controller = artifacts.require("Controller");
+const IERC20 = contract.fromArtifact("IERC20");
+const IStrategy = contract.fromArtifact("IStrategy");
+const MockToken = contract.fromArtifact("MockToken");
+const Controller = contract.fromArtifact("Controller");
 
-const ConsumerEURxbStrategy = artifacts.require("ConsumerEURxbStrategy");
-const InstitutionalEURxbStrategy = artifacts.require("InstitutionalEURxbStrategy");
-const UnwrappedToWrappedTokenConverter = artifacts.require("UnwrappedToWrappedTokenConverter");
-const WrappedToUnwrappedTokenConverter = artifacts.require("WrappedToUnwrappedTokenConverter");
-const TokenWrapper = artifacts.require("TokenWrapper");
+const ConsumerEURxbStrategy = contract.fromArtifact("ConsumerEURxbStrategy");
+const InstitutionalEURxbStrategy = contract.fromArtifact("InstitutionalEURxbStrategy");
+const UnwrappedToWrappedTokenConverter = contract.fromArtifact("UnwrappedToWrappedTokenConverter");
+const WrappedToUnwrappedTokenConverter = contract.fromArtifact("WrappedToUnwrappedTokenConverter");
+const TokenWrapper = contract.fromArtifact("TokenWrapper");
 
 
-const InstitutionalEURxbVault = artifacts.require("InstitutionalEURxbVault");
-const ConsumerEURxbVault = artifacts.require("ConsumerEURxbVault");
+const InstitutionalEURxbVault = contract.fromArtifact("InstitutionalEURxbVault");
+const ConsumerEURxbVault = contract.fromArtifact("ConsumerEURxbVault");
 
-const MockContract = artifacts.require("MockContract");
+const MockContract = contract.fromArtifact("MockContract");
 
 const vaultTestSuite = (strategyType, vaultType) => {
-  return (accounts) => {
-
+  return () => {
     const governance = accounts[0];
     const miris = accounts[1];
     const strategist = accounts[2];
@@ -142,9 +142,9 @@ const vaultTestSuite = (strategyType, vaultType) => {
           await wrapper.grantRole(MINTER_ROLE, unwrapConverter.address);
 
 
-          vault = await vaultType.new();
-          strategy = await strategyType.new();
-          controller = await Controller.new();
+          vault = await vaultType.new({from: governance});
+          strategy = await strategyType.new({from: governance});
+          controller = await Controller.new({from: governance});
 
           await strategy.configure(
             wrapper.address,

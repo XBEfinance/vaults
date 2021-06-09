@@ -1,6 +1,5 @@
 pragma solidity ^0.6.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -25,7 +24,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     using SafeMath for uint256;
 
     /// @notice Controller instance, to simplify controller-related actions
-    address internal _controller;
+    IController internal _controller;
 
     /// @notice Token which will be transfered to strategy and used in business logic
     IERC20 internal _token;
@@ -73,8 +72,8 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     /// @notice Usual setter with check if passet param is new
     /// @param _newController New value
     function setController(address _newController) public onlyGovernance {
-        require(_controller != _newController, "!new");
-        _controller = _newController;
+        require(address(_controller) != _newController, "!new");
+        _controller = IController(_newController);
     }
 
     /// @notice Returns total balance
@@ -82,13 +81,13 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     function balance() override public view returns(uint256) {
         return _token.balanceOf(address(this)).add(
             IStrategy(
-                IController(_controller).strategies(address(_token))
+                _controller.strategies(address(_token))
             ).balanceOf()
         );
     }
 
     /// @notice Custom logic in here for how much the vault allows to be borrowed, sets minimum required on-hand to keep small withdrawals cheap
-    function available() public view returns(uint) {
+    function available() public view returns(uint256) {
         return _token.balanceOf(address(this)).mul(min).div(max);
     }
 
@@ -101,7 +100,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     /// @notice Controller getter
     /// @return Controller address
     function controller() override public view returns(address) {
-        return _controller;
+        return address(_controller);
     }
 
     /// @notice Exist to calculate price per full share
@@ -113,7 +112,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
     function _deposit(address _from, uint256 _amount) internal returns(uint256 shares) {
         uint256 _pool = balance();
         if (address(this) != _from) {
-          _token.safeTransferFrom(_from, address(this), _amount);
+            _token.safeTransferFrom(_from, address(this), _amount);
         }
         _amount = _token.balanceOf(address(this));
         shares = 0;
@@ -143,16 +142,16 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
         // Check balance
         uint256 b = _token.balanceOf(address(this));
         if (b < r) {
-            uint256 _withdraw = r.sub(b);
-            IController(_controller).withdraw(address(_token), _withdraw);
+            uint256 _w = r.sub(b);
+            _controller.withdraw(address(_token), _w);
             uint256 _after = _token.balanceOf(address(this));
             uint256 _diff = _after.sub(b);
-            if (_diff < _withdraw) {
+            if (_diff < _w) {
                 r = b.add(_diff);
             }
         }
         if (_to != address(this)) {
-          _token.safeTransfer(_to, r);
+            _token.safeTransfer(_to, r);
         }
         emit Withdraw(r);
     }
@@ -170,9 +169,8 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Governable, Initializable, E
 
     /// @notice Transfer tokens to controller, controller transfers it to strategy and earn (farm)
     function earn() override external {
-        uint256 _bal = available();
-        _token.safeTransfer(_controller, _bal);
-        IController(_controller).earn(address(_token), _bal);
+      uint256 _bal = available();
+        _token.safeTransfer(address(_controller), _bal);
+        _controller.earn(address(_token), _bal);
     }
-
 }

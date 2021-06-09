@@ -54,7 +54,7 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
     }
 
     function _convert(address _from, address _to, uint256 _amount) internal returns(uint256) {
-        IController currentController = IController(_controller);
+        IController currentController = _controller;
         address converterAddress = currentController.converters(_from, _to);
         require(converterAddress != address(0), "!converter");
         IConverter converter = IConverter(converterAddress);

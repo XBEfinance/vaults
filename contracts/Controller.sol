@@ -28,16 +28,16 @@ contract Controller is IController, Governable, Initializable, Context {
     event Harvest(address _strategy, address _token);
 
     /// @dev token => vault
-    mapping(address => address) public vaults;
+    mapping(address => address) public override vaults;
 
     /// @dev token => strategy
-    mapping(address => address) public strategies;
+    mapping(address => address) public override strategies;
 
     /// @dev from => to => converter address
-    mapping(address => mapping(address => address)) public converters;
+    mapping(address => mapping(address => address)) public override converters;
 
     /// @dev token => strategy => is strategy approved
-    mapping(address => mapping(address => bool)) public approvedStrategies;
+    mapping(address => mapping(address => bool)) public override approvedStrategies;
 
     /// @notice Strategist is an actor who created the strategies and he is receiving fees from strategies execution
     address public strategist;
@@ -183,7 +183,7 @@ contract Controller is IController, Governable, Initializable, Context {
     /// @param _token Given token address
     /// @param _amount Amount of given token address
     function earn(address _token, uint256 _amount) override public {
-        address _strategy = _strategies[_token];
+        address _strategy = strategies[_token];
         address _want = IStrategy(_strategy).want();
         if (_want != _token) {
             address converter = converters[_token][_want];

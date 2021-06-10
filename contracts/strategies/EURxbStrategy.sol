@@ -13,6 +13,8 @@ import "../interfaces/vault/IVaultCore.sol";
 
 import "../governance/Governable.sol";
 
+import "../mocks/StringsConcatenations.sol";
+
 /// @title EURxbStrategy
 /// @notice This is base contract for yield farming strategy with EURxb token
 abstract contract EURxbStrategy is IStrategy, Governable, Initializable, Context {

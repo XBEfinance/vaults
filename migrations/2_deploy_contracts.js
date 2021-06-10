@@ -1,8 +1,17 @@
-const { accounts, contract } = require('@openzeppelin/test-environment');
-const Treasury = contract.fromArtifact('Treasury');
-const Governance = contract.fromArtifact('Governance');
-const XBE = contract.fromArtifact('XBE');
-const TokenWrapper = contract.fromArtifact('TokenWrapper');
+// const { accounts, contract } = require('@openzeppelin/test-environment');
+const Treasury = artifacts.require('Treasury');
+const Governance = artifacts.require('Governance');
+const XBE = artifacts.require('XBE');
+const TokenWrapper = artifacts.require('TokenWrapper');
+const MockToken = artifacts.require('MockToken');
+const Registry = artifacts.require('Registry');
+const Controller = artifacts.require('Controller');
+const ConsumerEURxbVault = artifacts.require('ConsumerEURxbVault');
+const InstitutionalEURxbVault = artifacts.require('InstitutionalEURxbVault');
+const UnwrappedToWrappedTokenConverter = artifacts.require('UnwrappedToWrappedTokenConverter');
+const WrappedToUnwrappedTokenConverter = artifacts.require('WrappedToUnwrappedTokenConverter');
+const InstitutionalEURxbStrategy = artifacts.require('InstitutionalEURxbStrategy');
+const ConsumerEURxbStrategy = artifacts.require('ConsumerEURxbStrategy');
 
 const { BN } = require('@openzeppelin/test-helpers');
 
@@ -31,7 +40,7 @@ module.exports = function (deployer, network, accounts) {
       const periodForVoting = new BN('2');
       const lockForVoting = new BN('2');
 
-      const safe = await IGnosisSafe.at('0xD78D94634d8F2E3eFADE97A5D13Da04c92440e67');
+      const safe = await IGnosisSafe.attach('0xD78D94634d8F2E3eFADE97A5D13Da04c92440e67');
       const mock = await deployer.deploy(MockContract);
       const mockToken = await deployer.deploy(MockToken, 'Some Token', 'ST', web3.utils.toWei('50', 'ether'));
       const governanceContract = await deployer.deploy(Governance);
@@ -87,36 +96,53 @@ module.exports = function (deployer, network, accounts) {
     } else if (network.startsWith('rinkeby')) {
       const xbEuro = await MockToken.at('0x5640D0FfB20F700ebaE1e2E09D525e4C46153D8e'); // BankTransparentProxy
       const treasury = await Treasury.at('0x8D77234fC07167380fE0b776342B9bB4f46cE4a4');
-      const wXBEuro = await deployer.deploy(TokenWrapper);
+      const iStrategy = await deployer.deploy(InstitutionalEURxbStrategy);
+      const cStrategy = await deployer.deploy(ConsumerEURxbStrategy);
+      const wXBEuro = await deployer.deploy(TokenWrapper, 'wXBEuro', 'wbEuro', xbEuro.address, iStrategy.address);
       const controller = await deployer.deploy(Controller);
       await controller.configure(treasury.address, process.env.RINKEBY_STRATEGIST);
       const registry = await deployer.deploy(Registry);
       const cVault = await deployer.deploy(ConsumerEURxbVault);
       const iVault = await deployer.deploy(InstitutionalEURxbVault);
-      const eToW = await deployer.deploy(EURxbToWrappedEURxbConverter);
+      const eToW = await deployer.deploy(UnwrappedToWrappedTokenConverter);
       eToW.configure(xbEuro.address);
-      const wToE = await deployer.deploy(WrappedEURxbToEURxbConverter);
+      const wToE = await deployer.deploy(WrappedToUnwrappedTokenConverter);
       wToE.configure(xbEuro.address);
-      const iStrategy = await deployer.deploy(InstitutionalEURxbStrategy);
-      const cStrategy = await deployer.deploy(ConsumerEURxbStrategy);
+      console.log('1');
       await iStrategy.configure(wXBEuro.address, controller.address, iVault.address);
+      console.log('2');
       await cStrategy.configure(xbEuro.address, controller.address, cVault.address);
-      await wXBEuro.configure(xbEuro.address, iStrategy.address);
+      console.log('3');
       const MINTER_ROLE = await wXBEuro.MINTER_ROLE();
+      console.log('4');
       await wXBEuro.grantRole(MINTER_ROLE, eToW.address);
+      console.log('5');
       await wXBEuro.grantRole(MINTER_ROLE, wToE.address);
+      console.log('6');
       await cVault.configure(xbEuro.address, controller.address);
+      console.log('7');
       await iVault.configure(wXBEuro.address, controller.address);
-      await registry.addVault(cVault.address);
-      await registry.addVault(iVault.address);
+      console.log('8');
       await controller.setApprovedStrategy(xbEuro.address, cStrategy.address, true);
+      console.log('9');
       await controller.setApprovedStrategy(wXBEuro.address, iStrategy.address, true);
+      console.log('10');
       await controller.setStrategy(xbEuro.address, cStrategy.address);
+      console.log('11');
       await controller.setStrategy(wXBEuro.address, iStrategy.address);
+      console.log('12');
       await controller.setConverter(iVault.address, xbEuro.address, wToE.address);
+      console.log('13');
       await controller.setConverter(xbEuro.address, iVault.address, eToW.address);
+      console.log('14');
       await controller.setVault(xbEuro.address, cVault.address);
+      console.log('15');
       await controller.setVault(wXBEuro.address, iVault.address);
+      console.log('16');
+      await registry.addVault(cVault.address);
+      console.log('17');
+      await registry.addVault(iVault.address);
+      console.log('18');
 
 
       // const xbe = await XBE.at('0xfaC2D38F064A35b5C0636a7eDB4B6Cc13bD8D278');

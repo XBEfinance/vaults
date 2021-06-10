@@ -19,6 +19,7 @@ contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
     mapping(address => uint256) public xbEUROvault; // (owner => xbeuro_in_vault_amount)
     mapping(address => mapping(uint256 => address)) public bondOwner; // (bondContractAddress => (bondId => owner))
     mapping(address => address) public bondDDP; // (bondContractAddress => DDP)
+    uint256 public collectedFee;
 
     event Deposit(address _user, uint256 _amount);
     event Withdraw(address _user, uint256 _amount);
@@ -48,9 +49,14 @@ contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
 
         uint256 xbEUROamount = eurx.balanceByTime(msgSender, timestamp);
         xbEUROamount = xbEUROamount.mul(amount).div(eurx.balanceOf(msgSender));
+
+        uint256 mintingFee = xbEUROamount.div(20); // calculate minting fee
+        xbEUROamount = xbEUROamount.sub(mintingFee); // recalculate amount of xbEURO to transfer to user
+        collectedFee = collectedFee.add(mintingFee); // increase collectedFee
+
         eurx.transferFrom(msgSender, address(this), amount);
         xbEUROvault[msgSender] = xbEUROvault[msgSender].add(xbEUROamount);
-        _mint(address(this), xbEUROamount);
+        _mint(address(this), xbEUROamount.add(mintingFee)); // mint required amount + fee
         _approve(address(this), vault, xbEUROamount);
         IVaultTransfers(vault).deposit(xbEUROamount);
 
@@ -63,7 +69,12 @@ contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
 
         require(_amount > 0, "BankV2: amount < 0");
         require(_xbEUROavailable >= _amount, "BankV2: not enough funds");
-        IVaultTransfers(vault).withdraw(_amount);
+
+//        IVaultTransfers(vault).withdraw(_amount);
+        IVaultTransfers(vault).withdrawAll();
+        _approve(address(this), vault, _xbEUROavailable - _amount);
+        IVaultTransfers(vault).deposit(_xbEUROavailable - _amount);
+
         xbEUROvault[msgSender] = _xbEUROavailable.sub(_amount);
         _transfer(address(this), msgSender, _amount);
 
@@ -83,5 +94,11 @@ contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
 
         _ddp.withdraw(bondId);
         _burn(msgSender, tokenValue);
+    }
+
+    function withdrawCollectedFee(uint256 _amount, address _to) override external onlyOwner {
+        require(_amount > 0, "BankV2: amount < 0");
+        require(_amount <= collectedFee, "BankV2: amount > collectedFee");
+        _transfer(address(this), _to, _amount);
     }
 }

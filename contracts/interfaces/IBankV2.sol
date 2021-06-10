@@ -27,4 +27,7 @@ interface IBankV2 is IERC20, IERC721Receiver {
 
     //   @notice Method for redeeming the bond
     function redeemBond(address bondAddress, uint256 bondId) external ;
+
+
+    function withdrawCollectedFee(uint256 _amount, address _to) external;
 }

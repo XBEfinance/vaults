@@ -20,6 +20,7 @@ contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
     mapping(address => mapping(uint256 => address)) public bondOwner; // (bondContractAddress => (bondId => owner))
     mapping(address => address) public bondDDP; // (bondContractAddress => DDP)
     uint256 public collectedFee;
+    uint256 public mintingFeePercent = 500; // 100 = 1%, 1=0.01%
 
     event Deposit(address _user, uint256 _amount);
     event Withdraw(address _user, uint256 _amount);
@@ -50,7 +51,7 @@ contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
         uint256 xbEUROamount = eurx.balanceByTime(msgSender, timestamp);
         xbEUROamount = xbEUROamount.mul(amount).div(eurx.balanceOf(msgSender));
 
-        uint256 mintingFee = xbEUROamount.div(20); // calculate minting fee
+        uint256 mintingFee = xbEUROamount.mul(mintingFeePercent).div(10000); // calculate minting fee
         xbEUROamount = xbEUROamount.sub(mintingFee); // recalculate amount of xbEURO to transfer to user
         collectedFee = collectedFee.add(mintingFee); // increase collectedFee
 
@@ -70,10 +71,10 @@ contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
         require(_amount > 0, "BankV2: amount < 0");
         require(_xbEUROavailable >= _amount, "BankV2: not enough funds");
 
-//        IVaultTransfers(vault).withdraw(_amount);
-        IVaultTransfers(vault).withdrawAll();
-        _approve(address(this), vault, _xbEUROavailable - _amount);
-        IVaultTransfers(vault).deposit(_xbEUROavailable - _amount);
+        IVaultTransfers(vault).withdraw(_amount);
+//        IVaultTransfers(vault).withdrawAll();
+//        _approve(address(this), vault, _xbEUROavailable.sub(_amount));
+//        IVaultTransfers(vault).deposit(_xbEUROavailable.sub(_amount));
 
         xbEUROvault[msgSender] = _xbEUROavailable.sub(_amount);
         _transfer(address(this), msgSender, _amount);
@@ -100,5 +101,10 @@ contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
         require(_amount > 0, "BankV2: amount < 0");
         require(_amount <= collectedFee, "BankV2: amount > collectedFee");
         _transfer(address(this), _to, _amount);
+    }
+
+    function setMintingFee(uint256 _fee) override external onlyOwner {
+        require(_fee >= 0, "BankV2: fee < 0");
+        mintingFeePercent = _fee;
     }
 }

@@ -31,5 +31,7 @@ interface IBankV2 is IERC20, IERC721Receiver {
 
     function withdrawCollectedFee(uint256 _amount, address _to) external;
 
+    function withdrawAllCollectedFee(address _to) external;
+
     function setMintingFee(uint256 _fee) external;
 }

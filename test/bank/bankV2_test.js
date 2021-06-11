@@ -150,6 +150,60 @@ contract('BankV2', (accounts) => {
     });
   });
 
+  describe('deposit', () => {
+    it('Ok: deposit + collectedFee check', async () => {
+      const timestamp = await lastBlockTimestamp();
+      await this.multisig.mintSecurityAssetToken(client, this.ETHER_100, 1748069828, { from: owner });
+
+      await this.eurxb.approve(this.bankV2.address, ether('1'), { from: client });
+      await this.bankV2.deposit(this.eurxb.address, ether('1'), timestamp + 4 * YEAR, { from: client });
+
+      const vaultBalance = await this.bankV2.balanceOf.call(this.vault.address);
+      const collectedFee = await this.bankV2.collectedFee.call();
+      assert.equal(vaultBalance.div(new BN('95', 10)).mul(new BN('100', 10)).mul(new BN('5', 10)).div(new BN('100', 10))
+        .toString(), collectedFee.toString(), '');
+    });
+
+    it('Ok: deposit + setMintingFee check', async () => {
+      const timestamp = await lastBlockTimestamp();
+      await this.multisig.mintSecurityAssetToken(client, this.ETHER_100, 1748069828, { from: owner });
+      await this.bankV2.setMintingFee('1000');
+      const mintingFee = await this.bankV2.mintingFeePercent.call();
+
+      console.log(mintingFee.toString());
+      assert.equal(mintingFee.toString(), new BN('1000', 10).toString(), '');
+
+      await this.eurxb.approve(this.bankV2.address, ether('1'), { from: client });
+      await this.bankV2.deposit(this.eurxb.address, ether('1'), timestamp + 4 * YEAR, { from: client });
+
+      const vaultBalance = await this.bankV2.balanceOf.call(this.vault.address);
+      const collectedFee = await this.bankV2.collectedFee.call();
+      assert.equal(vaultBalance.div(new BN('90', 10)).mul(new BN('100', 10)).mul(new BN('10', 10)).div(new BN('100', 10))
+        .toString(), collectedFee.toString(), '');
+    });
+
+    it('Ok: deposit + withdrawAllCollectedFee check', async () => {
+      const timestamp = await lastBlockTimestamp();
+      await this.multisig.mintSecurityAssetToken(client, this.ETHER_100, 1748069828, { from: owner });
+      await this.bankV2.setMintingFee('1000');
+      const mintingFee = await this.bankV2.mintingFeePercent.call();
+
+      console.log(mintingFee.toString());
+      assert.equal(mintingFee.toString(), new BN('1000', 10).toString(), '');
+
+      await this.eurxb.approve(this.bankV2.address, ether('1'), { from: client });
+      await this.bankV2.deposit(this.eurxb.address, ether('1'), timestamp + 4 * YEAR, { from: client });
+
+      const vaultBalance = await this.bankV2.balanceOf.call(this.vault.address);
+      const collectedFee = await this.bankV2.collectedFee.call();
+      assert.equal(vaultBalance.div(new BN('90', 10)).mul(new BN('100', 10)).mul(new BN('10', 10)).div(new BN('100', 10))
+        .toString(), collectedFee.toString(), '');
+
+      await this.bankV2.withdrawAllCollectedFee(owner);
+      const balanceOfOwner = await this.bankV2.balanceOf(owner);
+      assert.equal(balanceOfOwner.toString(), collectedFee.toString(), '');
+    });
+  });
   describe('withdraw', () => {
     it('Ok: withdraw', async () => {
       const timestamp = await lastBlockTimestamp();
@@ -231,8 +285,50 @@ contract('BankV2', (accounts) => {
       const tokenInfo = await this.bond.getTokenInfo(1, { from: alice });
       assert.equal(tokenInfo[0].toString(), ether('75'));
 
-      await this.eurxb.approve(this.bankV2.address, bf, { from: alice });
-      await this.bankV2.deposit(this.eurxb.address, bf, new BN(timestamp + 4 * YEAR, 10), { from: alice });
+      await this.eurxb.approve(this.bankV2.address, ether('75'), { from: alice });
+      const vaultBalanceR = await this.vault.balance.call();
+      console.log('Vault.balance returns: ', vaultBalanceR.toString());
+      const vaulttotalSupplyR = await this.vault.totalSupply.call();
+      console.log('Vault.totalSupply returns: ', vaulttotalSupplyR.toString());
+      // let vaultcanWithdrawR = await this.vault.canWithdraw.call(ether('10'));
+      // console.log('Vault.canWithdraw returns: ', vaultcanWithdrawR.toString());
+
+      await this.bankV2.deposit(this.eurxb.address, ether('75'), new BN(timestamp + 4 * YEAR, 10), { from: alice });
+      // console.log('Deposit 10 eth...');
+      // vaultBalanceR = await this.vault.balance.call();
+      // console.log('Vault.balance returns: ', vaultBalanceR.toString());
+      // vaulttotalSupplyR = await this.vault.totalSupply.call();
+      // console.log('Vault.totalSupply returns: ', vaulttotalSupplyR.toString());
+      // let vaultcanWithdrawR = await this.vault.canWithdraw.call(ether('12.16'));
+      // console.log('Vault.canWithdraw returns: ', vaultcanWithdrawR.toString());
+      //
+      // await this.bankV2.deposit(this.eurxb.address, ether('10'), new BN(timestamp + 4 * YEAR, 10), { from: alice });
+      // console.log('Deposit more 10 eth...');
+      // vaultBalanceR = await this.vault.balance.call();
+      // console.log('Vault.balance returns: ', vaultBalanceR.toString());
+      // vaulttotalSupplyR = await this.vault.totalSupply.call();
+      // console.log('Vault.totalSupply returns: ', vaulttotalSupplyR.toString());
+      // vaultcanWithdrawR = await this.vault.canWithdraw.call(ether('10'));
+      // console.log('Vault.canWithdraw returns: ', vaultcanWithdrawR.toString());
+
+      // await this.bankV2.deposit(this.eurxb.address, ether('10'), new BN(timestamp + 4 * YEAR, 10), { from: alice });
+      // console.log('Deposit more 10 eth...');
+      // vaultBalanceR = await this.vault.balance.call();
+      // console.log('Vault.balance returns: ', vaultBalanceR.toString());
+      // vaulttotalSupplyR = await this.vault.totalSupply.call();
+      // console.log('Vault.totalSupply returns: ', vaulttotalSupplyR.toString());
+      // vaultcanWithdrawR = await this.vault.canWithdraw.call(ether('10'));
+      // console.log('Vault.canWithdraw returns: ', vaultcanWithdrawR.toString());
+      //
+      // await this.bankV2.deposit(this.eurxb.address, ether('10'), new BN(timestamp + 4 * YEAR, 10), { from: alice });
+      // console.log('Deposit more 10 eth...');
+      // vaultBalanceR = await this.vault.balance.call();
+      // console.log('Vault.balance returns: ', vaultBalanceR.toString());
+      // vaulttotalSupplyR = await this.vault.totalSupply.call();
+      // console.log('Vault.totalSupply returns: ', vaulttotalSupplyR.toString());
+      // vaultcanWithdrawR = await this.vault.canWithdraw.call(ether('10'));
+      // console.log('Vault.canWithdraw returns: ', vaultcanWithdrawR.toString());
+
       const balance = await this.eurxb.balanceOf.call(this.bankV2.address);
       assert.equal(balance.toString(), ether('75'));
 
@@ -327,8 +423,8 @@ contract('BankV2', (accounts) => {
       assert(timestamp + 4 * YEAR + DAY >= tokenInfo01[2].toString() && tokenInfo01[2].toString() >= timestamp + 4 * YEAR, `Bond timestamp nas to be: ${timestamp + 4 * YEAR + DAY} > ${tokenInfo01[2].toString()} > ${timestamp + 4 * YEAR}`);
 
       // depositing EURxB
-      await this.eurxb.approve(this.bankV2.address, ether("75"), { from: client });
-      await this.bankV2.deposit(this.eurxb.address, ether("75"), timestamp + 4 * YEAR, { from: client });
+      await this.eurxb.approve(this.bankV2.address, ether('75'), { from: client });
+      await this.bankV2.deposit(this.eurxb.address, ether('75'), timestamp + 4 * YEAR, { from: client });
       const balance = await this.eurxb.balanceOf.call(this.bankV2.address);
       assert.equal(balance.toString(), ether('75'));
 

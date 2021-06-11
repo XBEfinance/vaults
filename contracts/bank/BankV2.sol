@@ -20,7 +20,7 @@ contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
     mapping(address => mapping(uint256 => address)) public bondOwner; // (bondContractAddress => (bondId => owner))
     mapping(address => address) public bondDDP; // (bondContractAddress => DDP)
     uint256 public collectedFee;
-    uint256 public mintingFeePercent = 500; // 100 = 1%, 1=0.01%
+    uint256 public mintingFeePercent; // 100 = 1%, 1=0.01%
 
     event Deposit(address _user, uint256 _amount);
     event Withdraw(address _user, uint256 _amount);
@@ -29,6 +29,7 @@ contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
 
     function configure(address _vault) override external initializer onlyOwner {
         vault = _vault;
+        mintingFeePercent = 500;
     }
 
     function setBondDDP(address bond, address _ddp) override external onlyOwner {
@@ -72,9 +73,6 @@ contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
         require(_xbEUROavailable >= _amount, "BankV2: not enough funds");
 
         IVaultTransfers(vault).withdraw(_amount);
-//        IVaultTransfers(vault).withdrawAll();
-//        _approve(address(this), vault, _xbEUROavailable.sub(_amount));
-//        IVaultTransfers(vault).deposit(_xbEUROavailable.sub(_amount));
 
         xbEUROvault[msgSender] = _xbEUROavailable.sub(_amount);
         _transfer(address(this), msgSender, _amount);
@@ -98,6 +96,14 @@ contract BankV2 is IBankV2, ERC721Holder, ERC20, Initializable, Ownable {
     }
 
     function withdrawCollectedFee(uint256 _amount, address _to) override external onlyOwner {
+        _withdrawCollectedFee(_amount, _to);
+    }
+
+    function withdrawAllCollectedFee(address _to) override external onlyOwner {
+        _withdrawCollectedFee(collectedFee, _to);
+    }
+
+    function _withdrawCollectedFee(uint256 _amount, address _to) internal {
         require(_amount > 0, "BankV2: amount < 0");
         require(_amount <= collectedFee, "BankV2: amount > collectedFee");
         _transfer(address(this), _to, _amount);

@@ -6,27 +6,24 @@ source ./scripts/utils/generate_truffle_config.sh
 if [[ $1 = "+fast" ]]; then
   echo "Run tests without build!"
   generate_truffle_config "0.6.3" ".\/contracts"
-
   #remove +fast parameter
   shift
 else
   # remove previous build
   rm -rf ./build
-
-  # build our contracts
-  generate_truffle_config "0.6.3" ".\/contracts"
-  truffle compile
-
-  # build third party contracts
-  ./scripts/third_party_build.sh
+  ./scripts/main_parts_build.sh
 fi
 
 if [[ $1 = "network" ]]; then
   # run tests
-  truffle test --network $2 --stacktrace $@
+  truffle test --network $2 --compile-none --stacktrace $@
 else
-  # run tests
-  truffle test --stacktrace $@
+  if [[ $1 = "+debug" ]]; then
+    node --inspect ./node_modules/.bin/truffle test --compile-none --stacktrace $@
+  else
+    # run tests
+    truffle test --compile-none --stacktrace $@
+  fi
 fi
 
 

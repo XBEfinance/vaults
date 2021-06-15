@@ -1,31 +1,50 @@
 #!/bin/bash
 
 export CONFIG_NAME="./truffle-config.js"
+
+if [[ $1 = "+fast" ]]; then
+  echo "Run coverage without build!"
+  SKIP_REBUILD=true
+  shift
+else
+  # remove previous build
+  rm -rf ./build
+
+  mkdir -p build/contracts/
+
+  ./scripts/main_parts_build.sh
+fi
+
 source ./scripts/utils/generate_truffle_config.sh
+generate_truffle_config "0.6.3" ".\/contracts\/main" "false"
 
-# remove previous build
-rm -rf ./build
+source ./scripts/utils/generate_truffle_config.sh
+generate_truffle_config "0.6.3" ".\/contracts\/main" "false"
 
-mkdir -p build/contracts/
-
-# build third party contracts
-./scripts/third_party_build.sh
-
-# generate truffle config for coverage
-generate_truffle_config "0.6.3" ".\/contracts"
+function specify_coverage {
+  if [[ $1 = "file" ]]; then
+    node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage --file $2 --network $3
+  elif [[ -z "$1" ]]; then
+    node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage
+  else
+    node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage --network $1
+  fi
+}
 
 #run coverage
 if [[ $1 = "file" ]]; then
   echo "File pattern specified, proceeding..."
-  node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage --file $2
+  specify_coverage "file" $2 $3
+elif [[ -z "$1" ]]; then
+  specify_coverage
 else
   echo "Total coverage requested..."
-  node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage
+  specify_coverage $1
 fi
 
-
-# remove build
-rm -rf ./build
-
-# remove config file
-rm -f $CONFIG_NAME
+if [[ $SKIP_REBUILD != true ]]; then
+  # remove build
+  rm -rf ./build
+fi
+  # remove config file
+  rm -f $CONFIG_NAME

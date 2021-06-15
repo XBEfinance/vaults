@@ -21,6 +21,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aragon/contract-helpers-test": "^0.1.0",
+    "@aragon/minime": "^1.0.0",
+    "@aragon/os": "^4.4.0",
     "@openzeppelin/contracts": "^3.4.1",
     "@openzeppelin/test-helpers": "0.5.10",
     "@openzeppelin/upgrades": "^2.8.0",

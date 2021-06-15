@@ -42,10 +42,12 @@ contract("BonusCampaign", () => {
   let veXBE;
   let voting;
   let vaultWithXBExCXStrategy;
+  let mockedStrategy;
 
   let deployment;
 
   beforeEach(async () => {
+    mockedStrategy = await MockContract.new();
     [
       vaultWithXBExCXStrategy,
       mockXBE,
@@ -54,9 +56,12 @@ contract("BonusCampaign", () => {
       bonusCampaign,
       veXBE,
       voting
-    ] = await beforeEachWithSpecificDeploymentParams(owner, alice, bob, async () => {
-      defaultParams.bonusCampaign.mintTime = await time.latest();
-    });
+    ] = await beforeEachWithSpecificDeploymentParams(
+      owner, alice, bob, mockedStrategy,
+      async () => {
+        defaultParams.bonusCampaign.mintTime = await time.latest();
+      }
+    );
   });
 
   it('should configure properly', async () => {
@@ -201,6 +206,7 @@ contract("BonusCampaign", () => {
     });
 
     it('should not start a minting campaign if called for too soon', async () => {
+      mockedStrategy = await MockContract.new();
       [
         vaultWithXBExCXStrategy,
         mockXBE,
@@ -209,9 +215,12 @@ contract("BonusCampaign", () => {
         bonusCampaign,
         veXBE,
         voting
-      ] = await beforeEachWithSpecificDeploymentParams(owner, alice, bob, async () => {
-        defaultParams.bonusCampaign.mintTime = (await time.latest()).add(days('2'));
-      });
+      ] = await beforeEachWithSpecificDeploymentParams(
+        owner, alice, bob, mockedStrategy,
+        async () => {
+          defaultParams.bonusCampaign.mintTime = (await time.latest()).add(days('2'));
+        }
+      );
       await expectRevert(bonusCampaign.startMint(), "cannotMintYet");
     })
   });

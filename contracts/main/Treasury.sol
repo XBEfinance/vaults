@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 
+import "./staking_rewards/RewardsDistributionRecipient.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IOneSplitAudit.sol";
 
@@ -62,7 +63,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
         uint256 _balance = IERC20(rewardsToken).balanceOf(address(this));
         IERC20(rewardsToken).safeApprove(strategyContract, 0);
         IERC20(rewardsToken).safeApprove(strategyContract, _balance);
-        IStakingRewards(strategyContract).notifyRewardAmount(_balance);
+        RewardsDistributionRecipient(strategyContract).notifyRewardAmount(_balance);
     }
 
     function getExpectedReturn(address _from, address _to, uint256 parts) external view returns(uint256 expected) {

@@ -10,7 +10,7 @@ const BonusCampaign = artifacts.require("BonusCampaign");
 const MockToken = artifacts.require('MockToken');
 
 const Treasury = artifacts.require('Treasury');
-const XBE = artifacts.require('XBE');
+// const XBE = artifacts.require('XBE');
 const TokenWrapper = artifacts.require('TokenWrapper');
 const Registry = artifacts.require('Registry');
 const Controller = artifacts.require('Controller');
@@ -263,17 +263,17 @@ const deployVaults = async () => {
 };
 
 const deployVaultsToMainnet = async () => {
-  const xbe = await XBE.at('0x5DE7Cc4BcBCa31c473F6D2F27825Cfb09cc0Bb16');
-  const governance = await deployer.deploy(Governance);
-  // const treasury = await deployer.deploy(Treasury);
-
-  await governance.configure(
-    '0',
-    xbe.address, // Reward token
-    process.env.MAINNERT_OWNER_ACCOUNT,
-    xbe.address, // Governance token
-    process.env.MAINNERT_DISTRIBUTION_RINKEBY_ACCOUNT, // if treasury contract is exist then change that to treasury.address
-  );
+  // const xbe = await XBE.at('0x5DE7Cc4BcBCa31c473F6D2F27825Cfb09cc0Bb16');
+  // const governance = await deployer.deploy(Governance);
+  // // const treasury = await deployer.deploy(Treasury);
+  //
+  // await governance.configure(
+  //   '0',
+  //   xbe.address, // Reward token
+  //   process.env.MAINNERT_OWNER_ACCOUNT,
+  //   xbe.address, // Governance token
+  //   process.env.MAINNERT_DISTRIBUTION_RINKEBY_ACCOUNT, // if treasury contract is exist then change that to treasury.address
+  // );
   // await treasury.configure(
   //   process.env.MAINNERT_OWNER_ACCOUNT,
   //   '0x0000000000000000000000000000000000000000', // set OneSplit account here

@@ -12,13 +12,11 @@ import "../interfaces/IController.sol";
 import "../interfaces/IConverter.sol";
 import "../interfaces/vault/IVaultCore.sol";
 
-import "../governance/Governable.sol";
-
 import "../mocks/StringsConcatenations.sol";
 
 /// @title EURxbStrategy
 /// @notice This is base contract for yield farming strategy with EURxb token
-abstract contract EURxbStrategy is IStrategy, Ownable, Initializable, Context {
+abstract contract EURxbStrategy is IStrategy, Ownable, Initializable {
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;

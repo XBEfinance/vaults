@@ -20,7 +20,7 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
 
     /// @notice Constructor that creates a vault for investors
     constructor() EURxbVault("Institutional", "in") public {
-       _setupRole(DEFAULT_ADMIN_ROLE, governance);
+       _setupRole(DEFAULT_ADMIN_ROLE, owner());
     }
 
     modifier onlyInvestor {
@@ -42,11 +42,11 @@ contract InstitutionalEURxbVault is EURxbVault, AccessControl {
         tokenUnwrapped = _initialTokenUnwrapped;
     }
 
-    function allowInvestor(address _investor) external onlyGovernance {
+    function allowInvestor(address _investor) external onlyOwner {
         grantRole(INVESTOR, _investor);
     }
 
-    function disallowInvestor(address _investor) external onlyGovernance {
+    function disallowInvestor(address _investor) external onlyOwner {
         revokeRole(INVESTOR, _investor);
     }
 

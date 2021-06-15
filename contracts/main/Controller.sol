@@ -16,7 +16,7 @@ import "./interfaces/IOneSplitAudit.sol";
 
 /// @title Controller
 /// @notice The contract is the middleman between vault and strategy, it balances and trigger earn processes
-contract Controller is IController, Ownable, Initializable, Context {
+contract Controller is IController, Ownable, Initializable {
     using Address for address;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -70,10 +70,12 @@ contract Controller is IController, Ownable, Initializable, Context {
     /// @param _initialStrategist strategist address
     function configure(
           address _initialTreasury,
-          address _initialStrategist
+          address _initialStrategist,
+          address _governance
     ) external initializer {
         _treasury = _initialTreasury;
         strategist = _initialStrategist;
+        transferOwnership(_governance);
     }
 
     /// @notice Used only to rescue stuck funds from controller to msg.sender

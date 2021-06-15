@@ -25,7 +25,7 @@ const configureMainParts = async (
   await strategy.configure(
     revenueToken.address,
     controller.address,
-    vault.address,
+    vault.address
     {from: governance}
   );
 

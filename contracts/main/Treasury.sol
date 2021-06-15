@@ -1,19 +1,17 @@
 pragma solidity ^0.6.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 
-import "./governance/Governable.sol";
-import "./governance/Governance.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IOneSplitAudit.sol";
 
 /// @title Treasury
 /// @notice Realisation of ITreasury for channeling managing fees from strategies to gov and governance address
-contract Treasury is Ownable, Initializable, Context, ITreasury {
+contract Treasury is Initializable, Ownable, ITreasury {
     using SafeERC20 for IERC20;
 
     address public oneSplit;
@@ -57,14 +55,14 @@ contract Treasury is Ownable, Initializable, Context, ITreasury {
     }
 
     function toGovernance(address _token, uint256 _amount) override external onlyOwner {
-        IERC20(_token).safeTransfer(governance, _amount);
+        IERC20(_token).safeTransfer(owner(), _amount);
     }
 
     function toVoters() override external {
         uint256 _balance = IERC20(rewardsToken).balanceOf(address(this));
         IERC20(rewardsToken).safeApprove(governanceContract, 0);
         IERC20(rewardsToken).safeApprove(governanceContract, _balance);
-        Governance(governanceContract).notifyRewardAmount(_balance);
+        // Governance(governanceContract).notifyRewardAmount(_balance);
     }
 
     function getExpectedReturn(address _from, address _to, uint256 parts) external view returns(uint256 expected) {

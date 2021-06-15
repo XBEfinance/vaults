@@ -10,6 +10,7 @@ const {
   ether,
   time,
 } = require("@openzeppelin/test-helpers");
+const { accounts, contract } = require('@openzeppelin/test-environment');
 const {
   ZERO,
   ONE,
@@ -24,37 +25,35 @@ const {
   defaultParams,
   months,
   beforeEachWithSpecificDeploymentParams
-} = require("./utils/deploy_infrastructure.js");
+} = require("./utils/deploy_strategy_infrastructure.js");
 
 const { ZERO_ADDRESS } = constants;
 
-contract("BonusCampaign", (accounts) => {
+contract("BonusCampaign", () => {
 
   const owner = accounts[0];
   const alice = accounts[1];
   const bob = accounts[2];
 
   let mockXBE;
-  let mockCRV;
+  let mockCX;
   let xbeInflation;
   let bonusCampaign;
   let veXBE;
   let voting;
-  let stakingRewards;
-  let vaultWithXBExCRVStrategy;
+  let vaultWithXBExCXStrategy;
 
   let deployment;
 
   beforeEach(async () => {
     [
-      vaultWithXBExCRVStrategy,
+      vaultWithXBExCXStrategy,
       mockXBE,
-      mockCRV,
+      mockCX,
       xbeInflation,
       bonusCampaign,
       veXBE,
-      voting,
-      stakingRewards
+      voting
     ] = await beforeEachWithSpecificDeploymentParams(owner, alice, bob, async () => {
       defaultParams.bonusCampaign.mintTime = await time.latest();
     });
@@ -203,17 +202,13 @@ contract("BonusCampaign", (accounts) => {
 
     it('should not start a minting campaign if called for too soon', async () => {
       [
-        vaultWithXBExCRVStrategy,
+        vaultWithXBExCXStrategy,
         mockXBE,
-        mockCRV,
+        mockCX,
         xbeInflation,
         bonusCampaign,
-        minter,
-        gaugeController,
         veXBE,
-        voting,
-        stakingRewards,
-        liquidityGaugeReward,
+        voting
       ] = await beforeEachWithSpecificDeploymentParams(owner, alice, bob, async () => {
         defaultParams.bonusCampaign.mintTime = (await time.latest()).add(days('2'));
       });

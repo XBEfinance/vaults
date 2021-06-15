@@ -15,7 +15,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
     using SafeERC20 for IERC20;
 
     address public oneSplit;
-    address public governanceContract;
+    address public strategyContract;
     address public rewardsToken;
 
     mapping(address => bool) public authorized;
@@ -28,12 +28,12 @@ contract Treasury is Initializable, Ownable, ITreasury {
     function configure(
         address _governance,
         address _oneSplit,
-        address _governanceContract,
+        address _strategyContract,
         address _rewardsToken
     ) external initializer {
         transferOwnership(_governance);
         setOneSplit(_oneSplit);
-        setGovernanceContract(_governanceContract);
+        setStrategyContract(_strategyContract);
         setRewardsToken(_rewardsToken);
         setAuthorized(_governance, true);
     }
@@ -46,8 +46,8 @@ contract Treasury is Initializable, Ownable, ITreasury {
         rewardsToken = _rewardsToken;
     }
 
-    function setGovernanceContract(address _governanceContract) public onlyOwner {
-        governanceContract = _governanceContract;
+    function setStrategyContract(address _strategyContract) public onlyOwner {
+        strategyContract = _strategyContract;
     }
 
     function setAuthorized(address _authorized, bool status) public onlyOwner {
@@ -60,9 +60,9 @@ contract Treasury is Initializable, Ownable, ITreasury {
 
     function toVoters() override external {
         uint256 _balance = IERC20(rewardsToken).balanceOf(address(this));
-        IERC20(rewardsToken).safeApprove(governanceContract, 0);
-        IERC20(rewardsToken).safeApprove(governanceContract, _balance);
-        // Governance(governanceContract).notifyRewardAmount(_balance);
+        IERC20(rewardsToken).safeApprove(strategyContract, 0);
+        IERC20(rewardsToken).safeApprove(strategyContract, _balance);
+        IStakingRewards(strategyContract).notifyRewardAmount(_balance);
     }
 
     function getExpectedReturn(address _from, address _to, uint256 parts) external view returns(uint256 expected) {

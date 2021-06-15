@@ -34,12 +34,12 @@ const strategyTestSuite = (strategyType, vaultType, isInstitutional) => {
     const miris = accounts[1];
     const strategist = accounts[2];
 
-    var revenueToken;
-    var controller;
-    var strategy;
-    var vault;
-    var mock;
-    var wrapper;
+    let revenueToken;
+    let controller;
+    let strategy;
+    let vault;
+    let mock;
+    let wrapper;
 
     beforeEach(async () => {
       // console.log(strategyType);

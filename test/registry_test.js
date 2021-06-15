@@ -38,13 +38,13 @@ describe('Registry', () => {
   const miris = accounts[1];
   const strategist = accounts[2];
 
-  var revenueToken;
-  var controller;
-  var strategy;
-  var vault;
-  var mock;
-  var registry;
-  var wrapper;
+  let revenueToken;
+  let controller;
+  let strategy;
+  let vault;
+  let mock;
+  let registry;
+  let wrapper;
 
   const addVaults = async () => {
     const vaults = [vault.address];
@@ -113,7 +113,7 @@ describe('Registry', () => {
       .methods.token().encodeABI();
     await secondMock.givenCalldataReturnAddress(getTokenCalldata, mockToken.address);
 
-    var getVaultsCalldata = (await IController.at(thirdMock.address)).contract
+    let getVaultsCalldata = (await IController.at(thirdMock.address)).contract
       .methods.vaults(mockToken.address).encodeABI();
     await thirdMock.givenCalldataReturnAddress(getVaultsCalldata, thirdMock.address);
 
@@ -169,7 +169,7 @@ describe('Registry', () => {
 
   it('should add wrapped vault properly', async () => {
 
-    var _, firstVault;
+    let _, firstVault;
 
     [firstVault, _, _, _] = await setupVaultMock(false);
 
@@ -187,16 +187,16 @@ describe('Registry', () => {
   });
 
   it('should add vault with same controller', async () => {
-    var _;
-    var firstVaultMock;
-    var firstStrategyMock;
-    var mockToken;
+    let _;
+    let firstVaultMock;
+    let firstStrategyMock;
+    let mockToken;
 
-    var secondVaultMock;
-    var secondStrategyMock;
-    var otherMockToken;
+    let secondVaultMock;
+    let secondStrategyMock;
+    let otherMockToken;
 
-    var controllerMock = await MockContract.new();
+    let controllerMock = await MockContract.new();
 
     [firstVaultMock, firstStrategyMock, _, mockToken] = await setupVaultMock(false, controllerMock);
     [secondVaultMock, secondStrategyMock, _, otherMockToken] = await setupVaultMock(false, controllerMock);
@@ -215,10 +215,10 @@ describe('Registry', () => {
   });
 
   it('should get vault stats if vault is wrapped', async () => {
-    var vaultMock;
-    var strategyMock;
-    var mockToken;
-    var controllerMock;
+    let vaultMock;
+    let strategyMock;
+    let mockToken;
+    let controllerMock;
 
     [vaultMock, strategyMock, controllerMock, mockToken] = await setupVaultMock(false);
 
@@ -245,10 +245,10 @@ describe('Registry', () => {
   });
 
   it('should get vault stats if vault is delegated', async () => {
-    var vaultMock;
-    var strategyMock;
-    var mockToken;
-    var controllerMock;
+    let vaultMock;
+    let strategyMock;
+    let mockToken;
+    let controllerMock;
 
     [vaultMock, strategyMock, controllerMock, mockToken] = await setupVaultMock(false);
 
@@ -269,10 +269,10 @@ describe('Registry', () => {
   });
 
   it('should get vault stats if vault is delegated', async () => {
-    var vaultMock;
-    var strategyMock;
-    var mockToken;
-    var controllerMock;
+    let vaultMock;
+    let strategyMock;
+    let mockToken;
+    let controllerMock;
 
     [vaultMock, strategyMock, controllerMock, mockToken] = await setupVaultMock(false);
 
@@ -327,14 +327,14 @@ describe('Registry', () => {
     const vaults = await addVaults();
     const actualVaults = await registry.getVaults();
     expect(actualVaults.length).to.be.equal(vaults.length);
-    for (var i = 0; i < actualVaults.length; i++) {
+    for (let i = 0; i < actualVaults.length; i++) {
         expect(actualVaults[i]).to.be.equal(vaults[i]);
     }
   });
 
   it('should get info of a vault', async () => {
     const vaults = await addVaults();
-    for (var i = 0; i < vaults.length; i++) {
+    for (let i = 0; i < vaults.length; i++) {
       const vaultInfo = await registry.getVaultInfo(vaults[i]);
       expect(vaultInfo[0]).to.be.equal(controller.address);
       expect(vaultInfo[1]).to.be.equal(wrapper.address);
@@ -347,7 +347,7 @@ describe('Registry', () => {
   it('should get vaults info', async () => {
     const vaults = await addVaults();
     const vaultsInfo = await registry.getVaultsInfo();
-    for (var i = 0; i < vaults.length; i++) {
+    for (let i = 0; i < vaults.length; i++) {
       expect(vaultsInfo[0][i]).to.be.equal(vaults[i]);
       expect(vaultsInfo[1][i]).to.be.equal(controller.address);
       expect(vaultsInfo[2][i]).to.be.equal(wrapper.address);

@@ -33,9 +33,9 @@ const defaultParams = {
   },
   mockTokens: {
     mockedTotalSupplyXBE: ether("1000"),
-    mockedTotalSupplyCRV: ether("1000"),
+    mockedTotalSupplyCX: ether("1000"),
     mockedAmountXBE: ether("100"),
-    mockedAmountCRV: ether("100"),
+    mockedAmountCX: ether("100"),
   },
   xbeinflation: {
     initialSupply: new BN("5000"),
@@ -52,43 +52,21 @@ const defaultParams = {
   },
 };
 
-const deployInfrastructure = (owner, alice, bob, params) => {
-  let mockXBE;
-  let mockCRV;
+const deployStrategyInfrastructure = (
+  owner,
+  alice,
+  bob,
+  minter,
+  mockXBE,
+  mockCX,
+  params
+) => {
   let xbeInflation;
   let bonusCampaign;
   let veXBE;
   let voting;
-  let stakingRewards;
 
   const proceed = async () => {
-    mockXBE = await getMockTokenPrepared(
-      alice,
-      params.mockTokens.mockedAmountXBE,
-      params.mockTokens.mockedTotalSupplyXBE,
-      owner
-    );
-    mockCRV = await getMockTokenPrepared(
-      alice,
-      params.mockTokens.mockedAmountCRV,
-      params.mockTokens.mockedTotalSupplyCRV,
-      owner
-    );
-
-    await mockXBE.approve(bob, params.mockTokens.mockedAmountXBE, {
-      from: owner,
-    });
-    await mockXBE.transfer(bob, params.mockTokens.mockedAmountXBE, {
-      from: owner,
-    });
-
-    await mockCRV.approve(bob, params.mockTokens.mockedAmountCRV, {
-      from: owner,
-    });
-    await mockCRV.transfer(bob, params.mockTokens.mockedAmountCRV, {
-      from: owner,
-    });
-
     xbeInflation = await XBEInflation.new();
 
     // deploy bonus campaign
@@ -100,18 +78,11 @@ const deployInfrastructure = (owner, alice, bob, params) => {
     // deploy voting
     voting = await Voting.new();
 
-    // deploy staking rewards
-    stakingRewards = await StakingRewards.new();
-
-
     return [
-      mockXBE,
-      mockCRV,
       xbeInflation,
       bonusCampaign,
       veXBE,
-      voting,
-      stakingRewards
+      voting
     ];
   };
 
@@ -150,13 +121,6 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       params.voting.minAcceptQuorumPct,
       params.voting.voteTime
     );
-
-    // await stakingRewards.configure(
-    //   owner,
-    //   mockCRV.address,
-    //   params.vaultWithXBExCRVStrategyAddress,
-    //   params.liquidityGaugeReward.rewardsDuration
-    // );
   };
 
   return {
@@ -165,30 +129,78 @@ const deployInfrastructure = (owner, alice, bob, params) => {
   };
 };
 
-const beforeEachWithSpecificDeploymentParams = async (owner, alice, bob, middleware) => {
-  const vaultWithXBExCRVStrategy = await getMockTokenPrepared(
+const getMockXBEandCX = async (owner, alice, bob, params) => {
+  const mockXBE = await getMockTokenPrepared(
+    alice,
+    params.mockTokens.mockedAmountXBE,
+    params.mockTokens.mockedTotalSupplyXBE,
+    owner
+  );
+
+  const mockCX = await getMockTokenPrepared(
+    alice,
+    params.mockTokens.mockedAmountCX,
+    params.mockTokens.mockedTotalSupplyCX,
+    owner
+  );
+
+  await mockXBE.approve(bob, params.mockTokens.mockedAmountXBE, {
+    from: owner,
+  });
+  await mockXBE.transfer(bob, params.mockTokens.mockedAmountXBE, {
+    from: owner,
+  });
+
+  await mockCX.approve(bob, params.mockTokens.mockedAmountCX, {
+    from: owner,
+  });
+  await mockCX.transfer(bob, params.mockTokens.mockedAmountCX, {
+    from: owner,
+  });
+  return [mockXBE, mockCX];
+}
+
+const beforeEachWithSpecificDeploymentParams = async (
+  owner,
+  alice,
+  bob,
+  minter,
+  middleware
+) => {
+  const vaultWithXBExCXStrategy = await getMockTokenPrepared(
     alice,
     ether("100"),
     ether("1000"),
     owner
   );
-  await vaultWithXBExCRVStrategy.approve(bob, ether("100"));
-  await vaultWithXBExCRVStrategy.transfer(bob, ether("100"));
-  defaultParams.vaultWithXBExCRVStrategyAddress =
-    vaultWithXBExCRVStrategy.address;
+  await vaultWithXBExCXStrategy.approve(bob, ether("100"));
+  await vaultWithXBExCXStrategy.transfer(bob, ether("100"));
+  defaultParams.vaultWithXBExCXStrategyAddress =
+    vaultWithXBExCXStrategy.address;
+
+  const [mockXBE, mockCX] = await getMockXBEandCX(owner, alice, bob, defaultParams);
 
   if (middleware) {
     await middleware();
   }
 
-  deployment = deployInfrastructure(owner, alice, bob, defaultParams);
+  deployment = deployStrategyInfrastructure(
+    owner,
+    alice,
+    bob,
+    minter,
+    mockXBE,
+    mockCX,
+    defaultParams
+  );
+
   const result = await deployment.proceed();
   await deployment.configure();
-  return [vaultWithXBExCRVStrategy, ...result];
+  return [vaultWithXBExCXStrategy, ...result];
 };
 
 module.exports = {
-  deployInfrastructure,
+  deployStrategyInfrastructure,
   YEAR,
   MULTIPLIER,
   days,

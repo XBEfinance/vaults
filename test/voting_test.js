@@ -10,9 +10,10 @@ const {
   ether,
   time,
 } = require("@openzeppelin/test-helpers");
+const { accounts, contract } = require('@openzeppelin/test-environment');
 
-const Voting = artifacts.require("Voting");
-const EVMScriptExecutorMock = artifacts.require("EVMScriptExecutorMock");
+const Voting = contract.fromArtifact("Voting");
+const EVMScriptExecutorMock = contract.fromArtifact("EVMScriptExecutorMock");
 
 const { newApp, newDao, ANY_ADDRESS, APP_ID } = require("./utils/dao.js");
 
@@ -31,15 +32,19 @@ const {
   defaultParams,
 } = require("./utils/deploy_infrastructure.js");
 
-contract("Voting", ([owner, alice, bob, tod]) => {
+contract("Voting", () => {
+  const owner = accounts[0];
+  const alice = accounts[1];
+  const bob = accounts[2];
+  const tod = accounts[3];
+
   let mockXBE;
-  let mockCRV;
+  let mockCX;
   let xbeInflation;
   let bonusCampaign;
   let veXBE;
   let voting;
-  let stakingRewards;
-  let vaultWithXBExCRVStrategy;
+  let vaultWithXBExCXStrategy;
   let executorMock;
   let votingApp;
   let abi;
@@ -53,12 +58,11 @@ contract("Voting", ([owner, alice, bob, tod]) => {
     deployment = deployInfrastructure(owner, alice, bob, defaultParams);
     [
       mockXBE,
-      mockCRV,
+      mockCX,
       xbeInflation,
       bonusCampaign,
       veXBE,
-      voting,
-      stakingRewards
+      voting
     ] = await deployment.proceed();
   }
 

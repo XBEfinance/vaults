@@ -37,12 +37,12 @@ describe('Treasury', () => {
   const governanceTokenTotalSupply = ether('3000');
   const startId = ZERO;
 
-  var treasury;
-  var governanceContract;
-  var governanceToken;
-  var rewardsToken;
-  var governanceToken;
-  var oneSplitMock;
+  let treasury;
+  let governanceContract;
+  let governanceToken;
+  let rewardsToken;
+  let governanceToken;
+  let oneSplitMock;
 
   beforeEach(async () => {
 

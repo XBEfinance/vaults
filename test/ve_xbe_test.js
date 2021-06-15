@@ -11,6 +11,7 @@ const {
   ether,
   time,
 } = require("@openzeppelin/test-helpers");
+const { accounts, contract } = require('@openzeppelin/test-environment');
 const {
   ZERO,
   ONE,
@@ -23,26 +24,25 @@ const {
   MULTIPLIER,
   days,
   defaultParams,
-} = require("./utils/deploy_infrastructure.js");
+} = require("./utils/deploy_strategy_infrastructure.js");
 
 
 const { ZERO_ADDRESS } = constants;
-const MockContract = artifacts.require("MockContract");
+const MockContract = contract.fromArtifact("MockContract");
 
-contract("VeXBE", (accounts) => {
+contract("VeXBE", () => {
 
   const owner = accounts[0];
   const alice = accounts[1];
   const bob = accounts[2];
 
   let mockXBE;
-  let mockCRV;
+  let mockCX;
   let xbeInflation;
   let bonusCampaign;
   let veXBE;
   let voting;
-  let stakingRewards;
-  let vaultWithXBExCRVStrategy;
+  let vaultWithXBExCXStrategy;
 
   let deployment;
 
@@ -57,12 +57,11 @@ contract("VeXBE", (accounts) => {
     deployment = deployInfrastructure(owner, alice, bob, defaultParams);
     [
       mockXBE,
-      mockCRV,
+      mockCX,
       xbeInflation,
       bonusCampaign,
       veXBE,
-      voting,
-      stakingRewards
+      voting
     ] = await deployment.proceed();
   }
 
@@ -91,16 +90,16 @@ contract("VeXBE", (accounts) => {
   }
 
   beforeEach(async () => {
-    vaultWithXBExCRVStrategy = await getMockTokenPrepared(
+    vaultWithXBExCXStrategy = await getMockTokenPrepared(
       alice,
       ether("100"),
       ether("1000"),
       owner
     );
-    await vaultWithXBExCRVStrategy.approve(bob, ether("100"));
-    await vaultWithXBExCRVStrategy.transfer(bob, ether("100"));
-    defaultParams.vaultWithXBExCRVStrategyAddress =
-      vaultWithXBExCRVStrategy.address;
+    await vaultWithXBExCXStrategy.approve(bob, ether("100"));
+    await vaultWithXBExCXStrategy.transfer(bob, ether("100"));
+    defaultParams.vaultWithXBExCXStrategyAddress =
+      vaultWithXBExCXStrategy.address;
   });
 
   describe("Configuration", () => {

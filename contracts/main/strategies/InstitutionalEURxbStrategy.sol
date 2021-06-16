@@ -18,6 +18,7 @@ contract InstitutionalEURxbStrategy is EURxbStrategy {
 
     /// @dev To be realised
     function deposit() override external {
+
     }
 
     /// @dev To be realised

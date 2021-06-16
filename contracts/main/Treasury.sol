@@ -16,7 +16,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
     using SafeERC20 for IERC20;
 
     address public oneSplit;
-    address public strategyContract;
+    address public rewardsDistributionRecipientContract;
     address public rewardsToken;
 
     mapping(address => bool) public authorized;
@@ -48,7 +48,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
     }
 
     function setStrategyContract(address _strategyContract) public onlyOwner {
-        strategyContract = _strategyContract;
+        rewardsDistributionRecipientContract = _strategyContract;
     }
 
     function setAuthorized(address _authorized, bool status) public onlyOwner {
@@ -61,9 +61,9 @@ contract Treasury is Initializable, Ownable, ITreasury {
 
     function toVoters() override external {
         uint256 _balance = IERC20(rewardsToken).balanceOf(address(this));
-        IERC20(rewardsToken).safeApprove(strategyContract, 0);
-        IERC20(rewardsToken).safeApprove(strategyContract, _balance);
-        RewardsDistributionRecipient(strategyContract).notifyRewardAmount(_balance);
+        IERC20(rewardsToken).safeApprove(rewardsDistributionRecipientContract, 0);
+        IERC20(rewardsToken).safeApprove(rewardsDistributionRecipientContract, _balance);
+        RewardsDistributionRecipient(rewardsDistributionRecipientContract).notifyRewardAmount(_balance);
     }
 
     function getExpectedReturn(address _from, address _to, uint256 parts) external view returns(uint256 expected) {

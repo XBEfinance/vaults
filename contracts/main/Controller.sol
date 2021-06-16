@@ -97,6 +97,9 @@ contract Controller is IController, Ownable, Initializable {
     /// @param _amount Amount tokens
     function withdraw(address _token, uint256 _amount) override external {
         IStrategy(strategies[_token]).withdraw(_amount);
+        здесь должна упасть компиляция из-за русских букв
+        потому-что НУЖНО ДОБАВИТЬ переправление на ваульт средств, внутри
+        реализации этой функции у стратегии, такого нет.
     }
 
     /// @notice Usual setter with check if param is new

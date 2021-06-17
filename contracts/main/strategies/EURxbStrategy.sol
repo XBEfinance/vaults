@@ -24,7 +24,7 @@ abstract contract EURxbStrategy is IStrategy, Ownable, Initializable {
     event Withdrawn(address indexed _token, uint256 indexed _amount, address indexed _to);
 
     /// @notice EURxb instance address or wrapper of EURxb instance
-    address internal _eurxb;
+    address internal _want;
 
     /// @notice Controller instance getter, used to simplify controller-related actions
     address public controller;
@@ -50,12 +50,12 @@ abstract contract EURxbStrategy is IStrategy, Ownable, Initializable {
     /// @param _controllerAddress address of controller instance
     /// @param _vaultAddress address of vault related to this strategy (Link type 1:1)
     function configure(
-        address _eurxbAddress,
+        address _wantAddress,
         address _controllerAddress,
         address _vaultAddress,
         address _governance
     ) initializer external {
-        _eurxb = _eurxbAddress;
+        _want = _wantAddress;
         controller = _controllerAddress;
         vault = _vaultAddress;
         transferOwnership(_governance);
@@ -78,20 +78,20 @@ abstract contract EURxbStrategy is IStrategy, Ownable, Initializable {
     /// @notice Usual setter with check if param is new
     /// @param _newWant New value
     function setWant(address _newWant) override onlyOwner external {
-        require(_eurxb != _newWant, "!old");
-        _eurxb = _newWant;
+        require(_want != _newWant, "!old");
+        _want = _newWant;
     }
 
     /// @notice Usual getter (inherited from IStrategy)
     /// @return 'want' token (In this case EURxb)
     function want() override external view returns(address) {
-        return _eurxb;
+        return _want;
     }
 
     /// @notice must exclude any tokens used in the yield
     /// @dev Controller role - withdraw should return to Controller
     function withdraw(address _token) override onlyController external {
-        require(address(_token) != address(_eurxb), "!want");
+        require(address(_token) != address(_want), "!want");
         uint256 balance = IERC20(_token).balanceOf(address(this));
         require(IERC20(_token).transfer(controller, balance), "!transfer");
         emit Withdrawn(_token, balance, controller);
@@ -100,28 +100,28 @@ abstract contract EURxbStrategy is IStrategy, Ownable, Initializable {
     /// @notice Withdraw partial funds, normally used with a vault withdrawal
     /// @dev Controller | Vault role - withdraw should always return to Vault
     function withdraw(uint256 _amount) override onlyControllerOrVault public {
-        uint256 _balance = IERC20(_eurxb).balanceOf(address(this));
+        uint256 _balance = IERC20(_want).balanceOf(address(this));
         if (_balance < _amount) {
             _amount = _withdrawSome(_amount.sub(_balance));
             _amount = _amount.add(_balance);
         }
-        address _vault = IController(controller).vaults(_eurxb);
+        address _vault = IController(controller).vaults(_want);
         require(_vault != address(0), "!vault 0"); // additional protection so we don't burn the funds
 
         address vaultToken = IVaultCore(_vault).token();
-        if (vaultToken != _eurxb) {
-            address converter = IController(controller).converters(vaultToken, _eurxb);
+        if (vaultToken != _want) {
+            address converter = IController(controller).converters(vaultToken, _want);
             require(converter != address(0), "!converter");
             require(IERC20(vaultToken).transfer(converter, _amount), "!transferConverterToken");
             _amount = IConverter(converter).convert(address(this));
         }
-        require(IERC20(_eurxb).transfer(_vault, _amount), "!transferVault");
-        emit Withdrawn(_eurxb, _amount, _vault);
+        require(IERC20(_want).transfer(_vault, _amount), "!transferVault");
+        emit Withdrawn(_want, _amount, _vault);
     }
 
     /// @dev Controller | Vault role - withdraw should always return to Vault
     function withdrawAll() override onlyControllerOrVault external returns(uint256) {
-        uint256 _balance = IERC20(_eurxb).balanceOf(address(this));
+        uint256 _balance = IERC20(_want).balanceOf(address(this));
         withdraw(_balance);
         return _balance;
     }
@@ -130,6 +130,6 @@ abstract contract EURxbStrategy is IStrategy, Ownable, Initializable {
 
     /// @notice balance of this address in "want" tokens
     function balanceOf() override external view returns(uint256) {
-        return IERC20(_eurxb).balanceOf(address(this));
+        return IERC20(_want).balanceOf(address(this));
     }
 }

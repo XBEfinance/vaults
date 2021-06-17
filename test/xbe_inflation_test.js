@@ -31,7 +31,7 @@ const {
 
 const MockContract = contract.fromArtifact("MockContract");
 
-contract("XBEInflation", () => {
+describe("XBEInflation", () => {
   const owner = accounts[0];
   const alice = accounts[1];
   const bob = accounts[2];

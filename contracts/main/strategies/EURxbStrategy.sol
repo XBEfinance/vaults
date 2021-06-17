@@ -46,7 +46,7 @@ abstract contract EURxbStrategy is IStrategy, Ownable, Initializable {
 
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
-    /// @param _eurxbAddress address of eurxb instance or address of TokenWrapper(EURxb) instance
+    /// @param _wantAddress address of eurxb instance or address of TokenWrapper(EURxb) instance
     /// @param _controllerAddress address of controller instance
     /// @param _vaultAddress address of vault related to this strategy (Link type 1:1)
     function configure(

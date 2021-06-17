@@ -18,18 +18,20 @@ const MULTIPLIER = new BN("10").pow(new BN("18"));
 const days = (n) => new BN("60").mul(new BN("1440").mul(new BN(n)));
 const months = (n) => days("30").mul(new BN(n));
 
-const XBEInflation = artifacts.require("XBEInflation");
-const VeXBE = artifacts.require("VeXBE");
-const Voting = artifacts.require("Voting");
-const StakingRewards = artifacts.require("StakingRewards");
-const BonusCampaign = artifacts.require("BonusCampaign");
-const MockToken = artifacts.require("MockToken");
+const { accounts, contract } = require('@openzeppelin/test-environment');
+
+const XBEInflation = contract.fromArtifact("XBEInflation");
+const VeXBE = contract.fromArtifact("VeXBE");
+const Voting = contract.fromArtifact("Voting");
+const StakingRewards = contract.fromArtifact("StakingRewards");
+const BonusCampaign = contract.fromArtifact("BonusCampaign");
+const MockToken = contract.fromArtifact("MockToken");
 
 const defaultParams = {
   bonusCampaign: {
     rewardsDuration: months("23"),
     emission: ether("5000"),
-    mintTime: ZERO,
+    mintTime: ZERO
   },
   mockTokens: {
     mockedTotalSupplyXBE: ether("1000"),
@@ -67,16 +69,16 @@ const deployStrategyInfrastructure = (
   let voting;
 
   const proceed = async () => {
-    xbeInflation = await XBEInflation.new();
+    xbeInflation = await XBEInflation.new({from: owner});
 
     // deploy bonus campaign
-    bonusCampaign = await BonusCampaign.new();
+    bonusCampaign = await BonusCampaign.new({from: owner});
 
     // deploy voting escrow
-    veXBE = await VeXBE.new();
+    veXBE = await VeXBE.new({from: owner});
 
     // deploy voting
-    voting = await Voting.new();
+    voting = await Voting.new({from: owner});
 
     return [
       xbeInflation,
@@ -95,7 +97,8 @@ const deployStrategyInfrastructure = (
       params.xbeinflation.rateReductionTime,
       params.xbeinflation.rateReductionCoefficient,
       params.xbeinflation.rateDenominator,
-      params.xbeinflation.inflationDelay
+      params.xbeinflation.inflationDelay,
+      {from: owner}
     );
 
     await bonusCampaign.methods[
@@ -105,21 +108,24 @@ const deployStrategyInfrastructure = (
       veXBE.address,
       params.bonusCampaign.mintTime,
       params.bonusCampaign.rewardsDuration,
-      params.bonusCampaign.emission
+      params.bonusCampaign.emission,
+      {from: owner}
     );
 
     await veXBE.configure(
       mockXBE.address,
       "Voting Escrowed XBE",
       "veXBE",
-      "0.0.1"
+      "0.0.1",
+      {from: owner}
     );
 
     await voting.initialize(
       veXBE.address,
       params.voting.supportRequiredPct,
       params.voting.minAcceptQuorumPct,
-      params.voting.voteTime
+      params.voting.voteTime,
+      {from: owner}
     );
   };
 
@@ -173,8 +179,8 @@ const beforeEachWithSpecificDeploymentParams = async (
     ether("1000"),
     owner
   );
-  await vaultWithXBExCXStrategy.approve(bob, ether("100"));
-  await vaultWithXBExCXStrategy.transfer(bob, ether("100"));
+  await vaultWithXBExCXStrategy.approve(bob, ether("100"), {from: owner});
+  await vaultWithXBExCXStrategy.transfer(bob, ether("100"), {from: owner});
   defaultParams.vaultWithXBExCXStrategyAddress =
     vaultWithXBExCXStrategy.address;
 
@@ -196,7 +202,7 @@ const beforeEachWithSpecificDeploymentParams = async (
 
   const result = await deployment.proceed();
   await deployment.configure();
-  return [vaultWithXBExCXStrategy, ...result];
+  return [vaultWithXBExCXStrategy, mockXBE, mockCX, ...result];
 };
 
 module.exports = {
@@ -206,5 +212,6 @@ module.exports = {
   days,
   months,
   defaultParams,
+  getMockXBEandCX,
   beforeEachWithSpecificDeploymentParams
 };

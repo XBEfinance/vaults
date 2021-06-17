@@ -14,7 +14,7 @@ else
   ./scripts/main_parts_build.sh
 fi
 
-if [[ $1 = "network" ]]; then
+if [[ $1 = "+network" ]]; then
   # run tests
   truffle test --network $2 --compile-none --stacktrace $@
 else

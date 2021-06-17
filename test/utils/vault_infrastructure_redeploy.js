@@ -3,7 +3,7 @@ const { accounts, contract } = require('@openzeppelin/test-environment');
 const {
   deployStrategyInfrastructure,
   defaultParams,
-  getMockCXandXBE
+  getMockXBEandCX
 } = require("./deploy_strategy_infrastructure.js");
 
 const { ZERO_ADDRESS } = constants;
@@ -30,7 +30,7 @@ const configureMainParts = async (
   await strategy.configure(
     revenueToken.address,
     controller.address,
-    vault.address
+    vault.address,
     {from: governance}
   );
 

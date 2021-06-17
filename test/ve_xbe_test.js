@@ -30,7 +30,7 @@ const {
 const { ZERO_ADDRESS } = constants;
 const MockContract = contract.fromArtifact("MockContract");
 
-contract("VeXBE", () => {
+describe("VeXBE", () => {
 
   const owner = accounts[0];
   const alice = accounts[1];

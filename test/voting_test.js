@@ -32,7 +32,7 @@ const {
   defaultParams,
 } = require("./utils/deploy_infrastructure.js");
 
-contract("Voting", () => {
+describe("Voting", () => {
   const owner = accounts[0];
   const alice = accounts[1];
   const bob = accounts[2];

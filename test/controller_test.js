@@ -15,6 +15,7 @@ const { ZERO_ADDRESS } = constants;
 
 const { ZERO, CONVERSION_WEI_CONSTANT, getMockTokenPrepared } = require('./utils/common');
 const { vaultInfrastructureRedeploy } = require('./utils/vault_infrastructure_redeploy');
+const { defaultParams } = require('./utils/deploy_strategy_infrastructure.js');
 
 const Controller = contract.fromArtifact("Controller");
 const IERC20 = contract.fromArtifact("IERC20");
@@ -49,7 +50,8 @@ describe('Controller', () => {
       governance,
       strategist,
       InstitutionalEURxbStrategy,
-      InstitutionalEURxbVault
+      InstitutionalEURxbVault,
+      defaultParams
     );
     wrapper = await TokenWrapper.new(
       "Banked EURxb",

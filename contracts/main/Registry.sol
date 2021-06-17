@@ -12,6 +12,8 @@ import "./interfaces/vault/IVaultCore.sol";
 import "./interfaces/vault/IVaultDelegated.sol";
 import "./interfaces/vault/IVaultWrapped.sol";
 
+import "./mocks/StringsConcatenations.sol";
+
 /// @title Registry
 /// @notice The contract is the middleman actor through which the Keeper
 /// bot queries the vaults and strategies addresses to call harvest method.
@@ -159,6 +161,7 @@ contract Registry is Ownable, Initializable {
         require(controllerVault == vault, "!controllerVaultMatch"); // Might happen on Proxy Vaults
 
         // Check if strategy has the same token as vault
+        if (isWrapped) {
             address underlying = IVaultDelegated(vault).underlying();
             require(underlying == token, "!wrappedTokenMatch"); // Might happen?
         } else if (!isDelegated) {

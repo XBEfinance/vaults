@@ -15,6 +15,7 @@ const { ZERO_ADDRESS } = constants;
 
 const { ZERO, CONVERSION_WEI_CONSTANT, getMockTokenPrepared } = require('./utils/common');
 const { vaultInfrastructureRedeploy } = require('./utils/vault_infrastructure_redeploy');
+const { defaultParams } = require('./utils/deploy_strategy_infrastructure.js');
 
 const Controller = contract.fromArtifact("Controller");
 const IERC20 = contract.fromArtifact("IERC20");
@@ -36,20 +37,21 @@ describe('Controller', () => {
   const strategist = accounts[2];
 
 
-  var revenueToken;
-  var controller;
-  var strategy;
-  var vault;
-  var treasury
-  var mock;
-  var wrapper;
+  let revenueToken;
+  let controller;
+  let strategy;
+  let vault;
+  let treasury
+  let mock;
+  let wrapper;
 
   beforeEach(async () => {
     [mock, controller, strategy, vault, revenueToken, treasury] = await vaultInfrastructureRedeploy(
       governance,
       strategist,
       InstitutionalEURxbStrategy,
-      InstitutionalEURxbVault
+      InstitutionalEURxbVault,
+      defaultParams
     );
     wrapper = await TokenWrapper.new(
       "Banked EURxb",
@@ -101,7 +103,7 @@ describe('Controller', () => {
     await expectRevert(controller.inCaseStrategyTokenGetStuck(strategy.address, revenueToken.address, {from: governance}),
       "!want");
     const mockedBalance = ether('10');
-    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, ether('123'), miris);
+    let mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, ether('123'), miris);
 
     await expectRevert(
       controller.inCaseStrategyTokenGetStuck(
@@ -122,8 +124,8 @@ describe('Controller', () => {
   });
 
   it('should withdraw tokens from strategy', async () => {
-    var mockedBalance = ether('10');
-    var toWithdraw = ether('5');
+    let mockedBalance = ether('10');
+    let toWithdraw = ether('5');
     const balanceOfStrategyCalldata = revenueToken.contract
       .methods.balanceOf(strategy.address).encodeABI();
     await mock.givenCalldataReturnUint(balanceOfStrategyCalldata, mockedBalance);
@@ -199,7 +201,7 @@ describe('Controller', () => {
 
 
   it('should set vault by token', async () => {
-    var mockToken = await getMockTokenPrepared(strategy.address, ether('10'), ether('123'), miris);
+    let mockToken = await getMockTokenPrepared(strategy.address, ether('10'), ether('123'), miris);
     await expectRevert(controller.setVault(revenueToken.address, vault.address, {from: governance}), '!vault 0');
     await controller.setVault(mockToken.address, mock.address, {from: governance});
     expect(await controller.vaults(mockToken.address)).to.be.equal(mock.address);
@@ -245,7 +247,7 @@ describe('Controller', () => {
     const sumToEarn = ether('1');
     const sumToEarnInRevenueToken = ether('2');
 
-    var mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, ether('123'), miris);
+    let mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, ether('123'), miris);
 
     ////
     await controller.setApprovedStrategy(mockToken.address, strategy.address, true, {from: governance});
@@ -292,7 +294,7 @@ describe('Controller', () => {
 
     await mock.givenMethodReturnBool(transferCalldata, true);
 
-    var receipt = await controller.earn(secondMock.address, sumToEarn, {from: miris});
+    let receipt = await controller.earn(secondMock.address, sumToEarn, {from: miris});
     await expectEvent(receipt, "Earn");
     ////
 
@@ -300,7 +302,7 @@ describe('Controller', () => {
     const vaultTransferCalldata = revenueToken.contract.
       methods.transfer(vault.address, 0).encodeABI();
     await mock.givenMethodReturnBool(vaultTransferCalldata, true);
-    var transferMockCalldata = revenueToken.contract
+    let transferMockCalldata = revenueToken.contract
       .methods.transfer(mock.address, 0).encodeABI();
     await mock.givenMethodReturnBool(transferMockCalldata, false);
     await expectRevert(controller.earn(revenueToken.address, sumToEarnInRevenueToken), '!transferStrategyToken');
@@ -328,7 +330,7 @@ describe('Controller', () => {
 
   it('should emit no events if withdraw from strategy does not return any tokens', async () => {
     const mockToken = await getMockTokenForStrategy();
-    var receipt = await controller.harvest(mock.address, mockToken.address, {from: governance});
+    let receipt = await controller.harvest(mock.address, mockToken.address, {from: governance});
     await expectEvent.notEmitted(receipt, "Transfer");
   });
 

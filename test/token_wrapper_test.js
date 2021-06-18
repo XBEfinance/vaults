@@ -31,11 +31,11 @@ describe('TokenWrapper', () => {
   const alice = accounts[1];
   const fool = accounts[2];
 
-  var tokenToWrap;
-  var wrapper;
-  var mock;
+  let tokenToWrap;
+  let wrapper;
+  let mock;
 
-  var MINTER_ROLE;
+  let MINTER_ROLE;
 
   beforeEach(async () => {
     mock = await MockContract.new();

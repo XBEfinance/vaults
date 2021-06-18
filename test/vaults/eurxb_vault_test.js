@@ -42,11 +42,11 @@ const vaultTestSuite = (strategyType, vaultType, isInstitutional) => {
 
     const testMin = new BN('9600');
 
-    var revenueToken;
-    var controller;
-    var strategy;
-    var vault;
-    var mock;
+    let revenueToken;
+    let controller;
+    let strategy;
+    let vault;
+    let mock;
 
     beforeEach(async () => {
       [
@@ -89,7 +89,7 @@ const vaultTestSuite = (strategyType, vaultType, isInstitutional) => {
     if (isInstitutional) {
 
       const investor = accounts[3];
-      var role;
+      let role;
 
       describe('investor role management', () => {
 
@@ -115,11 +115,11 @@ const vaultTestSuite = (strategyType, vaultType, isInstitutional) => {
 
       describe('wrapping/unwrapping functional', () => {
 
-        var wrapConverter;
-        var unwrapConverter;
-        var tokenToWrap;
-        var wrapper;
-        var aliceAmount = ether('5');
+        let wrapConverter;
+        let unwrapConverter;
+        let tokenToWrap;
+        let wrapper;
+        let aliceAmount = ether('5');
 
         beforeEach(async () => {
 
@@ -350,7 +350,7 @@ const vaultTestSuite = (strategyType, vaultType, isInstitutional) => {
     it('should get price per full share', async () => {
       const mockedAmount = ether('10');
 
-      var revenueTokenERC20 = await IERC20.at(revenueToken.address);
+      let revenueTokenERC20 = await IERC20.at(revenueToken.address);
 
       const transferFromCalldata = revenueTokenERC20.contract
         .methods.transferFrom(miris, vault.address, mockedAmount).encodeABI();
@@ -417,8 +417,8 @@ const vaultTestSuite = (strategyType, vaultType, isInstitutional) => {
       }
       await vault.deposit(mockedAmount, {from: miris});
 
-      var balance = await vault.balance();
-      var totalSupply = await vault.totalSupply();
+      let balance = await vault.balance();
+      let totalSupply = await vault.totalSupply();
 
       expect(balance).to.be.bignumber.equal(mockedAmount);
       expect(totalSupply).to.be.bignumber.equal(mockedAmount);
@@ -503,7 +503,7 @@ const vaultTestSuite = (strategyType, vaultType, isInstitutional) => {
       const vaultBalance = await vault.balance();
       const vaultTotalSupply = await vault.totalSupply();
 
-      var r = vaultBalance.mul(mockedAmount).div(vaultTotalSupply);
+      let r = vaultBalance.mul(mockedAmount).div(vaultTotalSupply);
 
       const transferCalldata = revenueTokenERC20.contract
         .methods.transfer(miris, r).encodeABI();
@@ -568,7 +568,7 @@ const vaultTestSuite = (strategyType, vaultType, isInstitutional) => {
 
       const vaultBalance = await vault.balance();
       const vaultTotalSupply = await vault.totalSupply();
-      var r = vaultBalance.mul(mockedAmount).div(vaultTotalSupply);
+      let r = vaultBalance.mul(mockedAmount).div(vaultTotalSupply);
 
       await mock.givenCalldataReturnUint(balanceOfVaultCalldata,
         r.sub(difference));

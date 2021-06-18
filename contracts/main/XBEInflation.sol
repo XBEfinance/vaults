@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 
-
+import "./BonusCampaign.sol";
 import "./interfaces/minting/IMint.sol";
 import "./interfaces/IXBEInflation.sol";
 import "./VeXBE.sol";
@@ -56,13 +56,18 @@ contract XBEInflation is Initializable, IXBEInflation {
   address public admin;
 
   VeXBE public veXBE;
+  BonusCampaign public bonusCampaign;
   address public vault;
   address public token;
+
   uint256 public totalMinted;
+  uint256 public maxBoost;
 
   uint256 public constant YEAR = 86400 * 365;
   uint64 public constant PCT_BASE = 10 ** 18;
   uint256 public constant TOKENLESS_PRODUCTION = 40;
+  uint64 public constant PRECISION = 100;
+  uint64 public constant MAX_BOOST = 100 * PRECISION / TOKENLESS_PRODUCTION;
 
   uint256 public initialSupply; //= 1303030303;
   uint256 public initialRate; //= 274815283 * 10 ** 18 / YEAR;
@@ -86,6 +91,7 @@ contract XBEInflation is Initializable, IXBEInflation {
   function configure(
       address _token,
       address _minter,
+      address _bonusCampaign,
       uint256 _initialSupply, // NOT IN WEI!!!
       uint256 _initialRate,
       uint256 _rateReductionTime,
@@ -95,6 +101,7 @@ contract XBEInflation is Initializable, IXBEInflation {
   ) external initializer {
       admin = msg.sender;
       setMinter(_minter);
+      bonusCampaign = BonusCampaign(_bonusCampaign);
       token = _token;
       initialSupply = _initialSupply;
       initialRate = _initialRate;
@@ -285,22 +292,26 @@ contract XBEInflation is Initializable, IXBEInflation {
         return computeValue >= _value;
     }
 
-    function _calculateBoost(address addr) internal view returns(uint256) {
+    function _calculateBalance(address addr) internal view returns(uint256) {
         // # To be called after totalSupply is updated
         IERC20 _vault = mintList[msg.sender].vault;
 
-        uint256 lpBalance = _vault.balanceOf(addr);
+        uint256 boostedBalance = _vault.balanceOf(addr);
         uint256 lpTotal = _vault.totalSupply();
 
         uint256 votingBalance = veXBE.balanceOf(addr);
-        uint256 votingTotal = veXBE.supply();
+        uint256 votingTotal = veXBE.totalSupply();
 
-        uint256 lim = lpBalance * TOKENLESS_PRODUCTION / 100;
+        uint256 lockDuration = veXBE.lockEnd(addr) - veXBE.lockStarts(addr);
 
-        if (lpTotal > 0) {
-            lim += lpTotal * votingBalance / votingTotal * (100 - TOKENLESS_PRODUCTION) / 100;
+        // if lockup is 23 months or more
+        if (lockDuration >= bonusCampaign.rewardsDuration() && block.timestamp < bonusCampaign.periodFinish()) {
+            return boostedBalance;
         }
-        return lim = Math.min(lpBalance, lim);
+
+        uint256 unboostedBalance = boostedBalance * TOKENLESS_PRODUCTION / 100;
+        unboostedBalance += lpTotal * votingBalance / votingTotal * (100 - TOKENLESS_PRODUCTION) / 100;
+        return Math.min(unboostedBalance, boostedBalance);
     }
 
   function mint(address _to, uint256 _value) external onlyMinters returns(bool) {

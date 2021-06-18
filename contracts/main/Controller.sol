@@ -197,7 +197,7 @@ contract Controller is IController, Ownable, Initializable {
         } else {
             require(IERC20(_token).transfer(_strategy, _amount), "!transferStrategyToken");
         }
-        IStrategy(_strategy).deposit();
+        IStrategy(_strategy).deposit(_token, _amount);
         emit Earn(_token, _amount);
     }
 

@@ -3,9 +3,12 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/Math.sol";
+
 
 import "./interfaces/minting/IMint.sol";
 import "./interfaces/IXBEInflation.sol";
+import "./VeXBE.sol";
 
 contract XBEInflation is Initializable, IXBEInflation {
 
@@ -33,6 +36,18 @@ contract XBEInflation is Initializable, IXBEInflation {
 
   event CalculatedEpochTimeWritten(uint256 epochTime);
 
+  struct Strategy {
+      uint256 weight;
+      IERC20 vault;
+  }
+
+  //contract strategy => contract weight
+  mapping(address => Strategy) public mintList;
+
+  address[10000] public strategy;
+
+  mapping(int128 => mapping(address => uint256)) private availableEpoch;
+
   mapping(address => uint256) public _balanceOf;
   mapping(address => mapping(address => uint256)) public _allowances;
   uint256 public _totalSupply;
@@ -40,10 +55,14 @@ contract XBEInflation is Initializable, IXBEInflation {
   address public minter;
   address public admin;
 
+  VeXBE public veXBE;
+  address public vault;
   address public token;
   uint256 public totalMinted;
 
   uint256 public constant YEAR = 86400 * 365;
+  uint64 public constant PCT_BASE = 10 ** 18;
+  uint256 public constant TOKENLESS_PRODUCTION = 40;
 
   uint256 public initialSupply; //= 1303030303;
   uint256 public initialRate; //= 274815283 * 10 ** 18 / YEAR;
@@ -95,6 +114,11 @@ contract XBEInflation is Initializable, IXBEInflation {
   // @dev Update mining rate and supply at the start of the epoch
   //      Any modifying mining call must also call this
   // """
+  modifier onlyMinters() {
+        require(mintList[msg.sender].weight > 0,  '!minter');
+        _;
+    }
+
   function _updateMiningParameters() internal {
       uint256 _rate = rate;
       uint256 _startEpochSupply = startEpochSupply;
@@ -110,8 +134,14 @@ contract XBEInflation is Initializable, IXBEInflation {
       }
 
       rate = _rate;
+
       emit UpdateMiningParameters(block.timestamp, _rate, _startEpochSupply);
   }
+
+//   function calculate(uint256 _supply) internal {
+//       uint256 supply = _supply;
+//       for(uint256 i = 0; i < strategy.length;)
+//   }
 
   // """
   // @notice Update mining rate and supply at the start of the epoch
@@ -247,9 +277,34 @@ contract XBEInflation is Initializable, IXBEInflation {
   // @param _value The amount that will be created
   // @return bool success
   // """
-  function mint(address _to, uint256 _value) external returns(bool) {
+
+
+    function _availableMint(uint256 _value) internal returns(bool) {
+        uint256 pct = mintList[msg.sender].weight;
+        uint256 computeValue = _availableSupply().mul(_value.div(PCT_BASE));
+        return computeValue >= _value;
+    }
+
+    function _calculateBoost(address addr) internal view returns(uint256) {
+        // # To be called after totalSupply is updated
+        IERC20 _vault = mintList[msg.sender].vault;
+
+        uint256 lpBalance = _vault.balanceOf(addr);
+        uint256 lpTotal = _vault.totalSupply();
+
+        uint256 votingBalance = veXBE.balanceOf(addr);
+        uint256 votingTotal = veXBE.supply();
+
+        uint256 lim = lpBalance * TOKENLESS_PRODUCTION / 100;
+
+        if (lpTotal > 0) {
+            lim += lpTotal * votingBalance / votingTotal * (100 - TOKENLESS_PRODUCTION) / 100;
+        }
+        return lim = Math.min(lpBalance, lim);
+    }
+
+  function mint(address _to, uint256 _value) external onlyMinters returns(bool) {
       require(_to != address(0), "!zeroAddress");
-      require(msg.sender == minter, "!minter");
       if (block.timestamp >= startEpochTime.add(rateReductionTime)) {
           _updateMiningParameters();
       }

@@ -12,6 +12,7 @@ import '../interfaces/IMainRegistry.sol';
 import '../interfaces/IPool.sol';
 import '../interfaces/IGaugeLiquidity.sol';
 import '../interfaces/IBooster.sol';
+import '../interfaces/IRewards.sol';
 
 /// @title InstitutionalEURxbStrategy
 /// @notice This is contract for yield farming strategy with EURxb token for investors
@@ -23,11 +24,16 @@ contract InstitutionalEURxbStrategy is EURxbStrategy {
     address depositCoin;
 
     struct Pool {
-        address lpToken;
+        address lpCurve;
         address liquidityGauge;
+        address crvRewards;
+        address lpConvex;
+        uint8 nCoins;
+        uint16 convexId;
     }
     //pool address => Pool
     mapping(address => Pool) poolInfo;
+    address[] public poolAddresses;
 
     constructor(address _addressProvider) public {
         addressProvider = IAddressProvider(_addressProvider);
@@ -36,46 +42,66 @@ contract InstitutionalEURxbStrategy is EURxbStrategy {
     /// @dev To be realised
     function skim() override external {
     }
-
-    /// @dev To be realised
+     /// @dev To be realised
     function deposit(address _token, uint256 _amount) override external {
-        (address _lpToken, uint256 _amountLp) = _addLliquidityToCurve(_token, _amount);
-        _convertToLp(_lpToken, _amountLp);
+        
+    }
+    /// @dev To be realised
+    function depositERC(address _token, uint256 _amount) external {
+        require(_token != address(0), 'address == 0');
+        require(_amount > 0, 'amount == 0');
+        (address _lpToken, uint256 _amountLp) = _addLiquidityToCurve(_token, _amount);
+        _convertToConvexLp(_lpToken, _amountLp);
     }
 
+    function depositConvexLp(address _lpToken, uint256 _amount) external {
+        uint256 _poolLength = convexBooster.poolLength();
+        IERC20(_lpToken).transferFrom(msg.sender, address(this), _amount);
+        for(uint256 i = 0; i < _poolLength; i++){
+            IBooster.PoolInfo memory _pool = convexBooster.poolInfo(i);
+            if(_pool.token == _lpToken){
+                address _rewardContract = _pool.crvRewards;
+                IERC20(_lpToken).approve(_rewardContract, _amount);
+                IRewards(_rewardContract).stakeFor(address(this), _amount);
+                break;
+            }
+        }
+    }
+    //for second strategy 
     function _convertToCrv(address _pool, address _token, uint256 _amount) internal {
         IGaugeLiquidity _liqGauges = IGaugeLiquidity(poolInfo[_pool].liquidityGauge);
         _liqGauges.deposit(_amount, address(this));
         uint256 _crvAmount = _liqGauges.claimable_tokens(address(this));
     }
 
-    function _convertToLp (address _lpToken, uint256 _amountLp) internal {
+    function _convertToConvexLp (address _lpToken, uint256 _amountLp) internal {
         uint256 _poolLength = convexBooster.poolLength();
-        IERC20(_lpToken).approve(address(this), _amountLp);
+        IERC20(_lpToken).approve(address(convexBooster), _amountLp);
         for(uint256 i = 0; i < _poolLength; i++){
             IBooster.PoolInfo memory _pool = convexBooster.poolInfo(i);
             if(_pool.lptoken == _lpToken){
+                //true means that the received lp tokens will immediately be stakes
                 convexBooster.deposit(i, _amountLp, true);
             }
         }
-        //IBooster.PoolInfo = convexBooster
-
     }
 
-    function _addLliquidityToCurve(address _token, uint256 _amount) internal returns(address, uint256 ){
+    function _addLiquidityToCurve(address _token, uint256 _amount) internal returns(address, uint256 ){
         uint256 _poolCount = mainRegistry.pool_count();
-        address[] memory _poolList = mainRegistry.pool_list();
+        address[] memory _poolList = new address[](_poolCount);
+        _poolList = mainRegistry.pool_list();
         for(uint256 i = 0; i < _poolCount; i++){
             IPool _poolAddress = IPool(_poolList[i]);
-            uint128 _coinsLength = 8;
-            uint256[] memory _coinsAmounts = new uint256[](_coinsLength);
-            for(uint256 l = 0; l < _coinsLength; i++){
+            uint8 _nCoins = poolInfo[address(_poolAddress)].nCoins;
+            //required for passing as an argument
+            uint256[] memory _coinsAmount = new uint256[](_nCoins);
+            for(uint256 l = 0; l < _nCoins; i++){
                 address _coin = _poolAddress.coins(int128(i));
                 if(_token == _coin){
-                    _coinsAmounts[l] = _amount;
-                    _poolAddress.add_liquidity(_coinsAmounts, 0); 
-                    uint256 _lpAmount = IERC20(poolInfo[address(_poolAddress)].lpToken).balanceOf(address(this));
-                    return (poolInfo[address(_poolAddress)].lpToken, _lpAmount);
+                    _coinsAmount[l] = _amount;
+                    _poolAddress.add_liquidity(_coinsAmount, 0); 
+                    uint256 _lpAmount = IERC20(poolInfo[address(_poolAddress)].lpCurve).balanceOf(address(this));
+                    return (poolInfo[address(_poolAddress)].lpCurve, _lpAmount);
                 }
             }
         }

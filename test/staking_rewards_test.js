@@ -10,6 +10,7 @@ const {
   ether,
   time,
 } = require("@openzeppelin/test-helpers");
+const { accounts, contract } = require('@openzeppelin/test-environment');
 const {
   ZERO,
   ONE,
@@ -23,26 +24,25 @@ const {
   days,
   defaultParams,
   beforeEachWithSpecificDeploymentParams
-} = require("./utils/deploy_infrastructure.js");
+} = require("./utils/deploy_strategy_infrastructure.js");
 
 
 const { ZERO_ADDRESS } = constants;
-const MockContract = artifacts.require("MockContract");
+const MockContract = contract.fromArtifact("MockContract");
 
-contract("StakingRewards", (accounts) => {
+describe("StakingRewards", () => {
 
   const owner = accounts[0];
   const alice = accounts[1];
   const bob = accounts[2];
 
   let mockXBE;
-  let mockCRV;
+  let mockCX;
   let xbeInflation;
   let bonusCampaign;
   let veXBE;
   let voting;
-  let stakingRewards;
-  let vaultWithXBExCRVStrategy;
+  let vaultWithXBExCXStrategy;
 
   let deployment;
 
@@ -50,23 +50,22 @@ contract("StakingRewards", (accounts) => {
 
     beforeEach(async () => {
       [
-        vaultWithXBExCRVStrategy,
+        vaultWithXBExCXStrategy,
         mockXBE,
-        mockCRV,
+        mockCX,
         xbeInflation,
         bonusCampaign,
         veXBE,
-        voting,
-        stakingRewards
+        voting
       ] = await beforeEachWithSpecificDeploymentParams(owner, alice, bob);
     });
 
     it('should configure properly', async () => {
       expect(await stakingRewards.rewardsToken()).to.be.equal(
-        mockCRV.address
+        mockCX.address
       );
       expect(await stakingRewards.stakingToken()).to.be.equal(
-        defaultParams.vaultWithXBExCRVStrategyAddress
+        defaultParams.vaultWithXBExCXStrategyAddress
       );
       expect(await stakingRewards.rewardsDistribution()).to.be.equal(
         owner
@@ -78,22 +77,22 @@ contract("StakingRewards", (accounts) => {
 
     it('should return totalSupply', async () => {
       const amount = ether('100');
-      await vaultWithXBExCRVStrategy.approve(stakingRewards.address, amount);
+      await vaultWithXBExCXStrategy.approve(stakingRewards.address, amount);
       await stakingRewards.stake(amount);
       expect(await stakingRewards.totalSupply()).to.be.bignumber.equal(amount);
     });
 
     it('should return balance of user', async () => {
       const amount = ether('100');
-      await vaultWithXBExCRVStrategy.approve(stakingRewards.address, amount);
+      await vaultWithXBExCXStrategy.approve(stakingRewards.address, amount);
       await stakingRewards.stake(amount);
       expect(await stakingRewards.balanceOf(owner)).to.be.bignumber.equal(amount);
     });
 
     it('should return last time reward applicable', async () => {
       const mockTotalSupply = ether('100');
-      await mockCRV.approve(stakingRewards.address, mockTotalSupply);
-      await mockCRV.transfer(stakingRewards.address, mockTotalSupply);
+      await mockCX.approve(stakingRewards.address, mockTotalSupply);
+      await mockCX.transfer(stakingRewards.address, mockTotalSupply);
       await stakingRewards.notifyRewardAmount(mockTotalSupply);
 
       const currentTime = await time.latest();
@@ -121,12 +120,12 @@ contract("StakingRewards", (accounts) => {
       );
 
       const mockTotalSupply = ether('100');
-      await mockCRV.approve(stakingRewards.address, mockTotalSupply);
-      await mockCRV.transfer(stakingRewards.address, mockTotalSupply);
+      await mockCX.approve(stakingRewards.address, mockTotalSupply);
+      await mockCX.transfer(stakingRewards.address, mockTotalSupply);
       await stakingRewards.notifyRewardAmount(mockTotalSupply);
 
       const amount = ether('100');
-      await vaultWithXBExCRVStrategy.approve(stakingRewards.address, amount);
+      await vaultWithXBExCXStrategy.approve(stakingRewards.address, amount);
       await stakingRewards.stake(amount);
 
       rewardsPerTokenStored = await stakingRewards.rewardPerTokenStored();
@@ -146,12 +145,12 @@ contract("StakingRewards", (accounts) => {
 
     it('should return earned amount', async () => {
       const mockTotalSupply = ether('100');
-      await mockCRV.approve(stakingRewards.address, mockTotalSupply);
-      await mockCRV.transfer(stakingRewards.address, mockTotalSupply);
+      await mockCX.approve(stakingRewards.address, mockTotalSupply);
+      await mockCX.transfer(stakingRewards.address, mockTotalSupply);
       await stakingRewards.notifyRewardAmount(mockTotalSupply);
 
       const amount = ether('100');
-      await vaultWithXBExCRVStrategy.approve(stakingRewards.address, amount);
+      await vaultWithXBExCXStrategy.approve(stakingRewards.address, amount);
       await stakingRewards.stake(amount);
 
       await time.increase(days('20'));
@@ -170,8 +169,8 @@ contract("StakingRewards", (accounts) => {
 
     it('should return reward for duration', async () => {
       const mockTotalSupply = ether('100');
-      await mockCRV.approve(stakingRewards.address, mockTotalSupply);
-      await mockCRV.transfer(stakingRewards.address, mockTotalSupply);
+      await mockCX.approve(stakingRewards.address, mockTotalSupply);
+      await mockCX.transfer(stakingRewards.address, mockTotalSupply);
       await stakingRewards.notifyRewardAmount(mockTotalSupply);
 
       const expected = (await stakingRewards.rewardRate())
@@ -185,7 +184,7 @@ contract("StakingRewards", (accounts) => {
     it('should stake', async () => {
       await expectRevert(stakingRewards.stake(ZERO), "Cannot stake 0");
       const amount = ether('100');
-      await vaultWithXBExCRVStrategy.approve(stakingRewards.address, amount);
+      await vaultWithXBExCXStrategy.approve(stakingRewards.address, amount);
       const result = await stakingRewards.stake(amount);
       expectEvent(result, "Staked", {
         user: owner,
@@ -197,7 +196,7 @@ contract("StakingRewards", (accounts) => {
     it('should withdraw', async () => {
       await expectRevert(stakingRewards.withdraw(ZERO), "Cannot withdraw 0");
       const amount = ether('100');
-      await vaultWithXBExCRVStrategy.approve(stakingRewards.address, amount);
+      await vaultWithXBExCXStrategy.approve(stakingRewards.address, amount);
       await stakingRewards.stake(amount);
       const result = await stakingRewards.withdraw(amount);
       expectEvent(result, "Withdrawn", {
@@ -209,18 +208,18 @@ contract("StakingRewards", (accounts) => {
 
     it('should get reward', async () => {
       const mockTotalSupply = ether('100');
-      await mockCRV.approve(stakingRewards.address, mockTotalSupply);
-      await mockCRV.transfer(stakingRewards.address, mockTotalSupply);
+      await mockCX.approve(stakingRewards.address, mockTotalSupply);
+      await mockCX.transfer(stakingRewards.address, mockTotalSupply);
       await stakingRewards.notifyRewardAmount(mockTotalSupply);
 
       const amount = ether('50');
 
-      await vaultWithXBExCRVStrategy.approve(stakingRewards.address, amount);
+      await vaultWithXBExCXStrategy.approve(stakingRewards.address, amount);
       await stakingRewards.stake(amount);
 
       await time.increase(days('10'));
 
-      await vaultWithXBExCRVStrategy.approve(stakingRewards.address, amount);
+      await vaultWithXBExCXStrategy.approve(stakingRewards.address, amount);
       await stakingRewards.stake(amount);
 
       await time.increase(days('10'));
@@ -237,18 +236,18 @@ contract("StakingRewards", (accounts) => {
 
     it('should perform exit', async () => {
       const mockTotalSupply = ether('100');
-      await mockCRV.approve(stakingRewards.address, mockTotalSupply);
-      await mockCRV.transfer(stakingRewards.address, mockTotalSupply);
+      await mockCX.approve(stakingRewards.address, mockTotalSupply);
+      await mockCX.transfer(stakingRewards.address, mockTotalSupply);
       await stakingRewards.notifyRewardAmount(mockTotalSupply);
 
       const amount = ether('50');
 
-      await vaultWithXBExCRVStrategy.approve(stakingRewards.address, amount);
+      await vaultWithXBExCXStrategy.approve(stakingRewards.address, amount);
       await stakingRewards.stake(amount);
 
       await time.increase(days('10'));
 
-      await vaultWithXBExCRVStrategy.approve(stakingRewards.address, amount);
+      await vaultWithXBExCXStrategy.approve(stakingRewards.address, amount);
       await stakingRewards.stake(amount);
 
       await time.increase(days('10'));
@@ -272,12 +271,12 @@ contract("StakingRewards", (accounts) => {
 
     it('should notify reward amount', async () => {
       const mockTotalSupply = ether('100');
-      await mockCRV.approve(stakingRewards.address, mockTotalSupply);
-      await mockCRV.transfer(stakingRewards.address, mockTotalSupply);
+      await mockCX.approve(stakingRewards.address, mockTotalSupply);
+      await mockCX.transfer(stakingRewards.address, mockTotalSupply);
       const result = await stakingRewards.notifyRewardAmount(mockTotalSupply);
 
       expect(
-        await mockCRV.balanceOf(stakingRewards.address)
+        await mockCX.balanceOf(stakingRewards.address)
       ).to.be.bignumber.equal(mockTotalSupply);
 
       expectEvent(result, "RewardAdded", {
@@ -310,7 +309,7 @@ contract("StakingRewards", (accounts) => {
 
       await expectRevert(stakingRewards.recoverERC20(mockToken.address, amount, {from: alice}),
         "Revert (message: Ownable: caller is not the owner)")
-      await expectRevert(stakingRewards.recoverERC20(vaultWithXBExCRVStrategy.address, amount),
+      await expectRevert(stakingRewards.recoverERC20(vaultWithXBExCXStrategy.address, amount),
         "Cannot withdraw the staking token")
 
       const result = await stakingRewards.recoverERC20(mockToken.address, amount);
@@ -327,8 +326,8 @@ contract("StakingRewards", (accounts) => {
     it('should set rewards duration', async () => {
 
       const mockTotalSupply = ether('100');
-      await mockCRV.approve(stakingRewards.address, mockTotalSupply);
-      await mockCRV.transfer(stakingRewards.address, mockTotalSupply);
+      await mockCX.approve(stakingRewards.address, mockTotalSupply);
+      await mockCX.transfer(stakingRewards.address, mockTotalSupply);
       await stakingRewards.notifyRewardAmount(mockTotalSupply);
 
       await expectRevert(

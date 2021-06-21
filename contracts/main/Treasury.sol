@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 
+import "./staking_rewards/RewardsDistributionRecipient.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IOneSplitAudit.sol";
 
@@ -15,7 +16,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
     using SafeERC20 for IERC20;
 
     address public oneSplit;
-    address public governanceContract;
+    address public rewardsDistributionRecipientContract;
     address public rewardsToken;
 
     mapping(address => bool) public authorized;
@@ -28,12 +29,12 @@ contract Treasury is Initializable, Ownable, ITreasury {
     function configure(
         address _governance,
         address _oneSplit,
-        address _governanceContract,
+        address _strategyContract,
         address _rewardsToken
     ) external initializer {
         transferOwnership(_governance);
         setOneSplit(_oneSplit);
-        setGovernanceContract(_governanceContract);
+        setStrategyContract(_strategyContract);
         setRewardsToken(_rewardsToken);
         setAuthorized(_governance, true);
     }
@@ -46,8 +47,8 @@ contract Treasury is Initializable, Ownable, ITreasury {
         rewardsToken = _rewardsToken;
     }
 
-    function setGovernanceContract(address _governanceContract) public onlyOwner {
-        governanceContract = _governanceContract;
+    function setStrategyContract(address _strategyContract) public onlyOwner {
+        rewardsDistributionRecipientContract = _strategyContract;
     }
 
     function setAuthorized(address _authorized, bool status) public onlyOwner {
@@ -60,9 +61,9 @@ contract Treasury is Initializable, Ownable, ITreasury {
 
     function toVoters() override external {
         uint256 _balance = IERC20(rewardsToken).balanceOf(address(this));
-        IERC20(rewardsToken).safeApprove(governanceContract, 0);
-        IERC20(rewardsToken).safeApprove(governanceContract, _balance);
-        // Governance(governanceContract).notifyRewardAmount(_balance);
+        IERC20(rewardsToken).safeApprove(rewardsDistributionRecipientContract, 0);
+        IERC20(rewardsToken).safeApprove(rewardsDistributionRecipientContract, _balance);
+        RewardsDistributionRecipient(rewardsDistributionRecipientContract).notifyRewardAmount(_balance);
     }
 
     function getExpectedReturn(address _from, address _to, uint256 parts) external view returns(uint256 expected) {

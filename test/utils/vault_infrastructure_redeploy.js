@@ -1,5 +1,11 @@
 const { constants } = require('@openzeppelin/test-helpers');
 const { accounts, contract } = require('@openzeppelin/test-environment');
+const {
+  deployStrategyInfrastructure,
+  defaultParams,
+  getMockXBEandCX
+} = require("./deploy_strategy_infrastructure.js");
+
 const { ZERO_ADDRESS } = constants;
 
 const InstitutionalEURxbVault = contract.fromArtifact("InstitutionalEURxbVault");
@@ -19,13 +25,12 @@ const configureMainParts = async (
   treasury,
   governance,
   strategist,
-  oneSplitAddress,
-  governanceContract
+  oneSplitAddress
 ) => {
   await strategy.configure(
     revenueToken.address,
     controller.address,
-    vault.address
+    vault.address,
     {from: governance}
   );
 
@@ -57,7 +62,7 @@ const configureMainParts = async (
   await treasury.configure(
     governance,
     oneSplitAddress,
-    governanceContract.address,
+    strategy.address,
     revenueToken.address,
     {from: governance}
   );
@@ -67,32 +72,43 @@ const vaultInfrastructureRedeploy = async (
   governance,
   strategist,
   strategyType,
-  vaultType
+  vaultType,
+  params
 ) => {
-  const [owner] = accounts;
+  const [owner, alice, bob] = accounts;
   const mock = await MockContract.new({ from: owner});
 
   const controller = await Controller.new({ from: owner});
   const strategy = await strategyType.new({ from: owner});
   const vault = await vaultType.new({ from: owner});
   const treasury = await Treasury.new({ from: owner});
-  var revenueToken = await IERC20.at(mock.address);
 
-  var treasuryAddress = treasury.address;
+  const [mockXBE, mockCX] = await getMockXBEandCX(owner, alice, bob, params);
 
   await configureMainParts(
     strategy,
     controller,
-    revenueToken,
+    mockXBE.address,
     vault,
     treasury,
     governance,
     strategist,
-    mock.address,
-    mock
+    mock.address
   );
 
-  return [ mock, controller, strategy, vault, revenueToken, treasury ]
+  const strategyInfrastructureDeployment = deployStrategyInfrastructure(
+    owner, alice, bob, strategy, mockXBE, mockCX, params
+  );
+
+  return [
+    mock,
+    controller,
+    strategy,
+    vault,
+    revenueToken,
+    treasury,
+    strategyInfrastructureDeployment
+  ]
 };
 
 module.exports = { vaultInfrastructureRedeploy };

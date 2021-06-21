@@ -2,7 +2,9 @@ pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract MockToken is ERC20 {
+import "../interfaces/minting/IMint.sol";
+
+contract MockToken is ERC20, IMint {
     constructor(
         string memory name,
         string memory symbol,
@@ -12,6 +14,10 @@ contract MockToken is ERC20 {
     }
 
     function mintSender(uint256 _amount) external {
-      _mint(msg.sender, _amount);
+        _mint(msg.sender, _amount);
+    }
+
+    function mint(address account, uint256 amount) override external {
+        _mint(account, amount);
     }
 }

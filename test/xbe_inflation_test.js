@@ -10,6 +10,7 @@ const {
   ether,
   time,
 } = require("@openzeppelin/test-helpers");
+const { accounts, contract } = require('@openzeppelin/test-environment');
 
 const { ZERO_ADDRESS } = constants;
 const {
@@ -26,23 +27,22 @@ const {
   days,
   defaultParams,
   beforeEachWithSpecificDeploymentParams
-} = require("./utils/deploy_infrastructure.js");
+} = require("./utils/deploy_strategy_infrastructure.js");
 
-const MockContract = artifacts.require("MockContract");
+const MockContract = contract.fromArtifact("MockContract");
 
-contract("XBEInflation", (accounts) => {
+describe("XBEInflation", () => {
   const owner = accounts[0];
   const alice = accounts[1];
   const bob = accounts[2];
 
   let mockXBE;
-  let mockCRV;
+  let mockCX;
   let xbeInflation;
   let bonusCampaign;
   let veXBE;
   let voting;
-  let stakingRewards;
-  let vaultWithXBExCRVStrategy;
+  let vaultWithXBExCXStrategy;
 
   let deployment;
 
@@ -50,14 +50,13 @@ contract("XBEInflation", (accounts) => {
 
     beforeEach(async () => {
       [
-        vaultWithXBExCRVStrategy,
+        vaultWithXBExCXStrategy,
         mockXBE,
-        mockCRV,
+        mockCX,
         xbeInflation,
         bonusCampaign,
         veXBE,
-        voting,
-        stakingRewards
+        voting
       ] = await beforeEachWithSpecificDeploymentParams(owner, alice, bob);
     });
 
@@ -249,17 +248,13 @@ contract("XBEInflation", (accounts) => {
 
     beforeEach(async () => {
       [
-        vaultWithXBExCRVStrategy,
+        vaultWithXBExCXStrategy,
         mockXBE,
-        mockCRV,
+        mockCX,
         xbeInflation,
         bonusCampaign,
-        minter,
-        gaugeController,
         veXBE,
-        voting,
-        stakingRewards,
-        liquidityGaugeReward,
+        voting
       ] = await beforeEachWithSpecificDeploymentParams(owner, alice, bob,
         async () => {
           defaultParams.xbeinflation.rateReductionTime = days('2');
@@ -321,7 +316,7 @@ contract("XBEInflation", (accounts) => {
 
       const lpToDeposit = ether("2");
 
-      await vaultWithXBExCRVStrategy.approve(
+      await vaultWithXBExCXStrategy.approve(
         liquidityGaugeReward.address,
         lpToDeposit,
         { from: alice }

@@ -14,7 +14,11 @@ import "@aragon/minime/contracts/MiniMeToken.sol";
 
 import "@aragon/os/contracts/common/UnstructuredStorage.sol";
 
-contract Voting is IForwarder, AragonApp {
+import "../main/staking_rewards/StakingRewards.sol";
+import "../main/BonusCampaign.sol";
+import "../main/VeXBE.sol";
+
+contract Voting is IForwarder, AragonApp, StakingRewards {
     using SafeMath for uint256;
     using SafeMath64 for uint64;
 
@@ -23,6 +27,7 @@ contract Voting is IForwarder, AragonApp {
     bytes32 public constant MODIFY_QUORUM_ROLE = keccak256("MODIFY_QUORUM_ROLE");
 
     uint64 public constant PCT_BASE = 10 ** 18; // 0% = 0; 1% = 10^16; 100% = 10^18
+    uint256 public constant TOKENLESS_PRODUCTION = 40;
 
     string private constant ERROR_NO_VOTE = "VOTING_NO_VOTE";
     string private constant ERROR_INIT_PCTS = "VOTING_INIT_PCTS";
@@ -34,6 +39,11 @@ contract Voting is IForwarder, AragonApp {
     string private constant ERROR_CAN_NOT_EXECUTE = "VOTING_CAN_NOT_EXECUTE";
     string private constant ERROR_CAN_NOT_FORWARD = "VOTING_CAN_NOT_FORWARD";
     string private constant ERROR_NO_VOTING_POWER = "VOTING_NO_VOTING_POWER";
+
+    uint256 public lock = 17280;
+    bool public breaker = false;
+    mapping(address => uint256) public voteLock;
+    BonusCampaign public bonusCampaign;
 
     enum VoterState { Absent, Yea, Nay }
 
@@ -99,6 +109,18 @@ contract Voting is IForwarder, AragonApp {
         supportRequiredPct = _supportRequiredPct;
         minAcceptQuorumPct = _minAcceptQuorumPct;
         voteTime = _voteTime;
+    }
+
+    function setLock(uint256 _lock) external auth(MODIFY_QUORUM_ROLE) {
+        lock = _lock;
+    }
+
+    function setBreaker(bool _breaker) external auth(MODIFY_QUORUM_ROLE) {
+        breaker = _breaker;
+    }
+
+    function setBonusCampaign(address _bonusCampaign) external auth(MODIFY_QUORUM_ROLE) {
+        bonusCampaign = BonusCampaign(_bonusCampaign);
     }
 
     /**
@@ -308,6 +330,8 @@ contract Voting is IForwarder, AragonApp {
         vote_.votingPower = votingPower;
         vote_.executionScript = _executionScript;
 
+        voteLock[msg.sender()] = lock.add(block.number);
+
         emit StartVote(voteId, msg.sender, _metadata);
 
         if (_castVote && _canVote(voteId, msg.sender)) {
@@ -319,6 +343,7 @@ contract Voting is IForwarder, AragonApp {
     * @dev Internal function to cast a vote. It assumes the queried vote exists.
     */
     function _vote(uint256 _voteId, bool _supports, address _voter, bool _executesIfDecided) internal {
+
         Vote storage vote_ = votes[_voteId];
 
         // This could re-enter, though we can assume the governance token is not malicious
@@ -339,6 +364,8 @@ contract Voting is IForwarder, AragonApp {
         }
 
         vote_.voters[_voter] = _supports ? VoterState.Yea : VoterState.Nay;
+
+        voteLock[_voter] = lock.add(block.number);
 
         emit CastVote(_voteId, _voter, _supports, voterStake);
 
@@ -427,8 +454,54 @@ contract Voting is IForwarder, AragonApp {
         if (_total == 0) {
             return false;
         }
-
         uint256 computedPct = _value.mul(PCT_BASE) / _total;
         return computedPct > _pct;
+    }
+
+    function withdraw(uint256 amount) public override nonReentrant updateReward(msg.sender) {
+        require(amount > 0, "Cannot withdraw 0");
+        if (!breaker) {
+            require(voteLock[msg.sender()] < block.number, "!locked");
+        }
+        _totalSupply = _totalSupply.sub(amount);
+        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+        IERC20(stakingToken).safeTransfer(msg.sender, amount);
+        emit Withdrawn(msg.sender, amount);
+    }
+
+    function earned(address account) public override view returns (uint256) {
+        uint256 maxBoostedReward = _balances[account]
+          .mul(
+            rewardPerToken().sub(userRewardPerTokenPaid[account])
+          )
+          .div(1e18)
+          .add(rewards[account]);
+
+        VeXBE veXBE = VeXBE(address(token));
+        uint256 lockDuration = veXBE.lockedEnd(addr) - veXBE.lockStarts(addr);
+        // if lockup is 23 months or more
+        if (lockDuration >= bonusCampaign.rewardsDuration() && block.timestamp < bonusCampaign.periodFinish()) {
+            return maxBoostedReward;
+        }
+
+        uint256 lpTotal = totalSupply();
+        uint256 votingBalance = veXBE.balanceOf(account);
+        uint256 votingTotal = veXBE.totalSupply();
+
+        uint256 boostedReward = maxBoostedReward * TOKENLESS_PRODUCTION / 100;
+        boostedReward += lpTotal * votingBalance / votingTotal * (100 - TOKENLESS_PRODUCTION) / 100;
+        return Math.min(boostedReward, maxBoostedReward);
+    }
+
+    function getReward() public override nonReentrant updateReward(msg.sender) {
+        if (!breaker) {
+            require(voteLock[msg.sender()] > block.number, "!voted");
+        }
+        uint256 reward = rewards[msg.sender];
+        if (reward > 0) {
+            rewards[msg.sender] = 0;
+            IERC20(rewardsToken).safeTransfer(msg.sender, reward);
+            emit RewardPaid(msg.sender, reward);
+        }
     }
 }

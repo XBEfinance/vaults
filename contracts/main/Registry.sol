@@ -158,11 +158,6 @@ contract Registry is Ownable, Initializable {
         } else {
             controllerVault = IController(controller).vaults(token);
         }
-        // revert(StringsConcatenations.strConcat(
-        //   StringsConcatenations.address2str(controllerVault),
-        //   " ",
-        //   StringsConcatenations.address2str(vault)
-        // ));
         require(controllerVault == vault, "!controllerVaultMatch"); // Might happen on Proxy Vaults
 
         // Check if strategy has the same token as vault

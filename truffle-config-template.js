@@ -46,6 +46,17 @@ const mainnetNetworkConfig = {
   gasPrice: 125000000000,
 };
 
+const ganacheNetworkConfig = {
+  host: "localhost",
+  port: 8545,
+  network_id: '*',
+  // networkCheckTimeout: 10000000,
+  gasLimit: 9000000,
+  // gas: 9000000,
+  // confirmations: 2,
+  gasPrice: 125000000000
+};
+
 module.exports = {
   /**
    * Networks define how you connect to your ethereum client and let you set the
@@ -80,8 +91,14 @@ module.exports = {
     // Useful for deploying to a public network.
     mainnet: mainnetNetworkConfig,
 
-    // Use this network to test safe interaction
-    rinkeby_safe_test: rinkebyNetworkConfig,
+    rinkeby_deploy: rinkebyNetworkConfig,
+
+    rinkeby_tokens: rinkebyNetworkConfig,
+
+    rinkeby_configure: rinkebyNetworkConfig,
+
+    development: ganacheNetworkConfig
+
 
     // Useful for private networks
     // private: {

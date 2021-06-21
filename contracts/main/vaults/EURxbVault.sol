@@ -168,7 +168,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC2
 
     /// @notice Transfer tokens to controller, controller transfers it to strategy and earn (farm)
     function earn() override external {
-      uint256 _bal = available();
+        uint256 _bal = available();
         _token.safeTransfer(address(_controller), _bal);
         _controller.earn(address(_token), _bal);
     }

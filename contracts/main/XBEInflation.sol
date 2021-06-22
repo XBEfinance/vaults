@@ -4,6 +4,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/math/Math.sol";
+import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
 import "./interfaces/minting/IMint.sol";
 import "./interfaces/IXBEInflation.sol";
@@ -11,6 +12,7 @@ import "./interfaces/IXBEInflation.sol";
 contract XBEInflation is Initializable, IXBEInflation {
 
     using SafeMath for uint256;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
     event Transfer(
         address indexed _from,
@@ -33,16 +35,6 @@ contract XBEInflation is Initializable, IXBEInflation {
     event SetAdmin(address admin);
 
     event CalculatedEpochTimeWritten(uint256 epochTime);
-
-    struct Strategy {
-        uint256 weight;
-        IERC20 vault;
-    }
-
-    //contract strategy => contract weight
-    mapping(address => Strategy) public mintList;
-
-    address[10000] public strategy;
 
     mapping(int128 => mapping(address => uint256)) private availableEpoch;
 
@@ -73,6 +65,11 @@ contract XBEInflation is Initializable, IXBEInflation {
     uint256 public override rate;
 
     uint256 public startEpochSupply;
+
+    modifier onlyAdmin {
+      require(msg.sender == admin, "!admin");
+      _;
+    }
 
     // """
     // @notice Contract constructor
@@ -113,11 +110,6 @@ contract XBEInflation is Initializable, IXBEInflation {
     // @dev Update mining rate and supply at the start of the epoch
     //      Any modifying mining call must also call this
     // """
-    modifier onlyMinters() {
-          require(mintList[msg.sender].weight > 0,  '!minter');
-          _;
-      }
-
     function _updateMiningParameters() internal {
         uint256 _rate = rate;
         uint256 _startEpochSupply = startEpochSupply;
@@ -251,8 +243,7 @@ contract XBEInflation is Initializable, IXBEInflation {
     // @dev Only callable once, when minter has not yet been set
     // @param _minter Address of the minter
     // """
-    function setMinter(address _minter) public {
-        require(msg.sender == admin, "!admin");
+    function setMinter(address _minter) public onlyAdmin {
         require(minter == address(0), "minterExists");
         minter = _minter;
         emit SetMinter(_minter);
@@ -263,8 +254,7 @@ contract XBEInflation is Initializable, IXBEInflation {
     // @dev After all is set up, admin only can change the token name
     // @param _admin New admin address
     // """
-    function setAdmin(address _admin) external {
-        require(msg.sender == admin, "!admin");
+    function setAdmin(address _admin) external onlyAdmin {
         admin = _admin;
         emit SetAdmin(_admin);
     }
@@ -277,20 +267,49 @@ contract XBEInflation is Initializable, IXBEInflation {
     // @return bool success
     // """
 
-    function _availableMint(uint256 _value) internal returns(bool) {
-        uint256 pct = mintList[msg.sender].weight;
-        uint256 computeValue = _availableSupply().mul(_value.div(PCT_BASE));
-        return computeValue >= _value;
+    mapping(address => uint256) public weights; // in bps
+    uint256 public constant SUM_WEIGHT = 10000;
+
+    EnumerableSet.AddressSet internal _xbeReceivers;
+
+    function addXBEReceiver(address _xbeReceiver) external onlyAdmin {
+        _xbeReceivers.add(_xbeReceiver);
     }
 
-    function mint(address _to, uint256 _value) external onlyMinters returns(bool) {
+    function removeXBEReceiver(address _xbeReceiver) external onlyAdmin {
+        _xbeReceivers.remove(_xbeReceiver);
+    }
+
+    function setWeight(address _xbeReceiver, uint256 _weight) external onlyAdmin {
+        weights[_xbeReceiver] = _weight;
+        uint256 currentWeightSum = 0;
+        for (uint256 i = 0; i < _xbeReceivers.length(); i++) {
+            currentWeightSum = currentWeightSum.add(
+                weights[_xbeReceivers.at(i)]
+            );
+        }
+        require(currentWeightSum == SUM_WEIGHT, "weightSum!=100%");
+    }
+
+    function mintForContracts()
+        external
+        returns(bool)
+    {
         require(_to != address(0), "!zeroAddress");
+        uint256 __availableSupply = _availableSupply();
+        require(totalMinted < __availableSupply, "availableSupply(Gt|Eq)TotalMinted");
         if (block.timestamp >= startEpochTime.add(rateReductionTime)) {
             _updateMiningParameters();
         }
-        IMint(token).mint(_to, _value);
-        totalMinted = totalMinted + _value;
-        require(totalMinted < _availableSupply(), "availableSupply(Gt|Eq)TotalMinted");
+        for (uint256 i = 0; i < _xbeReceivers.length(); i++) {
+            uint256 toMint = __availableSupply
+              .mul(
+                weights[_xbeReceivers.at(i)]
+              )
+              .div(SUM_WEIGHT);
+            IMint(token).mint(_contract, toMint);
+            totalMinted = totalMinted + toMint;
+        }
         return true;
     }
 }

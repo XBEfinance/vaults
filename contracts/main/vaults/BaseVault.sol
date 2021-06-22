@@ -28,7 +28,7 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC2
     IERC20 internal _token;
 
     /// @notice Minimum percentage to be in business? (in base points)
-    uint256 public min = 9500;
+    uint256 public min = 10000;//9500;
 
     /// @notice Hundred procent (in base points)
     uint256 public constant max = 10000;
@@ -108,6 +108,21 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC2
         return balance().mul(1e18).div(totalSupply());
     }
 
+    // function deposit(uint256 _amount) public {
+    //     uint256 _pool = balance();
+    //     uint256 _before = token.balanceOf(address(this));
+    //     token.safeTransferFrom(msg.sender, address(this), _amount);
+    //     uint256 _after = token.balanceOf(address(this));
+    //     _amount = _after.sub(_before); // Additional check for deflationary tokens
+    //     uint256 shares = 0;
+    //     if (totalSupply() == 0) {
+    //         shares = _amount;
+    //     } else {
+    //         shares = (_amount.mul(totalSupply())).div(_pool);
+    //     }
+    //     _mint(msg.sender, shares);
+    // }
+
     function _deposit(address _from, uint256 _amount) internal returns(uint256 shares) {
         uint256 _pool = balance();
         if (address(this) != _from) {
@@ -118,6 +133,9 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC2
         if (totalSupply() == 0) {
             shares = _amount;
         } else {
+            // shares / totalSupply = _amount / _pool
+            // shares * _pool = _amount * totalSupply
+            // shares = _amount * totalSupply / _pool
             shares = (_amount.mul(totalSupply())).div(_pool);
         }
         _mint(_from, shares);
@@ -136,6 +154,9 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC2
     }
 
     function _withdraw(address _to, uint256 _shares) internal returns(uint256 r) {
+        // share / totalSupply = r / balance
+        // share * balance = r * totalSupply
+        // r = share * balance / totalSupply
         r = (balance().mul(_shares)).div(totalSupply());
         _burn(_to, _shares);
         // Check balance

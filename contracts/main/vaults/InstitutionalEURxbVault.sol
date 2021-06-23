@@ -4,13 +4,13 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "./EURxbVault.sol";
+import "./BaseVault.sol";
 import "../interfaces/IController.sol";
 import "../interfaces/IConverter.sol";
 
 /// @title InstitutionalEURxbVault
 /// @notice Vault for investors of the system
-contract InstitutionalEURxbVault is EURxbVault, AccessControl {
+contract InstitutionalEURxbVault is BaseVault, AccessControl {
 
     using SafeERC20 for IERC20;
 

@@ -6,11 +6,11 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 
-import "./EURxbStrategy.sol";
+import "./BaseStrategy.sol";
 
 /// @title InstitutionalEURxbStrategy
 /// @notice This is contract for yield farming strategy with EURxb token for investors
-contract InstitutionalEURxbStrategy is EURxbStrategy {
+contract InstitutionalEURxbStrategy is BaseStrategy {
 
     /// @dev To be realised
     function skim() override external {

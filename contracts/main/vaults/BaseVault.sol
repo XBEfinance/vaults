@@ -15,7 +15,7 @@ import "../interfaces/IController.sol";
 
 /// @title EURxbVault
 /// @notice Base vault contract, used to manage funds of the clients
-contract EURxbVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20 {
+contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20 {
 
     using SafeERC20 for IERC20;
     using Address for address;
@@ -107,21 +107,6 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC2
     function getPricePerFullShare() override external view returns(uint256) {
         return balance().mul(1e18).div(totalSupply());
     }
-
-    // function deposit(uint256 _amount) public {
-    //     uint256 _pool = balance();
-    //     uint256 _before = token.balanceOf(address(this));
-    //     token.safeTransferFrom(msg.sender, address(this), _amount);
-    //     uint256 _after = token.balanceOf(address(this));
-    //     _amount = _after.sub(_before); // Additional check for deflationary tokens
-    //     uint256 shares = 0;
-    //     if (totalSupply() == 0) {
-    //         shares = _amount;
-    //     } else {
-    //         shares = (_amount.mul(totalSupply())).div(_pool);
-    //     }
-    //     _mint(msg.sender, shares);
-    // }
 
     function _deposit(address _from, uint256 _amount) internal returns(uint256 shares) {
         uint256 _pool = balance();

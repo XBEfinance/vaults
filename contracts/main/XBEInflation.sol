@@ -66,6 +66,11 @@ contract XBEInflation is Initializable, IXBEInflation {
 
     uint256 public startEpochSupply;
 
+    mapping(address => uint256) public weights; // in points relative to sumWeight
+    uint256 public sumWeight = 0;
+
+    EnumerableSet.AddressSet internal _xbeReceivers;
+
     modifier onlyAdmin {
       require(msg.sender == admin, "!admin");
       _;
@@ -129,10 +134,6 @@ contract XBEInflation is Initializable, IXBEInflation {
         emit UpdateMiningParameters(block.timestamp, _rate, _startEpochSupply);
     }
 
-  //   function calculate(uint256 _supply) internal {
-  //       uint256 supply = _supply;
-  //       for(uint256 i = 0; i < strategy.length;)
-  //   }
 
     // """
     // @notice Update mining rate and supply at the start of the epoch
@@ -259,38 +260,37 @@ contract XBEInflation is Initializable, IXBEInflation {
         emit SetAdmin(_admin);
     }
 
-    // """
-    // @notice Mint `_value` tokens and assign them to `_to`
-    // @dev Emits a Transfer event originating from 0x00
-    // @param _to The account that will receive the created tokens
-    // @param _value The amount that will be created
-    // @return bool success
-    // """
+    function getWeightInPoints(address _xbeReceiver, uint256 maxPoints) external view returns(uint256) {
+        return weights[_xbeReceiver].mul(maxPoints).div(sumWeight);
+    }
 
-    mapping(address => uint256) public weights; // in bps
-    uint256 public constant SUM_WEIGHT = 10000;
-
-    EnumerableSet.AddressSet internal _xbeReceivers;
-
-    function addXBEReceiver(address _xbeReceiver) external onlyAdmin {
+    function addXBEReceiver(address _xbeReceiver, uint256 _weight) external onlyAdmin {
         _xbeReceivers.add(_xbeReceiver);
+        weights[_xbeReceiver] = _weight;
+        sumWeight = sumWeight.add(_weight);
     }
 
     function removeXBEReceiver(address _xbeReceiver) external onlyAdmin {
+        sumWeight = sumWeight.sub(weights[_xbeReceiver]);
         _xbeReceivers.remove(_xbeReceiver);
     }
 
     function setWeight(address _xbeReceiver, uint256 _weight) external onlyAdmin {
-        weights[_xbeReceiver] = _weight;
-        uint256 currentWeightSum = 0;
-        for (uint256 i = 0; i < _xbeReceivers.length(); i++) {
-            currentWeightSum = currentWeightSum.add(
-                weights[_xbeReceivers.at(i)]
-            );
+        uint256 oldWeight = weights[_xbeReceiver];
+        if (oldWeight > _weight) {
+            sumWeight = sumWeight.sub(oldWeight.sub(_weight));
+        } else if (oldWeight < _weight) {
+            sumWeight = sumWeight.add(_weight.sub(oldWeight));
         }
-        require(currentWeightSum == SUM_WEIGHT, "weightSum!=100%");
+        weights[_xbeReceiver] = _weight;
     }
 
+
+    // """
+    // @notice Mint part of available supply of tokens and assign them to approved contracts
+    // @dev Emits a Transfer event originating from 0x00
+    // @return bool success
+    // """
     function mintForContracts()
         external
         returns(bool)
@@ -306,7 +306,7 @@ contract XBEInflation is Initializable, IXBEInflation {
               .mul(
                 weights[_xbeReceivers.at(i)]
               )
-              .div(SUM_WEIGHT);
+              .div(sumWeight);
             IMint(token).mint(_contract, toMint);
             totalMinted = totalMinted + toMint;
         }

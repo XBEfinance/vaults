@@ -50,7 +50,7 @@ contract Controller is IController, Ownable, Initializable {
     address private _treasury;
 
     /// @notice procents (in base points) to send to treasury
-    uint256 public split = 500;
+    uint256 public split = 0;
 
     /// @notice Utility constant, 100% (in base points)
     uint256 public constant max = 10000;
@@ -104,6 +104,13 @@ contract Controller is IController, Ownable, Initializable {
     function setParts(uint256 _newParts) onlyOwner external {
         require(parts != _newParts, "!old");
         parts = _newParts;
+    }
+
+    /// @notice Usual setter with check if param is new
+    /// @param _newSplit New value
+    function setSplit(uint256 _newSplit) onlyOwner external {
+        require(split != _newSplit && _newSplit < max, "!old|>max");
+        split = _newSplit;
     }
 
     /// @notice Usual setter with additional checks
@@ -238,7 +245,9 @@ contract Controller is IController, Ownable, Initializable {
                 _amount = _after.sub(_before);
                 uint256 _reward = _amount.mul(split).div(max);
                 earn(_want, _amount.sub(_reward));
-                require(IERC20(_want).transfer(_treasury, _reward), '!transferTreasury');
+                if (_reward > 0) {
+                    require(IERC20(_want).transfer(_treasury, _reward), '!transferTreasury');
+                }
                 emit Harvest(_strategy, _token);
             }
         }

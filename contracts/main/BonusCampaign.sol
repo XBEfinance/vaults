@@ -8,6 +8,7 @@ contract BonusCampaign is StakingRewards {
 
     uint256 public bonusEmission;
     uint256 public startMintTime;
+    uint256 public stopRegisterTime;
 
     mapping(address => bool) public registered;
 
@@ -15,6 +16,7 @@ contract BonusCampaign is StakingRewards {
         address _rewardsToken,
         address _votingEscrowedToken,
         uint256 _startMintTime,
+        uint256 _stopRegisterTime,
         uint256 _rewardsDuration,
         uint256 _bonusEmission
     ) external initializer {
@@ -26,17 +28,18 @@ contract BonusCampaign is StakingRewards {
         );
         bonusEmission = _bonusEmission;
         startMintTime = _startMintTime;
+        stopRegisterTime = _stopRegisterTime;
     }
 
-    function stake(uint256 amount) external override nonReentrant whenNotPaused updateReward(msg.sender) {
+    function stake(uint256 amount) external override {
         revert("!allowed");
     }
 
-    function withdraw(uint256 amount) public override nonReentrant updateReward(msg.sender) {
+    function withdraw(uint256 amount) public override {
         revert("!allowed");
     }
 
-    function notifyRewardAmount(uint256 reward) external override onlyRewardsDistribution updateReward(address(0)) {
+    function notifyRewardAmount(uint256 reward) external override {
         revert("!allowed");
     }
 
@@ -46,6 +49,7 @@ contract BonusCampaign is StakingRewards {
     }
 
     function register() external nonReentrant whenNotPaused updateReward(msg.sender) {
+        require(block.timestamp <= stopRegisterTime, "registerNowIsBlocked");
         require(!registered[msg.sender], "alreadyRegistered");
         // avoid double staking in this very block by substracting one from block.number
         IVotingEscrow veToken = IVotingEscrow(stakingToken);
@@ -90,6 +94,7 @@ contract BonusCampaign is StakingRewards {
 
         lastUpdateTime = block.timestamp;
         periodFinish = block.timestamp.add(rewardsDuration);
+        _mintStarted = true;
         emit RewardAdded(bonusEmission);
     }
 

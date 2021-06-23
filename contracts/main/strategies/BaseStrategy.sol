@@ -16,7 +16,7 @@ import "../mocks/StringsConcatenations.sol";
 
 /// @title EURxbStrategy
 /// @notice This is base contract for yield farming strategy with EURxb token
-abstract contract EURxbStrategy is IStrategy, Ownable, Initializable {
+abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;

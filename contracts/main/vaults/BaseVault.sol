@@ -12,10 +12,11 @@ import "../interfaces/vault/IVaultTransfers.sol";
 import "../interfaces/vault/IVaultDelegated.sol";
 import "../interfaces/IStrategy.sol";
 import "../interfaces/IController.sol";
+import "../interfaces/IReferralProgram.sol";
 
 /// @title EURxbVault
 /// @notice Base vault contract, used to manage funds of the clients
-contract EURxbVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20 {
+contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20 {
 
     using SafeERC20 for IERC20;
     using Address for address;
@@ -26,6 +27,9 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC2
 
     /// @notice Token which will be transfered to strategy and used in business logic
     IERC20 internal _token;
+
+    /// @notice The referral program
+    IReferralProgram internal referralProgram;
 
     /// @notice Minimum percentage to be in business? (in base points)
     uint256 public min = 10000;//9500;
@@ -38,6 +42,10 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC2
 
     /// @param typeName Name of the vault token
     /// @param typePrefix Prefix of the vault token
+
+    //
+    address internal referrer;
+
     constructor(string memory typeName, string memory typePrefix)
         public
         ERC20(
@@ -54,9 +62,11 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC2
     function configure(
         address _initialToken,
         address _initialController,
-        address _governance
+        address _governance,
+        address _referralProgram
     ) public initializer {
         _token = IERC20(_initialToken);
+        referralProgram = IReferralProgram(_referralProgram);
         setController(_initialController);
         transferOwnership(_governance);
     }
@@ -124,11 +134,11 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC2
     // }
 
     function _deposit(address _from, uint256 _amount) internal returns(uint256 shares) {
-        uint256 _pool = balance();
         if (address(this) != _from) {
             _token.safeTransferFrom(_from, address(this), _amount);
         }
         _amount = _token.balanceOf(address(this));
+        uint256 _pool = balance();
         shares = 0;
         if (totalSupply() == 0) {
             shares = _amount;
@@ -142,10 +152,15 @@ contract EURxbVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC2
         emit Deposit(shares);
     }
 
+    //TO_DO integration with referral program
     /// @notice Allows to deposit business logic tokens and reveive vault tokens
     /// @param _amount Amount to deposit business logic tokens
     function deposit(uint256 _amount) override virtual public {
         _deposit(_msgSender(), _amount);
+        IReferralProgram.User memory _user =  referralProgram.users(_msgSender());
+        if(!_user.exists){
+            referralProgram.registerUser(referrer, _msgSender());
+        }
     }
 
     /// @notice Allows to deposit full balance of the business logic token and reveice vault tokens

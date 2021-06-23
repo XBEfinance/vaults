@@ -16,7 +16,7 @@ import "../mocks/StringsConcatenations.sol";
 
 /// @title EURxbStrategy
 /// @notice This is base contract for yield farming strategy with EURxb token
-abstract contract EURxbStrategy is IStrategy, Ownable, Initializable {
+abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
@@ -54,7 +54,7 @@ abstract contract EURxbStrategy is IStrategy, Ownable, Initializable {
         address _controllerAddress,
         address _vaultAddress,
         address _governance
-    ) initializer external {
+    ) public initializer {
         _want = _wantAddress;
         controller = _controllerAddress;
         vault = _vaultAddress;
@@ -92,6 +92,7 @@ abstract contract EURxbStrategy is IStrategy, Ownable, Initializable {
     /// @dev Controller role - withdraw should return to Controller
     function withdraw(address _token) override onlyController external {
         require(address(_token) != address(_want), "!want");
+        withdraw(); //get all rewards from the convex 
         uint256 balance = IERC20(_token).balanceOf(address(this));
         require(IERC20(_token).transfer(controller, balance), "!transfer");
         emit Withdrawn(_token, balance, controller);
@@ -126,10 +127,12 @@ abstract contract EURxbStrategy is IStrategy, Ownable, Initializable {
         return _balance;
     }
 
+    function withdraw() virtual internal;
+
     function _withdrawSome(uint256 _amount) virtual internal returns(uint);
 
     /// @notice balance of this address in "want" tokens
-    function balanceOf() override external view returns(uint256) {
+    function balanceOf() override public view returns(uint256) {
         return IERC20(_want).balanceOf(address(this));
     }
 }

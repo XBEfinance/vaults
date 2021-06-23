@@ -6,12 +6,12 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 
-import "./EURxbStrategy.sol";
+import "./BaseStrategy.sol";
 import "../TokenWrapper.sol";
 
 /// @title ConsumerEURxbStrategy
 /// @notice This is contract for yield farming strategy with EURxb token for consumers
-contract ConsumerEURxbStrategy is EURxbStrategy {
+contract ConsumerEURxbStrategy is BaseStrategy {
 
     using SafeERC20 for IERC20;
 

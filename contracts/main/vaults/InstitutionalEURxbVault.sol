@@ -19,7 +19,7 @@ contract InstitutionalEURxbVault is BaseVault, AccessControl {
     address public tokenUnwrapped;
 
     /// @notice Constructor that creates a vault for investors
-    constructor() EURxbVault("Institutional", "in") public {
+    constructor() BaseVault("Institutional", "in") public {
        _setupRole(DEFAULT_ADMIN_ROLE, owner());
     }
 

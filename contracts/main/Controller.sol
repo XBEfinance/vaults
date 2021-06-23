@@ -183,7 +183,7 @@ contract Controller is IController, Ownable, Initializable {
 
     /// @notice The method converts if needed given token to business logic strategy token,
     /// transfers converted tokens to strategy, and executes the business logic
-    /// @param _token Given token address
+    /// @param _token Given token address (wERC20)
     /// @param _amount Amount of given token address
     function earn(address _token, uint256 _amount) override public {
         address _strategy = strategies[_token];
@@ -197,7 +197,7 @@ contract Controller is IController, Ownable, Initializable {
         } else {
             require(IERC20(_token).transfer(_strategy, _amount), "!transferStrategyToken");
         }
-        IStrategy(_strategy).deposit(_token, _amount);
+        IStrategy(_strategy).deposit();
         emit Earn(_token, _amount);
     }
 
@@ -209,6 +209,7 @@ contract Controller is IController, Ownable, Initializable {
     function harvest(address _strategy, address _token) override onlyOwnerOrStrategist external {
         // This contract should never have value in it, but just incase since this is a public call
         uint256 _before = IERC20(_token).balanceOf(address(this));
+        //
         IStrategy(_strategy).withdraw(_token);
         uint256 _after = IERC20(_token).balanceOf(address(this));
         if (_after > _before) {

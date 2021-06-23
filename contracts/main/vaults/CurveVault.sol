@@ -2,9 +2,9 @@ pragma solidity ^0.6.0;
 
 import "./BaseVault.sol";
 
-/// @title ConsumerEURxbVault
+/// @title In this case _token it's lp curve;
 /// @notice Vault for consumers of the system
-contract ConsumerEURxbVault is BaseVault {
+contract CurveVault is BaseVault {
     /// @notice Constructor that creates a consumer vault
-    constructor() BaseVault("Consumer", "co") public {}
+    constructor() BaseVault("Curve", "crv") public {}
 }

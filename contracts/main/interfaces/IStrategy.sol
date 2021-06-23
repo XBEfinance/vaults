@@ -4,7 +4,7 @@ pragma solidity ^0.6.0;
 interface IStrategy {
     function want() external view returns(address);
 
-    function deposit(address _token, uint256 _amount) external;
+    function deposit() external;
 
     // NOTE: must exclude any tokens used in the yield
     // Controller role - withdraw should return to Controller

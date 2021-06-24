@@ -534,7 +534,7 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         revert("!allowed");
     }
 
-    function requestWithdrawBonded(uint256 amount) public override nonReentrant updateReward(msg.sender) {
+    function requestWithdrawBonded(uint256 amount) public nonReentrant updateReward(msg.sender) {
         require(!bondedRewardLocks[msg.sender].requested, "alreadyRegistered");
         require(amount > 0, "Cannot request to withdraw 0");
         uint256 bondedAmount = bondedRewardLocks[msg.sender].amount;
@@ -562,7 +562,7 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         emit Withdrawn(msg.sender, amount);
     }
 
-    function withdrawUnbonded(uint256 amount) public override nonReentrant updateReward(msg.sender) {
+    function withdrawUnbonded(uint256 amount) public nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
         if (bondedRewardLocks[msg.sender].amount > 0) {
             require(amount <= _balanceOf[msg.sender].sub(bondedRewardLocks[msg.sender].amount), "cannotWithdrawBondedTokens");

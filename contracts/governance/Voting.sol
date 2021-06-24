@@ -40,10 +40,12 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
     string private constant ERROR_NO_VOTING_POWER = "VOTING_NO_VOTING_POWER";
 
     BonusCampaign public bonusCampaign;
+    address public treasury;
 
     struct BondedReward {
       uint256 amount;
       uint256 unlockTime;
+      bool requested;
     }
 
     mapping(address => uint256) public voteLock;
@@ -160,6 +162,10 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         auth(MODIFY_QUORUM_ROLE)
     {
         bondedLockDuration = _bondedLockDuration;
+    }
+
+    function setTreasury(address _treasury) external auth(MODIFY_QUORUM_ROLE) {
+        treasury = _treasury;
     }
 
     /**
@@ -497,10 +503,11 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         return computedPct > _pct;
     }
 
-    function _stake(address _from, uint256 _amount) internal {
+    function _stake(address _from, uint256 _amount, bool _bonded) internal {
         require(amount > 0, "Cannot stake 0");
         _totalSupply = _totalSupply.add(_amount);
         _balances[_from] = _balances[_from].add(_amount);
+
         IERC20(stakingToken).safeTransferFrom(_from, address(this), amount);
         emit Staked(_from, amount);
     }
@@ -516,33 +523,59 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
     function stakeFor(address _for, uint256 amount) external nonReentrant whenNotPaused updateReward(_for) {
         require(stakeAllowance[msg.sender][_for], "stakeNotApproved");
         _stake(_for, amount);
+        bondedRewardLocks[msg.sender] = BondedReward({
+          amount: bondedRewardLocks[msg.sender] + amount,
+          unlockTime: block.timestamp + bondedLockDuration,
+          requested: false
+        });
     }
 
-    function withdraw(uint256 amount) public override nonReentrant updateReward(msg.sender) {
+    function withdraw(uint256 amount) public override {
+        revert("!allowed");
+    }
+
+    function requestWithdrawBonded(uint256 amount) public override nonReentrant updateReward(msg.sender) {
+        require(!bondedRewardLocks[msg.sender].requested, "alreadyRegistered");
+        require(amount > 0, "Cannot request to withdraw 0");
+        uint256 bondedAmount = bondedRewardLocks[msg.sender].amount;
+        require(bondedAmount > 0 && amount <= bondedAmount, "notEnoughBondedTokens");
+        if (!breaker) {
+            require(voteLock[msg.sender()] < block.number, "!locked");
+        }
+        bondedRewardLocks[msg.sender].requested = true;
+    }
+
+    function withdrawBondedOrWithPenalty() public nonReentrant updateReward(msg.sender) {
+        require(bondedRewardLocks[msg.sender].requested, "needsToBeRequested");
+        uint256 amount = bondedRewardLocks[msg.sender].amount;
+        _totalSupply = _totalSupply.sub(amount);
+        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+        if (block.timestamp > bondedRewardLocks[msg.sender].unlockTime) {
+            IERC20(stakingToken).safeTransfer(msg.sender, amount);
+        } else {
+            uint256 toTransfer = amount.mul(penaltyPct).div(PCT_BASE);
+            uint256 penalty = amount.sub(toTransfer);
+            IERC20(stakingToken).safeTransfer(msg.sender, toTransfer);
+            IERC20(stakingToken).safeTransfer(treasury, penalty);
+        }
+        delete bondedRewardLocks[msg.sender];
+        emit Withdrawn(msg.sender, amount);
+    }
+
+    function withdrawUnbonded(uint256 amount) public override nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
+        if (bondedRewardLocks[msg.sender].amount > 0) {
+            require(amount <= _balanceOf[msg.sender].sub(bondedRewardLocks[msg.sender].amount), "cannotWithdrawBondedTokens");
+        }
         if (!breaker) {
             require(voteLock[msg.sender()] < block.number, "!locked");
         }
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
 
-        // set bonded XBE
-        bondedRewardLocks[msg.sender] = BondedReward({
-          amount: bondedRewardLocks[msg.sender] + amount,
-          unlockTime: block.timestamp + bondedLockDuration
-        });
+        IERC20(stakingToken).safeTransfer(msg.sender, amount);
 
         emit Withdrawn(msg.sender, amount);
-    }
-
-    function withdrawUnbondedOrWithPenalty() public nonReentrant updateReward(msg.sender) {
-        if (block.timestamp > bondedRewardLocks[msg.sender].unlockTime) {
-            IERC20(stakingToken).safeTransfer(msg.sender, bondedRewardLocks[msg.sender].amount);
-        } else {
-            uint256 toTransfer = bondedRewardLocks[msg.sender].amount.mul(penaltyPct).div(PCT_BASE);
-            IERC20(stakingToken).safeTransfer(msg.sender, toTransfer);
-        }
-        delete bondedRewardLocks[msg.sender];
     }
 
     function earned(address account) public override view returns (uint256) {

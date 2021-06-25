@@ -92,7 +92,6 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     /// @dev Controller role - withdraw should return to Controller
     function withdraw(address _token) override onlyController external {
         require(address(_token) != address(_want), "!want");
-        withdraw(); //get all rewards from the convex 
         uint256 balance = IERC20(_token).balanceOf(address(this));
         require(IERC20(_token).transfer(controller, balance), "!transfer");
         emit Withdrawn(_token, balance, controller);
@@ -127,12 +126,16 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
         return _balance;
     }
 
-    function withdraw() virtual internal;
-
-    function _withdrawSome(uint256 _amount) virtual internal returns(uint);
-
     /// @notice balance of this address in "want" tokens
     function balanceOf() override public view returns(uint256) {
         return IERC20(_want).balanceOf(address(this));
     }
+
+    function getRewards() override virtual external;
+
+    function claim(uint256 _crv, uint256 _cvx, uint256 _xbe) override virtual external returns(bool);
+
+    function _withdrawSome(uint256 _amount) virtual internal returns(uint);
+
+    function earned() override virtual public returns(uint256, uint256, uint256);
 }

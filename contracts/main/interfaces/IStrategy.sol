@@ -27,4 +27,13 @@ interface IStrategy {
     function setController(address _newController) external;
 
     function setWant(address _newWant) external;
+
+    function getRewards() external;
+
+    function earned() external returns(uint256, uint256, uint256);
+
+    function canClaimCrv() external returns(uint256);
+
+    function claim(uint256 _crv, uint256 _cvx, uint256 _xbe) external returns(bool);
+
 }

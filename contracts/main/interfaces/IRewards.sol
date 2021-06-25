@@ -12,4 +12,5 @@ interface IRewards{
     function addExtraReward(address) external;
     function stakingToken() external returns (address);
     function withdrawAndUnwrap(uint256 amount, bool claim) external returns(bool);
+    function earned(address account) external view returns (uint256);
 }

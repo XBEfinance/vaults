@@ -36,16 +36,21 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
 
     /// @notice Hundred procent (in base points)
     uint256 public constant max = 10000;
+   
+    address public treasury;
+
+    IERC20 public crv;
+    IERC20 public cvx;
+    IERC20 public xbe;
 
     event Deposit(uint256 indexed _shares);
     event Withdraw(uint256 indexed _amount);
+    event RewardPaid(uint256 indexed _crv, uint256 indexed _cvx, uint256 indexed _xbe);
+
+    address internal referrer;
 
     /// @param typeName Name of the vault token
     /// @param typePrefix Prefix of the vault token
-
-    //
-    address internal referrer;
-
     constructor(string memory typeName, string memory typePrefix)
         public
         ERC20(
@@ -63,12 +68,14 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
         address _initialToken,
         address _initialController,
         address _governance,
-        address _referralProgram
+        address _referralProgram,
+        address _treasury
     ) public initializer {
         _token = IERC20(_initialToken);
         referralProgram = IReferralProgram(_referralProgram);
         setController(_initialController);
         transferOwnership(_governance);
+        treasury = _treasury;        
     }
 
     /// @notice Usual setter with check if passet param is new
@@ -149,18 +156,18 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
             shares = (_amount.mul(totalSupply())).div(_pool);
         }
         _mint(_from, shares);
+        //register in referral program
+        IReferralProgram.User memory _user =  referralProgram.users(_msgSender());
+        if(!_user.exists){
+            referralProgram.registerUser(treasury, _msgSender());
+        }
         emit Deposit(shares);
     }
 
-    //TO_DO integration with referral program
     /// @notice Allows to deposit business logic tokens and reveive vault tokens
     /// @param _amount Amount to deposit business logic tokens
     function deposit(uint256 _amount) override virtual public {
         _deposit(_msgSender(), _amount);
-        IReferralProgram.User memory _user =  referralProgram.users(_msgSender());
-        if(!_user.exists){
-            referralProgram.registerUser(referrer, _msgSender());
-        }
     }
 
     /// @notice Allows to deposit full balance of the business logic token and reveice vault tokens
@@ -188,6 +195,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
         if (_to != address(this)) {
             _token.safeTransfer(_to, r);
         }
+        claimAll();
         emit Withdraw(r);
     }
 
@@ -195,6 +203,42 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
     /// @param _shares Business logic tokens to withdraw
     function withdraw(uint256 _shares) override virtual public {
         _withdraw(_msgSender(), _shares);
+    }
+
+    function claim() public {
+        (uint256 _crv, uint256 _cvx, uint256 _xbe) = earnedReal();
+        _controller.claim(address(_token), _crv, _cvx, _xbe);
+        crv.safeTransfer(_msgSender(), _crv);
+        cvx.safeTransfer(_msgSender(), _cvx);
+        xbe.safeTransfer(_msgSender(), _xbe);
+        emit RewardPaid(_crv, _cvx, _xbe);
+    }
+
+    function claimAll() public {
+        IStrategy(_controller.strategies(address(_token))).getRewards();
+        claim();
+    }
+
+    function earnedReal() public returns(uint256 _crv, uint256 _cvx, uint256 _xbe) {
+        (uint256 _crvTotal, uint256 _cvxTotal, uint256 _xbeTotal) = IStrategy(
+                _controller.strategies(address(_token))
+            ).earned();
+        uint256 _share = balanceOf(_msgSender());
+        _crv = _crvTotal.add(crv.balanceOf(address(this)).mul(_share).div(totalSupply()));
+        _cvx = _cvxTotal.add(cvx.balanceOf(address(this)).mul(_share).div(totalSupply()));
+        _xbe = _xbeTotal.add(xbe.balanceOf(address(this)).mul(_share).div(totalSupply()));
+        //call view function from strategy that
+        (uint256 freeCRV, uint256 freeCVX, uint256 freeXBE) = 
+    }
+
+    function earnedVirtual() external returns(uint256 _crv, uint256 _cvx, uint256 _xbe){
+        (uint256 _crvReal, uint256 _cvxReal, uint256 _xbeReal) = earnedReal();
+        uint256 _virtualEarned = IStrategy(_controller.strategies(address(_token))).canClaimCrv();
+        uint256 _share = balanceOf(_msgSender());
+        //cvx and crv are earned 1:1 
+        _crv = _crvReal.add(_virtualEarned).mul(_share).div(totalSupply());
+        _cvx = _cvxReal.add(_virtualEarned).mul(_share).div(totalSupply());
+        _xbe = _xbeReal.mul(_share).div(totalSupply());
     }
 
     /// @notice Same as withdraw only with full balance of vault tokens

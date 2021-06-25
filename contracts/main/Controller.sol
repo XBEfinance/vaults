@@ -99,6 +99,18 @@ contract Controller is IController, Ownable, Initializable {
         IStrategy(strategies[_token]).withdraw(_amount);
     }
 
+     function claim(address _token, uint256 _crv, uint256 _cvx, uint256 _xbe) override external {
+        IStrategy(strategies[_token]).claim(_crv, _cvx, _xbe);
+    }
+
+    /// @notice forces the strategy to take away the rewards due to it
+    // this method must call via backend
+    /// @param _strategy strategy address
+    function getRewardStrategy(address _strategy) external {
+        IStrategy(_strategy).getRewards();
+    }
+
+
     /// @notice Usual setter with check if param is new
     /// @param _newParts New value
     function setParts(uint256 _newParts) onlyOwner external {

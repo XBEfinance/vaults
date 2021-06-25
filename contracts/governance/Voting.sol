@@ -516,18 +516,20 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         stakeAllowance[_staker][msg.sender] = _allowed;
     }
 
-    function stake(uint256 amount) external override nonReentrant whenNotPaused updateReward(msg.sender) {
-        _stake(msg.sender, amount);
-    }
-
     function stakeFor(address _for, uint256 amount) external nonReentrant whenNotPaused updateReward(_for) {
-        require(stakeAllowance[msg.sender][_for], "stakeNotApproved");
+        if (msg.sender != vault) {
+            require(stakeAllowance[msg.sender][_for], "stakeNotApproved");
+        }
         _stake(_for, amount);
         bondedRewardLocks[msg.sender] = BondedReward({
           amount: bondedRewardLocks[msg.sender] + amount,
           unlockTime: block.timestamp + bondedLockDuration,
           requested: false
         });
+    }
+
+    function stake(uint256 amount) external override nonReentrant whenNotPaused updateReward(msg.sender) {
+        _stake(msg.sender, amount);
     }
 
     function withdraw(uint256 amount) public override {

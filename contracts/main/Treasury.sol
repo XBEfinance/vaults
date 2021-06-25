@@ -42,7 +42,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
 
     function configure(
         address _governance,
-        address _strategyContract,
+        address _rewardsDistributionRecipientContract,
         address _rewardsToken,
         address _uniswapRouter,
         uint256 _slippageTolerance,
@@ -50,7 +50,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
     ) external initializer {
         transferOwnership(_governance);
         setOneSplit(_oneSplit);
-        setStrategyContract(_strategyContract);
+        setRewardsDistributionRecipientContract(rewardsDistributionRecipientContract);
         setRewardsToken(_rewardsToken);
         setAuthorized(_governance, true);
         uniswapRouter = UniswapV2Router02(_uniswapRouter);
@@ -97,7 +97,6 @@ contract Treasury is Initializable, Ownable, ITreasury {
           address(this),
           block.timestamp + swapDeadline
         );
-
     }
 
     function toGovernance(address _token, uint256 _amount) override external onlyOwner {
@@ -108,6 +107,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
         uint256 _balance = IERC20(rewardsToken).balanceOf(address(this));
         IERC20(rewardsToken).safeApprove(rewardsDistributionRecipientContract, 0);
         IERC20(rewardsToken).safeApprove(rewardsDistributionRecipientContract, _balance);
+        IERC20(rewardsToken).safeTransfer(rewardsDistributionRecipientContract, _balance);
         RewardsDistributionRecipient(rewardsDistributionRecipientContract).notifyRewardAmount(_balance);
     }
 

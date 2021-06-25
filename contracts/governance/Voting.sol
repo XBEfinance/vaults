@@ -27,7 +27,6 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
     bytes32 public constant MODIFY_QUORUM_ROLE = keccak256("MODIFY_QUORUM_ROLE");
 
     uint64 public constant PCT_BASE = 10 ** 18; // 0% = 0; 1% = 10^16; 100% = 10^18
-    uint256 public constant TOKENLESS_PRODUCTION = 40;
 
     string private constant ERROR_NO_VOTE = "VOTING_NO_VOTE";
     string private constant ERROR_INIT_PCTS = "VOTING_INIT_PCTS";
@@ -40,10 +39,26 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
     string private constant ERROR_CAN_NOT_FORWARD = "VOTING_CAN_NOT_FORWARD";
     string private constant ERROR_NO_VOTING_POWER = "VOTING_NO_VOTING_POWER";
 
+    BonusCampaign public bonusCampaign;
+    address public treasury;
+
+    struct BondedReward {
+      uint256 amount;
+      uint256 unlockTime;
+      bool requested;
+    }
+
+    mapping(address => uint256) public voteLock;
+    mapping(address => mapping(address => bool)) public stakeAllowance;
+    mapping(address => BondedReward) public bondedRewardLocks;
+
+    uint256 public bondedLockDuration = 5 days;
+    uint256 public penaltyPct = 1 ether / 2; // PCT_BASE is 10^18
+
+    uint256 public inverseMaxBoostCoefficient = 40; // 1 / inverseMaxBoostCoefficient = max boost coef. (ex. if 40 then 1 / (40 / 100) = 2.5)
+
     uint256 public lock = 17280;
     bool public breaker = false;
-    mapping(address => uint256) public voteLock;
-    BonusCampaign public bonusCampaign;
 
     enum VoterState { Absent, Yea, Nay }
 
@@ -119,8 +134,38 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         breaker = _breaker;
     }
 
-    function setBonusCampaign(address _bonusCampaign) external auth(MODIFY_QUORUM_ROLE) {
+    function setBonusCampaign(address _bonusCampaign)
+        external
+        auth(MODIFY_QUORUM_ROLE)
+    {
         bonusCampaign = BonusCampaign(_bonusCampaign);
+    }
+
+    function setInverseMaxBoostCoefficient(uint256 _inverseBoostCoefficient)
+        external
+        auth(MODIFY_QUORUM_ROLE)
+    {
+        inverseBoostCoefficient = _inverseBoostCoefficient;
+        require(_inverseBoostCoefficient > 0 && _inverseBoostCoefficient < 100, "invalidInverseMaxBoostCoefficient");
+    }
+
+    function setPenaltyPct(uint256 _penaltyPct)
+        external
+        auth(MODIFY_QUORUM_ROLE)
+    {
+        penaltyPct = _penaltyPct;
+        require(_penaltyPct < PCT_BASE, "tooHighPct");
+    }
+
+    function setBondedLockDuration(uint256 _bondedLockDuration)
+        external
+        auth(MODIFY_QUORUM_ROLE)
+    {
+        bondedLockDuration = _bondedLockDuration;
+    }
+
+    function setTreasury(address _treasury) external auth(MODIFY_QUORUM_ROLE) {
+        treasury = _treasury;
     }
 
     /**
@@ -458,14 +503,80 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         return computedPct > _pct;
     }
 
-    function withdraw(uint256 amount) public override nonReentrant updateReward(msg.sender) {
+    function _stake(address _from, uint256 _amount, bool _bonded) internal {
+        require(amount > 0, "Cannot stake 0");
+        _totalSupply = _totalSupply.add(_amount);
+        _balances[_from] = _balances[_from].add(_amount);
+
+        IERC20(stakingToken).safeTransferFrom(_from, address(this), amount);
+        emit Staked(_from, amount);
+    }
+
+    function setAllowanceOfStaker(address _staker, bool _allowed) external {
+        stakeAllowance[_staker][msg.sender] = _allowed;
+    }
+
+    function stakeFor(address _for, uint256 amount) external nonReentrant whenNotPaused updateReward(_for) {
+        if (msg.sender != vault) {
+            require(stakeAllowance[msg.sender][_for], "stakeNotApproved");
+        }
+        _stake(_for, amount);
+        bondedRewardLocks[msg.sender] = BondedReward({
+          amount: bondedRewardLocks[msg.sender] + amount,
+          unlockTime: block.timestamp + bondedLockDuration,
+          requested: false
+        });
+    }
+
+    function stake(uint256 amount) external override nonReentrant whenNotPaused updateReward(msg.sender) {
+        _stake(msg.sender, amount);
+    }
+
+    function withdraw(uint256 amount) public override {
+        revert("!allowed");
+    }
+
+    function requestWithdrawBonded(uint256 amount) public nonReentrant updateReward(msg.sender) {
+        require(!bondedRewardLocks[msg.sender].requested, "alreadyRegistered");
+        require(amount > 0, "Cannot request to withdraw 0");
+        uint256 bondedAmount = bondedRewardLocks[msg.sender].amount;
+        require(bondedAmount > 0 && amount <= bondedAmount, "notEnoughBondedTokens");
+        if (!breaker) {
+            require(voteLock[msg.sender()] < block.number, "!locked");
+        }
+        bondedRewardLocks[msg.sender].requested = true;
+    }
+
+    function withdrawBondedOrWithPenalty() public nonReentrant updateReward(msg.sender) {
+        require(bondedRewardLocks[msg.sender].requested, "needsToBeRequested");
+        uint256 amount = bondedRewardLocks[msg.sender].amount;
+        _totalSupply = _totalSupply.sub(amount);
+        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+        if (block.timestamp > bondedRewardLocks[msg.sender].unlockTime) {
+            IERC20(stakingToken).safeTransfer(msg.sender, amount);
+        } else {
+            uint256 toTransfer = amount.mul(penaltyPct).div(PCT_BASE);
+            uint256 penalty = amount.sub(toTransfer);
+            IERC20(stakingToken).safeTransfer(msg.sender, toTransfer);
+            IERC20(stakingToken).safeTransfer(treasury, penalty);
+        }
+        delete bondedRewardLocks[msg.sender];
+        emit Withdrawn(msg.sender, amount);
+    }
+
+    function withdrawUnbonded(uint256 amount) public nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
+        if (bondedRewardLocks[msg.sender].amount > 0) {
+            require(amount <= _balanceOf[msg.sender].sub(bondedRewardLocks[msg.sender].amount), "cannotWithdrawBondedTokens");
+        }
         if (!breaker) {
             require(voteLock[msg.sender()] < block.number, "!locked");
         }
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
+
         IERC20(stakingToken).safeTransfer(msg.sender, amount);
+
         emit Withdrawn(msg.sender, amount);
     }
 
@@ -488,8 +599,11 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         uint256 votingBalance = veXBE.balanceOf(account);
         uint256 votingTotal = veXBE.totalSupply();
 
-        uint256 boostedReward = maxBoostedReward * TOKENLESS_PRODUCTION / 100;
-        boostedReward += lpTotal * votingBalance / votingTotal * (100 - TOKENLESS_PRODUCTION) / 100;
+        uint256 boostedReward = maxBoostedReward * inverseMaxBoostCoefficient / 100;
+        if (votingTotal == 0 || votingBalance == 0) {
+            return boostedReward;
+        }
+        boostedReward += lpTotal * votingBalance / votingTotal * (100 - inverseMaxBoostCoefficient) / 100;
         return Math.min(boostedReward, maxBoostedReward);
     }
 

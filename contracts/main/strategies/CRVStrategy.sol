@@ -21,7 +21,7 @@ import "../interfaces/IVoting.sol";
 
 /// @title HiveStrategy
 /// @notice This is contract for yield farming strategy with EURxb token for investors
-contract HiveStrategy is BaseStrategy {
+contract CRVStrategy is BaseStrategy {
 
     using SafeERC20 for IERC20;
 
@@ -33,25 +33,14 @@ contract HiveStrategy is BaseStrategy {
 
     uint64 public constant PCT_BASE = 10 ** 18;
 
-    struct Settings  {
-        address poolCurve;
-        address lpCurve;
-        address crvRewards;
-        address lpConvex;
-        address convexBooster;
-        uint8 nCoins; //coins in pool 
-        // uint8 idPool;
-    }
-
-    Settings public poolSettings; 
-
-    address public crv;
-    address public cvx;
-    address public xbe;
-
+    address public crvToken;
+    address public crvDepositor;
+    address public cvxCRVRewards;
+    
     address public referralProgram;
     address public xbeVoting;
     address public treasury; 
+
 
     struct HiveWeight{
         uint256 weight;
@@ -62,47 +51,78 @@ contract HiveStrategy is BaseStrategy {
 
     HiveWeight[] hiveWeights;
 
+    uint64 public countReceiver;
+    uint256 public sumWeight;
+
+    constructor () public {}
+
     function configure(
         address _addressProvider,
-        address _wantAddress, //in this case it's lP curve 
+        address _wantAddress,
         address _controllerAddress,
         address _vaultAddress,
         address _governance,
-        Settings calldata _poolSettings 
+        address _cvxCRVRewards
     ) external initializer {
         super.configure(_wantAddress, _controllerAddress, _vaultAddress, _governance);
         addressProvider = IAddressProvider(_addressProvider);
         mainRegistry = IMainRegistry(addressProvider.get_registry());
-        poolSettings = _poolSettings;
+        cvxCRVRewards = _cvxCRVRewards;
+
     }
 
-    
+    function addFeeReceiver(address _to, uint256 _weight, address[] memory _tokens, bool _callFunc) external onlyOwner {
+        require(sumWeight.add(_weight) < PCT_BASE, '!weight < PCT_BASE');
+        HiveWeight storage newWeight;
+        newWeight.to = _to;
+        newWeight.weight = _weight;
+        newWeight.callFunc = _callFunc;
+        for(uint256 i = 0; i < _tokens.length; i++){
+            newWeight.tokens[_tokens[i]] = true;
+        }
+        hiveWeights.push(newWeight);
+        countReceiver++;
+    }
+
     function skim() override external {
     }
+    
+    function removeFeeReceiver(uint256 _index) external onlyOwner {
+        sumWeight = sumWeight.sub(hiveWeights[_index].weight);
+        delete hiveWeights[_index];
+        countReceiver--;
+    }
 
+     function setWeight(uint256 _index, uint256 _weight) external onlyOwner {
+        uint256 oldWeight = hiveWeights[_index].weight;
+        if (oldWeight > _weight) {
+            sumWeight = sumWeight.sub(oldWeight.sub(_weight));
+        } else if (oldWeight < _weight) {
+            sumWeight = sumWeight.add(_weight.sub(oldWeight));
+            require(sumWeight < PCT_BASE);
+        }
+        hiveWeights[_index].weight = _weight;
+    }
     
      /// @dev Function that controller calls 
     function deposit() override external onlyController {
         uint256 _amount = IERC20(_want).balanceOf(controller);
         IERC20(_want).transferFrom(controller, address(this), _amount);
-        IERC20(_want).approve(poolSettings.convexBooster, _amount);
-
-        uint256 _poolLength = IBooster(poolSettings.convexBooster).poolLength();
-        //if we don't know if of pool in Booster
-        for(uint256 i = 0; i < _poolLength; i++){
-            IBooster.PoolInfo memory _pool = IBooster(poolSettings.convexBooster).poolInfo(i);
-            if(_pool.lptoken == poolSettings.lpCurve){
-                 //true means that the received lp tokens will immediately be stakes
-                IBooster(poolSettings.convexBooster).depositAll(i, true);
-                break;
-            }
-        }
+        IERC20(_want).approve(crvDepositor, _amount);
+        IRewards(crvDepositor).depositAll(true, cvxCRVRewards);
     }
 
     function getRewards() override external {
-        require(IRewards(poolSettings.crvRewards).getReward(), '!getRewards');
+        require(IRewards(cvxCRVRewards).getReward(), '!getRewards');
     }
 
+    function convertTokens(address _for, uint256 _amount) override external { 
+        IERC20(_want).approve(crvDepositor, _amount);
+        address stakingToken = IRewards(cvxCRVRewards).stakingToken();
+        ///address(0) means that we'll not stake immediately
+        IRewards(crvDepositor).depositAll(true, address(0));
+        IERC20(stakingToken).safeTransfer(_for, _amount);
+    }
 
     //returns sub fee
     function _distributeFee(address _for, address[] memory _tokens, uint256[] memory _amounts) internal returns(uint256[] memory) {
@@ -145,10 +165,10 @@ contract HiveStrategy is BaseStrategy {
     }   
 
     function canClaim() override external returns(uint256 _amount) {
-        _amount = IRewards(poolSettings.crvRewards).earned(address(this));
+        _amount = IRewards(cvxCRVRewards).earned(address(this));
     }
 
-   function earned(address[] memory _tokens) public override returns(uint256[] memory _amounts) {
+    function earned(address[] memory _tokens) public override returns(uint256[] memory _amounts) {
         for(uint256 i = 0; i < _tokens.length; i++){
             _amounts[i] = IERC20(_tokens[i]).balanceOf(address(this));
         }
@@ -166,11 +186,12 @@ contract HiveStrategy is BaseStrategy {
         }
         return true;
     }
+
     
      
     function _withdrawSome(uint256 _amount) override internal returns(uint) {
-        // withdraw from business
-        require(IRewards(poolSettings.crvRewards).withdrawAndUnwrap(_amount, true), '!withdrawSome');
+        // true means that we'll claim all the rewards
+        IRewards(cvxCRVRewards).withdraw(_amount, true);
         return _amount;
     }
 

@@ -7,11 +7,10 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 
-import "../interfaces/IStrategy.sol";
-import "../interfaces/IController.sol";
 import "../interfaces/IConverter.sol";
 import "../interfaces/vault/IVaultCore.sol";
-
+import '../interfaces/IStrategy.sol';
+import '../interfaces/IController.sol';
 import "../mocks/StringsConcatenations.sol";
 
 /// @title EURxbStrategy
@@ -133,9 +132,11 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
 
     function getRewards() override virtual external;
 
-    function claim(uint256 _crv, uint256 _cvx, uint256 _xbe) override virtual external returns(bool);
+    function claim(address, address[] memory, uint256[] memory) override virtual external returns(bool);
 
     function _withdrawSome(uint256 _amount) virtual internal returns(uint);
 
-    function earned() override virtual public returns(uint256, uint256, uint256);
+    function earned(address[] memory) override virtual external returns(uint256[] memory);
+
+    function convertTokens(address, uint256) virtual override external;
 }

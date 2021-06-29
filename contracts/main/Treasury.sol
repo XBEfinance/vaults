@@ -12,6 +12,7 @@ import '@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol';
 
 import "./staking_rewards/RewardsDistributionRecipient.sol";
 import "./interfaces/ITreasury.sol";
+import "./interfaces/IVoting.sol";
 
 /// @title Treasury
 /// @notice Realisation of ITreasury for channeling managing fees from strategies to gov and governance address
@@ -25,7 +26,8 @@ contract Treasury is Initializable, Ownable, ITreasury {
 
     address public rewardsDistributionRecipientContract;
     address public rewardsToken;
-
+    address public xbe;
+    address public voting;
     uint256 public constant MAX_BPS = 10000;
 
     uint256 public slippageTolerance; // in bps, ex. 9500 equals 5% slippage tolerance
@@ -45,6 +47,8 @@ contract Treasury is Initializable, Ownable, ITreasury {
         address _rewardsDistributionRecipientContract,
         address _rewardsToken,
         address _uniswapRouter,
+        address _xbe,
+        address _voting,
         uint256 _slippageTolerance,
         uint256 _swapDeadline
     ) external initializer {
@@ -56,6 +60,8 @@ contract Treasury is Initializable, Ownable, ITreasury {
         uniswapRouter = UniswapV2Router02(_uniswapRouter);
         slippageTolerance = _slippageTolerance;
         swapDeadline = _swapDeadline;
+        xbe = _xbe;
+        voting = _voting;
     }
 
     function setRewardsToken(address _rewardsToken) public onlyOwner {
@@ -76,6 +82,17 @@ contract Treasury is Initializable, Ownable, ITreasury {
 
     function removeTokenToConvert(address _token) external onlyOwner {
         _tokensToConvert.remove(_token);
+    }
+
+    function feeReceiving(address _for, address[] _tokens, uint256[] _amounts) external {
+        for(uint256 i = 0; i < _tokens.length; i++){
+            if(_tokens[i] == xbe){
+                IERC20(xbe).transfer(voting, _amounts[i]);
+                IVoting(voting).stakeFor(_for, _amounts[i]);
+            } else {
+                convertToRewardsToken(_tokens[i], _amounts[i]);
+            }
+        }
     }
 
     function convertToRewardsToken(address _token, uint256 amount) external authorizedOnly {

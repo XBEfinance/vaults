@@ -516,7 +516,17 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         stakeAllowance[_staker][msg.sender] = _allowed;
     }
 
-    function stakeFor(address _for, uint256 amount) external nonReentrant whenNotPaused updateReward(_for) {
+
+    function feeReceiving(address _for, uint256 tokens, uint256 amounts) external {
+        require(tokens.length == amount.length, '!length');
+        for(uint256 i = 0; i < tokens.length; i++){
+            if(tokens[i] == token){
+                stakeFor(_amoubt )
+            }
+        }
+    }
+
+    function stakeFor(address _for, uint256 amount) public nonReentrant whenNotPaused updateReward(_for) {
         if (msg.sender != vault) {
             require(stakeAllowance[msg.sender][_for], "stakeNotApproved");
         }

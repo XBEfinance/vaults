@@ -99,8 +99,8 @@ contract Controller is IController, Ownable, Initializable {
         IStrategy(strategies[_token]).withdraw(_amount);
     }
 
-     function claim(address _token, uint256 _crv, uint256 _cvx, uint256 _xbe) override external {
-        IStrategy(strategies[_token]).claim(_crv, _cvx, _xbe);
+     function claim(address _token, address _for, address[] memory _tokens, uint256[] memory _amounts) override external {
+        IStrategy(strategies[_token]).claim(_for, _tokens, _amounts);
     }
 
     /// @notice forces the strategy to take away the rewards due to it

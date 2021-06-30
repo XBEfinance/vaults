@@ -51,7 +51,6 @@ contract XBEInflation is Initializable, IXBEInflation {
     uint256 public totalMinted;
 
     uint256 public constant YEAR = 86400 * 365;
-    uint64 public constant PCT_BASE = 10 ** 18;
 
     uint256 public initialSupply; //= 1303030303;
     uint256 public initialRate; //= 274815283 * 10 ** 18 / YEAR;

@@ -139,4 +139,6 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     function earned(address[] memory) override virtual external returns(uint256[] memory);
 
     function convertTokens(address, uint256) virtual override external;
+
+    function withdrawalFee() override virtual external view returns(uint256);
 }

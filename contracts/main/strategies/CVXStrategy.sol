@@ -48,6 +48,9 @@ contract CVXStrategy is BaseStrategy {
 
     HiveWeight[] hiveWeights;
 
+    uint64 public countReceiver;
+    uint256 public sumWeight;
+
     function configure(
         address _addressProvider,
         address _wantAddress,
@@ -62,7 +65,36 @@ contract CVXStrategy is BaseStrategy {
         cvxRewardPool = _cvxRewardPool;
     }
 
+    function addFeeReceiver(address _to, uint256 _weight, address[] memory _tokens, bool _callFunc) external onlyOwner {
+        require(sumWeight.add(_weight) < PCT_BASE, '!weight < PCT_BASE');
+        HiveWeight storage newWeight;
+        newWeight.to = _to;
+        newWeight.weight = _weight;
+        newWeight.callFunc = _callFunc;
+        for(uint256 i = 0; i < _tokens.length; i++){
+            newWeight.tokens[_tokens[i]] = true;
+        }
+        hiveWeights.push(newWeight);
+        countReceiver++;
+    }
     
+    function removeFeeReceiver(uint256 _index) external onlyOwner {
+        sumWeight = sumWeight.sub(hiveWeights[_index].weight);
+        delete hiveWeights[_index];
+        countReceiver--;
+    }
+
+     function setWeight(uint256 _index, uint256 _weight) external onlyOwner {
+        uint256 oldWeight = hiveWeights[_index].weight;
+        if (oldWeight > _weight) {
+            sumWeight = sumWeight.sub(oldWeight.sub(_weight));
+        } else if (oldWeight < _weight) {
+            sumWeight = sumWeight.add(_weight.sub(oldWeight));
+            require(sumWeight < PCT_BASE);
+        }
+        hiveWeights[_index].weight = _weight;
+    }
+
     function skim() override external {
     }
 
@@ -151,6 +183,8 @@ contract CVXStrategy is BaseStrategy {
         return _amount;
     }
 
+     function convertTokens(address _for, uint256 _amount) override external { 
+    }
     
     /// @dev To be realised
     function withdrawalFee() override external view returns(uint256) {

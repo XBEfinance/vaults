@@ -84,9 +84,6 @@ contract CRVStrategy is BaseStrategy {
         countReceiver++;
     }
 
-    function skim() override external {
-    }
-    
     function removeFeeReceiver(uint256 _index) external onlyOwner {
         sumWeight = sumWeight.sub(hiveWeights[_index].weight);
         delete hiveWeights[_index];
@@ -102,6 +99,9 @@ contract CRVStrategy is BaseStrategy {
             require(sumWeight < PCT_BASE);
         }
         hiveWeights[_index].weight = _weight;
+    }
+    
+    function skim() override external {
     }
     
      /// @dev Function that controller calls 

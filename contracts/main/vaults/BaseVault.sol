@@ -33,6 +33,8 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
     /// @notice Hundred procent (in base points)
     uint256 public constant max = 10000;
 
+    mapping(address => uint256) internal _depositedAmountsOfTokens;
+
     event Deposit(uint256 indexed _shares);
     event Withdraw(uint256 indexed _amount);
 
@@ -108,6 +110,11 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
         return balance().mul(1e18).div(totalSupply());
     }
 
+
+    function getDepositedAmount(address who) external view returns(uint256) {
+        return _depositedAmountsOfTokens[who];
+    }
+
     function _deposit(address _from, uint256 _amount) internal returns(uint256 shares) {
         if (address(this) != _from) {
             uint256 _before = _token.balanceOf(address(this));
@@ -115,6 +122,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
             uint256 _after = _token.balanceOf(address(this));
             _amount = _after.sub(_before);
         }
+        _depositedAmountsOfTokens[_from] = _depositedAmountsOfTokens[_from] + _amount;
         uint256 _pool = balance();
         shares = 0;
         if (totalSupply() == 0) {
@@ -156,6 +164,11 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
         }
         if (_to != address(this)) {
             _token.safeTransfer(_to, r);
+        }
+        if (_depositedAmountsOfTokens[_to] > _amount) {
+            _depositedAmountsOfTokens[_to] = _depositedAmountsOfTokens[_to] - _amount;
+        } else {
+            _depositedAmountsOfTokens[_to] = 0;
         }
         emit Withdraw(r);
     }

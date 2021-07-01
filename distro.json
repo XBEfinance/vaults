@@ -1,0 +1,90 @@
+{
+    "rinkeby": {
+        "xbEuro": "0x5640D0FfB20F700ebaE1e2E09D525e4C46153D8e",
+        "treasury": "0x8D77234fC07167380fE0b776342B9bB4f46cE4a4",
+        "convex": {
+            "voteProxy": "0x9E4f21a50202CBdeFDc0405c420A12ad2421ced8",
+            "cvx": "0x6761Cb314E39082e08e1e697eEa23B6D1A77A34b",
+            "booster": "0x5491DC0054FFF2885a3849608988DDf9BBA49539",
+            "rFactory": "0x5eE0103Da02a4155c27d76239F49487Ce78f042c",
+            "tFactory": "0xe63c8566f05fA75Cb66cbE94B1c44E0A794E9303",
+            "sFactory": "0x3eb6e3fe6F6394a820559447d524D3723E0FbC09",
+            "cvxCrv": "0xbDB72909b87874AeB146b6f69eb759c3440fE62b",
+            "crvDepositor": "0xA79b1Df330D946B2e477F8AcAd6E4581d529b571",
+            "cvxCrvRewards": "0x69463f60AF189BbCa064D17bdC47df5Ee1E042aa",
+            "cvxRewards": "0x948CA21d75dF99436eb4A8A6Ba51ca95503F77C4",
+            "poolManager": "0x5ef2d8cba77b2F4330bf36267C7Cea145C59Ade0",
+            "arbitratorVault": "0x32FA51A7A5fF40E50c6Ba11B3b8Fb4Fa7a6bd3dF",
+            "chef": "0xC26c31E78cb6fCcc0C2ad217cfEb7e8aD27fc31c",
+            "claimZap": "0x66668B79A9643b34C2c15e89C7A103eD318b5552",
+            "vestedEscrow": "0x0A3138c5070f7B995D188B82260917baA228A89b",
+            "dropFactory": "0xDf633Aa8C2911750bAc0286Df70446e87dC44300",
+            "airdrop": "0x1ec17b18452d4fD865C58d4093B805dAA6aa625e",
+            "cvxEthSLP": "0x1F315c9B342a07FA21557d48c25b950016545f68",
+            "pools": [
+                {   
+                    "address": "0x1aaA7cDe9eeAd1A8D06640097e83421A6A0be7e0",
+                    "lptoken": "0x1aaA7cDe9eeAd1A8D06640097e83421A6A0be7e0",
+                    "token": "0xd83585B9026db73107A409D39C8E8F77519E8770",
+                    "gauge": "0x2B78433aD00d9e6fb579CF2Cd54AF06e1a33F68c",
+                    "crvRewards": "0x5DbF60cFA9c97018a0E6364CEA5054E29709f37d",
+                    "stash": "0x9B15b8C7ee244912398d4C533f8FBfa9090141Ce",
+                    "rewards": [
+                        {
+                            "rToken": "0xd16277565baCa695d95124e338C48E0c4D3E7fF5",
+                            "rAddress": "0x5DbF60cFA9c97018a0E6364CEA5054E29709f37d"
+                        }
+                    ],
+                    "name": "compound",
+                    "id": 0
+                }
+            ]
+        },
+        "curve": {
+            "CRV": "0xd16277565baCa695d95124e338C48E0c4D3E7fF5",
+            "veCRV": "0x7aE2716bEaf0fB61fbD4bf9d5b293A1BEa1977d2",
+            "gaugeController": "0x14F00234Bf72CCeDF773CF373D5CE0030f34982F",
+            "minter": "0xB54f37a00B88DEbD5efe1e64b2d0156A7844aD31",
+            "vesting": "0xC10d6C649a941753e438B70F7B83e32b3FdCd577",
+            "fee_distributor": "0xC10d6C649a941753e438B70F7B83e32b3FdCd577",
+            "compound": "0x1aaA7cDe9eeAd1A8D06640097e83421A6A0be7e0",
+            "usdt": "0x53586B81BD27720c052082BE01c349960ec2b8Ee",
+            "y": "0x1f85A4332729b1CBAAb50f6F8A46291596B295f1",
+            "busd": "0x28d3a5B9BF0Fe61b76221b4FDeb7E0ed19584066",
+            "pax": "0x567DF527301A453CFa6d2b4A8b3cB7C50F1eE988",
+            "ren": "0x109c43Bf41a6F4c2aEc1617107Fe48215aA0f578",
+            "address_provider": "0x252c40Ba1295277F993d91F649644C4eF72C708D",
+            "registry": "0x2752B0471C8A61A20834CAF704c6459088354d0f",
+            "pool_info": "0xF46e98846d2ebce484B861Bb411Eb5b22cA9E691",
+            "swaps": "0x80393B0C7e304ae98c7fd6373b0aB23486bbf8d3",
+            "pools": [
+                {
+                    "swap_address": "0xC69786C37c3297D832A1E36cd0407980a10720A1",
+                    "gauge_addresses": ["0x2B78433aD00d9e6fb579CF2Cd54AF06e1a33F68c"],
+                    "swap_name": "StableSwapCompound",
+                    "lp_token_address": "0x1aaA7cDe9eeAd1A8D06640097e83421A6A0be7e0",
+                    "coins": [{
+                        "name": "cDAI",
+                        "underlying_name": "DAI",
+                        "decimals": 18,
+                        "tethered": false,
+                        "wrapped_decimals": 8,
+                        "underlying_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "wrapped_address": "0x5d3a536e4d6dbd6114cc1ead35777bab948e3643"
+                    }, {
+                        "name": "cUSDC",
+                        "underlying_name": "USDC",
+                        "decimals": 6,
+                        "tethered": false,
+                        "wrapped_decimals": 8,
+                        "underlying_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                        "wrapped_address": "0x39aa39c021dfbae8fac545936693ac917d5e7563"
+                    }]
+                }
+            ]
+        }
+    },
+    "development": {
+        
+    }
+}

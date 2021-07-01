@@ -127,7 +127,8 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
 
     /// @notice balance of this address in "want" tokens
     function balanceOf() override public view returns(uint256) {
-        return IERC20(_want).balanceOf(address(this));
+        
+        //return IERC20(_want).balanceOf(address(this));
     }
 
     function getRewards() override virtual external;

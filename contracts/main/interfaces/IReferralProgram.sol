@@ -8,7 +8,6 @@ interface IReferralProgram {
         bool exists;
         address referrer;
     }
-
     function users(address wallet) external returns (bool exists, address referrer);
     function registerUser(address referrer, address referral) external;
     function feeReceiving(address _for, address[] calldata _tokens, uint256[] calldata _amounts) external;

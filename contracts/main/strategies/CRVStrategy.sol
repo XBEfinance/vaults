@@ -66,7 +66,7 @@ contract CRVStrategy is BaseStrategy {
         crvDepositor = _crvDepositor;
     }
 
-    function addFeeReceiver(address _to, uint256 _weight, address[] memory _tokens, bool _callFunc) external onlyOwner {
+    function addFeeReceiver(address _to, uint256 _weight, address[] calldata _tokens, bool _callFunc) external onlyOwner {
         require(sumWeight.add(_weight) < PCT_BASE, '!weight < PCT_BASE');
         HiveWeight storage newWeight;
         newWeight.to = _to;
@@ -95,10 +95,10 @@ contract CRVStrategy is BaseStrategy {
         }
         hiveWeights[_index].weight = _weight;
     }
-    
+
     function skim() override external {}
-    
-     /// @dev Function that controller calls 
+
+     /// @dev Function that controller calls
     function deposit() override external onlyController {
         uint256 _amount = IERC20(_want).balanceOf(address(this));
         IERC20(_want).approve(crvDepositor, _amount);
@@ -109,7 +109,7 @@ contract CRVStrategy is BaseStrategy {
         require(IRewards(cvxCRVRewards).getReward(), '!getRewards');
     }
 
-    function convertTokens(address _for, uint256 _amount) override external { 
+    function convertTokens(address _for, uint256 _amount) override external {
         IERC20(_want).approve(crvDepositor, _amount);
         address stakingToken = IRewards(cvxCRVRewards).stakingToken();
         ///address(0) means that we'll not stake immediately
@@ -139,7 +139,7 @@ contract CRVStrategy is BaseStrategy {
         return _amounts;
     }
 
-     function subFee(uint256[] memory _amounts) override external view returns(uint256[] memory){
+     function subFee(uint256[] memory _amounts) override public view returns(uint256[] memory){
         for(uint256 i = 0; i < _amounts.length; i++) {
             uint256 value = _amounts[i];
             for(uint256 j = 0; j < hiveWeights.length; j++){
@@ -151,11 +151,11 @@ contract CRVStrategy is BaseStrategy {
         return _amounts;
     }
 
-    function mulDiv (uint x, uint y, uint z)public pure returns (uint) {
+    function mulDiv (uint x, uint y, uint z) public pure returns (uint) {
         uint a = x / z; uint b = x % z; // x = a * z + b
         uint c = y / z; uint d = y % z; // y = c * z + d
         return a * b * z + a * d + b * c + b * d / z;
-    }   
+    }
 
     function canClaim() override external returns(uint256 _amount) {
         _amount = IRewards(cvxCRVRewards).earned(address(this));
@@ -180,15 +180,15 @@ contract CRVStrategy is BaseStrategy {
         return true;
     }
 
-    
-     
+
+
     function _withdrawSome(uint256 _amount) override internal returns(uint) {
         // true means that we'll claim all the rewards
         IRewards(cvxCRVRewards).withdraw(_amount, true);
         return _amount;
     }
 
-    
+
     /// @dev To be realised
     function withdrawalFee() override external view returns(uint256) {
         return 0;

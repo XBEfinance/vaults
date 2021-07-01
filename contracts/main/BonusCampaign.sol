@@ -10,6 +10,8 @@ contract BonusCampaign is StakingRewards {
     uint256 public startMintTime;
     uint256 public stopRegisterTime;
 
+    bool private _mintStarted;
+
     mapping(address => bool) public registered;
 
     function configure(
@@ -74,6 +76,7 @@ contract BonusCampaign is StakingRewards {
 
     function startMint() external onlyRewardsDistribution updateReward(address(0)) {
         require(block.timestamp >= startMintTime, "cannotMintYet");
+        require(!_mintStarted, "mintAlreadyHappened");
         if (block.timestamp >= periodFinish) {
             rewardRate = bonusEmission.div(rewardsDuration);
         } else {

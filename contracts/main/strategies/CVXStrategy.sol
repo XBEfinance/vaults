@@ -36,7 +36,7 @@ contract CVXStrategy is BaseStrategy {
     address public cvxRewardPool;
     address public referralProgram;
     address public xbeVoting;
-    address public treasury; 
+    address public treasury;
 
 
     struct HiveWeight{
@@ -65,7 +65,7 @@ contract CVXStrategy is BaseStrategy {
         cvxRewardPool = _cvxRewardPool;
     }
 
-    function addFeeReceiver(address _to, uint256 _weight, address[] memory _tokens, bool _callFunc) external onlyOwner {
+    function addFeeReceiver(address _to, uint256 _weight, address[] calldata _tokens, bool _callFunc) external onlyOwner {
         require(sumWeight.add(_weight) < PCT_BASE, '!weight < PCT_BASE');
         HiveWeight storage newWeight;
         newWeight.to = _to;
@@ -77,7 +77,7 @@ contract CVXStrategy is BaseStrategy {
         hiveWeights.push(newWeight);
         countReceiver++;
     }
-    
+
     function removeFeeReceiver(uint256 _index) external onlyOwner {
         sumWeight = sumWeight.sub(hiveWeights[_index].weight);
         delete hiveWeights[_index];
@@ -98,8 +98,8 @@ contract CVXStrategy is BaseStrategy {
     function skim() override external {
     }
 
-    
-     /// @dev Function that controller calls 
+
+     /// @dev Function that controller calls
     function deposit() override external onlyController {
         uint256 _amount = IERC20(_want).balanceOf(address(this));
         IERC20(_want).approve(cvxRewardPool, _amount);
@@ -134,7 +134,7 @@ contract CVXStrategy is BaseStrategy {
         return _amounts;
     }
 
-     function subFee(uint256[] memory _amounts) override external view returns(uint256[] memory){
+     function subFee(uint256[] memory _amounts) override public view returns(uint256[] memory){
         for(uint256 i = 0; i < _amounts.length; i++) {
             uint256 value = _amounts[i];
             for(uint256 j = 0; j < hiveWeights.length; j++){
@@ -150,7 +150,7 @@ contract CVXStrategy is BaseStrategy {
         uint a = x / z; uint b = x % z; // x = a * z + b
         uint c = y / z; uint d = y % z; // y = c * z + d
         return a * b * z + a * d + b * c + b * d / z;
-    }   
+    }
 
     function canClaim() override external returns(uint256 _amount) {
         _amount = IRewards(cvxRewardPool).earned(address(this));
@@ -175,17 +175,17 @@ contract CVXStrategy is BaseStrategy {
         return true;
     }
 
-    
-     
+
+
     function _withdrawSome(uint256 _amount) override internal returns(uint) {
         // withdraw from business
         IRewards(cvxRewardPool).withdraw(_amount, true);
         return _amount;
     }
 
-     function convertTokens(address _for, uint256 _amount) override external { 
+     function convertTokens(address _for, uint256 _amount) override external {
     }
-    
+
     /// @dev To be realised
     function withdrawalFee() override external view returns(uint256) {
         return 0;

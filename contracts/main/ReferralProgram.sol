@@ -13,7 +13,6 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
     struct User {
         bool exists;
         address referrer;
-
     }
 
     event CommitOwnership(address admin);
@@ -64,7 +63,7 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
             referrer: rootAddress
         });
     }
-    
+
     // TODO: restrict usage to onlyVault
     function registerUser(
         address referrer,
@@ -73,7 +72,7 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
         _registerUser(referrer, referral);
     }
 
-    function registerUser(address referrer) public { 
+    function registerUser(address referrer) public {
         _registerUser(referrer, msg.sender);
     }
 

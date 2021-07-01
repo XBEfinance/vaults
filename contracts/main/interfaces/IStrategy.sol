@@ -30,13 +30,13 @@ interface IStrategy {
 
     function getRewards() external;
 
-    function earned(address[] memory) external returns(uint256[] memory);
+    function earned(address[] calldata) external returns(uint256[] memory);
 
     function canClaim() external returns(uint256);
 
-    function claim(address, address[] memory, uint256[] memory) external returns(bool);
+    function claim(address, address[] calldata, uint256[] calldata) external returns(bool);
 
-    function subFee(uint256[] memory) external view returns(uint256[] memory);
+    function subFee(uint256[] calldata) external view returns(uint256[] memory);
 
     function convertTokens(address, uint256) external;
 }

@@ -84,7 +84,6 @@ contract XBEInflation is Initializable, IXBEInflation {
     function configure(
         address _token,
         address _minter,
-        address _bonusCampaign,
         uint256 _initialSupply, // NOT IN WEI!!!
         uint256 _initialRate,
         uint256 _rateReductionTime,
@@ -94,7 +93,6 @@ contract XBEInflation is Initializable, IXBEInflation {
     ) external initializer {
         admin = msg.sender;
         setMinter(_minter);
-        bonusCampaign = BonusCampaign(_bonusCampaign);
         token = _token;
         initialSupply = _initialSupply;
         initialRate = _initialRate;
@@ -294,19 +292,20 @@ contract XBEInflation is Initializable, IXBEInflation {
         external
         returns(bool)
     {
-        require(_to != address(0), "!zeroAddress");
         uint256 __availableSupply = _availableSupply();
         require(totalMinted < __availableSupply, "availableSupply(Gt|Eq)TotalMinted");
         if (block.timestamp >= startEpochTime.add(rateReductionTime)) {
             _updateMiningParameters();
         }
         for (uint256 i = 0; i < _xbeReceivers.length(); i++) {
+            address _to = _xbeReceivers.at(i);
+            require(_to != address(0), "!zeroAddress");
             uint256 toMint = __availableSupply
               .mul(
-                weights[_xbeReceivers.at(i)]
+                weights[_to]
               )
               .div(sumWeight);
-            IMint(token).mint(_contract, toMint);
+            IMint(token).mint(_to, toMint);
             totalMinted = totalMinted + toMint;
         }
         return true;

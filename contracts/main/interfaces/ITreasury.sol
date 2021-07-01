@@ -8,7 +8,6 @@ currently normalizing all rewards into provided default token.
 interface ITreasury {
     function toVoters() external;
     function toGovernance(address _token, uint256 _amount) external;
-    function convert(address _from, uint256 _parts) external;
     function convertToRewardsToken(address _token, uint256 amount) external;
-    function feeReceiving(address, address[] memory, uint256[] memory) external;
+    function feeReceiving(address, address[] calldata, uint256[] calldata) external;
 }

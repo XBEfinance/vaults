@@ -22,5 +22,5 @@ interface IController {
 
     function converters(address, address) external view returns(address);
 
-    function claim(address, address, address[] memory, uint256[] memory) external;
+    function claim(address, address, address[] calldata, uint256[] calldata) external;
 }

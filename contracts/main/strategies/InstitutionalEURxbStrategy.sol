@@ -31,4 +31,28 @@ contract InstitutionalEURxbStrategy is BaseStrategy {
         return _amount;
     }
 
+    function canClaim() external override returns(uint256) {
+        return 0;
+    }
+
+    function claim(address, address[] calldata, uint256[] calldata) external override returns(bool) {
+        return false;
+    }
+
+    function convertTokens(address, uint256) external override {
+
+    }
+
+    function earned(address[] calldata) external override returns(uint256[] memory) {
+
+    }
+
+    function getRewards() external override {
+
+    }
+
+    function subFee(uint256[] calldata) external override view returns(uint256[] memory) {
+
+    }
+
 }

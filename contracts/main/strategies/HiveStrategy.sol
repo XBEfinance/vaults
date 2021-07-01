@@ -38,7 +38,7 @@ contract HiveStrategy is BaseStrategy {
         address crvRewards;
         address lpConvex;
         address convexBooster;
-        uint8 nCoins; //coins in pool 
+        uint8 nCoins; //coins in pool
         // uint8 idPool;
     }
 
@@ -49,7 +49,7 @@ contract HiveStrategy is BaseStrategy {
         bool callFunc;
     }
 
-    Settings public poolSettings; 
+    Settings public poolSettings;
     HiveWeight[] hiveWeights;
 
     uint64 public countReceiver;
@@ -57,11 +57,11 @@ contract HiveStrategy is BaseStrategy {
 
     function configure(
         address _addressProvider,
-        address _wantAddress, //in this case it's lP curve 
+        address _wantAddress, //in this case it's lP curve
         address _controllerAddress,
         address _vaultAddress,
         address _governance,
-        Settings calldata _poolSettings 
+        Settings calldata _poolSettings
     ) external initializer {
         super.configure(_wantAddress, _controllerAddress, _vaultAddress, _governance);
         addressProvider = IAddressProvider(_addressProvider);
@@ -69,7 +69,7 @@ contract HiveStrategy is BaseStrategy {
         poolSettings = _poolSettings;
     }
 
-    function addFeeReceiver(address _to, uint256 _weight, address[] memory _tokens, bool _callFunc) external onlyOwner {
+    function addFeeReceiver(address _to, uint256 _weight, address[] calldata _tokens, bool _callFunc) external onlyOwner {
         require(sumWeight.add(_weight) < PCT_BASE, '!weight < PCT_BASE');
         HiveWeight storage newWeight;
         newWeight.to = _to;
@@ -81,7 +81,7 @@ contract HiveStrategy is BaseStrategy {
         hiveWeights.push(newWeight);
         countReceiver++;
     }
-    
+
     function removeFeeReceiver(uint256 _index) external onlyOwner {
         sumWeight = sumWeight.sub(hiveWeights[_index].weight);
         delete hiveWeights[_index];
@@ -98,11 +98,11 @@ contract HiveStrategy is BaseStrategy {
         }
         hiveWeights[_index].weight = _weight;
     }
-    
+
     function skim() override external {}
 
-    
-     /// @dev Function that controller calls 
+
+     /// @dev Function that controller calls
     function deposit() override external onlyController {
         uint256 _amount = IERC20(_want).balanceOf(address(this));
         IERC20(_want).approve(poolSettings.convexBooster, _amount);
@@ -146,7 +146,7 @@ contract HiveStrategy is BaseStrategy {
         return _amounts;
     }
 
-     function subFee(uint256[] memory _amounts) override external view returns(uint256[] memory){
+     function subFee(uint256[] memory _amounts) override public view returns(uint256[] memory){
         for(uint256 i = 0; i < _amounts.length; i++) {
             uint256 value = _amounts[i];
             for(uint256 j = 0; j < hiveWeights.length; j++){
@@ -162,7 +162,7 @@ contract HiveStrategy is BaseStrategy {
         uint a = x / z; uint b = x % z; // x = a * z + b
         uint c = y / z; uint d = y % z; // y = c * z + d
         return a * b * z + a * d + b * c + b * d / z;
-    }   
+    }
 
     function canClaim() override external returns(uint256 _amount) {
         _amount = IRewards(poolSettings.crvRewards).earned(address(this));
@@ -186,16 +186,16 @@ contract HiveStrategy is BaseStrategy {
         }
         return true;
     }
-    
-     
+
+
     function _withdrawSome(uint256 _amount) override internal returns(uint) {
         require(IRewards(poolSettings.crvRewards).withdrawAndUnwrap(_amount, true), '!withdrawSome');
         return _amount;
     }
 
-    function convertTokens(address _for, uint256 _amount) override external { 
+    function convertTokens(address _for, uint256 _amount) override external {
     }
-    
+
     /// @dev To be realised
     function withdrawalFee() override external view returns(uint256) {
         return 0;

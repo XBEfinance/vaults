@@ -25,7 +25,6 @@ contract Treasury is Initializable, Ownable, ITreasury {
 
     address public rewardsDistributionRecipientContract;
     address public rewardsToken;
-    address public voting;
     uint256 public constant MAX_BPS = 10000;
 
     uint256 public slippageTolerance; // in bps, ex. 9500 equals 5% slippage tolerance
@@ -46,7 +45,6 @@ contract Treasury is Initializable, Ownable, ITreasury {
         address _rewardsToken,
         address _uniswapRouter,
         address _uniswapFactory,
-        address _voting,
         uint256 _slippageTolerance,
         uint256 _swapDeadline
     ) external initializer {
@@ -59,7 +57,6 @@ contract Treasury is Initializable, Ownable, ITreasury {
         uniswapFactory = _uniswapFactory;
         slippageTolerance = _slippageTolerance;
         swapDeadline = _swapDeadline;
-        voting = _voting;
     }
 
     function setRewardsToken(address _rewardsToken) public onlyOwner {
@@ -85,8 +82,8 @@ contract Treasury is Initializable, Ownable, ITreasury {
     function feeReceiving(address _for, address[] calldata _tokens, uint256[] calldata _amounts) override external {
         for(uint256 i = 0; i < _tokens.length; i++){
             if(_tokens[i] == rewardsToken){
-                IERC20(rewardsToken).approve(voting, _amounts[i]);
-                IVoting(voting).stakeFor(_for, _amounts[i]);
+                IERC20(rewardsToken).approve(governance, _amounts[i]);
+                IVoting(governance).stakeFor(_for, _amounts[i]);
             } else {
                 convertToRewardsToken(_tokens[i], _amounts[i]);
             }

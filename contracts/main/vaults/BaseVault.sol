@@ -35,7 +35,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
 
     event Deposit(uint256 indexed _shares);
     event Withdraw(uint256 indexed _amount);
-    
+
     /// @param typeName Name of the vault token
     /// @param typePrefix Prefix of the vault token
     constructor(string memory typeName, string memory typePrefix)
@@ -58,7 +58,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
     ) public initializer {
         _token = IERC20(_initialToken);
         setController(_initialController);
-        transferOwnership(_governance);      
+        transferOwnership(_governance);
     }
 
     /// @notice Usual setter with check if passet param is new
@@ -110,9 +110,11 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
 
     function _deposit(address _from, uint256 _amount) internal returns(uint256 shares) {
         if (address(this) != _from) {
+            uint256 _before = token.balanceOf(address(this));
             _token.safeTransferFrom(_from, address(this), _amount);
+            uint256 _after = token.balanceOf(address(this));
+            _amount = _after.sub(_before);
         }
-        _amount = _token.balanceOf(address(this));
         uint256 _pool = balance();
         shares = 0;
         if (totalSupply() == 0) {

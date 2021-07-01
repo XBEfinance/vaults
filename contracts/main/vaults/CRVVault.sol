@@ -86,15 +86,10 @@ contract CRVVault is BaseVault {
         uint256 _sumWithoutFee = _collectingFee(_amount);
         super.deposit(_sumWithoutFee);
         //register in referral program
-        (bool _exists, address _referrer) = referralProgram.users(_msgSender());
-        IReferralProgram.User memory _user = IReferralProgram.User({
-            exists: _exists,
-            referrer: _referrer
-        });
-        if(!_user.exists){
+        (bool _userExists,) = referralProgram.users(_msgSender());
+        if(!_userExists){
             referralProgram.registerUser(address(treasury), _msgSender());
         }
-
     }
 
     function withdraw(uint256 _shares) override public {

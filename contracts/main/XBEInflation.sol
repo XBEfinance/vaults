@@ -31,7 +31,6 @@ contract XBEInflation is Initializable, IXBEInflation {
         uint256 rate,
         uint256 supply
     );
-    event SetMinter(address minter);
     event SetAdmin(address admin);
 
     event CalculatedEpochTimeWritten(uint256 epochTime);
@@ -42,10 +41,8 @@ contract XBEInflation is Initializable, IXBEInflation {
     mapping(address => mapping(address => uint256)) public _allowances;
     uint256 public _totalSupply;
 
-    address public minter;
     address public admin;
 
-    address public vault;
     address public token;
 
     uint256 public totalMinted;
@@ -83,7 +80,6 @@ contract XBEInflation is Initializable, IXBEInflation {
     // """
     function configure(
         address _token,
-        address _minter,
         uint256 _initialSupply, // NOT IN WEI!!!
         uint256 _initialRate,
         uint256 _rateReductionTime,
@@ -92,7 +88,6 @@ contract XBEInflation is Initializable, IXBEInflation {
         uint256 _inflationDelay
     ) external initializer {
         admin = msg.sender;
-        setMinter(_minter);
         token = _token;
         initialSupply = _initialSupply;
         initialRate = _initialRate;
@@ -234,17 +229,6 @@ contract XBEInflation is Initializable, IXBEInflation {
             require(currentRate <= initialRate, "currentRateGtInitialRate");
         }
         return toMint;
-    }
-
-    // """
-    // @notice Set the minter address
-    // @dev Only callable once, when minter has not yet been set
-    // @param _minter Address of the minter
-    // """
-    function setMinter(address _minter) public onlyAdmin {
-        require(minter == address(0), "minterExists");
-        minter = _minter;
-        emit SetMinter(_minter);
     }
 
     // """

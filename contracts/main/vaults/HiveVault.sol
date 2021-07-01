@@ -40,7 +40,7 @@ contract HiveVault is BaseVault {
         super.configure(_initialToken, _initialController, _governance);
         referralProgram = IReferralProgram(_referralProgram);
         treasury = ITreasury(_treasury);
-        feePercentage = 0;  
+        feePercentage = 0;
     }
 
 
@@ -58,7 +58,7 @@ contract HiveVault is BaseVault {
             IERC20(_token).transfer(multisigWallet, _fee);
             _sumWithoutFee =  _amount.sub(_fee);
         }
-        _sumWithoutFee = _amount; 
+        _sumWithoutFee = _amount;
     }
 
      function setFeePercentage(uint64 _newPercentage) external onlyOwner {
@@ -71,15 +71,15 @@ contract HiveVault is BaseVault {
         uint a = x / z; uint b = x % z; // x = a * z + b
         uint c = y / z; uint d = y % z; // y = c * z + d
         return a * b * z + a * d + b * c + b * d / z;
-    }   
+    }
 
 
     function deposit(uint256 _amount) override public {
         uint256 _sumWithoutFee = _collectingFee(_amount);
         super.deposit(_sumWithoutFee);
         //register in referral program
-        IReferralProgram.User memory _user =  referralProgram.users(_msgSender());
-        if(!_user.exists){
+        (bool _userExists,) = referralProgram.users(_msgSender());
+        if(!_userExists){
             referralProgram.registerUser(address(treasury), _msgSender());
         }
 

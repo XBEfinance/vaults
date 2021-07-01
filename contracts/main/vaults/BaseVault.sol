@@ -110,9 +110,9 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
 
     function _deposit(address _from, uint256 _amount) internal returns(uint256 shares) {
         if (address(this) != _from) {
-            uint256 _before = token.balanceOf(address(this));
+            uint256 _before = _token.balanceOf(address(this));
             _token.safeTransferFrom(_from, address(this), _amount);
-            uint256 _after = token.balanceOf(address(this));
+            uint256 _after = _token.balanceOf(address(this));
             _amount = _after.sub(_before);
         }
         uint256 _pool = balance();

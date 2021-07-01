@@ -85,7 +85,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
     function feeReceiving(address _for, address[] calldata _tokens, uint256[] calldata _amounts) override external {
         for(uint256 i = 0; i < _tokens.length; i++){
             if(_tokens[i] == rewardsToken){
-                IERC20(rewardsToken).safeTransfer(voting, _amounts[i]);
+                IERC20(rewardsToken).approve(voting, _amounts[i]);
                 IVoting(voting).stakeFor(_for, _amounts[i]);
             } else {
                 convertToRewardsToken(_tokens[i], _amounts[i]);

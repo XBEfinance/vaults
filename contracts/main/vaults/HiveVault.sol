@@ -1,5 +1,8 @@
 pragma solidity ^0.6.0;
 
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import "./BaseVault.sol";
 import "../interfaces/IStrategy.sol";
 import "../interfaces/IController.sol";
@@ -9,6 +12,8 @@ import "../interfaces/ITreasury.sol";
 /// @title In this case _token it's lp curve;
 /// @notice Vault for consumers of the system
 contract HiveVault is BaseVault {
+
+    using SafeERC20 for IERC20;
 
     uint64 public constant PCT_BASE = 10 ** 18;
     uint64 public feePercentage;
@@ -55,7 +60,7 @@ contract HiveVault is BaseVault {
     function _collectingFee(uint256 _amount) internal returns(uint256 _sumWithoutFee) {
         if(feePercentage > 0) {
             uint256 _fee = mulDiv(feePercentage, _amount, PCT_BASE);
-            IERC20(_token).transfer(multisigWallet, _fee);
+            IERC20(_token).safeTransfer(multisigWallet, _fee);
             _sumWithoutFee =  _amount.sub(_fee);
         }
         _sumWithoutFee = _amount;

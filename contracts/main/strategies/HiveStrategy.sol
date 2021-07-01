@@ -61,8 +61,8 @@ contract HiveStrategy is BaseStrategy {
         address _controllerAddress,
         address _vaultAddress,
         address _governance,
-        Settings calldata _poolSettings
-    ) external initializer {
+        Settings memory _poolSettings
+    ) public initializer {
         super.configure(_wantAddress, _controllerAddress, _vaultAddress, _governance);
         addressProvider = IAddressProvider(_addressProvider);
         mainRegistry = IMainRegistry(addressProvider.get_registry());

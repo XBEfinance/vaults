@@ -15,7 +15,8 @@
     "test": "bash ./scripts/test.sh",
     "deploy": "bash ./scripts/deploy.sh",
     "flatten": "bash ./scripts/flatten.sh",
-    "verify": "bash ./scripts/verify.sh"
+    "verify": "bash ./scripts/verify.sh",
+    "rinkeby-fork": "bash ./scripts/rinkeby-rpc.sh"
   },
   "keywords": [],
   "author": "",

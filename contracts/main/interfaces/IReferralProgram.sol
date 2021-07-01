@@ -9,7 +9,7 @@ interface IReferralProgram {
         address referrer;
     }
 
-    function users(address wallet) external returns (User memory);
+    function users(address wallet) external returns (bool exists, address referrer);
     function registerUser(address referrer, address referral) external;
-    function notifyReward(address spender, uint256 crvValue, uint256 cvxValue, uint256 xbeValue) external;
+    function feeReceiving(address _for, address[] calldata _tokens, uint256[] calldata _amounts) external;
 }

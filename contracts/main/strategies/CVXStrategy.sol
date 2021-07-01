@@ -101,13 +101,13 @@ contract CVXStrategy is BaseStrategy {
     
      /// @dev Function that controller calls 
     function deposit() override external onlyController {
-        uint256 _amount = IERC20(_want).balanceOf(controller);
-        IERC20(_want).transferFrom(controller, address(this), _amount);
+        uint256 _amount = IERC20(_want).balanceOf(address(this));
         IERC20(_want).approve(cvxRewardPool, _amount);
         IRewards(cvxRewardPool).stake(_amount);
     }
 
     function getRewards() override external {
+        ///false means that we'll not stake the received rewards
         IRewards(cvxRewardPool).getReward(false);
     }
 

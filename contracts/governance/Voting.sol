@@ -567,7 +567,7 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
     function withdrawUnbonded(uint256 amount) public nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
         if (bondedRewardLocks[msg.sender].amount > 0) {
-            require(amount <= _balanceOf[msg.sender].sub(bondedRewardLocks[msg.sender].amount), "cannotWithdrawBondedTokens");
+            require(amount <= _balancesOf[msg.sender].sub(bondedRewardLocks[msg.sender].amount), "cannotWithdrawBondedTokens");
         }
         if (!breaker) {
             require(voteLock[msg.sender()] < block.number, "!locked");

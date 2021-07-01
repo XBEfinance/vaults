@@ -33,14 +33,8 @@ contract CRVStrategy is BaseStrategy {
 
     uint64 public constant PCT_BASE = 10 ** 18;
 
-    address public crvToken;
     address public crvDepositor;
     address public cvxCRVRewards;
-    
-    address public referralProgram;
-    address public xbeVoting;
-    address public treasury; 
-
 
     struct HiveWeight{
         uint256 weight;
@@ -62,13 +56,14 @@ contract CRVStrategy is BaseStrategy {
         address _controllerAddress,
         address _vaultAddress,
         address _governance,
-        address _cvxCRVRewards
+        address _cvxCRVRewards,
+        address _crvDepositor
     ) external initializer {
         super.configure(_wantAddress, _controllerAddress, _vaultAddress, _governance);
         addressProvider = IAddressProvider(_addressProvider);
         mainRegistry = IMainRegistry(addressProvider.get_registry());
         cvxCRVRewards = _cvxCRVRewards;
-
+        crvDepositor = _crvDepositor;
     }
 
     function addFeeReceiver(address _to, uint256 _weight, address[] memory _tokens, bool _callFunc) external onlyOwner {
@@ -101,13 +96,11 @@ contract CRVStrategy is BaseStrategy {
         hiveWeights[_index].weight = _weight;
     }
     
-    function skim() override external {
-    }
+    function skim() override external {}
     
      /// @dev Function that controller calls 
     function deposit() override external onlyController {
-        uint256 _amount = IERC20(_want).balanceOf(controller);
-        IERC20(_want).transferFrom(controller, address(this), _amount);
+        uint256 _amount = IERC20(_want).balanceOf(address(this));
         IERC20(_want).approve(crvDepositor, _amount);
         IRewards(crvDepositor).depositAll(true, cvxCRVRewards);
     }

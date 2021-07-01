@@ -580,7 +580,7 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         emit Withdrawn(msg.sender, amount);
     }
 
-    function earned(address account) public override view returns (uint256) {
+    function calculateBoostLevel(address account, uint256 precision) public view returns (uint256) {
         uint256 maxBoostedReward = _balances[account]
           .mul(
             rewardPerToken().sub(userRewardPerTokenPaid[account])
@@ -588,6 +588,15 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
           .div(1e18)
           .add(rewards[account]);
 
+        uint256 reward = _earned(account, maxBoostedReward);
+        // real boost level = reward.div(maxBoostedReward) # [0.4 .. 1]
+        // inversed = maxBoostedReward.div(reward) # [1 .. 2.5]
+        // multiplied by precision coeff: precision.mul(maxBoostedReward).div(reward)
+
+        return precision.mul(maxBoostedReward).div(reward);
+    }
+
+    function _earned(address account, uint256 maxBoostedReward) internal view returns (uint256) {
         VeXBE veXBE = VeXBE(address(token));
         uint256 lockDuration = veXBE.lockedEnd(addr) - veXBE.lockStarts(addr);
         // if lockup is 23 months or more
@@ -605,6 +614,17 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         }
         boostedReward += lpTotal * votingBalance / votingTotal * (100 - inverseMaxBoostCoefficient) / 100;
         return Math.min(boostedReward, maxBoostedReward);
+    }
+
+    function earned(address account) public override view returns (uint256) {
+        uint256 maxBoostedReward = _balances[account]
+          .mul(
+            rewardPerToken().sub(userRewardPerTokenPaid[account])
+          )
+          .div(1e18)
+          .add(rewards[account]);
+
+        return _earned(account, maxBoostedReward);
     }
 
     function getReward() public override nonReentrant updateReward(msg.sender) {

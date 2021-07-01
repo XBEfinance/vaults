@@ -1,5 +1,7 @@
 {
     "rinkeby": {
+        "uniswap_router_02": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+        "uniswap_factory": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
         "xbEuro": "0x5640D0FfB20F700ebaE1e2E09D525e4C46153D8e",
         "treasury": "0x8D77234fC07167380fE0b776342B9bB4f46cE4a4",
         "convex": {

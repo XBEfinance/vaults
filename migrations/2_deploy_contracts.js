@@ -12,6 +12,7 @@ const HiveStrategy = artifacts.require('HiveStrategy');
 const HiveVault = artifacts.require('HiveVault');
 // const StakingRewards = artifacts.require('StakingRewards');
 const BonusCampaign = artifacts.require('BonusCampaign');
+const ReferralProgram = artifacts.require('ReferralProgram');
 
 const MockToken = artifacts.require('MockToken');
 
@@ -47,6 +48,8 @@ let hiveStrategy;
 let controller;
 let treasury;
 let hiveVault;
+let referralProgram;
+let registry;
 
 const saveAddresses = () => {
   const jsonAddressData = JSON.stringify({
@@ -67,6 +70,15 @@ const getSavedAddress = (key) => {
 };
 
 const deployContracts = async (deployer, params, owner) => {
+  registry = await deployer.deploy(
+    Registry,
+    { from: owner },
+  );
+
+  referralProgram = await deployer.deploy(
+    ReferralProgram,
+    { from: owner },
+  );
   treasury = await deployer.deploy(
     Treasury,
     { from: owner },
@@ -167,10 +179,25 @@ const configureContracts = async (params, owner) => {
   bonusCampaign = await BonusCampaign.at(getSavCedAddress('bonusCampaign'));
   veXBE = await VeXBE.at(getSavedAddress('veXBE'));
   voting = await Voting.at(getSavedAddress('voting'));
+  const now = await time.latest();
+
+  await referralProgram.configure(
+    [mockXBE, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
+    treasury.address,
+  );
+
+  await registry.configure(
+    owner,
+  );
 
   await treasury.configure(
-    owner,
-    //! !!!!!!!!!!!!
+    voting.address,
+    voting.address,
+    mockXBE.address,
+    dependentsAddresses.uniswap_router_02,
+    dependentsAddresses.uniswap_factory,
+    params.treasury.slippageTolerance,
+    now.add(params.treasury.swapDeadline),
   );
   await controller.configure(
     treasury.address,
@@ -193,6 +220,14 @@ const configureContracts = async (params, owner) => {
     ],
   );
 
+  await hiveVault.configure(
+    dependentsAddresses.convex.pools[0].lptoken,
+    controller.address,
+    owner,
+    referralProgram.address,
+    treasury.address,
+  );
+
   await xbeInflation.configure(
     mockXBE.address,
     params.xbeinflation.initialSupply,
@@ -202,7 +237,7 @@ const configureContracts = async (params, owner) => {
     params.xbeinflation.rateDenominator,
     params.xbeinflation.inflationDelay,
   );
-  const now = await time.latest();
+
   await bonusCampaign.methods[
     'configure(address,address,uint256,uint256,uint256)'
   ](
@@ -327,6 +362,10 @@ module.exports = function (deployer, network, accounts) {
   const bob = accounts[2];
 
   let params = {
+    treasury: {
+      slippageTolerance: new BN('3'),
+      swapDeadline: new BN('300'),
+    },
     bonusCampaign: {
       rewardsDuration: months('23'),
       bonusEmission: ether('5000'),

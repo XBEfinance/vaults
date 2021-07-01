@@ -29,7 +29,6 @@ contract HiveStrategy is BaseStrategy {
 
     IAddressProvider public addressProvider;
     IMainRegistry public mainRegistry;
-    address depositCoin;
 
     uint64 public constant PCT_BASE = 10 ** 18;
 
@@ -43,16 +42,6 @@ contract HiveStrategy is BaseStrategy {
         // uint8 idPool;
     }
 
-    Settings public poolSettings; 
-
-    address public crv;
-    address public cvx;
-    address public xbe;
-
-    address public referralProgram;
-    address public xbeVoting;
-    address public treasury; 
-
     struct HiveWeight{
         uint256 weight;
         address to;
@@ -60,6 +49,7 @@ contract HiveStrategy is BaseStrategy {
         bool callFunc;
     }
 
+    Settings public poolSettings; 
     HiveWeight[] hiveWeights;
 
     uint64 public countReceiver;
@@ -79,7 +69,7 @@ contract HiveStrategy is BaseStrategy {
         poolSettings = _poolSettings;
     }
 
-     function addFeeReceiver(address _to, uint256 _weight, address[] memory _tokens, bool _callFunc) external onlyOwner {
+    function addFeeReceiver(address _to, uint256 _weight, address[] memory _tokens, bool _callFunc) external onlyOwner {
         require(sumWeight.add(_weight) < PCT_BASE, '!weight < PCT_BASE');
         HiveWeight storage newWeight;
         newWeight.to = _to;
@@ -98,7 +88,7 @@ contract HiveStrategy is BaseStrategy {
         countReceiver--;
     }
 
-     function setWeight(uint256 _index, uint256 _weight) external onlyOwner {
+    function setWeight(uint256 _index, uint256 _weight) external onlyOwner {
         uint256 oldWeight = hiveWeights[_index].weight;
         if (oldWeight > _weight) {
             sumWeight = sumWeight.sub(oldWeight.sub(_weight));
@@ -109,14 +99,12 @@ contract HiveStrategy is BaseStrategy {
         hiveWeights[_index].weight = _weight;
     }
     
-    function skim() override external {
-    }
+    function skim() override external {}
 
     
      /// @dev Function that controller calls 
     function deposit() override external onlyController {
-        uint256 _amount = IERC20(_want).balanceOf(controller);
-        IERC20(_want).transferFrom(controller, address(this), _amount);
+        uint256 _amount = IERC20(_want).balanceOf(address(this));
         IERC20(_want).approve(poolSettings.convexBooster, _amount);
 
         uint256 _poolLength = IBooster(poolSettings.convexBooster).poolLength();
@@ -162,7 +150,7 @@ contract HiveStrategy is BaseStrategy {
         for(uint256 i = 0; i < _amounts.length; i++) {
             uint256 value = _amounts[i];
             for(uint256 j = 0; j < hiveWeights.length; j++){
-                uint256 _fee = mulDiv(hiveWeights[i].weight, _amounts[i], PCT_BASE);
+                uint256 _fee = mulDiv(hiveWeights[j].weight, _amounts[i], PCT_BASE);
                 value -= _fee;
             }
             _amounts[i] = value;

@@ -8,7 +8,7 @@ import "../interfaces/ITreasury.sol";
 
 /// @title In this case _token it's lp curve;
 /// @notice Vault for consumers of the system
-contract HiveVault is BaseVault {
+contract CRVVault is BaseVault {
 
     uint64 public constant PCT_BASE = 10 ** 18;
     uint64 public feePercentage;

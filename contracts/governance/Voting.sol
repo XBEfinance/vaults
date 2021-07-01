@@ -13,12 +13,13 @@ import "@aragon/os/contracts/lib/math/SafeMath64.sol";
 import "@aragon/minime/contracts/MiniMeToken.sol";
 
 import "@aragon/os/contracts/common/UnstructuredStorage.sol";
+import "@aragon/os/contracts/lib/math/Math.sol";
 
-import "../main/staking_rewards/StakingRewards.sol";
-import "../main/BonusCampaign.sol";
-import "../main/VeXBE.sol";
+import "./interfaces/IBonusCampaign.sol";
+import "./interfaces/IVeXBE.sol";
+import "./interfaces/IERC20.sol";
 
-contract Voting is IForwarder, AragonApp, StakingRewards {
+contract Voting is IForwarder, AragonApp {
     using SafeMath for uint256;
     using SafeMath64 for uint64;
 
@@ -39,7 +40,7 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
     string private constant ERROR_CAN_NOT_FORWARD = "VOTING_CAN_NOT_FORWARD";
     string private constant ERROR_NO_VOTING_POWER = "VOTING_NO_VOTING_POWER";
 
-    BonusCampaign public bonusCampaign;
+    IBonusCampaign public bonusCampaign;
     address public treasury;
 
     struct BondedReward {
@@ -126,6 +127,18 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         voteTime = _voteTime;
     }
 
+    function configureRewards(
+        address _rewardsDistribution,
+        address _rewardsToken,
+        address _stakingToken,
+        uint256 _rewardsDuration
+    ) external auth(MODIFY_QUORUM_ROLE) _onlyInit {
+        rewardsToken = _rewardsToken;
+        stakingToken = _stakingToken;
+        rewardsDistribution = _rewardsDistribution;
+        rewardsDuration = _rewardsDuration;
+    }
+
     function setLock(uint256 _lock) external auth(MODIFY_QUORUM_ROLE) {
         lock = _lock;
     }
@@ -138,15 +151,15 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         external
         auth(MODIFY_QUORUM_ROLE)
     {
-        bonusCampaign = BonusCampaign(_bonusCampaign);
+        bonusCampaign = IBonusCampaign(_bonusCampaign);
     }
 
-    function setInverseMaxBoostCoefficient(uint256 _inverseBoostCoefficient)
+    function setInverseMaxBoostCoefficient(uint256 _inverseMaxBoostCoefficient)
         external
         auth(MODIFY_QUORUM_ROLE)
     {
-        inverseBoostCoefficient = _inverseBoostCoefficient;
-        require(_inverseBoostCoefficient > 0 && _inverseBoostCoefficient < 100, "invalidInverseMaxBoostCoefficient");
+        inverseMaxBoostCoefficient = _inverseMaxBoostCoefficient;
+        require(_inverseMaxBoostCoefficient > 0 && _inverseMaxBoostCoefficient < 100, "invalidInverseMaxBoostCoefficient");
     }
 
     function setPenaltyPct(uint256 _penaltyPct)
@@ -375,7 +388,7 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         vote_.votingPower = votingPower;
         vote_.executionScript = _executionScript;
 
-        voteLock[msg.sender()] = lock.add(block.number);
+        voteLock[msg.sender] = lock.add(block.number);
 
         emit StartVote(voteId, msg.sender, _metadata);
 
@@ -503,13 +516,160 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         return computedPct > _pct;
     }
 
-    function _stake(address _from, uint256 _amount, bool _bonded) internal {
-        require(amount > 0, "Cannot stake 0");
+    /////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // Altered Staking Rewards Contract
+    /////////////////////////////////////////////////////////////////////////////
+
+    /* ========== STATE VARIABLES ========== */
+
+    address public rewardsToken;
+    address public stakingToken;
+    uint256 public periodFinish = 0;
+    uint256 public rewardRate = 0;
+    uint256 public rewardsDuration; //= 7 days;
+    uint256 public lastUpdateTime;
+    uint256 public rewardPerTokenStored;
+    address public rewardsDistribution;
+
+    bool public paused;
+
+    uint256 private constant _NOT_ENTERED = 1;
+    uint256 private constant _ENTERED = 2;
+    uint256 private _status = _NOT_ENTERED;
+
+    modifier nonReentrant {
+        // On the first call to nonReentrant, _notEntered will be true
+        require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
+
+        // Any calls to nonReentrant after this point will fail
+        _status = _ENTERED;
+
+        _;
+
+        // By storing the original value once again, a refund is triggered (see
+        // https://eips.ethereum.org/EIPS/eip-2200)
+        _status = _NOT_ENTERED;
+    }
+
+    modifier whenNotPaused {
+        require(!paused, "paused");
+        _;
+    }
+
+    mapping(address => uint256) public userRewardPerTokenPaid;
+    mapping(address => uint256) public rewards;
+
+    uint256 internal _totalSupply;
+    mapping(address => uint256) internal _balances;
+
+    /* ========== EVENTS ========== */
+
+    event RewardAdded(uint256 reward);
+    event Staked(address indexed user, uint256 amount);
+    event Withdrawn(address indexed user, uint256 amount);
+    event RewardPaid(address indexed user, uint256 reward);
+    event RewardsDurationUpdated(uint256 newDuration);
+    event Recovered(address token, uint256 amount);
+
+    function setPaused(bool _paused) external auth(MODIFY_QUORUM_ROLE) {
+        paused = _paused;
+    }
+
+    /* ========== VIEWS ========== */
+
+    function totalSupply() public view returns (uint256) {
+        return _totalSupply;
+    }
+
+    function balanceOf(address account) external view returns (uint256) {
+        return _balances[account];
+    }
+
+    function lastTimeRewardApplicable() public view returns (uint256) {
+        return Math.min256(block.timestamp, periodFinish);
+    }
+
+    function rewardPerToken() public view returns (uint256) {
+        if (_totalSupply == 0) {
+            return rewardPerTokenStored;
+        }
+        return
+            rewardPerTokenStored.add(
+                lastTimeRewardApplicable().sub(lastUpdateTime).mul(rewardRate).mul(1e18).div(_totalSupply)
+            );
+    }
+
+    modifier onlyRewardsDistribution() {
+        require(msg.sender == rewardsDistribution, "Caller is not RewardsDistribution contract");
+        _;
+    }
+
+    function setRewardsDistribution(address _rewardsDistribution) external auth(MODIFY_QUORUM_ROLE) {
+        rewardsDistribution = _rewardsDistribution;
+    }
+
+    function getRewardForDuration() external view returns (uint256) {
+        return rewardRate.mul(rewardsDuration);
+    }
+
+    /* ========== RESTRICTED FUNCTIONS ========== */
+
+    function notifyRewardAmount(uint256 reward) external onlyRewardsDistribution updateReward(address(0)) {
+        if (block.timestamp >= periodFinish) {
+            rewardRate = reward.div(rewardsDuration);
+        } else {
+            uint256 remaining = periodFinish.sub(block.timestamp);
+            uint256 leftover = remaining.mul(rewardRate);
+            rewardRate = reward.add(leftover).div(rewardsDuration);
+        }
+
+        // Ensure the provided reward amount is not more than the balance in the contract.
+        // This keeps the reward rate in the right range, preventing overflows due to
+        // very high values of rewardRate in the earned and rewardsPerToken functions;
+        // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
+        uint256 balance = IERC20(rewardsToken).balanceOf(address(this));
+        require(rewardRate <= balance.div(rewardsDuration), "Provided reward too high");
+
+        lastUpdateTime = block.timestamp;
+        periodFinish = block.timestamp.add(rewardsDuration);
+        emit RewardAdded(reward);
+    }
+
+    // End rewards emission earlier
+    function updatePeriodFinish(uint256 timestamp) external auth(MODIFY_QUORUM_ROLE) updateReward(address(0)) {
+        periodFinish = timestamp;
+    }
+
+    function setRewardsDuration(uint256 _rewardsDuration) external auth(MODIFY_QUORUM_ROLE) {
+        require(
+            block.timestamp > periodFinish,
+            "Previous rewards period must be complete before changing the duration for the new period"
+        );
+        rewardsDuration = _rewardsDuration;
+        emit RewardsDurationUpdated(rewardsDuration);
+    }
+
+    /* ========== MODIFIERS ========== */
+
+    modifier updateReward(address account) {
+        rewardPerTokenStored = rewardPerToken();
+        lastUpdateTime = lastTimeRewardApplicable();
+        if (account != address(0)) {
+            rewards[account] = earned(account);
+            userRewardPerTokenPaid[account] = rewardPerTokenStored;
+        }
+        _;
+    }
+
+    function _stake(address _from, uint256 _amount) internal {
+        require(_amount > 0, "Cannot stake 0");
         _totalSupply = _totalSupply.add(_amount);
         _balances[_from] = _balances[_from].add(_amount);
 
-        IERC20(stakingToken).safeTransferFrom(_from, address(this), amount);
-        emit Staked(_from, amount);
+        require(IERC20(stakingToken).transferFrom(_from, address(this), _amount), "!t");
+        emit Staked(_from, _amount);
     }
 
     function setAllowanceOfStaker(address _staker, bool _allowed) external {
@@ -517,23 +677,19 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
     }
 
     function stakeFor(address _for, uint256 amount) public nonReentrant whenNotPaused updateReward(_for) {
-        if (msg.sender != vault) {
+        if (msg.sender != treasury) {
             require(stakeAllowance[msg.sender][_for], "stakeNotApproved");
         }
         _stake(_for, amount);
         bondedRewardLocks[msg.sender] = BondedReward({
-          amount: bondedRewardLocks[msg.sender] + amount,
+          amount: bondedRewardLocks[msg.sender].amount + amount,
           unlockTime: block.timestamp + bondedLockDuration,
           requested: false
         });
     }
 
-    function stake(uint256 amount) external override nonReentrant whenNotPaused updateReward(msg.sender) {
+    function stake(uint256 amount) external nonReentrant whenNotPaused updateReward(msg.sender) {
         _stake(msg.sender, amount);
-    }
-
-    function withdraw(uint256 amount) public override {
-        revert("!allowed");
     }
 
     function requestWithdrawBonded(uint256 amount) public nonReentrant updateReward(msg.sender) {
@@ -542,7 +698,7 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         uint256 bondedAmount = bondedRewardLocks[msg.sender].amount;
         require(bondedAmount > 0 && amount <= bondedAmount, "notEnoughBondedTokens");
         if (!breaker) {
-            require(voteLock[msg.sender()] < block.number, "!locked");
+            require(voteLock[msg.sender] < block.number, "!locked");
         }
         bondedRewardLocks[msg.sender].requested = true;
     }
@@ -553,12 +709,12 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
         if (block.timestamp > bondedRewardLocks[msg.sender].unlockTime) {
-            IERC20(stakingToken).safeTransfer(msg.sender, amount);
+            require(IERC20(stakingToken).transfer(msg.sender, amount), "!tBonded");
         } else {
             uint256 toTransfer = amount.mul(penaltyPct).div(PCT_BASE);
             uint256 penalty = amount.sub(toTransfer);
-            IERC20(stakingToken).safeTransfer(msg.sender, toTransfer);
-            IERC20(stakingToken).safeTransfer(treasury, penalty);
+            require(IERC20(stakingToken).transfer(msg.sender, toTransfer), "!tBondedWithPenalty");
+            require(IERC20(stakingToken).transfer(treasury, penalty), "!tPenalty");
         }
         delete bondedRewardLocks[msg.sender];
         emit Withdrawn(msg.sender, amount);
@@ -570,17 +726,17 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
             require(amount <= _balances[msg.sender].sub(bondedRewardLocks[msg.sender].amount), "cannotWithdrawBondedTokens");
         }
         if (!breaker) {
-            require(voteLock[msg.sender()] < block.number, "!locked");
+            require(voteLock[msg.sender] < block.number, "!locked");
         }
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
 
-        IERC20(stakingToken).safeTransfer(msg.sender, amount);
+        require(IERC20(stakingToken).transfer(msg.sender, amount), "!t");
 
         emit Withdrawn(msg.sender, amount);
     }
 
-    function calculateBoostLevel(address account, uint256 precision) public view returns (uint256) {
+    function calculateBoostLevel(address account, uint256 precision) external view returns (uint256) {
         uint256 maxBoostedReward = _balances[account]
           .mul(
             rewardPerToken().sub(userRewardPerTokenPaid[account])
@@ -597,8 +753,8 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
     }
 
     function _earned(address account, uint256 maxBoostedReward) internal view returns (uint256) {
-        VeXBE veXBE = VeXBE(address(token));
-        uint256 lockDuration = veXBE.lockedEnd(addr) - veXBE.lockStarts(addr);
+        IVeXBE veXBE = IVeXBE(address(token));
+        uint256 lockDuration = veXBE.lockedEnd(account) - veXBE.lockStarts(account);
         // if lockup is 23 months or more
         if (lockDuration >= bonusCampaign.rewardsDuration() && block.timestamp < bonusCampaign.periodFinish()) {
             return maxBoostedReward;
@@ -613,10 +769,10 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
             return boostedReward;
         }
         boostedReward += lpTotal * votingBalance / votingTotal * (100 - inverseMaxBoostCoefficient) / 100;
-        return Math.min(boostedReward, maxBoostedReward);
+        return Math.min256(boostedReward, maxBoostedReward);
     }
 
-    function earned(address account) public override view returns (uint256) {
+    function earned(address account) public view returns (uint256) {
         uint256 maxBoostedReward = _balances[account]
           .mul(
             rewardPerToken().sub(userRewardPerTokenPaid[account])
@@ -627,14 +783,14 @@ contract Voting is IForwarder, AragonApp, StakingRewards {
         return _earned(account, maxBoostedReward);
     }
 
-    function getReward() public override nonReentrant updateReward(msg.sender) {
+    function getReward() public nonReentrant updateReward(msg.sender) {
         if (!breaker) {
-            require(voteLock[msg.sender()] > block.number, "!voted");
+            require(voteLock[msg.sender] > block.number, "!voted");
         }
         uint256 reward = rewards[msg.sender];
         if (reward > 0) {
             rewards[msg.sender] = 0;
-            IERC20(rewardsToken).safeTransfer(msg.sender, reward);
+            require(IERC20(rewardsToken).transfer(msg.sender, reward), "!t");
             emit RewardPaid(msg.sender, reward);
         }
     }

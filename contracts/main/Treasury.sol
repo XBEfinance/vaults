@@ -5,9 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-import "@openzeppelin/contracts/GSN/Context.sol";
 
-import "@uniswap/v2-periphery/contracts/UniswapV2Router02.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/UniswapV2Router02.sol";
 import '@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol';
 
 import "./staking_rewards/RewardsDistributionRecipient.sol";
@@ -21,7 +20,6 @@ contract Treasury is Initializable, Ownable, ITreasury {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    mapping(address => bool) public authorized;
     UniswapV2Router02 public uniswapRouter;
 
     address public rewardsDistributionRecipientContract;

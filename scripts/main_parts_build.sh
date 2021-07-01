@@ -9,5 +9,5 @@ source ./scripts/utils/generate_truffle_config.sh
 generate_truffle_config "0.4.24" ".\/contracts\/governance"
 node --stack-size=1200 ./node_modules/.bin/truffle compile
 
-generate_truffle_config "0.6.3" ".\/contracts\/main"
+generate_truffle_config "0.6.6" ".\/contracts\/main"
 truffle compile

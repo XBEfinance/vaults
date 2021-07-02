@@ -38,12 +38,10 @@ const ZERO = new BN('0');
 //
 
 let mockXBE;
-let mockCRV;
 let xbeInflation;
 let bonusCampaign;
 let veXBE;
 let voting;
-let vaultWithXBExCRVStrategy;
 let hiveStrategy;
 let controller;
 let treasury;
@@ -54,8 +52,6 @@ let registry;
 const saveAddresses = () => {
   const jsonAddressData = JSON.stringify({
     mockXBE: mockXBE.address,
-    mockCRV: mockCRV.address,
-    vaultWithXBExCRVStrategy: vaultWithXBExCRVStrategy.address,
     xbeInflation: xbeInflation.address,
     bonusCampaign: bonusCampaign.address,
     veXBE: veXBE.address,
@@ -105,22 +101,6 @@ const deployContracts = async (deployer, params, owner) => {
     { from: owner },
   );
 
-  // mockCRV = await deployer.deploy(
-  //   MockToken,
-  //   'Mock CRV',
-  //   'mCRV',
-  //   params.mockTokens.mockedTotalSupplyCRV,
-  //   { from: owner },
-  // );
-
-  vaultWithXBExCRVStrategy = await deployer.deploy(
-    MockToken,
-    'Mock Vault LP Token',
-    'mLP',
-    params.mockTokens.mockedTotalSupplyXBE,
-    { from: owner },
-  );
-
   // deploy bonus campaign xbeinflation
   xbeInflation = await deployer.deploy(XBEInflation, { from: owner });
 
@@ -138,20 +118,14 @@ const deployContracts = async (deployer, params, owner) => {
 
 const distributeTokens = async (params, alice, bob, owner) => {
   mockXBE = await MockToken.at(getSavedAddress('mockXBE'));
-  mockCRV = await MockToken.at(getSavedAddress('mockCRV'));
-  vaultWithXBExCRVStrategy = await MockToken.at(getSavedAddress('vaultWithXBExCRVStrategy'));
+  // mockCRV = await MockToken.at(getSavedAddress('mockCRV'));
+  // vaultWithXBExCRVStrategy = await MockToken.at(getSavedAddress('vaultWithXBExCRVStrategy'));
 
   // LP, XBE and CRV to alice
   await mockXBE.approve(alice, params.mockTokens.mockedAmountXBE, {
     from: owner,
   });
   await mockXBE.transfer(alice, params.mockTokens.mockedAmountXBE, {
-    from: owner,
-  });
-  await vaultWithXBExCRVStrategy.approve(alice, params.mockTokens.mockedAmountXBE, {
-    from: owner,
-  });
-  await vaultWithXBExCRVStrategy.transfer(alice, params.mockTokens.mockedAmountXBE, {
     from: owner,
   });
 
@@ -162,21 +136,16 @@ const distributeTokens = async (params, alice, bob, owner) => {
   await mockXBE.transfer(bob, params.mockTokens.mockedAmountXBE, {
     from: owner,
   });
-  await vaultWithXBExCRVStrategy.approve(bob, params.mockTokens.mockedAmountXBE, {
-    from: owner,
-  });
-  await vaultWithXBExCRVStrategy.transfer(bob, params.mockTokens.mockedAmountXBE, {
-    from: owner,
-  });
 };
 
 const configureContracts = async (params, owner) => {
   const { dependentsAddresses } = params;
+  console.log(dependentsAddresses);
   mockXBE = await MockToken.at(getSavedAddress('mockXBE'));
-  mockCRV = await MockToken.at(getSavedAddress('mockCRV'));
+  // mockCRV = await MockToken.at(getSavedAddress('mockCRV'));
   // vaultWithXBExCRVStrategy = await MockToken.at(getSavedAddress('vaultWithXBExCRVStrategy'));
   xbeInflation = await XBEInflation.at(getSavedAddress('xbeInflation'));
-  bonusCampaign = await BonusCampaign.at(getSavCedAddress('bonusCampaign'));
+  bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
   veXBE = await VeXBE.at(getSavedAddress('veXBE'));
   voting = await Voting.at(getSavedAddress('voting'));
   const now = await time.latest();
@@ -247,7 +216,6 @@ const configureContracts = async (params, owner) => {
     now.add(params.bonusCampaign.stopRegisterTime),
     params.bonusCampaign.rewardsDuration,
     params.bonusCampaign.emission,
-
   );
 
   await veXBE.configure(
@@ -336,26 +304,6 @@ const deployVaults = async (params) => {
   // );
 };
 
-const deployVaultsToMainnet = async () => {
-  // const xbe = await XBE.at('0x5DE7Cc4BcBCa31c473F6D2F27825Cfb09cc0Bb16');
-  // const governance = await deployer.deploy(Governance);
-  // // const treasury = await deployer.deploy(Treasury);
-  //
-  // await governance.configure(
-  //   '0',
-  //   xbe.address, // Reward token
-  //   process.env.MAINNERT_OWNER_ACCOUNT,
-  //   xbe.address, // Governance token
-  //   process.env.MAINNERT_DISTRIBUTION_RINKEBY_ACCOUNT, // if treasury contract is exist then change that to treasury.address
-  // );
-  // await treasury.configure(
-  //   process.env.MAINNERT_OWNER_ACCOUNT,
-  //   '0x0000000000000000000000000000000000000000', // set OneSplit account here
-  //   governance.address,
-  //   xbe.address, // Reward token
-  // );
-};
-
 module.exports = function (deployer, network, accounts) {
   const owner = accounts[0];
   const alice = accounts[1];
@@ -394,31 +342,46 @@ module.exports = function (deployer, network, accounts) {
   };
 
   deployer.then(async () => {
+    const dependentsAddresses = distro.rinkeby;
+    params = { dependentsAddresses, ...params };
     if (network === 'test' || network === 'soliditycoverage') {
       // do nothing
-    } else if (network === 'development' || network.startsWith('rinkeby')) {
-      const dependentsAddresses = distro.rinkeby;
-      params = { dependentsAddresses, ...params };
+    } else if (network.startsWith('rinkeby')) {
       if (network === 'rinkeby_deploy') {
+
         await deployContracts(deployer, params, owner);
+
       } else if (network === 'rinkeby_tokens') {
+
         await distributeTokens(params, alice, bob, owner);
+
       } else if (network === 'rinkeby_configure') {
+
         await configureContracts(params, owner);
+
       } else if (network === 'rinkeby_all_with_save') {
+
         await deployContracts(deployer, params, owner);
         await distributeTokens(params, alice, bob, owner);
         await configureContracts(params, owner);
+
       } else if (network === 'rinkeby_vaults') {
+
         await deployVaults(params);
-      } else if (network === 'development') {
-        await deployContracts(deployer, params, owner);
-        await configureContracts(params, owner);
+
       } else {
         console.error(`Unsupported network: ${network}`);
       }
+
+    } else if (network === 'development') {
+
+      await deployContracts(deployer, params, owner);
+      await configureContracts(params, owner);
+
     } else if (network === 'mainnet') {
+
       await deployVaultsToMainnet();
+
     } else {
       console.error(`Unsupported network: ${network}`);
     }

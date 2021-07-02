@@ -56,6 +56,12 @@ const saveAddresses = () => {
     bonusCampaign: bonusCampaign.address,
     veXBE: veXBE.address,
     voting: voting.address,
+    hiveStrategy: hiveStrategy.address,
+    hiveVault: hiveVault.address,
+    referralProgram: referralProgram.address,
+    registry: registry.address,
+    treasury: treasury.address,
+    controller: controller.address,
   });
   fs.writeFileSync('addresses.json', jsonAddressData);
 };
@@ -75,10 +81,12 @@ const deployContracts = async (deployer, params, owner) => {
     ReferralProgram,
     { from: owner },
   );
+
   treasury = await deployer.deploy(
     Treasury,
     { from: owner },
   );
+
   controller = await deployer.deploy(
     Controller,
     { from: owner },
@@ -118,8 +126,6 @@ const deployContracts = async (deployer, params, owner) => {
 
 const distributeTokens = async (params, alice, bob, owner) => {
   mockXBE = await MockToken.at(getSavedAddress('mockXBE'));
-  // mockCRV = await MockToken.at(getSavedAddress('mockCRV'));
-  // vaultWithXBExCRVStrategy = await MockToken.at(getSavedAddress('vaultWithXBExCRVStrategy'));
 
   // LP, XBE and CRV to alice
   await mockXBE.approve(alice, params.mockTokens.mockedAmountXBE, {
@@ -139,19 +145,26 @@ const distributeTokens = async (params, alice, bob, owner) => {
 };
 
 const configureContracts = async (params, owner) => {
+
   const { dependentsAddresses } = params;
-  console.log(dependentsAddresses);
+
   mockXBE = await MockToken.at(getSavedAddress('mockXBE'));
-  // mockCRV = await MockToken.at(getSavedAddress('mockCRV'));
-  // vaultWithXBExCRVStrategy = await MockToken.at(getSavedAddress('vaultWithXBExCRVStrategy'));
   xbeInflation = await XBEInflation.at(getSavedAddress('xbeInflation'));
   bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
   veXBE = await VeXBE.at(getSavedAddress('veXBE'));
   voting = await Voting.at(getSavedAddress('voting'));
+
+  referralProgram = await ReferralProgram.at(getSavedAddress('referralProgram'));
+  registry = await Registry.at(getSavedAddress('registry'));
+  treasury = await Treasury.at(getSavedAddress('treasury'));
+  controller = await Controller.at(getSavedAddress('controller'));
+  hiveVault = await HiveVault.at(getSavedAddress('hiveVault'));
+  hiveStrategy = await HiveStrategy.at(getSavedAddress('hiveStrategy'));
+
   const now = await time.latest();
 
   await referralProgram.configure(
-    [mockXBE, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
+    [mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
     treasury.address,
   );
 
@@ -168,25 +181,43 @@ const configureContracts = async (params, owner) => {
     params.treasury.slippageTolerance,
     now.add(params.treasury.swapDeadline),
   );
+
   await controller.configure(
     treasury.address,
     owner,
     owner,
   );
 
+  await controller.setVault(
+    dependentsAddresses.convex.pools[0].lptoken,
+    hiveVault.address
+  );
+
+  await controller.setApprovedStrategy(
+    dependentsAddresses.convex.pools[0].lptoken,
+    hiveStrategy.address,
+    true
+  );
+
+  await controller.setStrategy(
+    dependentsAddresses.convex.pools[0].lptoken,
+    hiveStrategy.address
+  );
+
   await hiveStrategy.configure(
     dependentsAddresses.curve.address_provider,
     dependentsAddresses.convex.pools[0].lptoken,
     controller.address,
+    hiveVault.address,
     owner,
     [
       dependentsAddresses.curve.pools[0].swap_address,
       dependentsAddresses.curve.pools[0].lp_token_address,
-      dependentsAddresses.convex.pools.crvRewards,
-      dependentsAddresses.convex.pools.token,
+      dependentsAddresses.convex.pools[0].crvRewards,
+      dependentsAddresses.convex.pools[0].token,
       dependentsAddresses.convex.booster,
-      dependentsAddresses.curve.pools[0].coins.length,
-    ],
+      dependentsAddresses.curve.pools[0].coins.length
+    ]
   );
 
   await hiveVault.configure(
@@ -207,15 +238,13 @@ const configureContracts = async (params, owner) => {
     params.xbeinflation.inflationDelay,
   );
 
-  await bonusCampaign.methods[
-    'configure(address,address,uint256,uint256,uint256)'
-  ](
+  await bonusCampaign.configure(
     mockXBE.address,
     veXBE.address,
     now.add(params.bonusCampaign.startMintTime),
     now.add(params.bonusCampaign.stopRegisterTime),
     params.bonusCampaign.rewardsDuration,
-    params.bonusCampaign.emission,
+    params.bonusCampaign.emission
   );
 
   await veXBE.configure(
@@ -233,77 +262,6 @@ const configureContracts = async (params, owner) => {
   );
 };
 
-const deployVaults = async (params) => {
-  // const { dependentsAddresses } = params;
-  // const xbEuro = await MockToken.at(dependentsAddresses.xbEuro); // BankTransparentProxy
-  // const treasury = await Treasury.at(dependentsAddresses.treasury);
-  // const iStrategy = await deployer.deploy(InstitutionalEURxbStrategy);
-  // const cStrategy = await deployer.deploy(ConsumerEURxbStrategy);
-  // const wXBEuro = await deployer.deploy(TokenWrapper, 'wXBEuro', 'wbEuro', xbEuro.address, iStrategy.address);
-  // const controller = await deployer.deploy(Controller);
-  // await controller.configure(treasury.address, process.env.RINKEBY_STRATEGIST);
-  // const registry = await deployer.deploy(Registry);
-  // const cVault = await deployer.deploy(ConsumerEURxbVault);
-  // const iVault = await deployer.deploy(InstitutionalEURxbVault);
-  // const eToW = await deployer.deploy(UnwrappedToWrappedTokenConverter);
-  // eToW.configure(xbEuro.address);
-  // const wToE = await deployer.deploy(WrappedToUnwrappedTokenConverter);
-  // wToE.configure(xbEuro.address);
-  // console.log('1');
-  // await iStrategy.configure(wXBEuro.address, controller.address, iVault.address);
-  // console.log('2');
-  // await cStrategy.configure(xbEuro.address, controller.address, cVault.address);
-  // console.log('3');
-  // const MINTER_ROLE = await wXBEuro.MINTER_ROLE();
-  // console.log('4');
-  // await wXBEuro.grantRole(MINTER_ROLE, eToW.address);
-  // console.log('5');
-  // await wXBEuro.grantRole(MINTER_ROLE, wToE.address);
-  // console.log('6');
-  // await cVault.configure(xbEuro.address, controller.address);
-  // console.log('7');
-  // await iVault.configure(wXBEuro.address, controller.address);
-  // console.log('8');
-  // await controller.setApprovedStrategy(xbEuro.address, cStrategy.address, true);
-  // console.log('9');
-  // await controller.setApprovedStrategy(wXBEuro.address, iStrategy.address, true);
-  // console.log('10');
-  // await controller.setStrategy(xbEuro.address, cStrategy.address);
-  // console.log('11');
-  // await controller.setStrategy(wXBEuro.address, iStrategy.address);
-  // console.log('12');
-  // await controller.setConverter(iVault.address, xbEuro.address, wToE.address);
-  // console.log('13');
-  // await controller.setConverter(xbEuro.address, iVault.address, eToW.address);
-  // console.log('14');
-  // await controller.setVault(xbEuro.address, cVault.address);
-  // console.log('15');
-  // await controller.setVault(wXBEuro.address, iVault.address);
-  // console.log('16');
-  // await registry.addVault(cVault.address);
-  // console.log('17');
-  // await registry.addVault(iVault.address);
-  // console.log('18');
-
-  // const xbe = await XBE.at('0xfaC2D38F064A35b5C0636a7eDB4B6Cc13bD8D278');
-  // const governance = await deployer.deploy(Governance);
-  // const treasury = await deployer.deploy(Treasury);
-
-  // await governance.configure(
-  //   '0',
-  //   xbe.address, // Reward token
-  //   process.env.RINKEBY_OWNER_ACCOUNT,
-  //   xbe.address, // Governance token
-  //   process.env.REWARD_DISTRIBUTION_RINKEBY_ACCOUNT, // if treasury contract is exist then change that to treasury.address
-  // );
-  // await treasury.configure(
-  //   process.env.RINKEBY_OWNER_ACCOUNT,
-  //   '0x0000000000000000000000000000000000000000', // testnet OneSplit account
-  //   governance.address,
-  //   xbe.address, // Reward token
-  // );
-};
-
 module.exports = function (deployer, network, accounts) {
   const owner = accounts[0];
   const alice = accounts[1];
@@ -316,7 +274,7 @@ module.exports = function (deployer, network, accounts) {
     },
     bonusCampaign: {
       rewardsDuration: months('23'),
-      bonusEmission: ether('5000'),
+      emission: ether('5000'),
       stopRegisterTime: days('30'),
       startMintTime: new BN('0'),
     },
@@ -339,11 +297,17 @@ module.exports = function (deployer, network, accounts) {
       minAcceptQuorumPct: new BN('3000'),
       voteTime: new BN('1000000'),
     },
+    treasury: {
+      slippageTolerance: new BN('9500'),
+      swapDeadline: days('1')
+    }
   };
 
   deployer.then(async () => {
+
     const dependentsAddresses = distro.rinkeby;
     params = { dependentsAddresses, ...params };
+
     if (network === 'test' || network === 'soliditycoverage') {
       // do nothing
     } else if (network.startsWith('rinkeby')) {
@@ -376,6 +340,7 @@ module.exports = function (deployer, network, accounts) {
     } else if (network === 'development') {
 
       await deployContracts(deployer, params, owner);
+      await distributeTokens(params, alice, bob, owner);
       await configureContracts(params, owner);
 
     } else if (network === 'mainnet') {

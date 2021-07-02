@@ -48,12 +48,12 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     /// @param _wantAddress address of eurxb instance or address of TokenWrapper(EURxb) instance
     /// @param _controllerAddress address of controller instance
     /// @param _vaultAddress address of vault related to this strategy (Link type 1:1)
-    function configure(
+    function _configure(
         address _wantAddress,
         address _controllerAddress,
         address _vaultAddress,
         address _governance
-    ) public initializer {
+    ) internal {
         _want = _wantAddress;
         controller = _controllerAddress;
         vault = _vaultAddress;
@@ -127,7 +127,7 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
 
     /// @notice balance of this address in "want" tokens
     function balanceOf() override public view returns(uint256) {
-        
+
         //return IERC20(_want).balanceOf(address(this));
     }
 

@@ -24,7 +24,7 @@
             "airdrop": "0x1ec17b18452d4fD865C58d4093B805dAA6aa625e",
             "cvxEthSLP": "0x1F315c9B342a07FA21557d48c25b950016545f68",
             "pools": [
-                {   
+                {
                     "address": "0x1aaA7cDe9eeAd1A8D06640097e83421A6A0be7e0",
                     "lptoken": "0x1aaA7cDe9eeAd1A8D06640097e83421A6A0be7e0",
                     "token": "0xd83585B9026db73107A409D39C8E8F77519E8770",
@@ -65,28 +65,30 @@
                     "gauge_addresses": ["0x2B78433aD00d9e6fb579CF2Cd54AF06e1a33F68c"],
                     "swap_name": "StableSwapCompound",
                     "lp_token_address": "0x1aaA7cDe9eeAd1A8D06640097e83421A6A0be7e0",
-                    "coins": [{
-                        "name": "cDAI",
-                        "underlying_name": "DAI",
-                        "decimals": 18,
-                        "tethered": false,
-                        "wrapped_decimals": 8,
-                        "underlying_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
-                        "wrapped_address": "0x5d3a536e4d6dbd6114cc1ead35777bab948e3643"
-                    }, {
-                        "name": "cUSDC",
-                        "underlying_name": "USDC",
-                        "decimals": 6,
-                        "tethered": false,
-                        "wrapped_decimals": 8,
-                        "underlying_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-                        "wrapped_address": "0x39aa39c021dfbae8fac545936693ac917d5e7563"
-                    }]
+                    "coins": [
+                        {
+                            "name": "cDAI",
+                            "underlying_name": "DAI",
+                            "decimals": 18,
+                            "tethered": false,
+                            "wrapped_decimals": 8,
+                            "underlying_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                            "wrapped_address": "0x5d3a536e4d6dbd6114cc1ead35777bab948e3643"
+                        }, {
+                            "name": "cUSDC",
+                            "underlying_name": "USDC",
+                            "decimals": 6,
+                            "tethered": false,
+                            "wrapped_decimals": 8,
+                            "underlying_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                            "wrapped_address": "0x39aa39c021dfbae8fac545936693ac917d5e7563"
+                        }
+                    ]
                 }
             ]
         }
     },
     "development": {
-        
+
     }
 }

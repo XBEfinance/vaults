@@ -18,11 +18,11 @@ const MULTIPLIER = new BN("10").pow(new BN("18"));
 const days = (n) => new BN("60").mul(new BN("1440").mul(new BN(n)));
 const months = (n) => days("30").mul(new BN(n));
 
-const Minter = artifacts.require("Minter");
+// const Minter = artifacts.require("Minter");
 const XBEInflation = artifacts.require("XBEInflation");
 const GaugeController = artifacts.require("GaugeController");
 const VeXBE = artifacts.require("VeXBE");
-const LiquidityGaugeReward = artifacts.require("LiquidityGaugeReward");
+// const LiquidityGaugeReward = artifacts.require("LiquidityGaugeReward");
 const Voting = artifacts.require("Voting");
 const StakingRewards = artifacts.require("StakingRewards");
 const BonusCampaign = artifacts.require("BonusCampaign");

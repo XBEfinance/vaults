@@ -59,7 +59,7 @@ contract CRVStrategy is BaseStrategy {
         address _cvxCRVRewards,
         address _crvDepositor
     ) external initializer {
-        super.configure(_wantAddress, _controllerAddress, _vaultAddress, _governance);
+        _configure(_wantAddress, _controllerAddress, _vaultAddress, _governance);
         addressProvider = IAddressProvider(_addressProvider);
         mainRegistry = IMainRegistry(addressProvider.get_registry());
         cvxCRVRewards = _cvxCRVRewards;

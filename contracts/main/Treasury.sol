@@ -48,7 +48,6 @@ contract Treasury is Initializable, Ownable, ITreasury {
         uint256 _slippageTolerance,
         uint256 _swapDeadline
     ) external initializer {
-        transferOwnership(_governance);
         setRewardsDistributionRecipientContract(rewardsDistributionRecipientContract);
         setRewardsToken(_rewardsToken);
         setAuthorized(_governance, true);
@@ -57,6 +56,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
         uniswapFactory = _uniswapFactory;
         slippageTolerance = _slippageTolerance;
         swapDeadline = _swapDeadline;
+        transferOwnership(_governance);
     }
 
     function setRewardsToken(address _rewardsToken) public onlyOwner {

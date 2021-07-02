@@ -411,6 +411,9 @@ module.exports = function (deployer, network, accounts) {
         await configureContracts(params, owner);
       } else if (network === 'rinkeby_vaults') {
         await deployVaults(params);
+      } else if (network === 'development') {
+        await deployContracts(deployer, params, owner);
+        await configureContracts(params, owner);
       } else {
         console.error(`Unsupported network: ${network}`);
       }

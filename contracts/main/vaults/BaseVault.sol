@@ -165,8 +165,8 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
         if (_to != address(this)) {
             _token.safeTransfer(_to, r);
         }
-        if (_depositedAmountsOfTokens[_to] > _shares) {
-            _depositedAmountsOfTokens[_to] = _depositedAmountsOfTokens[_to] - _shares;
+        if (_depositedAmountsOfTokens[_to] > r) {
+            _depositedAmountsOfTokens[_to] = _depositedAmountsOfTokens[_to] - r;
         } else {
             _depositedAmountsOfTokens[_to] = 0;
         }

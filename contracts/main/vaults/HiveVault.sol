@@ -28,8 +28,8 @@ contract HiveVault is BaseVault {
     address[] tokenRewards;
     mapping(address => bool) tokenRewardsM;
 
-    event setPercentage(uint64 indexed newPercentage);
-    event addNewTokenReward(address indexed token);
+    event SetPercentage(uint64 indexed newPercentage);
+    event AddNewTokenReward(address indexed token);
     event RewardPaid(uint256[] indexed rewards);
 
     /// @notice Constructor that creates a consumer vault
@@ -54,7 +54,7 @@ contract HiveVault is BaseVault {
         require(!tokenRewardsM[_token], 'token already added');
         tokenRewards.push(_token);
         tokenRewardsM[_token] = true;
-        emit addNewTokenReward(_token);
+        emit AddNewTokenReward(_token);
     }
 
     function _collectingFee(uint256 _amount) internal returns(uint256 _sumWithoutFee) {
@@ -69,7 +69,7 @@ contract HiveVault is BaseVault {
      function setFeePercentage(uint64 _newPercentage) external onlyOwner {
         require(_newPercentage < PCT_BASE && _newPercentage != feePercentage, 'Invalid percentage');
         feePercentage = _newPercentage;
-        emit setPercentage(_newPercentage);
+        emit SetPercentage(_newPercentage);
     }
 
     function mulDiv (uint x, uint y, uint z)public pure returns (uint) {

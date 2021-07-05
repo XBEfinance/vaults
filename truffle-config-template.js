@@ -57,6 +57,12 @@ const ganacheNetworkConfig = {
   gasPrice: 125000000000
 };
 
+const mainnetForkNetworkConfig = {
+  host: "127.0.0.1",
+  port: 8545,
+  network_id: '1',
+};
+
 module.exports = {
   /**
    * Networks define how you connect to your ethereum client and let you set the
@@ -97,8 +103,11 @@ module.exports = {
 
     rinkeby_configure: rinkebyNetworkConfig,
 
-    development: ganacheNetworkConfig
+    rinkeby_all_with_save: rinkebyNetworkConfig,
 
+    development: ganacheNetworkConfig,
+
+    mainnet_fork: mainnetForkNetworkConfig
 
     // Useful for private networks
     // private: {

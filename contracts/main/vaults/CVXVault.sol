@@ -42,7 +42,7 @@ contract CVXVault is BaseVault {
         address _referralProgram,
         address _treasury
     ) public initializer {
-        super.configure(_initialToken, _initialController, _governance);
+        _configure(_initialToken, _initialController, _governance);
         referralProgram = IReferralProgram(_referralProgram);
         treasury = ITreasury(_treasury);
         feePercentage = 0;

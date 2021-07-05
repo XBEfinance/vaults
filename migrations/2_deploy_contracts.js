@@ -1,32 +1,33 @@
 const { BN, constants, time } = require('@openzeppelin/test-helpers');
-
+const { accounts, contract } = require('@openzeppelin/test-environment');
 const { ZERO_ADDRESS } = constants;
 
 const fs = require('fs');
-const distro = require('../distro.json');
+const distro = require('../../curve-convex/distro.json');
 
-const XBEInflation = artifacts.require('XBEInflation');
-const VeXBE = artifacts.require('VeXBE');
-const Voting = artifacts.require('Voting');
-const HiveStrategy = artifacts.require('HiveStrategy');
-const HiveVault = artifacts.require('HiveVault');
+const XBEInflation = contract.fromArtifact('XBEInflation');
+const VeXBE = contract.fromArtifact('VeXBE');
+const Voting = contract.fromArtifact('Voting');
+const HiveStrategy = contract.fromArtifact('HiveStrategy');
+const HiveVault = contract.fromArtifact('HiveVault');
 // const StakingRewards = artifacts.require('StakingRewards');
-const BonusCampaign = artifacts.require('BonusCampaign');
-const ReferralProgram = artifacts.require('ReferralProgram');
+const BonusCampaign = contract.fromArtifact('BonusCampaign');
+const ReferralProgram = contract.fromArtifact('ReferralProgram');
 
-const MockToken = artifacts.require('MockToken');
+const MockToken = contract.fromArtifact('MockToken');
 
-const Treasury = artifacts.require('Treasury');
+const Treasury = contract.fromArtifact('Treasury');
 // const XBE = artifacts.require('XBE');
-const TokenWrapper = artifacts.require('TokenWrapper');
-const Registry = artifacts.require('Registry');
-const Controller = artifacts.require('Controller');
-const ConsumerEURxbVault = artifacts.require('ConsumerEURxbVault');
-const InstitutionalEURxbVault = artifacts.require('InstitutionalEURxbVault');
-const UnwrappedToWrappedTokenConverter = artifacts.require('UnwrappedToWrappedTokenConverter');
-const WrappedToUnwrappedTokenConverter = artifacts.require('WrappedToUnwrappedTokenConverter');
-const InstitutionalEURxbStrategy = artifacts.require('InstitutionalEURxbStrategy');
-const ConsumerEURxbStrategy = artifacts.require('ConsumerEURxbStrategy');
+const TokenWrapper = contract.fromArtifact('TokenWrapper');
+const Registry = contract.fromArtifact('Registry');
+const Controller = contract.fromArtifact('Controller');
+const ConsumerEURxbVault = contract.fromArtifact('ConsumerEURxbVault');
+const InstitutionalEURxbVault = contract.fromArtifact('InstitutionalEURxbVault');
+const UnwrappedToWrappedTokenConverter = contract.fromArtifact('UnwrappedToWrappedTokenConverter');
+const WrappedToUnwrappedTokenConverter = contract.fromArtifact('WrappedToUnwrappedTokenConverter');
+const InstitutionalEURxbStrategy = contract.fromArtifact('InstitutionalEURxbStrategy');
+const ConsumerEURxbStrategy = contract.fromArtifact('ConsumerEURxbStrategy');
+const IAddressProvider = contract.fromArtifact('IAddressProvider');
 
 const ether = (n) => new BN(web3.utils.toWei(n, 'ether'));
 const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
@@ -166,10 +167,12 @@ const configureContracts = async (params, owner) => {
   await referralProgram.configure(
     [mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
     treasury.address,
+    { from: owner }
   );
 
   await registry.configure(
     owner,
+    { from: owner }
   );
 
   await treasury.configure(
@@ -180,29 +183,37 @@ const configureContracts = async (params, owner) => {
     dependentsAddresses.uniswap_factory,
     params.treasury.slippageTolerance,
     now.add(params.treasury.swapDeadline),
+    { from: owner }
   );
 
   await controller.configure(
     treasury.address,
     owner,
     owner,
+    { from: owner }
   );
 
   await controller.setVault(
     dependentsAddresses.convex.pools[0].lptoken,
-    hiveVault.address
+    hiveVault.address,
+    { from: owner }
   );
 
   await controller.setApprovedStrategy(
     dependentsAddresses.convex.pools[0].lptoken,
     hiveStrategy.address,
-    true
+    true,
+    { from: owner }
   );
 
   await controller.setStrategy(
     dependentsAddresses.convex.pools[0].lptoken,
-    hiveStrategy.address
+    hiveStrategy.address,
+    { from: owner }
   );
+
+  // "0x252c40Ba1295277F993d91F649644C4eF72C708D"
+  console.log(dependentsAddresses);
 
   await hiveStrategy.configure(
     dependentsAddresses.curve.address_provider,
@@ -217,8 +228,19 @@ const configureContracts = async (params, owner) => {
       dependentsAddresses.convex.pools[0].token,
       dependentsAddresses.convex.booster,
       dependentsAddresses.curve.pools[0].coins.length
-    ]
+    ],
+    { from: owner }
   );
+
+  const mainRegistryAddress = await (await IAddressProvider.at(dependentsAddresses.curve.address_provider))
+    .get_registry({ from: owner });
+
+  console.log(mainRegistryAddress);
+  await hiveStrategy.setMainRegistry(
+    mainRegistryAddress,
+    { from: owner }
+  );
+
 
   await hiveVault.configure(
     dependentsAddresses.convex.pools[0].lptoken,
@@ -226,6 +248,7 @@ const configureContracts = async (params, owner) => {
     owner,
     referralProgram.address,
     treasury.address,
+    { from: owner }
   );
 
   await xbeInflation.configure(
@@ -236,6 +259,7 @@ const configureContracts = async (params, owner) => {
     params.xbeinflation.rateReductionCoefficient,
     params.xbeinflation.rateDenominator,
     params.xbeinflation.inflationDelay,
+    { from: owner }
   );
 
   await bonusCampaign.configure(
@@ -244,7 +268,8 @@ const configureContracts = async (params, owner) => {
     now.add(params.bonusCampaign.startMintTime),
     now.add(params.bonusCampaign.stopRegisterTime),
     params.bonusCampaign.rewardsDuration,
-    params.bonusCampaign.emission
+    params.bonusCampaign.emission,
+    { from: owner }
   );
 
   await veXBE.configure(
@@ -252,6 +277,7 @@ const configureContracts = async (params, owner) => {
     'Voting Escrowed XBE',
     'veXBE',
     '0.0.1',
+    { from: owner }
   );
 
   await voting.initialize(
@@ -259,10 +285,11 @@ const configureContracts = async (params, owner) => {
     params.voting.supportRequiredPct,
     params.voting.minAcceptQuorumPct,
     params.voting.voteTime,
+    { from: owner }
   );
 };
 
-module.exports = function (deployer, network, accounts) {
+module.exports = function (deployer, network) {
   const owner = accounts[0];
   const alice = accounts[1];
   const bob = accounts[2];
@@ -337,7 +364,7 @@ module.exports = function (deployer, network, accounts) {
         console.error(`Unsupported network: ${network}`);
       }
 
-    } else if (network === 'development') {
+    } else if (network === 'development' || network === "mainnet_fork") {
 
       await deployContracts(deployer, params, owner);
       await distributeTokens(params, alice, bob, owner);

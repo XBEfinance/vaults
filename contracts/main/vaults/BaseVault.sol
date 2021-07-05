@@ -53,11 +53,11 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
     /// @dev Called once only by deployer
     /// @param _initialToken Business token logic address
     /// @param _initialController Controller instance address
-    function configure(
+    function _configure(
         address _initialToken,
         address _initialController,
         address _governance
-    ) public initializer {
+    ) internal {
         _token = IERC20(_initialToken);
         setController(_initialController);
         transferOwnership(_governance);

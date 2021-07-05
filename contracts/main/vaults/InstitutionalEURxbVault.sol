@@ -38,7 +38,7 @@ contract InstitutionalEURxbVault is BaseVault, AccessControl {
         address _governance,
         address _initialTokenUnwrapped
     ) external initializer {
-        super.configure(_initialToken, _initialController, _governance);
+        _configure(_initialToken, _initialController, _governance);
         tokenUnwrapped = _initialTokenUnwrapped;
     }
 

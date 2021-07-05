@@ -42,7 +42,7 @@ contract HiveVault is BaseVault {
         address _referralProgram,
         address _treasury
     ) public initializer {
-        super.configure(_initialToken, _initialController, _governance);
+        _configure(_initialToken, _initialController, _governance);
         referralProgram = IReferralProgram(_referralProgram);
         treasury = ITreasury(_treasury);
         feePercentage = 0;
@@ -128,11 +128,12 @@ contract HiveVault is BaseVault {
     function earnedVirtual() external returns(uint256[] memory virtualAmounts){
         uint256[] memory realAmounts = earnedReal();
         uint256[] memory virtualEarned = new uint256[](1);
+        virtualAmounts = new uint256(tokenRewards.length);
         virtualEarned[0] = IStrategy(_controller.strategies(address(_token))).canClaim();
         virtualEarned = IStrategy(_controller.strategies(address(_token))).subFee(virtualEarned);
         uint256 _share = balanceOf(_msgSender());
         for(uint256 i = 0; i < tokenRewards.length; i++){
-            if(tokenRewards[i] == xbe){
+            if(tokenRewards[i] == xbe) {
                 virtualAmounts[i] = realAmounts[i].mul(_share).div(totalSupply());
             } else {
                 virtualAmounts[i] = realAmounts[i].add(virtualEarned[0]).mul(_share).div(totalSupply());

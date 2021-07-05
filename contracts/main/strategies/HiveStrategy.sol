@@ -65,8 +65,11 @@ contract HiveStrategy is BaseStrategy {
     ) public initializer {
         _configure(_wantAddress, _controllerAddress, _vaultAddress, _governance);
         addressProvider = IAddressProvider(_addressProvider);
-        mainRegistry = IMainRegistry(addressProvider.get_registry());
         poolSettings = _poolSettings;
+    }
+
+    function setMainRegistry(address _mainRegistry) external onlyOwner {
+        mainRegistry = IMainRegistry(_mainRegistry);
     }
 
     function addFeeReceiver(address _to, uint256 _weight, address[] calldata _tokens, bool _callFunc) external onlyOwner {

@@ -47,14 +47,14 @@ const mainnetNetworkConfig = {
 };
 
 const ganacheNetworkConfig = {
-  host: "localhost",
+  host: 'localhost',
   port: 8545,
   network_id: '*',
   // networkCheckTimeout: 10000000,
   gasLimit: 9000000,
   // gas: 9000000,
   // confirmations: 2,
-  gasPrice: 125000000000
+  gasPrice: 125000000000,
 };
 
 module.exports = {
@@ -97,8 +97,7 @@ module.exports = {
 
     rinkeby_configure: rinkebyNetworkConfig,
 
-    development: ganacheNetworkConfig
-
+    development: ganacheNetworkConfig,
 
     // Useful for private networks
     // private: {
@@ -112,7 +111,7 @@ module.exports = {
   mocha: {
     // reporter: 'eth-gas-reporter',
     // gasReporter: { 'gasPrice': 1 },
-    timeout: 20000000
+    timeout: 20000000,
   },
 
   api_keys: {

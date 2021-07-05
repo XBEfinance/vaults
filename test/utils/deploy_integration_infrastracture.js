@@ -1,5 +1,6 @@
 // require ABI:
 const { BN, constants, time } = require('@openzeppelin/test-helpers');
+const UniswapV2Router02_ABI = require('../build/UniswapV2Router02.json');
 
 // var abi = <ABI of contract>;                                // Set contract ABI
 // var newContract = web3.eth.contract(abi);                   // Contract object
@@ -42,11 +43,7 @@ const MULTIPLIER = new BN('10').pow(new BN('18'));
 const ONE = new BN('1');
 const ZERO = new BN('0');
 
-contract('Curve LP Testing', (accounts) => {
-  const owner = accounts[0];
-  const alice = accounts[1];
-  const bob = accounts[2];
-
+contract('Curve LP Testing', async ([owner, alice, bob, jack]) => {
   let mockXBE;
   let xbeInflation;
   let bonusCampaign;
@@ -220,6 +217,6 @@ contract('Curve LP Testing', (accounts) => {
 
   before(initialization);
   describe('Purchase of Tokens', () => {
-    it('test', async () => {});
+
   });
 });

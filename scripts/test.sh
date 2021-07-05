@@ -14,6 +14,9 @@ else
   ./scripts/main_parts_build.sh
 fi
 
+cp -r ./abi/* ./build/contracts/
+echo "Third party artifacts copied!"
+
 if [[ $1 = "+network" ]]; then
   # run tests
   truffle test --network $2 --compile-none --stacktrace $@

@@ -1,9 +1,10 @@
 const Web3 = require('web3');
 const { BN, constants, time } = require('@openzeppelin/test-helpers');
-const contractTruffle = require('@truffle/contract');
-const StableSwapUSDT_ABI = require('../abi/StableSwapUSDT.json');
+// const contractTruffle = require('@truffle/contract');
+// const StableSwapUSDT_ABI = require('../abi/StableSwapUSDT.json');
 // OBJECTS CONTRACT
-const StableSwapUSDT = contractTruffle(StableSwapUSDT_ABI);
+// const StableSwapUSDT = contractTruffle(StableSwapUSDT_ABI);
+
 // var abi = <ABI of contract>;                                // Set contract ABI
 // var newContract = web3.eth.contract(abi);                   // Contract object
 // var contractInstance = newContract.at(<Contract Address>);  // instance of the contract
@@ -34,6 +35,7 @@ const UnwrappedToWrappedTokenConverter = artifacts.require('UnwrappedToWrappedTo
 const WrappedToUnwrappedTokenConverter = artifacts.require('WrappedToUnwrappedTokenConverter');
 const InstitutionalEURxbStrategy = artifacts.require('InstitutionalEURxbStrategy');
 const ConsumerEURxbStrategy = artifacts.require('ConsumerEURxbStrategy');
+const StableSwapUSDT = artifacts.require('StableSwapUSDT');
 
 const ether = (n) => new BN(web3.utils.toWei(n, 'ether'));
 const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));

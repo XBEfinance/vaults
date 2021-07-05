@@ -1,14 +1,15 @@
-// require ABI:
+const Web3 = require('web3');
 const { BN, constants, time } = require('@openzeppelin/test-helpers');
-
+const contractTruffle = require('@truffle/contract');
+const StableSwapUSDT_ABI = require('../abi/StableSwapUSDT.json');
+// OBJECTS CONTRACT
+const StableSwapUSDT = contractTruffle(StableSwapUSDT_ABI);
 // var abi = <ABI of contract>;                                // Set contract ABI
 // var newContract = web3.eth.contract(abi);                   // Contract object
 // var contractInstance = newContract.at(<Contract Address>);  // instance of the contract
 
 // contractInstance.functionName.call();
-
 const { ZERO_ADDRESS } = constants;
-
 const distro = require('../distro.json');
 
 const XBEInflation = artifacts.require('XBEInflation');
@@ -58,6 +59,7 @@ contract('Curve LP Testing', (accounts) => {
   let hiveVault;
   let referralProgram;
   let registry;
+  let stableSwapUSDT;
 
   const params = {
     bonusCampaign: {
@@ -93,6 +95,8 @@ contract('Curve LP Testing', (accounts) => {
   };
 
   const deployContracts = async () => {
+    const { dependentsAddresses } = params;
+
     registry = await Registry.new({ from: owner });
 
     referralProgram = await ReferralProgram.new({ from: owner });
@@ -106,6 +110,7 @@ contract('Curve LP Testing', (accounts) => {
     bonusCampaign = await BonusCampaign.new({ from: owner });
     veXBE = await VeXBE.new({ from: owner });
     voting = await Voting.new({ from: owner });
+    stableSwapUSDT = await StableSwapUSDT.at(dependentsAddresses.curve.pools[0].swap_address);
   };
 
   const configureContracts = async () => {
@@ -213,13 +218,16 @@ contract('Curve LP Testing', (accounts) => {
     );
   };
 
-  const initialization = async () => {
+  async function initialization() {
     await deployContracts();
     await configureContracts();
-  };
+  }
 
   before(initialization);
-  describe('Purchase of Tokens', () => {
-    it('test', async () => {});
+  describe('Purchase of Tokens', async () => {
+    it('test', async () => {
+      console.log(stableSwapUSDT.address);
+      // console.log(accounts);
+    });
   });
 });

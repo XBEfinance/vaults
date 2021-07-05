@@ -2,7 +2,7 @@
 /* eslint no-unused-vars: 0 */
 /* eslint eqeqeq: 0 */
 
-const { expect, assert } = require("chai");
+const { expect, assert } = require('chai');
 const {
   BN,
   constants,
@@ -10,28 +10,26 @@ const {
   expectRevert,
   ether,
   time,
-} = require("@openzeppelin/test-helpers");
+} = require('@openzeppelin/test-helpers');
 const { accounts, contract } = require('@openzeppelin/test-environment');
 const {
   ZERO,
   ONE,
   getMockTokenPrepared,
   processEventArgs,
-} = require("./utils/common.js");
+} = require('./utils/common.js');
 const {
   deployInfrastructure,
   YEAR,
   MULTIPLIER,
   days,
   defaultParams,
-} = require("./utils/deploy_strategy_infrastructure.js");
-
+} = require('./utils/deploy_strategy_infrastructure.js');
 
 const { ZERO_ADDRESS } = constants;
-const MockContract = contract.fromArtifact("MockContract");
+const MockContract = contract.fromArtifact('MockContract');
 
-describe("VeXBE", () => {
-
+describe('VeXBE', () => {
   const owner = accounts[0];
   const alice = accounts[1];
   const bob = accounts[2];
@@ -50,8 +48,8 @@ describe("VeXBE", () => {
     DEPOSIT_FOR_TYPE: new BN(0),
     CREATE_LOCK_TYPE: new BN(1),
     INCREASE_LOCK_AMOUNT: new BN(2),
-    INCREASE_UNLOCK_TIME: new BN(3)
-  }
+    INCREASE_UNLOCK_TIME: new BN(3),
+  };
 
   async function deploy() {
     deployment = deployInfrastructure(owner, alice, bob, defaultParams);
@@ -61,7 +59,7 @@ describe("VeXBE", () => {
       xbeInflation,
       bonusCampaign,
       veXBE,
-      voting
+      voting,
     ] = await deployment.proceed();
   }
 
@@ -70,18 +68,18 @@ describe("VeXBE", () => {
     await deployment.configure();
   }
 
-  async function approveAndCreateLock(from, value, unlockTime){
+  async function approveAndCreateLock(from, value, unlockTime) {
     await mockXBE.approve(veXBE.address, value, { from });
     return veXBE.createLock(value, unlockTime, { from });
   }
 
-  async function getTxBlockTimestamp(tx){
+  async function getTxBlockTimestamp(tx) {
     return new BN(
-      (await web3.eth.getBlock(tx.receipt.blockNumber)).timestamp.toString()
+      (await web3.eth.getBlock(tx.receipt.blockNumber)).timestamp.toString(),
     );
   }
 
-  async function shiftToNextWeek(){
+  async function shiftToNextWeek() {
     const latestTimestamp = await time.latest();
     const WEEK = await veXBE.WEEK();
     const latestFullWeek = latestTimestamp.div(WEEK).mul(WEEK);
@@ -92,26 +90,25 @@ describe("VeXBE", () => {
   beforeEach(async () => {
     vaultWithXBExCXStrategy = await getMockTokenPrepared(
       alice,
-      ether("100"),
-      ether("1000"),
-      owner
+      ether('100'),
+      ether('1000'),
+      owner,
     );
-    await vaultWithXBExCXStrategy.approve(bob, ether("100"));
-    await vaultWithXBExCXStrategy.transfer(bob, ether("100"));
-    defaultParams.vaultWithXBExCXStrategyAddress =
-      vaultWithXBExCXStrategy.address;
+    await vaultWithXBExCXStrategy.approve(bob, ether('100'));
+    await vaultWithXBExCXStrategy.transfer(bob, ether('100'));
+    defaultParams.vaultWithXBExCXStrategyAddress = vaultWithXBExCXStrategy.address;
   });
 
-  describe("Configuration", () => {
+  describe('Configuration', () => {
     beforeEach(deploy);
 
     it('should be correct configured', async () => {
       const config = {
         token: mockXBE.address,
-        name: "Voting Escrowed XBE",
-        symbol: "veXBE",
-        version: "0.0.1"
-      }
+        name: 'Voting Escrowed XBE',
+        symbol: 'veXBE',
+        version: '0.0.1',
+      };
       await veXBE.configure(config.token, config.name, config.symbol, config.version);
 
       const admin = await veXBE.admin();
@@ -128,7 +125,7 @@ describe("VeXBE", () => {
 
       await expectRevert(
         veXBE.configure(config.token, config.name, config.symbol, config.version),
-        'Initializable: contract is already initialized'
+        'Initializable: contract is already initialized',
       );
     });
   });
@@ -160,10 +157,8 @@ describe("VeXBE", () => {
       const unlockTime = (await time.latest()).add(MAXTIME).add(days('7'));
       const value = ether('1');
 
-
       await mockXBE.approve(veXBE.address, value);
       await expectRevert(veXBE.createLock(value, unlockTime), 'lockOnlyToValidFutureTime');
-
     });
 
     it('should correct createLock', async () => {
@@ -181,11 +176,11 @@ describe("VeXBE", () => {
         value,
         locktime,
         _type: depositType.CREATE_LOCK_TYPE,
-        ts: blockTimestamp
+        ts: blockTimestamp,
       });
       expectEvent(createLock, 'Supply', {
         prevSupply: new BN(0),
-        supply: value
+        supply: value,
       });
 
       const XBEBalanceAfter = await mockXBE.balanceOf(owner);
@@ -196,7 +191,6 @@ describe("VeXBE", () => {
 
       expect(lockStarts).to.be.bignumber.equal(blockTimestamp);
       expect(lockedEnd).to.be.bignumber.equal(locktime);
-
     });
 
     it('should correct deposit for other user', async () => {
@@ -223,16 +217,15 @@ describe("VeXBE", () => {
         value,
         locktime,
         _type: depositType.DEPOSIT_FOR_TYPE,
-        ts: blockTimestamp
+        ts: blockTimestamp,
       });
       expectEvent(depositFor, 'Supply', {
         prevSupply: supplyBefore,
-        supply: supplyBefore.add(value)
+        supply: supplyBefore.add(value),
       });
 
-      await time.increase(days("20"));
+      await time.increase(days('20'));
       await expectRevert(veXBE.depositFor(alice, value, { from: owner }), 'lockExpired');
-
     });
 
     it('should correct increase amount', async () => {
@@ -256,16 +249,15 @@ describe("VeXBE", () => {
         value,
         locktime,
         _type: depositType.INCREASE_LOCK_AMOUNT,
-        ts: blockTimestamp
+        ts: blockTimestamp,
       });
       expectEvent(increaseAmount, 'Supply', {
         prevSupply: supplyBefore,
-        supply: supplyBefore.add(value)
+        supply: supplyBefore.add(value),
       });
 
       await time.increase(days('20'));
       await expectRevert(veXBE.increaseAmount(value), 'lockExpired');
-
     });
 
     it('should correct increase unlock time', async () => {
@@ -296,13 +288,12 @@ describe("VeXBE", () => {
         value: ZERO,
         locktime: expectedLockTime,
         _type: depositType.INCREASE_UNLOCK_TIME,
-        ts: blockTimestamp
+        ts: blockTimestamp,
       });
       expectEvent(increaseUnlockTime, 'Supply', {
         prevSupply: supplyBefore,
-        supply: supplyBefore
+        supply: supplyBefore,
       });
-
     });
 
     it('should correct withdraw', async () => {
@@ -319,20 +310,17 @@ describe("VeXBE", () => {
       const withdraw = await veXBE.withdraw();
       const ts = await getTxBlockTimestamp(withdraw);
 
-      expectEvent(withdraw, 'Withdraw',{
+      expectEvent(withdraw, 'Withdraw', {
         provider: owner,
         value,
-        ts
+        ts,
       });
 
       expectEvent(withdraw, 'Supply', {
         prevSupply: value,
-        supply: ZERO
+        supply: ZERO,
       });
-
-
     });
-
   });
 
   describe('Ownership', () => {
@@ -389,12 +377,12 @@ describe("VeXBE", () => {
 
       const balancePoints = [];
 
-      for(let i = 0; i < 16; i+=1) {
+      for (let i = 0; i < 16; i += 1) {
         const [
-          {value: latestBlock} = {},
+          { value: latestBlock } = {},
           // {value: block} = {},
-          {value: balance} = {},
-          {value: totalSupply} = {},
+          { value: balance } = {},
+          { value: totalSupply } = {},
         ] = await Promise.allSettled([
           web3.eth.getBlock('latest'),
           // time.latestBlock(),
@@ -412,12 +400,12 @@ describe("VeXBE", () => {
         balancePoints.push({
           balance,
           totalSupply,
-          block: latestBlock.number
+          block: latestBlock.number,
         });
       }
 
       // eslint-disable-next-line no-restricted-syntax
-      for(const point of balancePoints) {
+      for (const point of balancePoints) {
         const balance = await veXBE.balanceOfAt(owner, point.block);
         const totalSupply = await veXBE.totalSupplyAt(point.block);
         expect(balance).to.be.bignumber.equal(point.balance);
@@ -429,49 +417,48 @@ describe("VeXBE", () => {
   describe('Utils', () => {
     beforeEach(deployAndConfigure);
 
-    async function calcCheckpoints(point, initialEpoch, result, ) {
-      const lastPoint = {...point};
-      const initialLastPoint = {...lastPoint};
+    async function calcCheckpoints(point, initialEpoch, result) {
+      const lastPoint = { ...point };
+      const initialLastPoint = { ...lastPoint };
       const blockTimestamp = await getTxBlockTimestamp(result);
-      const blockNumber  = new BN(result.receipt.blockNumber);
+      const blockNumber = new BN(result.receipt.blockNumber);
       const WEEK = await veXBE.WEEK();
       let epoch = parseInt(initialEpoch, 10);
       let tI = lastPoint.ts.div(WEEK).mul(WEEK);
 
-
       let blockSlope = new BN(0);
       if (blockTimestamp > lastPoint.ts) {
-          blockSlope = MULTIPLIER.mul( blockNumber.sub(lastPoint.blk) ).div( blockNumber.sub(lastPoint.ts) );
+        blockSlope = MULTIPLIER.mul(blockNumber.sub(lastPoint.blk)).div(blockNumber.sub(lastPoint.ts));
       }
 
       const pointHistory = [];
 
-      for(let i = 0; i < 255; i+= 1){
+      for (let i = 0; i < 255; i += 1) {
         tI = tI.add(WEEK);
         let dSlope = ZERO;
 
-        if(tI > blockTimestamp) {
+        if (tI > blockTimestamp) {
           tI = blockTimestamp;
-        }else{
+        } else {
           dSlope = await veXBE.slopeChanges(tI);
         }
 
         lastPoint.bias = lastPoint.bias.sub(lastPoint.slope.mul(tI.sub(lastPoint.ts)));
         lastPoint.slope = lastPoint.slope.add(dSlope);
 
-        if(lastPoint.bias < ZERO) lastPoint.bias = ZERO;
-        if(lastPoint.slope < ZERO) lastPoint.slope = ZERO;
+        if (lastPoint.bias < ZERO) lastPoint.bias = ZERO;
+        if (lastPoint.slope < ZERO) lastPoint.slope = ZERO;
 
         lastPoint.ts = tI;
-        lastPoint.blk = initialLastPoint.blk.add( blockSlope.mul( tI.sub(initialLastPoint.ts).div(MULTIPLIER) ) );
+        lastPoint.blk = initialLastPoint.blk.add(blockSlope.mul(tI.sub(initialLastPoint.ts).div(MULTIPLIER)));
         epoch += 1;
 
-        if(tI == blockTimestamp){
+        if (tI == blockTimestamp) {
           lastPoint.blk = blockNumber;
-          pointHistory.push({ epoch, point: {...lastPoint} });
+          pointHistory.push({ epoch, point: { ...lastPoint } });
           break;
-        }else{
-          pointHistory.push({ epoch, point: {...lastPoint} });
+        } else {
+          pointHistory.push({ epoch, point: { ...lastPoint } });
         }
       }
 
@@ -481,10 +468,10 @@ describe("VeXBE", () => {
     it('should correct save checkpoint', async () => {
       const value = ether('1');
       const unlockTime = (await time.latest()).add(days('365'));
-      await approveAndCreateLock(owner,value,unlockTime);
-      await approveAndCreateLock(alice,value,unlockTime);
+      await approveAndCreateLock(owner, value, unlockTime);
+      await approveAndCreateLock(alice, value, unlockTime);
 
-      const epoch  = await veXBE.epoch();
+      const epoch = await veXBE.epoch();
       const lastPoint = await veXBE.pointHistory(epoch);
 
       await time.increase(days(730));
@@ -493,20 +480,17 @@ describe("VeXBE", () => {
 
       const points = await calcCheckpoints(lastPoint, epoch, result);
 
-
       const newEpoch = await veXBE.epoch();
 
       // eslint-disable-next-line no-restricted-syntax
-      for(const historyPoint of points){
+      for (const historyPoint of points) {
         const { point: expectedPoint } = historyPoint;
         const point = await veXBE.pointHistory(historyPoint.epoch);
         expect(point.bias).to.be.bignumber.equal(expectedPoint.bias);
         expect(point.slope).to.be.bignumber.equal(expectedPoint.slope);
         expect(point.ts).to.be.bignumber.equal(expectedPoint.ts);
         expect(point.blk).to.be.bignumber.equal(expectedPoint.blk);
-
       }
-
     });
 
     it('should correct return last user slope', async () => {
@@ -551,6 +535,6 @@ describe("VeXBE", () => {
 
       const smartWalletChecker = await veXBE.smartWalletChecker();
       expect(smartWalletChecker).to.be.bignumber.equal(futureSmartWalletChecker);
-    })
+    });
   });
 });

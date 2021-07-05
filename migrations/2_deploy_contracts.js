@@ -146,7 +146,6 @@ const distributeTokens = async (params, alice, bob, owner) => {
 };
 
 const configureContracts = async (params, owner) => {
-
   const { dependentsAddresses } = params;
 
   mockXBE = await MockToken.at(getSavedAddress('mockXBE'));
@@ -326,12 +325,11 @@ module.exports = function (deployer, network) {
     },
     treasury: {
       slippageTolerance: new BN('9500'),
-      swapDeadline: days('1')
-    }
+      swapDeadline: days('1'),
+    },
   };
 
   deployer.then(async () => {
-
     const dependentsAddresses = distro.rinkeby;
     params = { dependentsAddresses, ...params };
 
@@ -339,41 +337,26 @@ module.exports = function (deployer, network) {
       // do nothing
     } else if (network.startsWith('rinkeby')) {
       if (network === 'rinkeby_deploy') {
-
         await deployContracts(deployer, params, owner);
-
       } else if (network === 'rinkeby_tokens') {
-
         await distributeTokens(params, alice, bob, owner);
-
       } else if (network === 'rinkeby_configure') {
-
         await configureContracts(params, owner);
-
       } else if (network === 'rinkeby_all_with_save') {
-
         await deployContracts(deployer, params, owner);
         await distributeTokens(params, alice, bob, owner);
         await configureContracts(params, owner);
-
       } else if (network === 'rinkeby_vaults') {
-
         await deployVaults(params);
-
       } else {
         console.error(`Unsupported network: ${network}`);
       }
-
-    } else if (network === 'development' || network === "mainnet_fork") {
-
-      await deployContracts(deployer, params, owner);
-      await distributeTokens(params, alice, bob, owner);
-      await configureContracts(params, owner);
-
+    } else if (network === 'development') {
+      // await deployContracts(deployer, params, owner);
+      // await distributeTokens(params, alice, bob, owner);
+      // await configureContracts(params, owner);
     } else if (network === 'mainnet') {
-
       await deployVaultsToMainnet();
-
     } else {
       console.error(`Unsupported network: ${network}`);
     }

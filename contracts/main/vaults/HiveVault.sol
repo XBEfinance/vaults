@@ -128,7 +128,7 @@ contract HiveVault is BaseVault {
     function earnedVirtual() external returns(uint256[] memory virtualAmounts){
         uint256[] memory realAmounts = earnedReal();
         uint256[] memory virtualEarned = new uint256[](1);
-        virtualAmounts = new uint256(tokenRewards.length);
+        virtualAmounts = new uint256[](tokenRewards.length);
         virtualEarned[0] = IStrategy(_controller.strategies(address(_token))).canClaim();
         virtualEarned = IStrategy(_controller.strategies(address(_token))).subFee(virtualEarned);
         uint256 _share = balanceOf(_msgSender());

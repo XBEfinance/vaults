@@ -91,8 +91,8 @@ contract HiveVault is BaseVault {
     }
 
     function withdraw(uint256 _shares) override public {
-        super._withdraw(_msgSender(), _shares);
         claimAll();
+        super._withdraw(_msgSender(), _shares);
     }
 
     function withdrawAll() override public {

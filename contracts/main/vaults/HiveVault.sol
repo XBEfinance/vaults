@@ -78,6 +78,14 @@ contract HiveVault is BaseVault {
         return a * b * z + a * d + b * c + b * d / z;
     }
 
+    function depositFor(uint256 _amount, address _for) override public {
+        uint256 _sumWithoutFee = _collectingFee(_amount);
+        super.depositFor(_sumWithoutFee, _for);
+        (bool _userExists,) = referralProgram.users(_for);
+        if(!_userExists){
+            referralProgram.registerUser(address(treasury), _for);
+        }
+    }
 
     function deposit(uint256 _amount) override public {
         uint256 _sumWithoutFee = _collectingFee(_amount);
@@ -87,7 +95,6 @@ contract HiveVault is BaseVault {
         if(!_userExists){
             referralProgram.registerUser(address(treasury), _msgSender());
         }
-
     }
 
     function withdraw(uint256 _shares) override public {

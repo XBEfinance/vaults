@@ -7,11 +7,11 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 
-import "../interfaces/IConverter.sol";
-import "../interfaces/vault/IVaultCore.sol";
-import '../interfaces/IStrategy.sol';
-import '../interfaces/IController.sol';
-import "../mocks/StringsConcatenations.sol";
+import "../../interfaces/IConverter.sol";
+import "../../interfaces/vault/IVaultCore.sol";
+import '../../interfaces/IStrategy.sol';
+import '../../interfaces/IController.sol';
+import "../../mocks/StringsConcatenations.sol";
 
 /// @title EURxbStrategy
 /// @notice This is base contract for yield farming strategy with EURxb token
@@ -119,7 +119,7 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     }
 
     /// @dev Controller | Vault role - withdraw should always return to Vault
-    function withdrawAll() override onlyControllerOrVault external returns(uint256) {
+    function withdrawAll() override virtual onlyControllerOrVault external returns(uint256) {
         uint256 _balance = IERC20(_want).balanceOf(address(this));
         withdraw(_balance);
         return _balance;
@@ -139,7 +139,4 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
 
     function earned(address[] calldata) override virtual external returns(uint256[] memory);
 
-    function convertTokens(address, uint256) virtual override external;
-
-    function withdrawalFee() override virtual external view returns(uint256);
 }

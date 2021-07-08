@@ -3,7 +3,7 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./BaseVault.sol";
+import "./base/BaseVault.sol";
 import "../interfaces/IStrategy.sol";
 import "../interfaces/IController.sol";
 import "../interfaces/IReferralProgram.sol";
@@ -78,7 +78,6 @@ contract HiveVault is BaseVault {
         return a * b * z + a * d + b * c + b * d / z;
     }
 
-
     function deposit(uint256 _amount) override public {
         uint256 _sumWithoutFee = _collectingFee(_amount);
         super.deposit(_sumWithoutFee);
@@ -87,17 +86,16 @@ contract HiveVault is BaseVault {
         if(!_userExists){
             referralProgram.registerUser(address(treasury), _msgSender());
         }
-
     }
 
     function withdraw(uint256 _shares) override public {
-        super._withdraw(_msgSender(), _shares);
         claimAll();
+        super._withdraw(_msgSender(), _shares);
     }
 
     function withdrawAll() override public {
-        super._withdraw(_msgSender(), balanceOf(_msgSender()));
         claimAll();
+        super._withdraw(_msgSender(), balanceOf(_msgSender()));
     }
 
     function claim() public {

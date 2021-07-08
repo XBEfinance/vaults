@@ -3,7 +3,7 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./BaseVault.sol";
+import "./base/BaseVault.sol";
 import "../interfaces/IStrategy.sol";
 import "../interfaces/IController.sol";
 import "../interfaces/IReferralProgram.sol";

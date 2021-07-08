@@ -214,8 +214,6 @@ const configureContracts = async (params, owner) => {
   // "0x252c40Ba1295277F993d91F649644C4eF72C708D"
   console.log(dependentsAddresses);
 
-  dependentsAddresses.curve.pools = Object.values(dependentsAddresses
-    .curve.pool_data);
 
   await hiveStrategy.configure(
     dependentsAddresses.curve.address_provider,
@@ -334,6 +332,8 @@ module.exports = function (deployer, network, accounts) {
 
   deployer.then(async () => {
     let dependentsAddresses = distro.rinkeby;
+    dependentsAddresses.curve.pools = Object.values(dependentsAddresses
+      .curve.pool_data);
     params = { dependentsAddresses, ...params };
 
     if (network === 'test' || network === 'soliditycoverage') {
@@ -372,6 +372,8 @@ module.exports = function (deployer, network, accounts) {
       await deployContracts(deployer, params, owner);
       await distributeTokens(params, alice, bob, owner);
       await configureContracts(params, owner);
+    } else if (network === 'development_conf') {
+
     } else if (network === 'mainnet') {
       // await deployVaultsToMainnet();
     } else {

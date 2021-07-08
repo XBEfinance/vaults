@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
-import "./BaseStrategy.sol";
+import "./base/BaseStrategy.sol";
 import '../interfaces/IAddressProvider.sol';
 import '../interfaces/IMainRegistry.sol';
 import '../interfaces/IPool.sol';
@@ -96,8 +96,6 @@ contract CRVStrategy is BaseStrategy {
         hiveWeights[_index].weight = _weight;
     }
 
-    function skim() override external {}
-
      /// @dev Function that controller calls
     function deposit() override external onlyController {
         uint256 _amount = IERC20(_want).balanceOf(address(this));
@@ -180,18 +178,10 @@ contract CRVStrategy is BaseStrategy {
         return true;
     }
 
-
-
     function _withdrawSome(uint256 _amount) override internal returns(uint) {
         // true means that we'll claim all the rewards
         IRewards(cvxCRVRewards).withdraw(_amount, true);
         return _amount;
-    }
-
-
-    /// @dev To be realised
-    function withdrawalFee() override external view returns(uint256) {
-        return 0;
     }
 
 }

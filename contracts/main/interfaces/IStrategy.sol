@@ -13,14 +13,10 @@ interface IStrategy {
     /// Controller | Vault role - withdraw should always return to Vault
     function withdraw(uint256) external;
 
-    function skim() external;
-
     ///Controller | Vault role - withdraw should always return to Vault
     function withdrawAll() external returns(uint256);
 
     function balanceOf() external view returns(uint256);
-
-    function withdrawalFee() external view returns(uint256);
 
     function setVault(address) external;
 

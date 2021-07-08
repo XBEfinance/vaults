@@ -1,6 +1,6 @@
 pragma solidity ^0.6.0;
 
-import "./BaseVault.sol";
+import "./base/BaseVault.sol";
 
 /// @title ConsumerEURxbVault
 /// @notice Vault for consumers of the system

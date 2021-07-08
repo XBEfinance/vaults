@@ -7,11 +7,11 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 
-import "../interfaces/vault/IVaultCore.sol";
-import "../interfaces/vault/IVaultTransfers.sol";
-import "../interfaces/vault/IVaultDelegated.sol";
-import "../interfaces/IController.sol";
-import "../interfaces/IStrategy.sol";
+import "../../interfaces/vault/IVaultCore.sol";
+import "../../interfaces/vault/IVaultTransfers.sol";
+import "../../interfaces/vault/IVaultDelegated.sol";
+import "../../interfaces/IController.sol";
+import "../../interfaces/IStrategy.sol";
 
 /// @title EURxbVault
 /// @notice Base vault contract, used to manage funds of the clients

@@ -158,12 +158,12 @@ contract('Curve LP Testing', async ([owner, alice, bob, jack]) => {
       hiveVault.address,
       owner,
       [
-        dependentsAddresses.curve.pools[0].swap_address,
-        dependentsAddresses.curve.pools[0].lp_token_address,
+        dependentsAddresses.curve.pool_data.mock_pool.swap_address,
+        dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
         dependentsAddresses.convex.pools[0].crvRewards,
         dependentsAddresses.convex.pools[0].token,
         dependentsAddresses.convex.booster,
-        dependentsAddresses.curve.pools[0].coins.length,
+        dependentsAddresses.curve.pool_data.mock_pool.coins.length,
       ],
     );
 

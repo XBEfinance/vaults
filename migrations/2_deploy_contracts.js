@@ -1,4 +1,5 @@
 const { BN, constants, time } = require('@openzeppelin/test-helpers');
+
 const { ZERO_ADDRESS } = constants;
 
 const fs = require('fs');
@@ -166,12 +167,12 @@ const configureContracts = async (params, owner) => {
   await referralProgram.configure(
     [mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
     treasury.address,
-    { from: owner }
+    { from: owner },
   );
 
   await registry.configure(
     owner,
-    { from: owner }
+    { from: owner },
   );
 
   await treasury.configure(
@@ -182,33 +183,33 @@ const configureContracts = async (params, owner) => {
     dependentsAddresses.uniswap_factory,
     params.treasury.slippageTolerance,
     now.add(params.treasury.swapDeadline),
-    { from: owner }
+    { from: owner },
   );
 
   await controller.configure(
     treasury.address,
     owner,
     owner,
-    { from: owner }
+    { from: owner },
   );
 
   await controller.setVault(
     dependentsAddresses.convex.pools[0].lptoken,
     hiveVault.address,
-    { from: owner }
+    { from: owner },
   );
 
   await controller.setApprovedStrategy(
     dependentsAddresses.convex.pools[0].lptoken,
     hiveStrategy.address,
     true,
-    { from: owner }
+    { from: owner },
   );
 
   await controller.setStrategy(
     dependentsAddresses.convex.pools[0].lptoken,
     hiveStrategy.address,
-    { from: owner }
+    { from: owner },
   );
 
   // "0x252c40Ba1295277F993d91F649644C4eF72C708D"
@@ -222,25 +223,26 @@ const configureContracts = async (params, owner) => {
     hiveVault.address,
     owner,
     [
-      dependentsAddresses.curve.pools[0].swap_address,
-      dependentsAddresses.curve.pools[0].lp_token_address,
+      dependentsAddresses.curve.pool_data.mock_pool.swap_address,
+      dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
       dependentsAddresses.convex.pools[0].crvRewards,
       dependentsAddresses.convex.pools[0].token,
       dependentsAddresses.convex.booster,
-      dependentsAddresses.curve.pools[0].coins.length
+      dependentsAddresses.curve.pool_data.mock_pool.coins.length,
     ],
-    { from: owner }
+    { from: owner },
   );
 
-  const mainRegistryAddress = await (await IAddressProvider.at(dependentsAddresses.curve.address_provider))
+  const mainRegistryAddress = await (
+    await IAddressProvider.at(dependentsAddresses.curve.address_provider)
+  )
     .get_registry({ from: owner });
 
   console.log(mainRegistryAddress);
   await hiveStrategy.setMainRegistry(
     mainRegistryAddress,
-    { from: owner }
+    { from: owner },
   );
-
 
   await hiveVault.configure(
     dependentsAddresses.convex.pools[0].lptoken,
@@ -248,7 +250,7 @@ const configureContracts = async (params, owner) => {
     owner,
     referralProgram.address,
     treasury.address,
-    { from: owner }
+    { from: owner },
   );
 
   await xbeInflation.configure(
@@ -259,7 +261,7 @@ const configureContracts = async (params, owner) => {
     params.xbeinflation.rateReductionCoefficient,
     params.xbeinflation.rateDenominator,
     params.xbeinflation.inflationDelay,
-    { from: owner }
+    { from: owner },
   );
 
   await bonusCampaign.configure(
@@ -269,7 +271,7 @@ const configureContracts = async (params, owner) => {
     now.add(params.bonusCampaign.stopRegisterTime),
     params.bonusCampaign.rewardsDuration,
     params.bonusCampaign.emission,
-    { from: owner }
+    { from: owner },
   );
 
   await veXBE.configure(
@@ -277,7 +279,7 @@ const configureContracts = async (params, owner) => {
     'Voting Escrowed XBE',
     'veXBE',
     '0.0.1',
-    { from: owner }
+    { from: owner },
   );
 
   await voting.initialize(
@@ -285,7 +287,7 @@ const configureContracts = async (params, owner) => {
     params.voting.supportRequiredPct,
     params.voting.minAcceptQuorumPct,
     params.voting.voteTime,
-    { from: owner }
+    { from: owner },
   );
 };
 
@@ -337,19 +339,17 @@ module.exports = function (deployer, network, accounts) {
     params = { dependentsAddresses, ...params };
 
     if (network === 'test' || network === 'soliditycoverage') {
-
-      const exec = require('child_process').exec;
+      const { exec } = require('child_process');
       exec('cd ../curve-convex && npm run deploy && npm run generate-distro && cd ../yeur', (error, stdout, stderr) => {
-        console.log('stdout: ' + stdout);
-        console.log('stderr: ' + stderr);
+        console.log(`stdout: ${stdout}`);
+        console.log(`stderr: ${stderr}`);
         if (error !== null) {
-          console.log('exec error: ' + error);
+          console.log(`exec error: ${error}`);
         }
       });
       await deployContracts(deployer, params, owner);
       await distributeTokens(params, alice, bob, owner);
       await configureContracts(params, owner);
-
     } else if (network.startsWith('rinkeby')) {
       if (network === 'rinkeby_deploy') {
         await deployContracts(deployer, params, owner);

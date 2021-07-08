@@ -5,99 +5,99 @@
     "xbEuro": "0x5640D0FfB20F700ebaE1e2E09D525e4C46153D8e",
     "treasury": "0x8D77234fC07167380fE0b776342B9bB4f46cE4a4",
     "convex": {
-      "voteProxy": "0x9e7c0367E68bE1D0389e4156DED38d5559264dD9",
-      "cvx": "0xfb01A5853CBf0772CBB9B623DcBa18fBF2cF1915",
-      "booster": "0x419Bd6879f2790cc46d9F78D8B402905F0Bd3abb",
-      "rFactory": "0x48aBd133C93Bd7aF4b6cb3893e5Da83C45d325a7",
-      "tFactory": "0x56EDc62f62213af5E4F898B718B115dCCF7AD068",
-      "sFactory": "0x79fD6F437DaCbABDCBE0efBE1293535e7A29680a",
-      "cvxCrv": "0xCBf5b936A0f76A9eA700a589bFC9256a91FBDBa3",
-      "crvDepositor": "0x13a4106EA05fc5FE63E8b08f8630E9a9537DFcBD",
-      "cvxCrvRewards": "0xB76aEbd29Ea68429dC97e24bc884Bb15cDbB05Ef",
-      "cvxRewards": "0x14962686bE14Af2DEe69644477e77c2135418895",
-      "poolManager": "0xB36eEd66B213cCfd4283D2A806cAD9Fa0F88B8dB",
-      "arbitratorVault": "0x407c1329EBC0b2a60F7546cDd59b6090377C0084",
-      "chef": "0x1C19A9d540829Ae1B88F14123A56e00CDA69affB",
-      "claimZap": "0x1349d2E0132509764ef311DF6Ccdd745E821E956",
-      "vestedEscrow": "0xE597219292c6F97A8cf33A92371241A596F48072",
-      "dropFactory": "0x93deB8b48DaDFAeAD561665B383bb426894C76a6",
-      "airdrop": "0x8465cDba04170622A225442531Fc604725512D53",
-      "cvxEthSLP": "0x5723dc96DDdBd3677B8EA453F91Ea69e0DcA23c7",
+      "voteProxy": "0x45EA68922Ae522DfE18386a7DcAcF8aac2E8445D",
+      "cvx": "0xF1143Fa1b88EB4B42b99eE20A530BcCF2bB26E57",
+      "booster": "0x450D1e7a0Fb3e4dE9BecA6fac5689342235eaCa7",
+      "rFactory": "0x7470d7378ca239A0c075d1AC0264651433cA0D89",
+      "tFactory": "0x602a29f03BBa70c362c35580273CeF2f3ec79Cf9",
+      "sFactory": "0x7518D003c4fB90289d40aE55AFA49003C37eA50C",
+      "cvxCrv": "0xed409fd5D0EA3A3B654b7a22c33E94Bc4aD9142b",
+      "crvDepositor": "0x3cABAdb0d4d870a81Df111D3A4C878b6aBEe6159",
+      "cvxCrvRewards": "0xc21D18D465b9d6d485a47d70d0050550E2aEa0b5",
+      "cvxRewards": "0x2CD94E2c2bfC74b4aDFF548d361C678d92BAafBc",
+      "poolManager": "0xc48E21C9c4AB5e27E2cb735b61A1700D0A5901d1",
+      "arbitratorVault": "0x3e038C6d2Aa991973609976DA80E32B144eBA3D6",
+      "chef": "0x9E98fC1145C327f169F073D1F55DF0A28A2c6F1D",
+      "claimZap": "0xc5C3B36b924F0Bad1Ab3E01939c99061438551F2",
+      "vestedEscrow": "0x16EC91784304721Ad2b2ff0e9a1F1Ffdd685e6c4",
+      "dropFactory": "0xfDA9e9e03c7E5766cc41c6f4e1c10AB252372574",
+      "airdrop": "0x7bDfCb2fc8BCdcC62d3396D3d56A9fc1AEE0e58b",
+      "cvxEthSLP": "0x5e08b91958e4b0748c401F8c19b566F1807887e7",
       "pools": [
         {
-          "lptoken": "0x8Feb081Af3EE4A860b5FBD89969ffD0D01AC0793",
-          "token": "0x98342fBF72a9a36ecD393CE68Eefd88830D40Cd2",
-          "gauge": "0x28BBd41794Bf6737df94CC1084E37E23F623Ea8B",
-          "crvRewards": "0x63BBaF0DC1c5110197b6A4433532fCAd333Ec638",
-          "stash": "0x7003F294D0e975B913DfD95DF10197B23679F090",
+          "lptoken": "0x8E2133B5E73a0BCD94a6669DC9aBAF302B2A7baD",
+          "token": "0x32F74Cde6C08Bdae90De43B7992c8174C1Cd8ab6",
+          "gauge": "0xE7a9cc78B0f7f713F2Cc3c663E8970db930cbF1B",
+          "crvRewards": "0x615A3003074D0Df9955Bae5425FE63cD0fa428CF",
+          "stash": "0x59B850B30725021e9784602B00b8D068F33B9961",
           "rewards": [
             {
-              "rToken": "0xbc39614927d2fF12728144ADfEA9De357ca9a704",
-              "rAddress": "0x63BBaF0DC1c5110197b6A4433532fCAd333Ec638"
+              "rToken": "0xda1b429532c4B39476C9c5742D13dA6C938fC24c",
+              "rAddress": "0x615A3003074D0Df9955Bae5425FE63cD0fa428CF"
             }
           ],
-          "name": "compound",
+          "name": "mock_pool",
           "id": 0
         }
       ]
     },
     "curve": {
-      "address_provider": "0x131d07268E812B9fA5E5d32d04928520D3b62806",
+      "address_provider": "0x550B244BFd32EE5F0f21c681b93f85644fBeF946",
       "pool_data": {
         "mock_pool": {
-          "swap_address": "0x059e4B779B4a32f7785623DEA38241082264D1aC",
+          "swap_address": "0x66E532C002F2D6b10AC8e949e77A0C300baEcbA8",
           "gauge_addresses": [
-            "0x28BBd41794Bf6737df94CC1084E37E23F623Ea8B"
+            "0xE7a9cc78B0f7f713F2Cc3c663E8970db930cbF1B"
           ],
           "swap_name": "StableSwapMockPool",
-          "lp_token_address": "0x8Feb081Af3EE4A860b5FBD89969ffD0D01AC0793",
+          "lp_token_address": "0x8E2133B5E73a0BCD94a6669DC9aBAF302B2A7baD",
           "coins": [
             {
               "name": "Coin A0",
               "decimals": 18,
               "underlying_name": "uCoin A0",
-              "wrapped_address": "0xE8F419e6FE30d6c5C8F8E43632cb365cDc39E37d",
+              "wrapped_address": "0xb29F12070AF937000E5Ec9B62015FD67e1592cA6",
               "wrapped_decimals": 18,
-              "underlying_address": "0xb181b565585F6DaC4fC923957f745A28805a0168"
+              "underlying_address": "0x1fE2e053dd26bfE60165BA2B8eFA31D363e5142D"
             },
             {
               "name": "Coin A1",
               "decimals": 18,
               "underlying_name": "uCoin A1",
-              "wrapped_address": "0x57c0b0Ffc11D782C44E2cf0b15Cf46b4780678b2",
+              "wrapped_address": "0x7864B529D195085A22a6993bF9c1527956D1D713",
               "wrapped_decimals": 18,
-              "underlying_address": "0x26cb2247833CaF8BAC8BFf6c6aFC832A39D0326d"
+              "underlying_address": "0xD6906b99c1EFD097fE39bAED9eD1D84A9cd8DCE7"
             },
             {
               "name": "Coin A2",
               "decimals": 18,
               "underlying_name": "uCoin A2",
-              "wrapped_address": "0xd5f99cE73391D174e5f8Be7b52f0506c1176C911",
+              "wrapped_address": "0xbE3D8429E0b7eE87561b04Be3B10ed1b5E7Ab198",
               "wrapped_decimals": 18,
-              "underlying_address": "0x1e8793a0e01d41A4aC09CC8412313f0885F2A4a6"
+              "underlying_address": "0xe6d929629C070CC3c21ed3155DBACd581F4f6003"
             },
             {
               "name": "Coin A3",
               "decimals": 18,
               "underlying_name": "uCoin A3",
-              "wrapped_address": "0xa5db08faab29D468C6C6FeE9ff57a74dEe070584",
+              "wrapped_address": "0x722EBba50c64Ae353052869Fe43Cd4aD326B6804",
               "wrapped_decimals": 18,
-              "underlying_address": "0xAA48990255EAB494a54D58192A8378D8c0A65D9a"
+              "underlying_address": "0x35396AA162fdFd6e397548C160b9c578194b0d28"
             }
           ],
           "lp_contract": "CurveTokenV1"
         }
       },
-      "CRV": "0xbc39614927d2fF12728144ADfEA9De357ca9a704",
-      "veCRV": "0x73d1274F8e782650bE7603b850255f8e3Ae99680",
-      "gaugeController": "0x5B94Dd9E3Ce7E2697132147B2F607bc6463D9D5d",
-      "minter": "0x542770219AC0e56e2552D5ac143A96511217D7Bf",
-      "vesting": "0x8B7ef637Af70C8b02cD03E7A2AE0295185d04900",
-      "fee_distributor": "0x8B7ef637Af70C8b02cD03E7A2AE0295185d04900",
-      "mock_pool": "0x8Feb081Af3EE4A860b5FBD89969ffD0D01AC0793",
-      "registry": "0x3f0A05d5e16800Bd19776198158ac0C52cEdd3A0",
-      "pool_info": "0xa974f7F7696154540b7c82437B8437B1A547b409",
-      "swaps": "0x78112877a13CF7B87031B8E2a6C547d7D2B190F0"
+      "CRV": "0xda1b429532c4B39476C9c5742D13dA6C938fC24c",
+      "veCRV": "0x2104A7add27D830aaCC33d875Aed63E277f68Df5",
+      "gaugeController": "0x4Bc299D59e04C0dB62037ba3829058f9b090a4fA",
+      "minter": "0x03e116f6465EE9C125aF7791BA0e1457aed7b50A",
+      "vesting": "0x5873a802F36d0A70643321AEA82A33474A58A21d",
+      "fee_distributor": "0x5873a802F36d0A70643321AEA82A33474A58A21d",
+      "mock_pool": "0x8E2133B5E73a0BCD94a6669DC9aBAF302B2A7baD",
+      "registry": "0xD792E3aeA1B814b4d149379C8a04440FC73BD7fD",
+      "pool_info": "0x289632228B45799d6c386c6De1a4E50cD5FD7F4a",
+      "swaps": "0x2693B54fd84156BE4E34981cB87D814c10266782"
     }
   },
   "mainnet": {}

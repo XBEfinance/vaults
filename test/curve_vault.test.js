@@ -1,4 +1,3 @@
-const Web3 = require('web3');
 const { BN, constants, time } = require('@openzeppelin/test-helpers');
 // const contractTruffle = require('@truffle/contract');
 // const StableSwapUSDT_ABI = require('../abi/StableSwapUSDT.json');
@@ -35,7 +34,9 @@ const UnwrappedToWrappedTokenConverter = artifacts.require('UnwrappedToWrappedTo
 const WrappedToUnwrappedTokenConverter = artifacts.require('WrappedToUnwrappedTokenConverter');
 const InstitutionalEURxbStrategy = artifacts.require('InstitutionalEURxbStrategy');
 const ConsumerEURxbStrategy = artifacts.require('ConsumerEURxbStrategy');
-const StableSwapUSDT = artifacts.require('StableSwapUSDT');
+const StableSwapUSDT = artifacts.require('StableSwapMockPool');
+const ERC20 = artifacts.require('yERC20');
+const ERC20LP = artifacts.require('ERC20LP');
 
 const ether = (n) => new BN(web3.utils.toWei(n, 'ether'));
 const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
@@ -62,6 +63,11 @@ contract('Curve LP Testing', (accounts) => {
   let referralProgram;
   let registry;
   let stableSwapUSDT;
+  let coin_0;
+  let coin_1;
+  let coin_2;
+  let coin_3;
+  let erc20LP;
 
   const params = {
     bonusCampaign: {
@@ -112,7 +118,14 @@ contract('Curve LP Testing', (accounts) => {
     bonusCampaign = await BonusCampaign.new({ from: owner });
     veXBE = await VeXBE.new({ from: owner });
     voting = await Voting.new({ from: owner });
-    stableSwapUSDT = await StableSwapUSDT.at(dependentsAddresses.curve.pools[0].swap_address);
+    stableSwapUSDT = await StableSwapUSDT.at(
+      dependentsAddresses.curve.pool_data.mock_pool.swap_address,
+    );
+    coin_0 = await ERC20.at(dependentsAddresses.curve.pool_data.mock_pool.coins[0].wrapped_address);
+    coin_1 = await ERC20.at(dependentsAddresses.curve.pool_data.mock_pool.coins[1].wrapped_address);
+    coin_2 = await ERC20.at(dependentsAddresses.curve.pool_data.mock_pool.coins[2].wrapped_address);
+    coin_3 = await ERC20.at(dependentsAddresses.curve.pool_data.mock_pool.coins[3].wrapped_address);
+    // erc20LP = await ERC20LP.at(dependentsAddresses.curve.pool_data.mock_pool.lp_token_address);
   };
 
   const configureContracts = async () => {
@@ -168,12 +181,12 @@ contract('Curve LP Testing', (accounts) => {
       hiveVault.address,
       owner,
       [
-        dependentsAddresses.curve.pools[0].swap_address,
-        dependentsAddresses.curve.pools[0].lp_token_address,
+        dependentsAddresses.curve.pool_data.mock_pool.swap_address,
+        dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
         dependentsAddresses.convex.pools[0].crvRewards,
         dependentsAddresses.convex.pools[0].token,
         dependentsAddresses.convex.booster,
-        dependentsAddresses.curve.pools[0].coins.length,
+        dependentsAddresses.curve.pool_data.mock_pool.coins.length,
       ],
     );
 
@@ -228,8 +241,19 @@ contract('Curve LP Testing', (accounts) => {
   before(initialization);
   describe('Purchase of Tokens', async () => {
     it('test', async () => {
-      console.log(stableSwapUSDT.address);
-      // console.log(accounts);
+      const coinAmounts = [ether('3'), ether('3'), ether('3'), ether('3')];
+      await coin_0.approve(stableSwapUSDT.address, ether('3'));
+      await coin_1.approve(stableSwapUSDT.address, ether('3'));
+      await coin_2.approve(stableSwapUSDT.address, ether('3'));
+      await coin_3.approve(stableSwapUSDT.address, ether('3'));
+      // // const approveAM = await coin_0.allowance(owner, stableSwapUSDT.address);
+      // // console.log(stableSwapUSDT);
+      // console.log((await coin_0.allowance(owner, stableSwapUSDT.address)).toString());
+      // console.log((await coin_1.allowance(owner, stableSwapUSDT.address)).toString());
+      // console.log((await coin_2.allowance(owner, stableSwapUSDT.address)).toString());
+      // console.log((await coin_3.allowance(owner, stableSwapUSDT.address)).toString());
+      const amountLP = await stableSwapUSDT.add_liquidity(coinAmounts, '0');
+      console.log(amountLP.toString());
     });
   });
 });

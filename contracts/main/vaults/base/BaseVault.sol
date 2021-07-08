@@ -136,6 +136,12 @@ contract BaseVault is IVaultCore, IVaultTransfers, Ownable, Initializable, ERC20
 
     /// @notice Allows to deposit business logic tokens and reveive vault tokens
     /// @param _amount Amount to deposit business logic tokens
+    function depositFor(uint256 _amount, address _for) override virtual public {
+        _deposit(_for, _amount);
+    }
+
+    /// @notice Allows to deposit business logic tokens and reveive vault tokens
+    /// @param _amount Amount to deposit business logic tokens
     function deposit(uint256 _amount) override virtual public {
         _deposit(_msgSender(), _amount);
     }

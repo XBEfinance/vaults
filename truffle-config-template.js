@@ -26,7 +26,7 @@ const mnemonic = fs.readFileSync('.secret').toString().trim();
 
 // NB: It's important to wrap the provider as a function.
 const rinkebyNetworkConfig = {
-  provider: () => new HDWalletProvider(mnemonic, `wss://rinkeby.infura.io/ws/v3/${process.env.INFURA_ID}`),
+  provider: () => new HDWalletProvider(mnemonic, `wss://rinkeby.infura.io/wss/v3/${process.env.INFURA_ID}`),
   network_id: 4, // Rinkeby's id
   networkCheckTimeout: 10000000,
   gasLimit: 5000000,
@@ -104,6 +104,7 @@ module.exports = {
     rinkeby_configure: rinkebyNetworkConfig,
 
     rinkeby_all_with_save: rinkebyNetworkConfig,
+    rinkeby_conf: rinkebyNetworkConfig,
 
     development: ganacheNetworkConfig,
 

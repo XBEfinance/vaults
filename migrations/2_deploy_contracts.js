@@ -164,16 +164,22 @@ const configureContracts = async (params, owner) => {
 
   const now = await time.latest();
 
+  console.log('Starting configuration...');
+
   await referralProgram.configure(
     [mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
     treasury.address,
     { from: owner },
   );
 
+  console.log('ReferralProgram configured...');
+
   await registry.configure(
     owner,
     { from: owner },
   );
+
+  console.log('Registry configured...');
 
   await treasury.configure(
     voting.address,
@@ -186,6 +192,8 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
+  console.log('Treasury configured...');
+
   await controller.configure(
     treasury.address,
     owner,
@@ -193,11 +201,15 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
+  console.log('Controller configured...');
+
   await controller.setVault(
     dependentsAddresses.convex.pools[0].lptoken,
     hiveVault.address,
     { from: owner },
   );
+
+  console.log('Controller: vault added...');
 
   await controller.setApprovedStrategy(
     dependentsAddresses.convex.pools[0].lptoken,
@@ -206,15 +218,17 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
+  console.log('Controller: strategy approved...');
+
   await controller.setStrategy(
     dependentsAddresses.convex.pools[0].lptoken,
     hiveStrategy.address,
     { from: owner },
   );
 
+  console.log('Controller: strategy added...');
   // "0x252c40Ba1295277F993d91F649644C4eF72C708D"
   console.log(dependentsAddresses);
-
 
   await hiveStrategy.configure(
     dependentsAddresses.curve.address_provider,
@@ -233,25 +247,7 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  const mainRegistryAddress = await (
-    await IAddressProvider.at(dependentsAddresses.curve.address_provider)
-  )
-    .get_registry({ from: owner });
-
-  console.log(mainRegistryAddress);
-  await hiveStrategy.setMainRegistry(
-    mainRegistryAddress,
-    { from: owner },
-  );
-
-  await hiveVault.configure(
-    dependentsAddresses.convex.pools[0].lptoken,
-    controller.address,
-    owner,
-    referralProgram.address,
-    treasury.address,
-    { from: owner },
-  );
+  console.log('HiveStrategy configured...');
 
   await xbeInflation.configure(
     mockXBE.address,
@@ -264,6 +260,8 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
+  console.log('XBEInflation: configured');
+
   await bonusCampaign.configure(
     mockXBE.address,
     veXBE.address,
@@ -274,6 +272,8 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
+  console.log('BonusCampaign: configured');
+
   await veXBE.configure(
     mockXBE.address,
     'Voting Escrowed XBE',
@@ -282,6 +282,8 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
+  console.log('VeXBE: configured...');
+
   await voting.initialize(
     veXBE.address,
     params.voting.supportRequiredPct,
@@ -289,6 +291,33 @@ const configureContracts = async (params, owner) => {
     params.voting.voteTime,
     { from: owner },
   );
+
+  console.log('Voting: configured...');
+
+  // const mainRegistryAddress = await (
+  //   await IAddressProvider.at(dependentsAddresses.curve.address_provider)
+  // )
+  //   .get_registry({ from: owner });
+  //
+  // console.log(mainRegistryAddress);
+  // await hiveStrategy.setMainRegistry(
+  //   mainRegistryAddress,
+  //   { from: owner },
+  // );
+
+  // console.log('HiveStrategy: main registry setup...');
+
+  await hiveVault.configure(
+    dependentsAddresses.convex.pools[0].lptoken,
+    controller.address,
+    owner,
+    referralProgram.address,
+    treasury.address,
+    { from: owner },
+  );
+
+  console.log('HiveVault: configured');
+
 };
 
 module.exports = function (deployer, network, accounts) {
@@ -359,9 +388,17 @@ module.exports = function (deployer, network, accounts) {
         await configureContracts(params, owner);
       } else if (network === 'rinkeby_all_with_save') {
         dependentsAddresses = testnet_distro.rinkeby;
+        dependentsAddresses.curve.pools = Object.values(dependentsAddresses
+          .curve.pool_data);
         params = { dependentsAddresses, ...params };
         await deployContracts(deployer, params, owner);
         await distributeTokens(params, alice, bob, owner);
+        await configureContracts(params, owner);
+      } else if (network === 'rinkeby_conf') {
+        dependentsAddresses = testnet_distro.rinkeby;
+        dependentsAddresses.curve.pools = Object.values(dependentsAddresses
+          .curve.pool_data);
+        params = { dependentsAddresses, ...params };
         await configureContracts(params, owner);
       } else if (network === 'rinkeby_vaults') {
         await deployVaults(params);
@@ -372,8 +409,6 @@ module.exports = function (deployer, network, accounts) {
       await deployContracts(deployer, params, owner);
       await distributeTokens(params, alice, bob, owner);
       await configureContracts(params, owner);
-    } else if (network === 'development_conf') {
-
     } else if (network === 'mainnet') {
       // await deployVaultsToMainnet();
     } else {

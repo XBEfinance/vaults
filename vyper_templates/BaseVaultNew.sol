@@ -1,4 +1,5 @@
 pragma solidity ^0.6.0;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -6,6 +7,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
+import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+
+import "../../staking_rewards/StakingRewards.sol";
 
 import "../../interfaces/vault/IVaultCore.sol";
 import "../../interfaces/vault/IVaultTransfers.sol";
@@ -15,8 +19,9 @@ import "../../interfaces/IStrategy.sol";
 
 /// @title EURxbVault
 /// @notice Base vault contract, used to manage funds of the clients
-contract BaseVaultNew is IVaultCore, IVaultTransfers, Ownable {
+contract BaseVaultNew is IVaultCore, IVaultTransfers, Ownable, , RewardsDistributionRecipient, ReentrancyGuard, Pausable, Initializable {
 
+    using EnumerableSet for EnumerableSet.AddressSet;
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
@@ -24,30 +29,53 @@ contract BaseVaultNew is IVaultCore, IVaultTransfers, Ownable {
     /// @notice Controller instance, to simplify controller-related actions
     IController internal _controller;
 
-    /// @notice Token which will be transfered to strategy and used in business logic
-    IERC20 internal _token;
+    address public stakingToken;
+    uint256 public periodFinish = 0;
+    uint256 public rewardsDuration; //= 7 days;
+    uint256 public lastUpdateTime;
+    uint256 public rewardPerTokenStored;
 
-    /// @notice Minimum percentage to be in business? (in base points)
-    uint256 public min = 10000;//9500;
+    struct RewardInfo {
+        address what;
+        uint256 amount;
+    }
 
-    /// @notice Hundred procent (in base points)
-    uint256 public constant max = 10000;
+    struct ClaimParams {
+        address what;
+        /*
+        000000AB - bitwise representation of claimMap parameter.
+        A bit - if 1 - autoclaim else do not attempt to claim
+        B bit - if 1 - claim from business logic in strategy else do not claim
 
-    mapping(address => uint256) internal _depositedAmountsOfTokens;
+        Invalid values:
+          1 = 00000001 - you cannot withdraw without claim and claim from business logic
+        Valid values:
+          0 = 00000000 - just withdraw
+          2 = 00000010 - withdraw with claim without claim from business logic
+          3 = 00000011 - withdraw with claim and with claim from business logic
+        */
+        uint8 claimMap;
+    }
 
-    event Deposit(uint256 indexed _shares);
-    event Withdraw(uint256 indexed _amount);
+    // reward token => reward rate
+    mapping(address => uint256) public rewardRates;
 
-    /// @param typeName Name of the vault token
-    /// @param typePrefix Prefix of the vault token
-    constructor(string memory typeName, string memory typePrefix)
-        public
-        ERC20(
-            string(abi.encodePacked(typeName, ' xbEURO')),
-            string(abi.encodePacked(typePrefix, 'xbEURO'))
-        )
-        Initializable()
-    {}
+    mapping(address => RewardInfo) public userRewardPerTokenPaid;
+    mapping(address => RewardInfo) public rewards;
+
+    uint256 internal _totalSupply;
+    mapping(address => uint256) internal _balances;
+
+    EnumerableSet.AddressSet public validTokens;
+
+    /* ========== EVENTS ========== */
+
+    event RewardAdded(address what, uint256 reward);
+    event Staked(address indexed user, uint256 amount);
+    event Withdrawn(address indexed user, uint256 amount);
+    event RewardPaid(address what, address indexed user, uint256 reward);
+    event RewardsDurationUpdated(uint256 newDuration);
+    event Recovered(address token, uint256 amount);
 
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
@@ -56,18 +84,12 @@ contract BaseVaultNew is IVaultCore, IVaultTransfers, Ownable {
     function _configure(
         address _initialToken,
         address _initialController,
-        address _governance
+        address _governance,
+        uint256 _rewardsDuration,
+        address[] memory _rewardsTokens
     ) internal {
-        _token = IERC20(_initialToken);
         setController(_initialController);
         transferOwnership(_governance);
-    }
-
-    /// @notice Usual setter with check if passet param is new
-    /// @param _newMin New value
-    function setMin(uint256 _newMin) onlyOwner external {
-        require(min != _newMin, "!new");
-        min = _newMin;
     }
 
     /// @notice Usual setter with check if passet param is new
@@ -77,111 +99,225 @@ contract BaseVaultNew is IVaultCore, IVaultTransfers, Ownable {
         _controller = IController(_newController);
     }
 
-    /// @notice Returns total balance
-    /// @return Balance of the strategy added to balance of the vault in business logic tokens
-    function balance() override public view returns(uint256) {
-        return _token.balanceOf(address(this)).add(
-            IStrategy(
-                _controller.strategies(address(_token))
-            ).balanceOf()
+    function totalSupply() external override view returns (uint256) {
+        return _totalSupply;
+    }
+
+    function balanceOf(address account) external override view returns (uint256) {
+        return _balances[account];
+    }
+
+    function lastTimeRewardApplicable() public override view returns (uint256) {
+        return Math.min(block.timestamp, periodFinish);
+    }
+
+    function rewardPerToken(address _rewardToken)
+        public
+        override
+        view
+        onlyValidToken(_rewardToken)
+        returns(uint256)
+    {
+        if (_totalSupply == 0) {
+            return rewardPerTokenStored;
+        }
+        return
+            rewardPerTokenStored.add(
+                lastTimeRewardApplicable().sub(lastUpdateTime).mul(rewardRates[_rewardToken]).mul(1e18).div(_totalSupply)
+            );
+    }
+
+    function earned(address _rewardToken, address account)
+        public
+        override
+        virtual
+        onlyValidToken(_rewardToken)
+        view
+        returns(uint256)
+    {
+        return _balances[account]
+          .mul(
+            rewardPerToken(_rewardToken).sub(userRewardPerTokenPaid[account])
+          )
+          .div(1e18).add(rewards[account]);
+    }
+
+    function getRewardForDuration(address _rewardToken)
+        external
+        override
+        view
+        onlyValidToken(_rewardToken)
+        returns(uint256) {
+        return rewardRates[_rewardToken].mul(rewardsDuration);
+    }
+
+    /* ========== MUTATIVE FUNCTIONS ========== */
+
+    function stake(uint256 amount)
+        external
+        virtual
+        override
+        nonReentrant
+        whenNotPaused
+        updateReward(msg.sender)
+    {
+        require(amount > 0, "Cannot stake 0");
+        _totalSupply = _totalSupply.add(amount);
+        _balances[msg.sender] = _balances[msg.sender].add(amount);
+        IERC20(stakingToken).safeTransferFrom(msg.sender, address(this), amount);
+        emit Staked(msg.sender, amount);
+    }
+
+    function _withdraw(uint256 _amount) internal {
+        require(_amount > 0, "Cannot withdraw 0");
+        _totalSupply = _totalSupply.sub(_amount);
+        _balances[msg.sender] = _balances[msg.sender].sub(_amount);
+        IERC20(stakingToken).safeTransfer(msg.sender, _amount);
+        emit Withdrawn(msg.sender, _amount);
+    }
+
+    function withdraw(
+        uint256 _amount,
+        ClaimParams memory _claimParams
+    )
+        public
+        virtual
+        nonReentrant
+        updateReward(_claimParams.what, msg.sender)
+    {
+        require(_claimParams.claimMap != 1, "invalidMap");
+        if (_claimParams.claimMap >> 1 == 1) {
+            getReward(_claimParams.what, _claimParams.claimMap);
+        }
+        _withdraw(_amount);
+    }
+
+    function withdraw(uint256 _amount)
+        public
+        virtual
+        override
+        nonReentrant
+    {
+        for (uint256 i = 0; i < validTokens.length(); i++) {
+            _updateReward(validTokens.at(i), _amount);
+        }
+        _withdraw(_amount);
+    }
+
+    function getReward(address _rewardToken, uint8 _claimMap)
+        public
+        virtual
+        override
+        nonReentrant
+        onlyValidToken(_rewardToken)
+        updateReward(_rewardToken, msg.sender)
+    {
+        uint256 reward = rewards[msg.sender].amount;
+        if (_claimMap << 7 == 1) {
+          // выполнить клейм в выводом наград из бизнес логики стратегии
+        } else {
+          _controller.claim(...);
+        }
+        if (reward > 0) {
+            rewards[msg.sender] = 0;
+            IERC20(rewardsToken).safeTransfer(msg.sender, reward);
+            emit RewardPaid(msg.sender, reward);
+        }
+    }
+
+    function exit() external virtual override {
+        withdraw(_balances[msg.sender]);
+        for (uint256 i = 0; i < validTokens.length(); i++) {
+            getReward(validTokens.at(i));
+        }
+    }
+
+    /* ========== RESTRICTED FUNCTIONS ========== */
+
+    function notifyRewardAmount(address _rewardToken, uint256 _reward)
+        external
+        virtual
+        override
+        onlyRewardsDistribution
+        onlyValidToken(_rewardToken)
+        updateReward(_rewardToken, address(0))
+    {
+        if (block.timestamp >= periodFinish) {
+            rewardRates[_rewardToken] = _reward.div(rewardsDuration);
+        } else {
+            uint256 remaining = periodFinish.sub(block.timestamp);
+            uint256 leftover = remaining.mul(rewardRates[_rewardToken]);
+            rewardRates[_rewardToken] = _reward.add(leftover).div(rewardsDuration);
+        }
+
+        // Ensure the provided reward amount is not more than the balance in the contract.
+        // This keeps the reward rate in the right range, preventing overflows due to
+        // very high values of rewardRate in the earned and rewardsPerToken functions;
+        // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
+        uint256 balance = IERC20(_rewardToken).balanceOf(address(this));
+        require(rewardRates[_rewardToken] <= balance.div(rewardsDuration), "Provided reward too high");
+
+        lastUpdateTime = block.timestamp;
+        periodFinish = block.timestamp.add(rewardsDuration);
+        emit RewardAdded(_rewardToken, reward);
+    }
+
+    // End rewards emission earlier
+    function updatePeriodFinish(uint256 timestamp)
+        external
+        onlyOwner
+        updateReward(address(0))
+    {
+        periodFinish = timestamp;
+    }
+
+    // Added to support recovering LP Rewards from other systems such as BAL to be distributed to holders
+    function recoverERC20(address tokenAddress, uint256 tokenAmount) external onlyOwner {
+        require(tokenAddress != stakingToken, "Cannot withdraw the staking token");
+        IERC20(tokenAddress).safeTransfer(owner(), tokenAmount);
+        emit Recovered(tokenAddress, tokenAmount);
+    }
+
+    function setRewardsDuration(uint256 _rewardsDuration) external onlyOwner {
+        require(
+            block.timestamp > periodFinish,
+            "Previous rewards period must be complete before changing the duration for the new period"
         );
+        rewardsDuration = _rewardsDuration;
+        emit RewardsDurationUpdated(rewardsDuration);
     }
 
-    /// @notice Custom logic in here for how much the vault allows to be borrowed, sets minimum required on-hand to keep small withdrawals cheap
-    function available() public view returns(uint256) {
-        return _token.balanceOf(address(this)).mul(min).div(max);
+    function addRewardToken(address _rewardToken) external onlyOwner {
+        require(validTokens.add(_rewardToken), "!add");
     }
 
-    /// @notice Business logic token getter
-    /// @return Business logic token address
-    function token() override public view returns(address) {
-        return address(_token);
+    function removeRewardToken(address _rewardToken) external onlyOwner {
+        require(validTokens.remove(_rewardToken), "!remove");
     }
 
-    /// @notice Controller getter
-    /// @return Controller address
-    function controller() override public view returns(address) {
-        return address(_controller);
+    function isTokenValid(address _rewardToken) external view returns(bool) {
+        return validTokens.contains(_rewardToken);
     }
 
-    /// @notice Exist to calculate price per full share
-    /// @return Price of the business logic token per share
-    function getPricePerFullShare() override external view returns(uint256) {
-        return balance().mul(1e18).div(totalSupply());
+    /* ========== MODIFIERS ========== */
+
+    modifier onlyValidToken(address _rewardToken) {
+        require(validTokens.contains(_rewardToken), "!valid");
+        _;
     }
 
-
-    function getDepositedAmount(address who) external view returns(uint256) {
-        return _depositedAmountsOfTokens[who];
-    }
-
-    function _deposit(address _from, uint256 _amount) internal returns(uint256 shares) {
-        if (address(this) != _from) {
-            uint256 _before = _token.balanceOf(address(this));
-            _token.safeTransferFrom(_from, address(this), _amount);
-            uint256 _after = _token.balanceOf(address(this));
-            _amount = _after.sub(_before);
+    function _updateReward(address _what, address _account) internal {
+        rewardPerTokenStored = rewardPerToken();
+        lastUpdateTime = lastTimeRewardApplicable();
+        if (account != address(0)) {
+            rewards[account].amount = earned(account);
+            userRewardPerTokenPaid[account].amount = rewardPerTokenStored;
         }
-        _depositedAmountsOfTokens[_from] = _depositedAmountsOfTokens[_from] + _amount;
-        uint256 _pool = balance();
-        shares = 0;
-        if (totalSupply() == 0) {
-            shares = _amount;
-        } else {
-            shares = (_amount.mul(totalSupply())).div(_pool);
-        }
-        _mint(_from, shares);
-        emit Deposit(shares);
     }
 
-    /// @notice Allows to deposit business logic tokens and reveive vault tokens
-    /// @param _amount Amount to deposit business logic tokens
-    function deposit(uint256 _amount) override virtual public {
-        _deposit(_msgSender(), _amount);
-    }
-
-    /// @notice Allows to deposit full balance of the business logic token and reveice vault tokens
-    function depositAll() override virtual public {
-        _deposit(_msgSender(), _token.balanceOf(_msgSender()));
-    }
-
-    function _withdraw(address _to, uint256 _shares) internal returns(uint256 r) {
-        // share / totalSupply = r / balance
-        // share * balance = r * totalSupply
-        // r = share * balance / totalSupply
-        r = (balance().mul(_shares)).div(totalSupply());
-        _burn(_to, _shares);
-        // Check balance
-        uint256 b = _token.balanceOf(address(this));
-        if (b < r) {
-            uint256 _w = r.sub(b);
-            _controller.withdraw(address(_token), _w);
-            uint256 _after = _token.balanceOf(address(this));
-            uint256 _diff = _after.sub(b);
-            if (_diff < _w) {
-                r = b.add(_diff);
-            }
-        }
-        if (_to != address(this)) {
-            _token.safeTransfer(_to, r);
-        }
-        if (_depositedAmountsOfTokens[_to] > r) {
-            _depositedAmountsOfTokens[_to] = _depositedAmountsOfTokens[_to] - r;
-        } else {
-            _depositedAmountsOfTokens[_to] = 0;
-        }
-        emit Withdraw(r);
-    }
-
-    /// @notice Allows exchange vault tokens to business logic tokens
-    /// @param _shares Business logic tokens to withdraw
-    function withdraw(uint256 _shares) override virtual public {
-        _withdraw(_msgSender(), _shares);
-    }
-
-    /// @notice Same as withdraw only with full balance of vault tokens
-    function withdrawAll() override virtual public {
-        _withdraw(_msgSender(), balanceOf(_msgSender()));
+    modifier updateReward(address _what, address _account) {
+        _updateReward(_what, _account);
+        _;
     }
 
     /// @notice Transfer tokens to controller, controller transfers it to strategy and earn (farm)

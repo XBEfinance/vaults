@@ -78,7 +78,7 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
         require(referral != address(0), 'RPuserIsZero');
         require(!users[referral].exists, 'RPuserExists');
         require(users[referrer].exists, 'RP!referrerExists');
-        users[msg.sender] = User({
+        users[referral] = User({
             exists: true,
             referrer: referrer
         });
@@ -107,12 +107,15 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
 
     function claimRewardsFor(address userAddr) public nonReentrant {
         require(users[userAddr].exists, 'RP!userExists');
+        uint256[] memory amounts = new uint256[](tokens.length);
         for(uint256 i = 0; i <  tokens.length; i++){
             if(rewards[userAddr][tokens[i]] > 0){
                 rewards[userAddr][tokens[i]] = 0;
+                amounts[i] = rewards[userAddr][tokens[i]];
                 IERC20(tokens[i]).safeTransfer(userAddr, rewards[userAddr][tokens[i]]);
             }
         }
+        emit RewardsClaimed(userAddr, tokens, amounts);
     }
 
     function claimRewards() public {

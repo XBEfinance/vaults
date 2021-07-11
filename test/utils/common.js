@@ -2,64 +2,30 @@ const { BN, ether, expectRevert } = require('@openzeppelin/test-helpers');
 
 const { accounts, contract } = require('@openzeppelin/test-environment');
 
-const MockToken = contract.fromArtifact("MockToken");
+const MockToken = artifacts.require('MockToken');
 
-/* eslint-disable */
-function increaseTime(duration) {
-  const id = Date.now();
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send({
-      jsonrpc: '2.0',
-      method: 'evm_increaseTime',
-      params: [duration],
-      id,
-    }, (err1) => {
-      if (err1) {
-        return reject(err1);
-      }
-      web3.currentProvider.send({
-        jsonrpc: '2.0',
-        method: 'evm_mine',
-        id: id + 1,
-      }, (err2, res) => {
-        return err2 ? reject(err2) : resolve(res);
-      });
-    });
+const revertToSnapShot = (id) => new Promise((resolve, reject) => {
+  web3.currentProvider.send({
+    jsonrpc: '2.0',
+    method: 'evm_revert',
+    params: [id],
+    id: new Date().getTime(),
+  }, (err, result) => {
+    if (err) { return reject(err); }
+    return resolve(result);
   });
-}
-/* eslint-enable */
+});
 
-async function currentTimestamp() {
-  const timestamp = Date.now();
-  return Math.trunc(timestamp / 1000);
-}
-
-const revertToSnapShot = (id) => {
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send({
-      jsonrpc: '2.0',
-      method: 'evm_revert',
-      params: [id],
-      id: new Date().getTime()
-    }, (err, result) => {
-      if (err) { return reject(err); }
-      return resolve(result);
-    });
+const takeSnapshot = () => new Promise((resolve, reject) => {
+  web3.currentProvider.send({
+    jsonrpc: '2.0',
+    method: 'evm_snapshot',
+    id: new Date().getTime(),
+  }, (err, snapshotId) => {
+    if (err) { return reject(err); }
+    return resolve(snapshotId);
   });
-};
-
-const takeSnapshot = () => {
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send({
-      jsonrpc: '2.0',
-      method: 'evm_snapshot',
-      id: new Date().getTime()
-    }, (err, snapshotId) => {
-      if (err) { return reject(err); }
-      return resolve(snapshotId);
-    });
-  });
-};
+});
 
 /* eslint-disable */
 const compactView = value_BN => web3.utils.fromWei(value_BN.toString(), 'ether');
@@ -80,7 +46,7 @@ const processEventArgs = async (result, eventName, processArgs) => {
   if (result == null) {
     throw new Error(`Result of tx is: ${result}`);
   }
-  const filteredLogs = result.logs.filter(l => l.event === eventName);
+  const filteredLogs = result.logs.filter((l) => l.event === eventName);
   const eventArgs = filteredLogs[0].args;
   await processArgs(eventArgs);
 };
@@ -92,12 +58,12 @@ const checkSetter = async (
   validSender,
   nonValidSender,
   contractInstance,
-  revertMessage
+  revertMessage,
 ) => {
   await contractInstance[setterMethodName](newValue, { from: validSender });
   expect(await contractInstance[getterName]()).to.be.equal(newValue);
   await expectRevert(contractInstance[setterMethodName](newValue, { from: nonValidSender }), revertMessage);
-}
+};
 
 module.exports = {
   DAY: 86400,
@@ -109,5 +75,5 @@ module.exports = {
   processEventArgs,
   checkSetter,
   revertToSnapShot,
-  takeSnapshot
+  takeSnapshot,
 };

@@ -28,7 +28,7 @@ interface IStrategy {
 
     function earned(address[] calldata) external returns(uint256[] memory);
 
-    function canClaim() external returns(uint256);
+    function canClaimAmount() external returns(uint256);
 
     function claim(address, address[] calldata, uint256[] calldata) external returns(bool);
 

@@ -80,7 +80,7 @@ contract HiveStrategy is ClaimableStrategy {
         require(IRewards(poolSettings.crvRewards).getReward(), '!getRewards');
     }
 
-    function canClaim() override external returns(uint256 _amount) {
+    function canClaimAmount() override external returns(uint256 _amount) {
         _amount = IRewards(poolSettings.crvRewards).earned(address(this));
     }
 

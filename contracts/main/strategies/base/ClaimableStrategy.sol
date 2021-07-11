@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
 import "./BaseStrategy.sol";
 import '../../interfaces/ITreasury.sol';
+import '../../interfaces/IRewards.sol';
 import "../../interfaces/IVoting.sol";
 
 /// @title ClaimableStrategy
@@ -85,7 +86,7 @@ abstract contract ClaimableStrategy is BaseStrategy {
         uint256[] memory _fees = new uint256[](_tokens.length);
         for(uint256 j = 0; j < feeWeights.length; j++) {
             for(uint256 i = 0; i < _tokens.length; i++) {
-                //weight * amounts / PCT_BASE
+                // weight * amounts / PCT_BASE
                 uint256 _fee = mulDiv(feeWeights[i].weight, _amounts[i], PCT_BASE);
                 _fees[i] = _fee;
                 if(feeWeights[j].tokens[_tokens[i]]){
@@ -94,7 +95,6 @@ abstract contract ClaimableStrategy is BaseStrategy {
                 _amounts[i] = _amounts[i].sub(_fee);
             }
             if(feeWeights[j].callFunc){
-                //TO-DO to create specific interface
                 ITreasury(feeWeights[j].to).feeReceiving(_for, _tokens, _fees);
             }
         }
@@ -126,7 +126,7 @@ abstract contract ClaimableStrategy is BaseStrategy {
        return _amounts;
   }
 
-  function claim(address _for, address[] memory  _tokens , uint256[] memory _amounts) override public onlyControllerOrVault returns(bool) {
+  function claim(address _for, address[] memory _tokens, uint256[] memory _amounts) override public onlyControllerOrVault returns(bool) {
       address _vault = IController(controller).vaults(_want);
       require(_vault != address(0), "!vault 0");
 

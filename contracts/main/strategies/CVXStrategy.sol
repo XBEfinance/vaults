@@ -147,7 +147,7 @@ contract CVXStrategy is BaseStrategy {
         return a * b * z + a * d + b * c + b * d / z;
     }
 
-    function canClaim() override external returns(uint256 _amount) {
+    function canClaimAmount() override external returns(uint256 _amount) {
         _amount = IRewards(cvxRewardPool).earned(address(this));
     }
 

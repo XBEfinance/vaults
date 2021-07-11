@@ -22,7 +22,7 @@ contract InstitutionalEURxbStrategy is BaseStrategy {
         return _amount;
     }
 
-    function canClaim() external override returns(uint256) {
+    function canClaimAmount() external override returns(uint256) {
         return 0;
     }
 

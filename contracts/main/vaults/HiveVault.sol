@@ -3,7 +3,7 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./base/BaseVault.sol";
+import "./base/BaseVaultOld.sol";
 import "../interfaces/IStrategy.sol";
 import "../interfaces/IController.sol";
 import "../interfaces/IReferralProgram.sol";
@@ -11,7 +11,7 @@ import "../interfaces/ITreasury.sol";
 
 /// @title In this case _token it's lp curve;
 /// @notice Vault for consumers of the system
-contract HiveVault is BaseVault {
+contract HiveVault is BaseVaultOld {
 
     using SafeERC20 for IERC20;
 
@@ -33,7 +33,7 @@ contract HiveVault is BaseVault {
     event RewardPaid(uint256[] indexed rewards);
 
     /// @notice Constructor that creates a consumer vault
-    constructor() BaseVault("Curve", "crv") public {}
+    constructor() BaseVaultOld("Curve", "crv") public {}
 
     function configure(
         address _initialToken,
@@ -136,7 +136,7 @@ contract HiveVault is BaseVault {
         uint256[] memory realAmounts = earnedReal();
         uint256[] memory virtualEarned = new uint256[](1);
         virtualAmounts = new uint256[](tokenRewards.length);
-        virtualEarned[0] = IStrategy(_controller.strategies(address(_token))).canClaim();
+        virtualEarned[0] = IStrategy(_controller.strategies(address(_token))).canClaimAmount();
         virtualEarned = IStrategy(_controller.strategies(address(_token))).subFee(virtualEarned);
         uint256 _share = balanceOf(_msgSender());
         for(uint256 i = 0; i < tokenRewards.length; i++){

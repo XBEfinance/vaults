@@ -3,7 +3,7 @@ const { BN, constants, time } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
 const fs = require('fs');
-const distro = require('../../curve-convex/distro.json');
+const distro = require('../distro.json');
 const testnet_distro = require('../../curve-convex/rinkeby_distro.json');
 
 const XBEInflation = artifacts.require('XBEInflation');
@@ -228,7 +228,7 @@ const configureContracts = async (params, owner) => {
 
   console.log('Controller: strategy added...');
   // "0x252c40Ba1295277F993d91F649644C4eF72C708D"
-  console.log(dependentsAddresses);
+  // console.log(dependentsAddresses);
 
   await hiveStrategy.configure(
     dependentsAddresses.curve.address_provider,
@@ -247,7 +247,25 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  console.log('HiveStrategy configured...');
+  // const mainRegistryAddress = await (
+  //   await IAddressProvider.at(dependentsAddresses.curve.address_provider)
+  // )
+  //   .get_registry({ from: owner });
+
+  // console.log(mainRegistryAddress);
+  // await hiveStrategy.setMainRegistry(
+  //   mainRegistryAddress,
+  //   { from: owner },
+  // );
+
+  await hiveVault.configure(
+    dependentsAddresses.convex.pools[0].lptoken,
+    controller.address,
+    owner,
+    referralProgram.address,
+    treasury.address,
+    { from: owner },
+  );
 
   await xbeInflation.configure(
     mockXBE.address,
@@ -317,7 +335,6 @@ const configureContracts = async (params, owner) => {
   );
 
   console.log('HiveVault: configured');
-
 };
 
 module.exports = function (deployer, network, accounts) {

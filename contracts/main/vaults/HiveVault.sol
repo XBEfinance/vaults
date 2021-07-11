@@ -49,7 +49,7 @@ contract HiveVault is BaseVault {
     }
 
 
-    function addTokenRewards(address _token) external{
+    function addTokenRewards(address _token) external onlyOwner{
         require(_token != address(0));
         require(!tokenRewardsM[_token], 'token already added');
         tokenRewards.push(_token);
@@ -62,8 +62,9 @@ contract HiveVault is BaseVault {
             uint256 _fee = mulDiv(feePercentage, _amount, PCT_BASE);
             IERC20(_token).safeTransfer(multisigWallet, _fee);
             _sumWithoutFee =  _amount.sub(_fee);
+        }else {
+            _sumWithoutFee = _amount;
         }
-        _sumWithoutFee = _amount;
     }
 
      function setFeePercentage(uint64 _newPercentage) external onlyOwner {
@@ -106,14 +107,15 @@ contract HiveVault is BaseVault {
         claimAll();
         super._withdraw(_msgSender(), balanceOf(_msgSender()));
     }
-
-    function claim() public {
+ 
+    function claim() public returns(uint256[] memory) {
         uint256[] memory _amounts = earnedReal();
         _controller.claim(address(_token), _msgSender(), tokenRewards, _amounts);
         for(uint256 i = 0; i < tokenRewards.length; i++){
             IERC20(tokenRewards[i]).safeTransfer(_msgSender(), _amounts[i]);
         }
         emit RewardPaid(_amounts);
+        return _amounts;
     }
 
     function claimAll() public {
@@ -122,8 +124,9 @@ contract HiveVault is BaseVault {
     }
 
     function earnedReal() public returns(uint256[] memory amounts) {
+        amounts = new uint256[](tokenRewards.length);
         amounts = IStrategy(
-                _controller.strategies(address(_token))
+                 _controller.strategies(address(_token))
             ).earned(tokenRewards);
         uint256 _share = balanceOf(_msgSender());
         for(uint256 i = 0; i < tokenRewards.length; i++){
@@ -133,9 +136,9 @@ contract HiveVault is BaseVault {
     }
 
     function earnedVirtual() external returns(uint256[] memory virtualAmounts){
+        virtualAmounts = new uint256[](tokenRewards.length);
         uint256[] memory realAmounts = earnedReal();
         uint256[] memory virtualEarned = new uint256[](1);
-        virtualAmounts = new uint256[](tokenRewards.length);
         virtualEarned[0] = IStrategy(_controller.strategies(address(_token))).canClaim();
         virtualEarned = IStrategy(_controller.strategies(address(_token))).subFee(virtualEarned);
         uint256 _share = balanceOf(_msgSender());

@@ -9,6 +9,7 @@ function verifyAll {
   truffle run verify Voting@0x74eC65034DBd26d04dd09Abaf4fb06d6B3cCa735 --network $1
 
   generate_truffle_config "0.6.6" ".\/contracts\/main"
+  truffle run verify ReferralProgram@0xB73d03Baa6796Abbc51C8A588c4C38231cE0b104 --network $1
   truffle run verify BonusCampaign@0xbce5A336944fa3c270A31bB7D148CbbF01E2C1bc --network $1
   truffle run verify VeXBE@0x68948cDbbA994F448667ddEfF2983Ee36ae1868C --network $1
   truffle run verify XBEInflation@0x1b17270E564B095504b80AD3b63de48A2172D886 --network $1

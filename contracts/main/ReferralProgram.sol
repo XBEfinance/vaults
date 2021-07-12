@@ -16,44 +16,38 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
         address referrer;
     }
 
-    event CommitOwnership(address admin);
-    event ApplyOwnership(address admin);
-    event CommitDistribution(uint256[] distribution);
-    event ApplyDistribution(uint256[] distribution);
-    event CommitNewToken(address token);
-    event ApplyNewToken(address token);
-
     mapping(address => User) public users;
-
     // user_address -> token_address -> token_amount
     mapping (address => mapping(address => uint256)) public rewards;
 
     uint256[] public distribution = [70, 20, 10];
-    uint256[] public futureDistribution;
-
     address[] public tokens;
-    address public newToken;
 
-    address private rootAddress;
-
+    address public rootAddress;
     address public admin;
-    address public futureAdmin;
 
     modifier onlyAdmin {
-      require(msg.sender == admin, "!admin");
+      require(msg.sender == admin, "RP!admin");
       _;
     }
+
+    event RegisterUser(address user, address referrer);
+    event RewardsReceived(address user, address[] tokens, uint256[] amounts);
+    event RewardsClaimed(address user, address[] tokens, uint256[] amounts);
+    event TransferOwnership(address admin);
+    event NewDistribution(uint256[] distribution);
+    event NewToken(address token);
 
     function configure(
         address[] calldata tokenAddresses,
         address _rootAddress
     ) external initializer {
         admin = msg.sender;
-        require(_rootAddress != address(0), 'rootIsZero');
-        require(tokenAddresses.length > 0, 'tokensNotProvided');
+        require(_rootAddress != address(0), 'RProotIsZero');
+        require(tokenAddresses.length > 0, 'RPtokensNotProvided');
 
         for(uint256 i = 0; i < tokenAddresses.length; i++){
-            require(tokenAddresses[i] != address(0), 'tokenIsZero');
+            require(tokenAddresses[i] != address(0), 'RPtokenIsZero');
         }
 
         tokens = tokenAddresses;
@@ -81,12 +75,14 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
         address referrer,
         address referral
     ) internal {
+        require(referral != address(0), 'RPuserIsZero');
         require(!users[referral].exists, 'RPuserExists');
         require(users[referrer].exists, 'RP!referrerExists');
-        users[msg.sender] = User({
+        users[referral] = User({
             exists: true,
             referrer: referrer
         });
+        emit RegisterUser(referral, referrer);
     }
 
     // TODO: restrict usage by address list
@@ -96,10 +92,7 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
         require(_amounts.length == _tokens.length, 'RP!AmountsLength');
         // If notify reward for unregistered _for -> register with root referrer
         if(!users[_for].exists){
-            users[_for] = User({
-                exists: true,
-                referrer: rootAddress
-            });
+            _registerUser(rootAddress, _for);
         }
 
         address upline = users[_for].referrer;
@@ -113,21 +106,27 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
     }
 
     function claimRewardsFor(address userAddr) public nonReentrant {
+        require(users[userAddr].exists, 'RP!userExists');
+        uint256[] memory amounts = new uint256[](tokens.length);
         for(uint256 i = 0; i <  tokens.length; i++){
             if(rewards[userAddr][tokens[i]] > 0){
-                IERC20(tokens[i]).safeTransfer(userAddr, rewards[userAddr][tokens[i]]);
-                rewards[userAddr][tokens[i]] = 0;
+                amounts[i] = rewards[userAddr][tokens[i]];
+                if(rewards[userAddr][tokens[i]] > 0) {
+                    IERC20(tokens[i]).safeTransfer(userAddr, rewards[userAddr][tokens[i]]);
+                    rewards[userAddr][tokens[i]] = 0;
+                }
+                
             }
         }
+        emit RewardsClaimed(userAddr, tokens, amounts);
     }
 
     function claimRewards() public {
         claimRewardsFor(msg.sender);
     }
 
-    function commitTransferOwnership(address addr) external onlyAdmin {
-        futureAdmin = addr;
-        emit CommitOwnership(addr);
+    function claimRewardsForRoot() public {
+        claimRewardsFor(rootAddress);
     }
 
     function getTokensList() public view returns (address[] memory){
@@ -138,46 +137,29 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
         return distribution;
     }
 
-    // """
-    // @notice Apply ownership transfer
-    // """
-    function applyTransferOwnership() external onlyAdmin {
-        address _admin = futureAdmin;
-        require(_admin != address(0), "adminIsZero");
-        admin = _admin;
-        emit ApplyOwnership(_admin);
+    function transferOwnership(address newAdmin) external onlyAdmin {
+        require(newAdmin != address(0), "RPadminIsZero");
+        admin = newAdmin;
+        emit TransferOwnership(admin);
     }
 
-    function commitDistribution(uint256[] calldata newDistribution) external onlyAdmin {
+    function changeDistribution(uint256[] calldata newDistribution) external onlyAdmin {
         uint256 sum;
         for(uint256 i = 0; i < newDistribution.length; i++){
             sum.add(newDistribution[i]);
         }
-        require(sum == 100, '!fullDistribution');
-        futureDistribution = newDistribution;
-        emit CommitDistribution(futureDistribution);
+        require(sum == 100, 'RP!fullDistribution');
+        distribution = newDistribution;
+        emit NewDistribution(distribution);
     }
 
-    // """
-    // @notice Apply distribution change
-    // """
-    function applyDistribution() external onlyAdmin {
-        distribution = futureDistribution;
-        emit ApplyDistribution(distribution);
-    }
-
-    function commitNewToken(address tokenAddress) external onlyAdmin {
-        require(tokenAddress != address(0), 'tokenIsZero');
-        newToken = tokenAddress;
-        emit CommitNewToken(newToken);
-    }
-
-    function applyNewToken() external onlyAdmin {
+    function addNewToken(address tokenAddress) external onlyAdmin {
+        require(tokenAddress != address(0), 'RPtokenIsZero');
         for(uint256 i = 0; i < tokens.length; i++){
-            require(newToken != tokens[i], 'tokenAlreadyExists');
+            require(tokenAddress != tokens[i], 'RPtokenAlreadyExists');
         }
-        tokens.push(newToken);
-        emit ApplyNewToken(newToken);
+        tokens.push(tokenAddress);
+        emit NewToken(tokenAddress);
     }
 
 }

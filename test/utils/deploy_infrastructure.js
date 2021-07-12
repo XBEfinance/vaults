@@ -20,7 +20,6 @@ const months = (n) => days('30').mul(new BN(n));
 
 // const Minter = artifacts.require("Minter");
 const XBEInflation = artifacts.require('XBEInflation');
-const GaugeController = artifacts.require('GaugeController');
 const VeXBE = artifacts.require('VeXBE');
 // const LiquidityGaugeReward = artifacts.require("LiquidityGaugeReward");
 const Voting = artifacts.require('Voting');

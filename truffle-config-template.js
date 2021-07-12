@@ -26,7 +26,7 @@ const mnemonic = fs.readFileSync('.secret').toString().trim();
 
 // NB: It's important to wrap the provider as a function.
 const rinkebyNetworkConfig = {
-  provider: () => new HDWalletProvider(mnemonic, `wss://rinkeby.infura.io/wss/v3/${process.env.INFURA_ID}`),
+  provider: () => new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/v3/${process.env.INFURA_ID}`),
   network_id: 4, // Rinkeby's id
   networkCheckTimeout: 10000000,
   gasLimit: 5000000,
@@ -36,7 +36,7 @@ const rinkebyNetworkConfig = {
 };
 
 const mainnetNetworkConfig = {
-  provider: () => new HDWalletProvider(mnemonic, `wss://mainnet.infura.io/ws/v3/${process.env.INFURA_ID}`),
+  provider: () => new HDWalletProvider(mnemonic, `https://mainnet.infura.io/v3/${process.env.INFURA_ID}`),
   network_id: 1,
   networkCheckTimeout: 10000000,
   gasLimit: 5000000,
@@ -58,7 +58,7 @@ const ganacheNetworkConfig = {
 };
 
 const mainnetForkNetworkConfig = {
-  host: "127.0.0.1",
+  host: '127.0.0.1',
   port: 8545,
   network_id: '1',
 };
@@ -108,7 +108,7 @@ module.exports = {
 
     development: ganacheNetworkConfig,
 
-    mainnet_fork: mainnetForkNetworkConfig
+    mainnet_fork: mainnetForkNetworkConfig,
 
     // Useful for private networks
     // private: {

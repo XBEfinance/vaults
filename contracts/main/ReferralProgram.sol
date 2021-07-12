@@ -110,9 +110,12 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
         uint256[] memory amounts = new uint256[](tokens.length);
         for(uint256 i = 0; i <  tokens.length; i++){
             if(rewards[userAddr][tokens[i]] > 0){
-                rewards[userAddr][tokens[i]] = 0;
                 amounts[i] = rewards[userAddr][tokens[i]];
-                IERC20(tokens[i]).safeTransfer(userAddr, rewards[userAddr][tokens[i]]);
+                if(rewards[userAddr][tokens[i]] > 0) {
+                    IERC20(tokens[i]).safeTransfer(userAddr, rewards[userAddr][tokens[i]]);
+                    rewards[userAddr][tokens[i]] = 0;
+                }
+                
             }
         }
         emit RewardsClaimed(userAddr, tokens, amounts);

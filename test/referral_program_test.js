@@ -257,33 +257,35 @@ contract('ReferralProgram', (accounts) => {
         carol,
       ];
 
+      // Transfer tokens to RefProgram
       for (const token of tokens) {
         await (await MockToken.at(token)).transfer(referralProgram.address, ether('100'));
       }
 
+      // Notify RefProgram
       await referralProgram.feeReceiving(carol, tokens, amounts);
 
       const uRewardsBefore = await getUsersRewards(users, tokens);
       const uTokensBefore = await getUsersTokensBalances(users, tokens);
 
-      await referralProgram.claimRewards();
-      await referralProgram.claimRewardsFor(alice);
+      await referralProgram.claimRewardsForRoot();
+      await referralProgram.claimRewards({ from: alice });
       await referralProgram.claimRewardsFor(bob);
 
       const uRewardsAfter = await getUsersRewards(users, tokens);
       const uTokensAfter = await getUsersTokensBalances(users, tokens);
 
       for (const user of users) {
-        // console.log(`User: [${user}]:`)
         for (const token of tokens) {
           const expectedTokenBalance = uTokensBefore[user][token]
             .add(uRewardsBefore[user][token]);
 
-          console.log(`Token [${token}]:
-            expected token balance: ${expectedTokenBalance}
-            actual token balance: ${uTokensAfter[user][token]}
-            reward after: ${uRewardsAfter[user][token]}
-            reward before: ${uRewardsBefore[user][token]}`);
+          // global.console.log(`Token [${token}]:
+          //   expected token balance: ${expectedTokenBalance}
+          //   token balance before: ${uTokensBefore[user][token]}
+          //   actual token balance: ${uTokensAfter[user][token]}
+          //   reward after: ${uRewardsAfter[user][token]}
+          //   reward before: ${uRewardsBefore[user][token]}`);
 
           expect(uRewardsAfter[user][token]).to.be.bignumber.equal(ZERO);
           expect(uTokensAfter[user][token]).to.be.bignumber.equal(expectedTokenBalance);

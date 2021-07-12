@@ -87,7 +87,7 @@ contract('Curve LP Testing', (accounts) => {
       mockedAmountCRV: ether('100'),
     },
     xbeinflation: {
-      initialSupply: new BN('5000'),
+      initialSupply: new BN('500000'),
       initialRate: new BN('274815283').mul(MULTIPLIER).div(YEAR), // new BN('10000').mul(MULTIPLIER).div(YEAR)
       rateReductionTime: YEAR,
       rateReductionCoefficient: new BN('1189207115002721024'), // new BN('10').mul(MULTIPLIER)
@@ -179,11 +179,12 @@ contract('Curve LP Testing', (accounts) => {
     );
 
     await hiveStrategy.configure(
-      dependentsAddresses.curve.address_provider,
       dependentsAddresses.convex.pools[0].lptoken,
       controller.address,
       hiveVault.address,
       owner,
+      mockXBE.address,
+      voting.address,
       [
         dependentsAddresses.curve.pool_data.mock_pool.swap_address,
         dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
@@ -224,6 +225,7 @@ contract('Curve LP Testing', (accounts) => {
       hiveStrategy.address,
       100000,
     );
+    // await xbeInflation.mintForContracts();
     await bonusCampaign.configure(
       mockXBE.address,
       veXBE.address,
@@ -314,7 +316,7 @@ contract('Curve LP Testing', (accounts) => {
       expect(balanceRewardAfterBob).to.be.bignumber.equal(depositAlice.add(depositBob));
 
       const earnedVirtualBob = await hiveVault.earnedVirtual.call({ from: bob });
-      const canClaimStrategy = await hiveStrategy.canClaim.call();
+      const canClaimStrategy = await hiveStrategy.canClaimAmount.call();
       // console.log(earnedVirtualBob.toString());
       // console.log(canClaimStrategy.toString());
 
@@ -322,22 +324,43 @@ contract('Curve LP Testing', (accounts) => {
 
       // backend called getRewards for specified strategy
       await controller.getRewardStrategy(hiveStrategy.address);
-
+      console.log((await cvx.balanceOf(hiveStrategy.address)).toString());
       // const balanceAtContract = await hiveStrategy.earned.call();
-      const earnedReal = await hiveVault.earnedReal.call({ from: alice });
+
+      const [crvEarned, cvxEarned, xbeEarned] = await hiveVault.earnedReal.call({ from: alice });
+
+      // TO-DO: ПРОВЕРИТЬ ЛОГИ!!!!
       const { logs } = await hiveVault.claim({ from: alice });
 
-      const afterCRV = await crv.balanceOf.call(alice);
-      const afterXBE = await mockXBE.balanceOf.call(alice);
-      const afterCVX = await cvx.balanceOf.call(alice);
-      console.log(afterCRV.toString());
-      // console.log(earnedReal.toString());
-      console.log(afterXBE.toString());
-      console.log(afterCVX.toString());
+      const claimCRV = await crv.balanceOf.call(alice);
+      const claimXBE = await mockXBE.balanceOf.call(alice);
+      const claimCVX = await cvx.balanceOf.call(alice);
 
-      // claim virtual bob
+      // check real alice's balance
+      expect(crvEarned).to.be.bignumber.equal(claimCRV);
+      expect(cvxEarned).to.be.bignumber.equal(claimCVX);
+      expect(xbeEarned).to.be.bignumber.equal(claimXBE);
+
+      // claim virtual for bob
+
+      time.increase(months('1'));
+
+      const [crvEarnedVirtual, cvxEarnedVirtual, xbeEarnedVirtual] = await hiveVault.earnedVirtual.call({ from: bob });
+      console.log(crvEarnedVirtual.toString(), cvxEarnedVirtual.toString(), xbeEarnedVirtual.toString());
+      // claimAll virtual bob
+      // ref program => users => exitst => true
 
       // deposit with protocol fee
+
+      // withdraw and withdrawAll
+
+      // async function getRewards(userAddress, tokens) {
+      //   const rewards = [];
+      //   for (const token of tokens) {
+      //     rewards[token] = await referralProgram.rewards(userAddress, token);
+      //   }
+      //   return rewards;
+      // }
     });
   });
 });

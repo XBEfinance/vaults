@@ -231,11 +231,12 @@ const configureContracts = async (params, owner) => {
   // console.log(dependentsAddresses);
 
   await hiveStrategy.configure(
-    dependentsAddresses.curve.address_provider,
     dependentsAddresses.convex.pools[0].lptoken,
     controller.address,
     hiveVault.address,
     owner,
+    mockXBE.address,
+    voting.address,
     [
       dependentsAddresses.curve.pool_data.mock_pool.swap_address,
       dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
@@ -257,15 +258,6 @@ const configureContracts = async (params, owner) => {
   //   mainRegistryAddress,
   //   { from: owner },
   // );
-
-  await hiveVault.configure(
-    dependentsAddresses.convex.pools[0].lptoken,
-    controller.address,
-    owner,
-    referralProgram.address,
-    treasury.address,
-    { from: owner },
-  );
 
   await xbeInflation.configure(
     mockXBE.address,

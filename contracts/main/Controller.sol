@@ -99,14 +99,19 @@ contract Controller is IController, Ownable, Initializable {
         IStrategy(strategies[_token]).withdraw(_amount);
     }
 
-     function claim(address _token, address _for, address[] calldata _tokens, uint256[] calldata _amounts) override external {
-        IStrategy(strategies[_token]).claim(_for, _tokens, _amounts);
+    function claim(
+        address _token,
+        address _for,
+        address[] calldata _tokensToClaim,
+        uint256[] calldata _amountsToClaim
+    ) override external {
+        IStrategy(strategies[_token]).claim(_for, _tokensToClaim, _amountsToClaim);
     }
 
     /// @notice forces the strategy to take away the rewards due to it
     // this method must call via backend
     /// @param _strategy strategy address
-    function getRewardStrategy(address _strategy) external {
+    function getRewardStrategy(address _strategy) external override {
         IStrategy(_strategy).getRewards();
     }
 
@@ -225,44 +230,46 @@ contract Controller is IController, Ownable, Initializable {
     /// @param _strategy Strategy to action
     /// @param _token Token that we want to chop and reinvest (could be any, becuaise 1inch used for conversion)
     /// @dev Only allows to withdraw non-core strategy tokens ~ this is over and above normal yield
-    function harvest(address _strategy, address _token) override onlyOwnerOrStrategist external {
+    function harvest(address _strategy, address _token) override external {
+        // onlyOwnerOrStrategist
+        revert("not used");
         // This contract should never have value in it, but just incase since this is a public call
-        uint256 _before = IERC20(_token).balanceOf(address(this));
-        //
-        IStrategy(_strategy).withdraw(_token);
-        uint256 _after = IERC20(_token).balanceOf(address(this));
-        if (_after > _before) {
-            uint256 _amount = _after.sub(_before);
-            address _want = IStrategy(_strategy).want();
-            uint256[] memory _distribution;
-            uint256 _expected;
-            _before = IERC20(_want).balanceOf(address(this));
-            IERC20(_token).safeApprove(oneSplit, 0);
-            IERC20(_token).safeApprove(oneSplit, _amount);
-            (_expected, _distribution) = IOneSplitAudit(oneSplit).getExpectedReturn(
-                _token,
-                _want,
-                _amount,
-                parts,
-                0
-            );
-            _after = IOneSplitAudit(oneSplit).swap(
-                _token,
-                _want,
-                _amount,
-                _expected,
-                _distribution,
-                0
-            );
-            if (_after > _before) {
-                _amount = _after.sub(_before);
-                uint256 _reward = _amount.mul(split).div(max);
-                earn(_want, _amount.sub(_reward));
-                if (_reward > 0) {
-                    require(IERC20(_want).transfer(_treasury, _reward), '!transferTreasury');
-                }
-                emit Harvest(_strategy, _token);
-            }
-        }
+        // uint256 _before = IERC20(_token).balanceOf(address(this));
+        // //
+        // IStrategy(_strategy).withdraw(_token);
+        // uint256 _after = IERC20(_token).balanceOf(address(this));
+        // if (_after > _before) {
+        //     uint256 _amount = _after.sub(_before);
+        //     address _want = IStrategy(_strategy).want();
+        //     uint256[] memory _distribution;
+        //     uint256 _expected;
+        //     _before = IERC20(_want).balanceOf(address(this));
+        //     IERC20(_token).safeApprove(oneSplit, 0);
+        //     IERC20(_token).safeApprove(oneSplit, _amount);
+        //     (_expected, _distribution) = IOneSplitAudit(oneSplit).getExpectedReturn(
+        //         _token,
+        //         _want,
+        //         _amount,
+        //         parts,
+        //         0
+        //     );
+        //     _after = IOneSplitAudit(oneSplit).swap(
+        //         _token,
+        //         _want,
+        //         _amount,
+        //         _expected,
+        //         _distribution,
+        //         0
+        //     );
+        //     if (_after > _before) {
+        //         _amount = _after.sub(_before);
+        //         uint256 _reward = _amount.mul(split).div(max);
+        //         earn(_want, _amount.sub(_reward));
+        //         if (_reward > 0) {
+        //             require(IERC20(_want).transfer(_treasury, _reward), '!transferTreasury');
+        //         }
+        //         emit Harvest(_strategy, _token);
+        //     }
+        // }
     }
 }

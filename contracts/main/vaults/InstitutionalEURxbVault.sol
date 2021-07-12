@@ -4,13 +4,13 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "./base/BaseVault.sol";
+import "./base/BaseVaultOld.sol";
 import "../interfaces/IController.sol";
 import "../interfaces/IConverter.sol";
 
 /// @title InstitutionalEURxbVault
 /// @notice Vault for investors of the system
-contract InstitutionalEURxbVault is BaseVault, AccessControl {
+contract InstitutionalEURxbVault is BaseVaultOld, AccessControl {
 
     using SafeERC20 for IERC20;
 
@@ -19,7 +19,7 @@ contract InstitutionalEURxbVault is BaseVault, AccessControl {
     address public tokenUnwrapped;
 
     /// @notice Constructor that creates a vault for investors
-    constructor() BaseVault("Institutional", "in") public {
+    constructor() BaseVaultOld("Institutional", "in") public {
        _setupRole(DEFAULT_ADMIN_ROLE, owner());
     }
 

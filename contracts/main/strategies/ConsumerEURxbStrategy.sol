@@ -23,7 +23,7 @@ contract ConsumerEURxbStrategy is BaseStrategy {
     }
 
 
-    function canClaim() external override returns(uint256) {
+    function canClaimAmount() external override returns(uint256) {
         return 0;
     }
 

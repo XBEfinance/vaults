@@ -86,7 +86,7 @@ contract SushiStrategy is WithClaimAmountStrategy {
         return _after.sub(_before);
     }
 
-    function _getAmountOfRewardEarnedFrom(address _rewardSourceContractAddress)
+    function _getAmountOfPendingRewardEarnedFrom(address _rewardSourceContractAddress)
         override
         internal
         returns(uint256)

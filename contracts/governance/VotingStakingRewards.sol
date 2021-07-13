@@ -32,6 +32,8 @@ contract VotingStakingRewards {
     IBonusCampaign public bonusCampaign;
     address public treasury;
 
+    mapping(address => bool) internal _strategiesWhoCanAutostake;
+
     struct BondedReward {
         uint256 amount;
         uint256 unlockTime;
@@ -76,12 +78,16 @@ contract VotingStakingRewards {
         address _rewardsDistribution,
         address _rewardsToken,
         address _stakingToken,
-        uint256 _rewardsDuration
+        uint256 _rewardsDuration,
+        address[] memory __strategiesWhoCanAutostake
     ) internal {
         rewardsToken = _rewardsToken;
         stakingToken = _stakingToken;
         rewardsDistribution = _rewardsDistribution;
         rewardsDuration = _rewardsDuration;
+        for (uint256 i = 0; i < __strategiesWhoCanAutostake.length; i++) {
+            _strategiesWhoCanAutostake[__strategiesWhoCanAutostake[i]] = true;
+        }
     }
 
     modifier nonReentrant {
@@ -184,8 +190,12 @@ contract VotingStakingRewards {
         stakeAllowance[_staker][msg.sender] = _allowed;
     }
 
+    function setStrategyWhoCanAutoStake(address _addr, bool _flag) external onlyRewardsDistribution {
+        _strategiesWhoCanAutostake[_addr] = _flag;
+    }
+
     function stakeFor(address _for, uint256 amount) public nonReentrant whenNotPaused updateReward(_for) {
-        if (msg.sender != treasury) {
+        if (_strategiesWhoCanAutostake[msg.sender]) {
             require(stakeAllowance[msg.sender][_for], "stakeNotApproved");
         }
         _stake(_for, amount);

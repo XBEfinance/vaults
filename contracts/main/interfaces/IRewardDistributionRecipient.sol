@@ -1,23 +1,6 @@
 pragma solidity ^0.6.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-
-
-abstract contract IRewardDistributionRecipient is Ownable {
-
-    address public rewardDistribution;
-
-    function notifyRewardAmount(uint256 reward) external virtual;
-
-    modifier onlyRewardDistribution {
-        require(msg.sender == rewardDistribution, "!rewardDistribution");
-        _;
-    }
-
-    function setRewardDistribution(address _rewardDistribution)
-        public
-        onlyOwner
-    {
-        rewardDistribution = _rewardDistribution;
-    }
+interface IRewardDistributionRecipient {
+    function notifyRewardAmount(uint256 reward) external;
+    function setStrategyWhoCanAutoStake(address addr, bool flag) external;
 }

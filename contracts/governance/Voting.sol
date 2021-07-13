@@ -111,20 +111,22 @@ contract Voting is IForwarder, AragonApp, VotingStakingRewards {
         address _rewardsDistribution,
         address _rewardsToken,
         address _stakingToken,
-        uint256 _rewardsDuration
-    ) external auth(MODIFY_QUORUM_ROLE) _onlyInit {
+        uint256 _rewardsDuration,
+        address[] memory _strategiesWhoCanAutostake
+    ) public auth(MODIFY_QUORUM_ROLE) _onlyInit {
         _configureRewards(
             _rewardsDistribution,
             _rewardsToken,
             _stakingToken,
-            _rewardsDuration
+            _rewardsDuration,
+            _strategiesWhoCanAutostake
         );
     }
 
     function setLock(uint256 _lock) external auth(MODIFY_QUORUM_ROLE) {
         lock = _lock;
     }
-    
+
     function setBreaker(bool _breaker) external auth(MODIFY_QUORUM_ROLE) {
         breaker = _breaker;
     }

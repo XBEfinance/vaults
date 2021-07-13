@@ -31,6 +31,8 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     /// @notice Vault instance getter, used to simplify vault-related actions
     address public vault;
 
+    uint256 internal _totalDeposited;
+
     /// @dev Prevents other msg.sender than controller address
     modifier onlyController {
         require(_msgSender() == controller, "!controller");
@@ -107,6 +109,7 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
         address _vault = IController(controller).vaults(_want);
         require(_vault != address(0), "!vault 0"); // additional protection so we don't burn the funds
 
+
         address vaultToken = IVaultCore(_vault).token();
         if (vaultToken != _want) {
             address converter = IController(controller).converters(vaultToken, _want);
@@ -115,6 +118,7 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
             _amount = IConverter(converter).convert(address(this));
         }
         require(IERC20(_want).transfer(_vault, _amount), "!transferVault");
+        _totalDeposited -= _amount;
         emit Withdrawn(_want, _amount, _vault);
     }
 
@@ -126,9 +130,8 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     }
 
     /// @notice balance of this address in "want" tokens
-    function balanceOf() override public view returns(uint256) {
-
-        //return IERC20(_want).balanceOf(address(this));
+    function balanceOf() override virtual public view returns(uint256) {
+        return _totalDeposited;
     }
 
     function getRewards() override virtual external;

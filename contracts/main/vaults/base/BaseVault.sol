@@ -360,17 +360,15 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
     {
         uint256 reward = rewards[_for][_what];
         if (reward > 0) {
-            if (_claimMask << 7 == 128) {
-                _controller.getRewardStrategy(
-                    _controller.strategies(_stakingToken)
-                );
+            if (_claimMask >> 1 == 1 && _claimMask << 7 != 128) {
                 reward = _claimThroughControllerAndReturnClaimed(
                     _stakingToken,
                     _for,
                     _what,
                     reward
                 );
-            } else if (_claimMask >> 1 == 1) {
+            } else if (_claimMask >> 1 == 1 && _claimMask << 7 == 128) {
+                IStrategy(_controller.strategies(_stakingToken)).getReward();
                 reward = _claimThroughControllerAndReturnClaimed(
                     _stakingToken,
                     _for,
@@ -472,6 +470,10 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
         return _validTokens.contains(_rewardToken);
     }
 
+    function getRewardToken(uint256 _index) external view returns(address) {
+        return _validTokens.at(_index);
+    }
+
     /* ========== MODIFIERS ========== */
 
     modifier onlyValidToken(address _rewardToken) {
@@ -527,6 +529,50 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
     }
 
     function balance() public override view returns(uint256) {
-        return stakingToken.balanceOf(address(this));
+        IStrategy strategy = IStrategy(_controller.strategies(_stakingToken));
+        return
+            stakingToken.balanceOf(address(this))
+                .add(strategy.balanceOf());
+    }
+
+    function earnedReal() public view returns(uint256[] memory amounts) {
+        address[] memory _tokenRewards = new address[](_validTokens.length());
+        for (uint256 i = 0; i < _tokenRewards.length; i++) {
+            _tokenRewards[i] = _validTokens.at(i);
+        }
+        IStrategy _strategy = IStrategy(_controller.strategies(address(stakingToken)));
+        amounts = _strategy.earned(_tokenRewards);
+        uint256 _share = balanceOf(msg.sender);
+        for(uint256 i = 0; i < _tokenRewards.length; i++){
+            amounts[i] = amounts[i]
+                .add(
+                    IERC20(tokenRewards[i]).balanceOf(address(this))
+                )
+                .mul(_share)
+                .div(totalSupply());
+        }
+        amounts = IStrategy(_controller.strategies(address(stakingToken))).subFee(amounts);
+    }
+
+    /// @dev _excludeToken is XBE or any token that transfers passively
+    /// to the strategy without third party contracts or explicit request from
+    /// either vault, or strategy, or user
+    function earnedVirtual(address _tokenThatComesPassively) external view returns(uint256[] memory virtualAmounts) {
+        uint256[] memory realAmounts = earnedReal();
+        uint256[] memory virtualEarned = new uint256[](realAmounts.length);
+        virtualAmounts = new uint256[](tokenRewards.length);
+        IStrategy _strategy = IStrategy(_controller.strategies(address(stakingToken)));
+        for (uint256 i = 0; i < virtualAmounts.length; i++) {
+            virtualEarned[i] = _strategy.canClaimAmount(_validTokens.at(i));
+        }
+        virtualEarned = _strategy.subFee(virtualEarned);
+        uint256 _share = balanceOf(msg.sender);
+        for(uint256 i = 0; i < realAmounts.length; i++){
+            if(_validTokens.at(i) == _tokenThatComesPassively) {
+                virtualAmounts[i] = realAmounts[i].mul(_share).div(totalSupply());
+            } else {
+                virtualAmounts[i] = realAmounts[i].add(virtualEarned[i]).mul(_share).div(totalSupply());
+            }
+        }
     }
 }

@@ -34,5 +34,5 @@ interface IStrategy {
 
     function subFee(uint256[] calldata) external view returns(uint256[] memory);
 
-    function convertTokens(address, uint256) external;
+    function convertTokens(uint256) external;
 }

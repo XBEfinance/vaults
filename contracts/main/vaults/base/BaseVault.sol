@@ -37,6 +37,11 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
 
     address public rewardsDistribution;
 
+    /// @dev _tokenThatComesPassively is XBE or any token that transfers passively
+    /// to the strategy without third party contracts or explicit request from
+    /// either vault, or strategy, or user. This parameter used in earnedVirtual() function below.
+    address internal _tokenThatComesPassively;
+
     // token => reward per token stored
     mapping(address => uint256) public rewardsPerTokensStored;
 
@@ -57,6 +62,8 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
 
     string private _name;
     string private _symbol;
+    string private _namePostfix;
+    string private _symbolPostfix;
 
     /* ========== EVENTS ========== */
 
@@ -83,12 +90,16 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
         address _initialController,
         address _governance,
         uint256 _rewardsDuration,
-        address[] memory _rewardsTokens
+        address[] memory _rewardsTokens,
+        string memory __namePostfix,
+        string memory __symbolPostfix
     ) internal {
         setController(_initialController);
         transferOwnership(_governance);
         stakingToken = IERC20(_initialToken);
         rewardsDuration = _rewardsDuration;
+        _namePostfix = __namePostfix;
+        _symbolPostfix = __symbolPostfix;
         for (uint256 i = 0; i < _rewardsTokens.length; i++) {
             _validTokens.add(_rewardsTokens[i]);
         }
@@ -106,11 +117,11 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
     }
 
     function name() public view virtual returns (string memory) {
-        return _name;
+        return string(abi.encodePacked(_name, _namePostfix));
     }
 
     function symbol() public view virtual returns (string memory) {
-        return _symbol;
+        return string(abi.encodePacked(_symbol, _symbolPostfix));
     }
 
     function decimals() public view virtual returns (uint8) {
@@ -301,15 +312,16 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
     }
 
 
-    /// @dev What is claimMap parameter?
-    /// 0b000000AB - bitwise representation of claimMap parameter.
-    /// A bit - if 1 - autoclaim else do not attempt to claim
-    /// B bit - if 1 - claim from business logic in strategy else do not claim
+    /// @dev What is claimMask parameter?
+    /// 0b000000AB - bitwise representation of claimMask parameter.
+    /// A bit - if 1 autoclaim else do not attempt to claim
+    /// B bit - if 1 claim from business logic in strategy else do not claim
     ///
     /// Invalid values:
     ///  0x01 = 0b00000001 - you cannot (withdraw without claim) and (claim from business logic)
+    ///  0x00 = 0b00000000 - you cannot just withdraw because
+    ///                         you'd have to redeposit your previous share to claim it
     /// Valid values:
-    ///  0x00 = 0b00000000 - just withdraw
     ///  0x02 = 0b00000010 - withdraw with claim without claim from business logic
     ///  0x03 = 0b00000011 - withdraw with claim and with claim from business logic
     function withdraw(
@@ -426,7 +438,8 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
         // very high values of rewardRate in the earned and rewardsPerToken functions;
         // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
         uint256 balance = IERC20(_rewardToken).balanceOf(address(this));
-        require(rewardRates[_rewardToken] <= balance.div(rewardsDuration), "Provided reward too high");
+        require(rewardRates[_rewardToken] <= balance.div(rewardsDuration),
+            "Provided reward too high");
 
         lastUpdateTime = block.timestamp;
         periodFinish = block.timestamp.add(rewardsDuration);
@@ -451,8 +464,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
 
     function setRewardsDuration(uint256 _rewardsDuration) external onlyOwner {
         require(
-            block.timestamp > periodFinish,
-            "Previous rewards period must be complete before changing the duration for the new period"
+            block.timestamp > periodFinish, "!periodFinish"
         );
         rewardsDuration = _rewardsDuration;
         emit RewardsDurationUpdated(rewardsDuration);
@@ -472,6 +484,10 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
 
     function getRewardToken(uint256 _index) external view returns(address) {
         return _validTokens.at(_index);
+    }
+
+    function getRewardTokensCount() external view returns(uint256) {
+        return _validTokens.length();
     }
 
     /* ========== MODIFIERS ========== */
@@ -498,7 +514,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
     }
 
     modifier validClaimMask(uint8 _mask) {
-        require(_mask != 1 && _mask < 4, "invalidClaimMask");
+        require(_mask != 1 && _mask < 4 && _mask > 0, "invalidClaimMask");
         _;
     }
 
@@ -529,7 +545,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
     }
 
     function balance() public override view returns(uint256) {
-        IStrategy strategy = IStrategy(_controller.strategies(_stakingToken));
+        IStrategy strategy = IStrategy(_controller.strategies(stakingToken));
         return
             stakingToken.balanceOf(address(this))
                 .add(strategy.balanceOf());
@@ -546,7 +562,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
         for(uint256 i = 0; i < _tokenRewards.length; i++){
             amounts[i] = amounts[i]
                 .add(
-                    IERC20(tokenRewards[i]).balanceOf(address(this))
+                    IERC20(_tokenRewards[i]).balanceOf(address(this))
                 )
                 .mul(_share)
                 .div(totalSupply());
@@ -554,13 +570,10 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
         amounts = IStrategy(_controller.strategies(address(stakingToken))).subFee(amounts);
     }
 
-    /// @dev _excludeToken is XBE or any token that transfers passively
-    /// to the strategy without third party contracts or explicit request from
-    /// either vault, or strategy, or user
-    function earnedVirtual(address _tokenThatComesPassively) external view returns(uint256[] memory virtualAmounts) {
+    function earnedVirtual() external view returns(uint256[] memory virtualAmounts) {
         uint256[] memory realAmounts = earnedReal();
         uint256[] memory virtualEarned = new uint256[](realAmounts.length);
-        virtualAmounts = new uint256[](tokenRewards.length);
+        virtualAmounts = new uint256[](realAmounts.length);
         IStrategy _strategy = IStrategy(_controller.strategies(address(stakingToken)));
         for (uint256 i = 0; i < virtualAmounts.length; i++) {
             virtualEarned[i] = _strategy.canClaimAmount(_validTokens.at(i));

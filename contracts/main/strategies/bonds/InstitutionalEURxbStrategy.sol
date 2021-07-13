@@ -6,22 +6,21 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 
-import "./base/BaseStrategy.sol";
-import "../TokenWrapper.sol";
+import "../base/BaseStrategy.sol";
 
-/// @title ConsumerEURxbStrategy
-/// @notice This is contract for yield farming strategy with EURxb token for consumers
-contract ConsumerEURxbStrategy is BaseStrategy {
+/// @title InstitutionalEURxbStrategy
+/// @notice This is contract for yield farming strategy with EURxb token for investors
+contract InstitutionalEURxbStrategy is BaseStrategy {
 
-    using SafeERC20 for IERC20;
-
+    /// @dev To be realised
     function deposit() override external {
+
     }
 
-    function _withdrawSome(uint256 _amount) internal override returns(uint) {
+    function _withdrawSome(uint256 _amount) override internal returns(uint) {
+        // withdraw from business
         return _amount;
     }
-
 
     function canClaimAmount() external override returns(uint256) {
         return 0;

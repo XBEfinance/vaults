@@ -195,7 +195,7 @@ contract VotingStakingRewards {
     }
 
     function stakeFor(address _for, uint256 amount) public nonReentrant whenNotPaused updateReward(_for) {
-        if (_strategiesWhoCanAutostake[msg.sender]) {
+        if (!_strategiesWhoCanAutostake[msg.sender]) {
             require(stakeAllowance[msg.sender][_for], "stakeNotApproved");
         }
         _stake(_for, amount);

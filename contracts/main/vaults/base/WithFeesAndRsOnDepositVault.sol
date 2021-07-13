@@ -3,15 +3,13 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./base/BaseVault.sol";
-import "../interfaces/IStrategy.sol";
-import "../interfaces/IController.sol";
-import "../interfaces/IReferralProgram.sol";
-import "../interfaces/ITreasury.sol";
+import "./BaseVault.sol";
+import "../../interfaces/IReferralProgram.sol";
+import "../../interfaces/ITreasury.sol";
 
-/// @title In this case _token it's lp curve;
+/// @title WithFeesAndRsOnDepositVault
 /// @notice Vault for consumers of the system
-contract CRVVault is BaseVault {
+contract WithFeesAndRsOnDepositVault is BaseVault {
 
     using SafeERC20 for IERC20;
 
@@ -27,7 +25,10 @@ contract CRVVault is BaseVault {
     event SetPercentage(uint64 indexed newPercentage);
 
     /// @notice Constructor that creates a consumer vault
-    constructor() BaseVault("Curve", "crv") public {}
+    constructor(string memory _name, string memory _symbol)
+        BaseVault(_name, _symbol) 
+        public
+    {}
 
     function configure(
         address _initialToken,
@@ -36,34 +37,37 @@ contract CRVVault is BaseVault {
         address _referralProgram,
         address _treasury,
         uint256 _rewardsDuration,
-        address[] memory _rewardTokens
-    ) public initializer {
+        address[] memory _rewardTokens,
+        string memory _namePostfix,
+        string memory _symbolPostfix
+    ) public initializer virtual {
         _configure(
             _initialToken,
             _initialController,
             _governance,
             _rewardsDuration,
-            _rewardTokens
+            _rewardTokens,
+            _namePostfix,
+            _symbolPostfix
         );
         referralProgram = IReferralProgram(_referralProgram);
         treasury = ITreasury(_treasury);
         feePercentage = 0;
     }
 
-
     function _collectingFee(uint256 _amount) internal returns(uint256 _sumWithoutFee) {
         if(feePercentage > 0) {
             uint256 _fee = mulDiv(feePercentage, _amount, PCT_BASE);
-            IERC20(_token).safeTransfer(multisigWallet, _fee);
+            stakingToken.safeTransfer(multisigWallet, _fee);
             _sumWithoutFee =  _amount.sub(_fee);
         } else {
             _sumWithoutFee = _amount;
         }
-
     }
 
      function setFeePercentage(uint64 _newPercentage) external onlyOwner {
-        require(_newPercentage < PCT_BASE && _newPercentage != feePercentage, 'Invalid percentage');
+        require(_newPercentage < PCT_BASE && _newPercentage != feePercentage,
+            'Invalid percentage');
         feePercentage = _newPercentage;
         emit SetPercentage(_newPercentage);
     }
@@ -91,12 +95,5 @@ contract CRVVault is BaseVault {
         if(!_userExists){
             referralProgram.registerUser(address(treasury), msg.sender);
         }
-    }
-
-    function convertTokens(uint256 _amount) external {
-        require(_amount > 0, '!_amounts > 0');
-        address _vault = _controller.vaults(address(_token));
-        IERC20(crv).safeTransferFrom(msg.sender, _vault, _amount);
-        IStrategy(_vault).convertTokens(msg.sender, _amount);
     }
 }

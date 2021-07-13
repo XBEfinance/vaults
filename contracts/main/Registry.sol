@@ -26,6 +26,10 @@ contract Registry is Ownable, Initializable {
     /// @notice The structure to keep vaults addresses
     EnumerableSet.AddressSet private _vaults;
 
+    event VaultAdded(address _newVault);
+    event VaultRemoved(address _Vault);
+
+
     /// @notice The structure to keep controller addresses
     /// It's important to memorize that controller can be updated or replaced as
     /// well as strategies and vaults, so this is first structure to look when
@@ -94,6 +98,7 @@ contract Registry is Ownable, Initializable {
         require(!_vaults.contains(_vault), "exists");
         // Adds unique _vault to _vaults array
         _vaults.add(_vault);
+        emit VaultAdded(_vault);
     }
 
     /// @dev Adding controller to set if it is not added yet
@@ -110,6 +115,7 @@ contract Registry is Ownable, Initializable {
     /// @param _vault Vault address to remove
     function removeVault(address _vault) public onlyOwner {
         _vaults.remove(_vault);
+        emit VaultRemoved(_vault);
     }
 
     /// @dev An internal function used to aggregate all data for a specific controller

@@ -4,9 +4,9 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "./base/BaseVaultOld.sol";
-import "../interfaces/IController.sol";
-import "../interfaces/IConverter.sol";
+import "../base/BaseVault.sol";
+import "../../interfaces/IController.sol";
+import "../../interfaces/IConverter.sol";
 
 /// @title InstitutionalEURxbVault
 /// @notice Vault for investors of the system
@@ -36,9 +36,21 @@ contract InstitutionalEURxbVault is BaseVault, AccessControl {
         address _initialToken,
         address _initialController,
         address _governance,
-        address _initialTokenUnwrapped
+        address _initialTokenUnwrapped,
+        uint256 _rewardsDuration,
+        address[] memory _rewardTokens,
+        string memory _namePostfix,
+        string memory _symbolPostfix
     ) external initializer {
-        _configure(_initialToken, _initialController, _governance);
+        _configure(
+            _initialToken,
+            _initialController,
+            _governance,
+            _rewardsDuration,
+            _rewardTokens,
+            _namePostfix,
+            _symbolPostfix
+        );
         tokenUnwrapped = _initialTokenUnwrapped;
     }
 
@@ -67,7 +79,7 @@ contract InstitutionalEURxbVault is BaseVault, AccessControl {
         IERC20(tokenUnwrapped).safeTransferFrom(_msgSender(), address(this), _amount);
         uint256 shares = _deposit(
           address(this),
-          _convert(tokenUnwrapped, address(_token), _amount)
+          _convert(tokenUnwrapped, address(stakingToken), _amount)
         );
         _transfer(address(this), _msgSender(), shares);
     }
@@ -79,7 +91,7 @@ contract InstitutionalEURxbVault is BaseVault, AccessControl {
     function withdrawUnwrapped(uint256 _amount) onlyInvestor public {
         _transfer(_msgSender(), address(this), _amount);
         uint256 withdrawn = _withdraw(address(this), _amount);
-        uint256 unwrappedAmount = _convert(address(_token), tokenUnwrapped, withdrawn);
+        uint256 unwrappedAmount = _convert(address(stakingToken), tokenUnwrapped, withdrawn);
         IERC20(tokenUnwrapped).safeTransfer(_msgSender(), unwrappedAmount);
     }
 

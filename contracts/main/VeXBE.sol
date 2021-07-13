@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/proxy/Initializable.sol";
 
 import "./interfaces/ISmartWalletChecker.sol";
 
-import "./mocks/StringsConcatenations.sol"; // DELETE THIS IF IT IS STILL EXISTS AFTER TESTS
+// import "./mocks/StringsConcatenations.sol"; // DELETE THIS IF IT IS STILL EXISTS AFTER TESTS
 
 // @title Voting Escrow XBE
 // @author Curve Finance | Translation to Solidity - Integral Team O

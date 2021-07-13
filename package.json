@@ -16,7 +16,9 @@
     "deploy": "bash ./scripts/deploy.sh",
     "flatten": "bash ./scripts/flatten.sh",
     "verify": "bash ./scripts/verify.sh",
-    "rinkeby-fork": "bash ./scripts/rinkeby-rpc.sh"
+    "rinkeby-fork": "bash ./scripts/rinkeby-rpc.sh",
+    "testrpc": "ganache-cli --gasLimit 12000000 -e 10000"
+
   },
   "keywords": [],
   "author": "",

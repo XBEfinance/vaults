@@ -3,7 +3,7 @@ const {
   ether,
   expectRevert,
   constants,
-} = require("@openzeppelin/test-helpers");
+} = require('@openzeppelin/test-helpers');
 
 const { ZERO_ADDRESS } = constants;
 const {
@@ -11,58 +11,57 @@ const {
   ONE,
   getMockTokenPrepared,
   processEventArgs,
-} = require("./common.js");
+} = require('./common.js');
 
-const YEAR = new BN("86400").mul(new BN("365"));
-const MULTIPLIER = new BN("10").pow(new BN("18"));
-const days = (n) => new BN("60").mul(new BN("1440").mul(new BN(n)));
-const months = (n) => days("30").mul(new BN(n));
+const YEAR = new BN('86400').mul(new BN('365'));
+const MULTIPLIER = new BN('10').pow(new BN('18'));
+const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
+const months = (n) => days('30').mul(new BN(n));
 
 // const Minter = artifacts.require("Minter");
-const XBEInflation = artifacts.require("XBEInflation");
-const GaugeController = artifacts.require("GaugeController");
-const VeXBE = artifacts.require("VeXBE");
+const XBEInflation = artifacts.require('XBEInflation');
+const VeXBE = artifacts.require('VeXBE');
 // const LiquidityGaugeReward = artifacts.require("LiquidityGaugeReward");
-const Voting = artifacts.require("Voting");
-const StakingRewards = artifacts.require("StakingRewards");
-const BonusCampaign = artifacts.require("BonusCampaign");
-const MockToken = artifacts.require("MockToken");
-const ReferralProgram = artifacts.require("ReferralProgram");
+const Voting = artifacts.require('Voting');
+const StakingRewards = artifacts.require('StakingRewards');
+const BonusCampaign = artifacts.require('BonusCampaign');
+const MockToken = artifacts.require('MockToken');
+const ReferralProgram = artifacts.require('ReferralProgram');
 
 const defaultParams = {
   vaultWithXBExCRVStrategyAddress: ZERO_ADDRESS,
   liquidityGaugeReward: {
     boostWarmup: ZERO, // new BN('2').mul(new BN('7')).mul(new BN('86400')),
-    rewardsDuration: days("365"),
-    typeName: "standard",
-    startingTypeWeight: new BN("10000").div(new BN("8")), // 100% in base points divided by 8 different gauges
-    startingGaugeWeight: new BN("10000").div(new BN("8")),
+    rewardsDuration: days('365'),
+    typeName: 'standard',
+    startingTypeWeight: new BN('10000').div(new BN('8')), // 100% in base points divided by 8 different gauges
+    startingGaugeWeight: new BN('10000').div(new BN('8')),
   },
   bonusCampaign: {
-    rewardsDuration: months("23"),
-    emission: ether("5000"),
+    rewardsDuration: months('23'),
+    emission: ether('5000'),
     mintTime: ZERO,
   },
   mockTokens: {
-    mockedTotalSupplyXBE: ether("1000"),
-    mockedTotalSupplyCRV: ether("1000"),
-    mockedTotalSupplyCVX: ether("1000"),
-    mockedAmountXBE: ether("100"),
-    mockedAmountCRV: ether("100"),
-    mockedAmountCVX: ether("100"),
+    mockedTotalSupplyXBE: ether('1000'),
+    mockedTotalSupplyCRV: ether('1000'),
+    mockedTotalSupplyCVX: ether('1000'),
+    mockedAmountXBE: ether('100'),
+    mockedAmountCRV: ether('100'),
+    mockedAmountCVX: ether('100'),
   },
   xbeinflation: {
-    initialSupply: new BN("5000"),
-    initialRate: new BN("274815283").mul(MULTIPLIER).div(YEAR), // new BN('10000').mul(MULTIPLIER).div(YEAR)
+    initialSupply: new BN('5000'),
+    initialRate: new BN('274815283').mul(MULTIPLIER).div(YEAR), // new BN('10000').mul(MULTIPLIER).div(YEAR)
     rateReductionTime: YEAR,
-    rateReductionCoefficient: new BN("1189207115002721024"), // new BN('10').mul(MULTIPLIER)
+    rateReductionCoefficient: new BN('1189207115002721024'), // new BN('10').mul(MULTIPLIER)
     rateDenominator: MULTIPLIER,
-    inflationDelay: new BN("86400"),
+    inflationDelay: new BN('86400'),
   },
   voting: {
-    supportRequiredPct: new BN("5100"),
-    minAcceptQuorumPct: new BN("3000"),
-    voteTime: new BN("1000000"),
+    supportRequiredPct: new BN('5100'),
+    minAcceptQuorumPct: new BN('3000'),
+    voteTime: new BN('1000000'),
   },
 };
 
@@ -85,19 +84,19 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       alice,
       params.mockTokens.mockedAmountXBE,
       params.mockTokens.mockedTotalSupplyXBE,
-      owner
+      owner,
     );
     mockCRV = await getMockTokenPrepared(
       alice,
       params.mockTokens.mockedAmountCRV,
       params.mockTokens.mockedTotalSupplyCRV,
-      owner
+      owner,
     );
     mockCVX = await getMockTokenPrepared(
       alice,
       params.mockTokens.mockedAmountCVX,
       params.mockTokens.mockedTotalSupplyCVX,
-      owner
+      owner,
     );
 
     await mockXBE.approve(bob, params.mockTokens.mockedAmountXBE, {
@@ -126,12 +125,6 @@ const deployInfrastructure = (owner, alice, bob, params) => {
     // deploy bonus campaign
     bonusCampaign = await BonusCampaign.new();
 
-    // deploy minter
-    minter = await Minter.new();
-
-    // deploy gauge controller
-    gaugeController = await GaugeController.new();
-
     // deploy voting escrow
     veXBE = await VeXBE.new();
 
@@ -140,9 +133,6 @@ const deployInfrastructure = (owner, alice, bob, params) => {
 
     // deploy staking rewards
     stakingRewards = await StakingRewards.new();
-
-    // deploy liquidity gauge
-    liquidityGaugeReward = await LiquidityGaugeReward.new();
 
     referralProgram = await ReferralProgram.new();
 
@@ -158,78 +148,77 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       voting,
       stakingRewards,
       liquidityGaugeReward,
-      referralProgram
+      referralProgram,
     ];
   };
 
   const configure = async () => {
     await xbeInflation.configure(
       mockXBE.address,
-      minter.address,
       params.xbeinflation.initialSupply,
       params.xbeinflation.initialRate,
       params.xbeinflation.rateReductionTime,
       params.xbeinflation.rateReductionCoefficient,
       params.xbeinflation.rateDenominator,
-      params.xbeinflation.inflationDelay
+      params.xbeinflation.inflationDelay,
     );
 
-    await bonusCampaign.methods[
-      "configure(address,address,uint256,uint256,uint256)"
-    ](
-      mockXBE.address,
-      veXBE.address,
-      params.bonusCampaign.mintTime,
-      params.bonusCampaign.rewardsDuration,
-      params.bonusCampaign.emission
-    );
+    // await bonusCampaign.methods[
+    //   'configure(address,address,uint256,uint256,uint256)'
+    // ](
+    //   mockXBE.address,
+    //   veXBE.address,
+    //   params.bonusCampaign.mintTime,
+    //   params.bonusCampaign.rewardsDuration,
+    //   params.bonusCampaign.emission,
+    // );
 
-    await minter.configure(xbeInflation.address, gaugeController.address);
+    // await minter.configure(xbeInflation.address, gaugeController.address);
 
-    await gaugeController.configure(xbeInflation.address, veXBE.address);
+    // await gaugeController.configure(xbeInflation.address, veXBE.address);
 
     await veXBE.configure(
       mockXBE.address,
-      "Voting Escrowed XBE",
-      "veXBE",
-      "0.0.1"
+      'Voting Escrowed XBE',
+      'veXBE',
+      '0.0.1',
     );
 
     await voting.initialize(
       veXBE.address,
       params.voting.supportRequiredPct,
       params.voting.minAcceptQuorumPct,
-      params.voting.voteTime
+      params.voting.voteTime,
     );
 
     await stakingRewards.configure(
       owner,
       mockCRV.address,
       params.vaultWithXBExCRVStrategyAddress,
-      params.liquidityGaugeReward.rewardsDuration
+      params.liquidityGaugeReward.rewardsDuration,
     );
 
-    await liquidityGaugeReward.initialize(
-      params.vaultWithXBExCRVStrategyAddress,
-      minter.address,
-      stakingRewards.address,
-      mockCRV.address,
-      owner,
-      params.liquidityGaugeReward.boostWarmup
-    );
+    // await liquidityGaugeReward.initialize(
+    //   params.vaultWithXBExCRVStrategyAddress,
+    //   minter.address,
+    //   stakingRewards.address,
+    //   mockCRV.address,
+    //   owner,
+    //   params.liquidityGaugeReward.boostWarmup,
+    // );
 
-    await gaugeController.addType(
-      params.liquidityGaugeReward.typeName,
-      params.liquidityGaugeReward.startingTypeWeight
-    );
+    // await gaugeController.addType(
+    //   params.liquidityGaugeReward.typeName,
+    //   params.liquidityGaugeReward.startingTypeWeight,
+    // );
 
-    await gaugeController.addGauge(
-      liquidityGaugeReward.address,
-      ZERO,
-      params.liquidityGaugeReward.startingGaugeWeight
-    );
+    // await gaugeController.addGauge(
+    //   liquidityGaugeReward.address,
+    //   ZERO,
+    //   params.liquidityGaugeReward.startingGaugeWeight,
+    // );
 
-    await gaugeController.checkpointGauge(liquidityGaugeReward.address);
+    // await gaugeController.checkpointGauge(liquidityGaugeReward.address);
 
     await referralProgram.configure(
       [
@@ -237,7 +226,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
         mockCVX.address,
         mockXBE.address,
       ],
-      owner
+      owner,
     );
   };
 
@@ -250,14 +239,13 @@ const deployInfrastructure = (owner, alice, bob, params) => {
 const beforeEachWithSpecificDeploymentParams = async (owner, alice, bob, middleware) => {
   const vaultWithXBExCRVStrategy = await getMockTokenPrepared(
     alice,
-    ether("100"),
-    ether("1000"),
-    owner
+    ether('100'),
+    ether('1000'),
+    owner,
   );
-  await vaultWithXBExCRVStrategy.approve(bob, ether("100"));
-  await vaultWithXBExCRVStrategy.transfer(bob, ether("100"));
-  defaultParams.vaultWithXBExCRVStrategyAddress =
-    vaultWithXBExCRVStrategy.address;
+  await vaultWithXBExCRVStrategy.approve(bob, ether('100'));
+  await vaultWithXBExCRVStrategy.transfer(bob, ether('100'));
+  defaultParams.vaultWithXBExCRVStrategyAddress = vaultWithXBExCRVStrategy.address;
 
   if (middleware) {
     await middleware();
@@ -276,5 +264,5 @@ module.exports = {
   days,
   months,
   defaultParams,
-  beforeEachWithSpecificDeploymentParams
+  beforeEachWithSpecificDeploymentParams,
 };

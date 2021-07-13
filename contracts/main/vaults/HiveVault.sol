@@ -50,7 +50,6 @@ contract HiveVault is BaseVault {
         feePercentage = 0;
     }
 
-
     function _collectingFee(uint256 _amount) internal returns(uint256 _sumWithoutFee) {
         if(feePercentage > 0) {
             uint256 _fee = mulDiv(feePercentage, _amount, PCT_BASE);

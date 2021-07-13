@@ -277,7 +277,7 @@ contract XBEInflation is Initializable, IXBEInflation {
         returns(bool)
     {
         uint256 __availableSupply = _availableSupply();
-        require(totalMinted < __availableSupply, "availableSupply(Gt|Eq)TotalMinted");
+        require(totalMinted <= __availableSupply, "availableSupply(Gt|Eq)TotalMinted");
         if (block.timestamp >= startEpochTime.add(rateReductionTime)) {
             _updateMiningParameters();
         }

@@ -1,4 +1,5 @@
 const { BN, constants, time } = require('@openzeppelin/test-helpers');
+const { assert, expect } = require('chai');
 // const contractTruffle = require('@truffle/contract');
 // const StableSwapUSDT_ABI = require('../abi/StableSwapUSDT.json');
 // OBJECTS CONTRACT
@@ -35,8 +36,11 @@ const WrappedToUnwrappedTokenConverter = artifacts.require('WrappedToUnwrappedTo
 const InstitutionalEURxbStrategy = artifacts.require('InstitutionalEURxbStrategy');
 const ConsumerEURxbStrategy = artifacts.require('ConsumerEURxbStrategy');
 const StableSwapUSDT = artifacts.require('StableSwapMockPool');
-const ERC20 = artifacts.require('yERC20');
 const ERC20LP = artifacts.require('ERC20LP');
+const BaseRewardPool = artifacts.require('BaseRewardPool');
+const Booster = artifacts.require('Booster');
+const ERC20CRV = artifacts.require('ERC20CRV');
+const CVX = artifacts.require('ConvexToken');
 
 const ether = (n) => new BN(web3.utils.toWei(n, 'ether'));
 const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
@@ -63,11 +67,11 @@ contract('Curve LP Testing', (accounts) => {
   let referralProgram;
   let registry;
   let stableSwapUSDT;
-  let coin_0;
-  let coin_1;
-  let coin_2;
-  let coin_3;
   let erc20LP;
+  let baseRewardPool;
+  let booster;
+  let crv;
+  let cvx;
 
   const params = {
     bonusCampaign: {
@@ -83,7 +87,7 @@ contract('Curve LP Testing', (accounts) => {
       mockedAmountCRV: ether('100'),
     },
     xbeinflation: {
-      initialSupply: new BN('5000'),
+      initialSupply: new BN('500000'),
       initialRate: new BN('274815283').mul(MULTIPLIER).div(YEAR), // new BN('10000').mul(MULTIPLIER).div(YEAR)
       rateReductionTime: YEAR,
       rateReductionCoefficient: new BN('1189207115002721024'), // new BN('10').mul(MULTIPLIER)
@@ -121,11 +125,11 @@ contract('Curve LP Testing', (accounts) => {
     stableSwapUSDT = await StableSwapUSDT.at(
       dependentsAddresses.curve.pool_data.mock_pool.swap_address,
     );
-    coin_0 = await ERC20.at(dependentsAddresses.curve.pool_data.mock_pool.coins[0].wrapped_address);
-    coin_1 = await ERC20.at(dependentsAddresses.curve.pool_data.mock_pool.coins[1].wrapped_address);
-    coin_2 = await ERC20.at(dependentsAddresses.curve.pool_data.mock_pool.coins[2].wrapped_address);
-    coin_3 = await ERC20.at(dependentsAddresses.curve.pool_data.mock_pool.coins[3].wrapped_address);
-    // erc20LP = await ERC20LP.at(dependentsAddresses.curve.pool_data.mock_pool.lp_token_address);
+    erc20LP = await ERC20LP.at(dependentsAddresses.curve.pool_data.mock_pool.lp_token_address);
+    baseRewardPool = await BaseRewardPool.at(dependentsAddresses.convex.pools[0].crvRewards);
+    booster = await Booster.at(dependentsAddresses.convex.booster);
+    crv = await ERC20CRV.at(dependentsAddresses.curve.CRV);
+    cvx = await CVX.at(dependentsAddresses.convex.cvx);
   };
 
   const configureContracts = async () => {
@@ -175,11 +179,12 @@ contract('Curve LP Testing', (accounts) => {
     );
 
     await hiveStrategy.configure(
-      dependentsAddresses.curve.address_provider,
       dependentsAddresses.convex.pools[0].lptoken,
       controller.address,
       hiveVault.address,
       owner,
+      mockXBE.address,
+      voting.address,
       [
         dependentsAddresses.curve.pool_data.mock_pool.swap_address,
         dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
@@ -191,13 +196,22 @@ contract('Curve LP Testing', (accounts) => {
     );
 
     await hiveVault.configure(
-      dependentsAddresses.convex.pools[0].lptoken,
+      dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
       controller.address,
       owner,
       referralProgram.address,
       treasury.address,
     );
 
+    await hiveVault.addTokenRewards(
+      dependentsAddresses.curve.CRV,
+    );
+    await hiveVault.addTokenRewards(
+      dependentsAddresses.convex.cvx,
+    );
+    await hiveVault.addTokenRewards(
+      mockXBE.address,
+    );
     await xbeInflation.configure(
       mockXBE.address,
       params.xbeinflation.initialSupply,
@@ -207,7 +221,11 @@ contract('Curve LP Testing', (accounts) => {
       params.xbeinflation.rateDenominator,
       params.xbeinflation.inflationDelay,
     );
-
+    await xbeInflation.addXBEReceiver(
+      hiveStrategy.address,
+      100000,
+    );
+    // await xbeInflation.mintForContracts();
     await bonusCampaign.configure(
       mockXBE.address,
       veXBE.address,
@@ -240,20 +258,109 @@ contract('Curve LP Testing', (accounts) => {
 
   before(initialization);
   describe('Purchase of Tokens', async () => {
-    it('test', async () => {
-      const coinAmounts = [ether('3'), ether('3'), ether('3'), ether('3')];
-      await coin_0.approve(stableSwapUSDT.address, ether('3'));
-      await coin_1.approve(stableSwapUSDT.address, ether('3'));
-      await coin_2.approve(stableSwapUSDT.address, ether('3'));
-      await coin_3.approve(stableSwapUSDT.address, ether('3'));
-      // // const approveAM = await coin_0.allowance(owner, stableSwapUSDT.address);
-      // // console.log(stableSwapUSDT);
-      // console.log((await coin_0.allowance(owner, stableSwapUSDT.address)).toString());
-      // console.log((await coin_1.allowance(owner, stableSwapUSDT.address)).toString());
-      // console.log((await coin_2.allowance(owner, stableSwapUSDT.address)).toString());
-      // console.log((await coin_3.allowance(owner, stableSwapUSDT.address)).toString());
-      const amountLP = await stableSwapUSDT.add_liquidity(coinAmounts, '0');
-      console.log(amountLP.toString());
+    const { dependentsAddresses } = params;
+    it('getting vault lp', async () => {
+      const depositAlice = ether('3');
+      const depositBob = ether('10');
+      // deposit Alice
+      // eslint-disable-next-line no-underscore-dangle
+      await stableSwapUSDT._mint_for_testing(depositAlice, { from: alice });
+      await erc20LP.approve(hiveVault.address, depositAlice, { from: alice });
+      await hiveVault.deposit(depositAlice, { from: alice });
+      const lpAlice = await hiveVault.balanceOf(alice);
+      expect(lpAlice).to.be.bignumber.equal(depositAlice);
+
+      // backend call earn func
+      await hiveVault.earn();
+      const balanceReward = await baseRewardPool.balanceOf(hiveStrategy.address);
+      expect(balanceReward).to.be.bignumber.equal(depositAlice);
+
+      // someone will call this function for our pool in Booster contract
+      await booster.earmarkRewards('0');
+      // time passes
+      await time.increase(months('2'));
+
+      // alice's earnings
+      const earnedRealAlice = await hiveVault.earnedReal.call({ from: alice });
+      const earnedVirtualAlice = await hiveVault.earnedVirtual.call({ from: alice });
+
+      // should be equal zero
+      expect(earnedRealAlice[0].toString()).to.be.equal('0');
+      // should be greater than zero
+      expect(earnedVirtualAlice[0].toString()).to.be.bignumber.above(new BN('0'));
+
+      // deposit Bob
+      // eslint-disable-next-line no-underscore-dangle
+      await stableSwapUSDT._mint_for_testing(depositBob, { from: bob });
+      await erc20LP.approve(hiveVault.address, depositBob, { from: bob });
+
+      await hiveVault.deposit(depositBob, { from: bob });
+      const lpBob = await hiveVault.balanceOf(bob);
+      const total = await hiveVault.totalSupply();
+
+      // deposit * totalSupply() / balance()
+      expect(lpBob).to.be.bignumber.equal(ether('3'));
+      // alice + bob LP
+      expect(total).to.be.bignumber.equal(ether('6'));
+      // backend call earn func
+      await hiveVault.earn();
+      // someone will call this function for our pool in Booster contract
+      await booster.earmarkRewards('0');
+      // time passes
+      await time.increase(months('1'));
+      // someone will call this function for our pool in Booster contract
+      await booster.earmarkRewards('0');
+
+      const balanceRewardAfterBob = await baseRewardPool.balanceOf(hiveStrategy.address);
+      // deposit Alice + depoist Bob
+      expect(balanceRewardAfterBob).to.be.bignumber.equal(depositAlice.add(depositBob));
+
+      const earnedVirtualBob = await hiveVault.earnedVirtual.call({ from: bob });
+      const canClaimStrategy = await hiveStrategy.canClaimAmount.call();
+      // console.log(earnedVirtualBob.toString());
+      // console.log(canClaimStrategy.toString());
+
+      // claim real for alice
+
+      // backend called getRewards for specified strategy
+      await controller.getRewardStrategy(hiveStrategy.address);
+      console.log((await cvx.balanceOf(hiveStrategy.address)).toString());
+      // const balanceAtContract = await hiveStrategy.earned.call();
+
+      const [crvEarned, cvxEarned, xbeEarned] = await hiveVault.earnedReal.call({ from: alice });
+
+      // TO-DO: ПРОВЕРИТЬ ЛОГИ!!!!
+      const { logs } = await hiveVault.claim({ from: alice });
+
+      const claimCRV = await crv.balanceOf.call(alice);
+      const claimXBE = await mockXBE.balanceOf.call(alice);
+      const claimCVX = await cvx.balanceOf.call(alice);
+
+      // check real alice's balance
+      expect(crvEarned).to.be.bignumber.equal(claimCRV);
+      expect(cvxEarned).to.be.bignumber.equal(claimCVX);
+      expect(xbeEarned).to.be.bignumber.equal(claimXBE);
+
+      // claim virtual for bob
+
+      time.increase(months('1'));
+
+      const [crvEarnedVirtual, cvxEarnedVirtual, xbeEarnedVirtual] = await hiveVault.earnedVirtual.call({ from: bob });
+      console.log(crvEarnedVirtual.toString(), cvxEarnedVirtual.toString(), xbeEarnedVirtual.toString());
+      // claimAll virtual bob
+      // ref program => users => exitst => true
+
+      // deposit with protocol fee
+
+      // withdraw and withdrawAll
+
+      // async function getRewards(userAddress, tokens) {
+      //   const rewards = [];
+      //   for (const token of tokens) {
+      //     rewards[token] = await referralProgram.rewards(userAddress, token);
+      //   }
+      //   return rewards;
+      // }
     });
   });
 });

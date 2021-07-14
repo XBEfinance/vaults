@@ -39,7 +39,7 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
             _voting
         );
         poolSettings = _poolSettings;
-        rewardTokensToConvexRewards[_poolSettings.cvxCrvToken] = _poolSettings.cvxCRVRewards;
+        rewardTokensToConvexRewardSources[_poolSettings.cvxCrvToken] = _poolSettings.cvxCRVRewards;
     }
 
     /// @dev Function that controller calls

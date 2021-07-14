@@ -38,9 +38,9 @@ contract InstitutionalEURxbVault is BaseVault, AccessControl {
         address _governance,
         address _initialTokenUnwrapped,
         uint256 _rewardsDuration,
-        address[] memory _rewardTokens,
-        string memory _namePostfix,
-        string memory _symbolPostfix
+        address[] calldata _rewardTokens,
+        string calldata _namePostfix,
+        string calldata _symbolPostfix
     ) external initializer {
         _configure(
             _initialToken,

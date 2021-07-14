@@ -32,7 +32,7 @@ contract VotingStakingRewards {
     IBonusCampaign public bonusCampaign;
     address public treasury;
 
-    mapping(address => bool) internal _strategiesWhoCanAutostake;
+    mapping(address => bool) internal _strategiesWhoCanAutoStake;
 
     struct BondedReward {
         uint256 amount;
@@ -86,7 +86,7 @@ contract VotingStakingRewards {
         rewardsDistribution = _rewardsDistribution;
         rewardsDuration = _rewardsDuration;
         for (uint256 i = 0; i < __strategiesWhoCanAutostake.length; i++) {
-            _strategiesWhoCanAutostake[__strategiesWhoCanAutostake[i]] = true;
+            _strategiesWhoCanAutoStake[__strategiesWhoCanAutostake[i]] = true;
         }
     }
 
@@ -191,11 +191,11 @@ contract VotingStakingRewards {
     }
 
     function setStrategyWhoCanAutoStake(address _addr, bool _flag) external onlyRewardsDistribution {
-        _strategiesWhoCanAutostake[_addr] = _flag;
+        _strategiesWhoCanAutoStake[_addr] = _flag;
     }
 
     function stakeFor(address _for, uint256 amount) public nonReentrant whenNotPaused updateReward(_for) {
-        if (!_strategiesWhoCanAutostake[msg.sender]) {
+        if (!_strategiesWhoCanAutoStake[msg.sender]) {
             require(stakeAllowance[msg.sender][_for], "stakeNotApproved");
         }
         _stake(_for, amount);
@@ -252,6 +252,25 @@ contract VotingStakingRewards {
         require(IERC20(stakingToken).transfer(msg.sender, amount), "!t");
 
         emit Withdrawn(msg.sender, amount);
+    }
+
+    function _rewardPerTokenForDuration(uint256 duration) internal view returns (uint256) {
+        if (_totalSupply == 0) {
+            return rewardPerTokenStored;
+        }
+        return
+            rewardPerTokenStored.add(
+                duration.mul(rewardRate).mul(1e18).div(_totalSupply)
+            );
+    }
+
+    function potentialXbeReturns(uint256 duration) public view returns (uint256) {
+        uint256 rewards = _balances[account]
+            .mul(
+                _rewardPerTokenForDuration(duration).sub(userRewardPerTokenPaid[account]))
+            .div(1e18)
+            .add(rewards[account]);
+        return rewards;
     }
 
     function calculateBoostLevel(address account, uint256 precision) external view returns (uint256) {

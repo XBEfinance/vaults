@@ -103,6 +103,7 @@ const deployContracts = async (deployer, params, owner) => {
     HiveVault,
     { from: owner },
   );
+
   mockXBE = await deployer.deploy(
     MockToken,
     'Mock XBE',
@@ -248,17 +249,6 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  // const mainRegistryAddress = await (
-  //   await IAddressProvider.at(dependentsAddresses.curve.address_provider)
-  // )
-  //   .get_registry({ from: owner });
-
-  // console.log(mainRegistryAddress);
-  // await hiveStrategy.setMainRegistry(
-  //   mainRegistryAddress,
-  //   { from: owner },
-  // );
-
   await xbeInflation.configure(
     mockXBE.address,
     params.xbeinflation.initialSupply,
@@ -303,19 +293,6 @@ const configureContracts = async (params, owner) => {
   );
 
   console.log('Voting: configured...');
-
-  // const mainRegistryAddress = await (
-  //   await IAddressProvider.at(dependentsAddresses.curve.address_provider)
-  // )
-  //   .get_registry({ from: owner });
-  //
-  // console.log(mainRegistryAddress);
-  // await hiveStrategy.setMainRegistry(
-  //   mainRegistryAddress,
-  //   { from: owner },
-  // );
-
-  // console.log('HiveStrategy: main registry setup...');
 
   await hiveVault.configure(
     dependentsAddresses.convex.pools[0].lptoken,

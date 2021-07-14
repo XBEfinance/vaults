@@ -37,7 +37,7 @@ contract SushiStrategy is WithClaimAmountStrategy {
             _voting
         );
         poolSettings = _poolSettings;
-        rewardTokensToConvexRewards[_poolSettings.cvxToken] = _poolSettings.convexMasterChef;
+        rewardTokensToConvexRewardSources[_poolSettings.cvxToken] = _poolSettings.convexMasterChef;
     }
 
     function setPoolIndex(uint256 _newPoolIndex) external onlyOwner {
@@ -91,8 +91,9 @@ contract SushiStrategy is WithClaimAmountStrategy {
         internal
         returns(uint256)
     {
-        return IConvexMasterChef(rewardsContractAddress).pendingCvx(address(this));
+        return IConvexMasterChef(_rewardSourceContractAddress)
+            .pendingCvx(address(this));
     }
 
-    function convertTokens(address _for, uint256 _amount) override external {}
+    function convertTokens(uint256 _amount) override external {}
 }

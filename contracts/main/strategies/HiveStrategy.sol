@@ -41,8 +41,8 @@ contract HiveStrategy is WithClaimAmountStrategy {
             _voting
         );
         poolSettings = _poolSettings;
-        rewardTokensToConvexRewards[_poolSettings.crvToken] = _poolSettings.crvRewards;
-        rewardTokensToConvexRewards[_poolSettings.cvxToken] = _poolSettings.cvxRewards;
+        rewardTokensToConvexRewardSources[_poolSettings.crvToken] = _poolSettings.crvRewards;
+        rewardTokensToConvexRewardSources[_poolSettings.cvxToken] = _poolSettings.cvxRewards;
     }
 
     function setPoolIndex(uint256 _newPoolIndex) external onlyOwner {
@@ -97,5 +97,5 @@ contract HiveStrategy is WithClaimAmountStrategy {
         return IRewards(_rewardSourceContractAddress).earned(address(this));
     }
 
-    function convertTokens(address _for, uint256 _amount) override external {}
+    function convertTokens(uint256 _amount) override external {}
 }

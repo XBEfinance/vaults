@@ -11,8 +11,6 @@ import "../../interfaces/ITreasury.sol";
 /// @notice Vault for consumers of the system
 contract WithFeesAndRsOnDepositVault is BaseVault {
 
-    using SafeERC20 for IERC20;
-
     uint64 public constant PCT_BASE = 10 ** 18;
     uint64 public feePercentage;
 
@@ -26,7 +24,7 @@ contract WithFeesAndRsOnDepositVault is BaseVault {
 
     /// @notice Constructor that creates a consumer vault
     constructor(string memory _name, string memory _symbol)
-        BaseVault(_name, _symbol) 
+        BaseVault(_name, _symbol)
         public
     {}
 

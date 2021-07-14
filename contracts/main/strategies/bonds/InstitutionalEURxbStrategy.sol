@@ -22,7 +22,7 @@ contract InstitutionalEURxbStrategy is BaseStrategy {
         return _amount;
     }
 
-    function canClaimAmount() external override returns(uint256) {
+    function canClaimAmount(address _rewardToken) external override returns(uint256) {
         return 0;
     }
 
@@ -30,7 +30,7 @@ contract InstitutionalEURxbStrategy is BaseStrategy {
         return false;
     }
 
-    function convertTokens(address, uint256) external override {
+    function convertTokens(uint256) external override {
 
     }
 

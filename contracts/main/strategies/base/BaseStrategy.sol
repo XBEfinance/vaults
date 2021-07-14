@@ -96,7 +96,7 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     function withdraw(address _token) override onlyController external {
         require(address(_token) != address(_want), "!want");
         uint256 balance = IERC20(_token).balanceOf(address(this));
-        require(IERC20(_token).transfer(controller, balance), "!transfer");
+        IERC20(_token).safeTransfer(controller, balance);
         emit Withdrawn(_token, balance, controller);
     }
 
@@ -116,10 +116,10 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
         if (vaultToken != _want) {
             address converter = IController(controller).converters(vaultToken, _want);
             require(converter != address(0), "!converter");
-            require(IERC20(vaultToken).transfer(converter, _amount), "!transferConverterToken");
+            IERC20(vaultToken).safeTransfer(converter, _amount);
             _amount = IConverter(converter).convert(address(this));
         }
-        require(IERC20(_want).transfer(_vault, _amount), "!transferVault");
+        IERC20(_want).safeTransfer(_vault, _amount);
         _totalDeposited -= _amount;
         emit Withdrawn(_want, _amount, _vault);
     }

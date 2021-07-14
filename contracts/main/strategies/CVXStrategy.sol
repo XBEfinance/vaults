@@ -35,7 +35,7 @@ contract CVXStrategy is WithClaimAmountStrategy {
             _voting
         );
         poolSettings = _poolSettings;
-        rewardTokensToConvexRewards[_poolSettings.cvxToken] = _poolSettings.cvxRewards;
+        rewardTokensToConvexRewardSources[_poolSettings.cvxToken] = _poolSettings.cvxRewards;
     }
 
     function setPoolIndex(uint256 _newPoolIndex) external onlyOwner {
@@ -69,5 +69,5 @@ contract CVXStrategy is WithClaimAmountStrategy {
         return IRewards(_rewardSourceContractAddress).earned(address(this));
     }
 
-    function convertTokens(address _for, uint256 _amount) override external {}
+    function convertTokens(uint256 _amount) override external {}
 }

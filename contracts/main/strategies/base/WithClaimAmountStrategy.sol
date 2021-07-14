@@ -27,8 +27,8 @@ abstract contract WithClaimAmountStrategy is ClaimableStrategy {
         returns(uint256 _amount)
     {
         address rewardSourceContractAddress = rewardTokensToConvexRewardSources[_rewardToken];
-        if (rewardsContractAddress != address(0)) {
-            _amount = _getAmountOfRewardEarnedFrom(rewardsContractAddress);
+        if (rewardSourceContractAddress != address(0)) {
+            _amount = _getAmountOfPendingRewardEarnedFrom(rewardSourceContractAddress);
         } else {
             _amount = 0;
         }

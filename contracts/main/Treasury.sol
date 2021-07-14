@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
-import "./staking_rewards/RewardsDistributionRecipient.sol";
 import "./interfaces/ITreasury.sol";
+import "./interfaces/IRewardsDistributionRecipient.sol";
 import "./interfaces/IVoting.sol";
 import "./templates/OverrideUniswapV2Library.sol";
 
@@ -113,14 +113,14 @@ contract Treasury is Initializable, Ownable, ITreasury {
         IERC20(_token).safeTransfer(owner(), _amount);
     }
 
-    function setStrategyWhoCanAutostake(address _strategy, bool _flag) external onlyOwner {
-        RewardsDistributionRecipient(rewardsDistributionRecipientContract).setStrategyWhoCanAutoStake(_strategy, _flag);
+    function setStrategyWhoCanAutoStake(address _strategy, bool _flag) external override onlyOwner {
+        IRewardsDistributionRecipient(rewardsDistributionRecipientContract).setStrategyWhoCanAutoStake(_strategy, _flag);
     }
 
     function toVoters() override external {
         uint256 _balance = IERC20(rewardsToken).balanceOf(address(this));
         IERC20(rewardsToken).safeTransfer(rewardsDistributionRecipientContract, _balance);
-        RewardsDistributionRecipient(rewardsDistributionRecipientContract).notifyRewardAmount(_balance);
+        IRewardsDistributionRecipient(rewardsDistributionRecipientContract).notifyRewardAmount(_balance);
     }
 
 }

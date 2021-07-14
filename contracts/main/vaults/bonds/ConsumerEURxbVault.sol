@@ -17,9 +17,9 @@ contract ConsumerEURxbVault is BaseVault {
         address _initialController,
         address _governance,
         uint256 _rewardsDuration,
-        address[] memory _rewardTokens,
-        string memory _namePostfix,
-        string memory _symbolPostfix
+        address[] calldata _rewardTokens,
+        string calldata _namePostfix,
+        string calldata _symbolPostfix
     ) external initializer {
         _configure(
             _initialToken,

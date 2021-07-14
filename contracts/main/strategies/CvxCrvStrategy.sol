@@ -26,7 +26,6 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
         address _controllerAddress,
         address _vaultAddress,
         address _governance,
-        address _tokenToAutostake,
         address _voting,
         Settings memory _poolSettings
     ) public initializer {
@@ -35,7 +34,7 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
             _controllerAddress,
             _vaultAddress,
             _governance,
-            _tokenToAutostake,
+            address(0),
             _voting
         );
         poolSettings = _poolSettings;

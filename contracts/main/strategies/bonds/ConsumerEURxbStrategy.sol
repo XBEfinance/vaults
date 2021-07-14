@@ -21,7 +21,7 @@ contract ConsumerEURxbStrategy is BaseStrategy {
     }
 
 
-    function canClaimAmount(address _rewardToken) external override returns(uint256) {
+    function canClaimAmount(address _rewardToken) external view override returns(uint256) {
         return 0;
     }
 
@@ -33,7 +33,7 @@ contract ConsumerEURxbStrategy is BaseStrategy {
 
     }
 
-    function earned(address[] calldata) external override returns(uint256[] memory) {
+    function earned(address[] calldata) external override view returns(uint256[] memory) {
 
     }
 

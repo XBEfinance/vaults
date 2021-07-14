@@ -12,7 +12,7 @@ interface IConvexMasterChef {
     function deposit(uint256 _pid, uint256 _amount) external;
     function withdraw(uint256 _pid, uint256 _amount) external;
     function claim(uint256 _pid, address _account) external;
-    function poolInfo(uint256 _index) external returns(PoolInfo memory);
-    function pendingCvx(uint256 _pid, address _user) external;
+    function poolInfo(uint256 _index) external view returns(PoolInfo memory);
+    function pendingCvx(uint256 _pid, address _user) external view returns(uint256);
     function poolLength() external view returns(uint256);
 }

@@ -90,7 +90,7 @@ contract InstitutionalEURxbVault is BaseVault, AccessControl {
 
     function withdrawUnwrapped(uint256 _amount) onlyInvestor public {
         _transfer(_msgSender(), address(this), _amount);
-        uint256 withdrawn = _withdraw(address(this), _amount);
+        uint256 withdrawn = _withdrawFrom(address(this), _amount);
         uint256 unwrappedAmount = _convert(address(stakingToken), tokenUnwrapped, withdrawn);
         IERC20(tokenUnwrapped).safeTransfer(_msgSender(), unwrappedAmount);
     }

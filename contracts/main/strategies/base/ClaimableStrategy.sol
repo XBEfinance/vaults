@@ -96,7 +96,7 @@ abstract contract ClaimableStrategy is BaseStrategy {
         return a * b * z + a * d + b * c + b * d / z;
     }
 
-    function earned(address[] memory _tokens) public override returns(uint256[] memory _amounts) {
+    function earned(address[] memory _tokens) public view override returns(uint256[] memory _amounts) {
          _amounts = new uint256[](_tokens.length);
          for(uint256 i = 0; i < _tokens.length; i++){
              _amounts[i] = IERC20(_tokens[i]).balanceOf(address(this));

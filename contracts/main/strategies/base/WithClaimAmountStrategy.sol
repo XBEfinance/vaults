@@ -23,6 +23,7 @@ abstract contract WithClaimAmountStrategy is ClaimableStrategy {
     function canClaimAmount(address _rewardToken)
         override
         virtual
+        view
         external
         returns(uint256 _amount)
     {
@@ -36,6 +37,7 @@ abstract contract WithClaimAmountStrategy is ClaimableStrategy {
 
     function _getAmountOfPendingRewardEarnedFrom(address rewardSourceContract)
         internal
+        view
         virtual
         returns(uint256);
 }

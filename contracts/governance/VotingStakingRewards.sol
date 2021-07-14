@@ -265,12 +265,12 @@ contract VotingStakingRewards {
     }
 
     function potentialXbeReturns(uint256 duration) public view returns (uint256) {
-        uint256 rewards = _balances[account]
+        uint256 _rewardsAmount = _balances[msg.sender]
             .mul(
-                _rewardPerTokenForDuration(duration).sub(userRewardPerTokenPaid[account]))
+                _rewardPerTokenForDuration(duration).sub(userRewardPerTokenPaid[msg.sender]))
             .div(1e18)
-            .add(rewards[account]);
-        return rewards;
+            .add(rewards[msg.sender]);
+        return _rewardsAmount;
     }
 
     function calculateBoostLevel(address account, uint256 precision) external view returns (uint256) {

@@ -252,24 +252,30 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    function _withdraw(uint256 _amount) internal {
+    function _withdrawFrom(address _from, uint256 _amount) internal returns(uint256) {
         require(_amount > 0, "Cannot withdraw 0");
         _totalSupply = _totalSupply.sub(_amount);
-        _balances[msg.sender] = _balances[msg.sender].sub(_amount);
-        stakingToken.safeTransfer(msg.sender, _amount);
-        emit Withdrawn(msg.sender, _amount);
+        _balances[_from] = _balances[_from].sub(_amount);
+        stakingToken.safeTransfer(_from, _amount);
+        emit Withdrawn(_from, _amount);
+        return _amount;
     }
 
-    function _deposit(address _from, uint256 _amount) internal {
+    function _withdraw(uint256 _amount) internal returns(uint256) {
+        return _withdrawFrom(msg.sender, _amount);
+    }
+
+    function _deposit(address _from, uint256 _amount) internal returns(uint256) {
         require(_amount > 0, "Cannot stake 0");
         _totalSupply = _totalSupply.add(_amount);
         _balances[_from] = _balances[_from].add(_amount);
         stakingToken.safeTransferFrom(_from, address(this), _amount);
         emit Staked(_from, _amount);
+        return _amount;
     }
 
     function deposit(uint256 amount)
-        external
+        public
         virtual
         override
         nonReentrant
@@ -280,7 +286,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
     }
 
     function depositFor(uint256 _amount, address _for)
-        external
+        public
         virtual
         override
         nonReentrant
@@ -291,7 +297,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
     }
 
     function depositAll()
-        external
+        public
         virtual
         override
         nonReentrant
@@ -337,7 +343,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
         _withdraw(_amount);
     }
 
-    function withdrawAll() external virtual override {
+    function withdrawAll() public virtual override {
         withdraw(_balances[msg.sender], 0x03);
     }
 
@@ -380,7 +386,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
                     reward
                 );
             } else if (_claimMask >> 1 == 1 && _claimMask << 7 == 128) {
-                IStrategy(_controller.strategies(_stakingToken)).getReward();
+                IStrategy(_controller.strategies(_stakingToken)).getRewards();
                 reward = _claimThroughControllerAndReturnClaimed(
                     _stakingToken,
                     _for,
@@ -545,7 +551,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
     }
 
     function balance() public override view returns(uint256) {
-        IStrategy strategy = IStrategy(_controller.strategies(stakingToken));
+        IStrategy strategy = IStrategy(_controller.strategies(address(stakingToken)));
         return
             stakingToken.balanceOf(address(this))
                 .add(strategy.balanceOf());

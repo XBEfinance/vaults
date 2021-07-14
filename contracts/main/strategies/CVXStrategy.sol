@@ -63,6 +63,7 @@ contract CVXStrategy is WithClaimAmountStrategy {
 
     function _getAmountOfPendingRewardEarnedFrom(address _rewardSourceContractAddress)
         override
+        view
         internal
         returns(uint256)
     {

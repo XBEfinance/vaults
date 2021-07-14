@@ -52,7 +52,7 @@ contract SushiStrategy is WithClaimAmountStrategy {
         IConvexMasterChef.PoolInfo memory _pool = IConvexMasterChef(
             poolSettings.convexMasterChef
         ).poolInfo(index);
-        return _pool.lptoken == poolSettings.lpSushi;
+        return _pool.lpToken == poolSettings.lpSushi;
     }
 
     function checkIfPoolIndexNeedsToBeUpdated() public view returns(bool) {
@@ -88,11 +88,12 @@ contract SushiStrategy is WithClaimAmountStrategy {
 
     function _getAmountOfPendingRewardEarnedFrom(address _rewardSourceContractAddress)
         override
+        view
         internal
         returns(uint256)
     {
         return IConvexMasterChef(_rewardSourceContractAddress)
-            .pendingCvx(address(this));
+            .pendingCvx(poolSettings.poolIndex, address(this));
     }
 
     function convertTokens(uint256 _amount) override external {}

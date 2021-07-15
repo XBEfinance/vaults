@@ -188,7 +188,7 @@ contract VotingStakingRewards {
 
     function lockFunds(uint256 _amount, uint256 _unlockTime) external {
         veXBE.createLockFor(msg.sender, _amount, _unlockTime);
-        ...
+        
     }
 
     function setAllowanceOfStaker(address _staker, bool _allowed) external {

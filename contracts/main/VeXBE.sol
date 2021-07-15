@@ -462,6 +462,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // @param _unlock_time Epoch time when tokens unlock, rounded down to whole weeks
     // """
     function createLock(uint256 _value, uint256 _unlockTime) external nonReentrant {
+        assertNotContract(msg.sender);
         createLockFor(msg.sender, _value, _unlockTime);
     }
 
@@ -473,7 +474,6 @@ contract VeXBE is Initializable, ReentrancyGuard {
         if (msg.sender != voting) {
             require(createLockAllowance[msg.sender][_for], "!allowed");
         }
-        assertNotContract(_for);
         uint256 unlockTime = (_unlockTime / WEEK) * WEEK; // # Locktime is rounded down to weeks
         LockedBalance memory _locked = locked[_for];
 

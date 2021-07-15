@@ -186,6 +186,11 @@ contract VotingStakingRewards {
         emit Staked(_from, _amount);
     }
 
+    function lockFunds(uint256 _amount, uint256 _unlockTime) external {
+        veXBE.createLockFor(msg.sender, _amount, _unlockTime);
+        ...
+    }
+
     function setAllowanceOfStaker(address _staker, bool _allowed) external {
         stakeAllowance[_staker][msg.sender] = _allowed;
     }
@@ -273,7 +278,7 @@ contract VotingStakingRewards {
         return _rewardsAmount;
     }
 
-    function calculateBoostLevel(address account, uint256 precision) external view returns (uint256) {
+    function calculateBoostLevel(address account) external view returns (uint256) {
         uint256 maxBoostedReward = _balances[account]
           .mul(
             rewardPerToken().sub(userRewardPerTokenPaid[account])
@@ -286,7 +291,7 @@ contract VotingStakingRewards {
         // inversed = maxBoostedReward.div(reward) # [1 .. 2.5]
         // multiplied by precision coeff: precision.mul(maxBoostedReward).div(reward)
 
-        return precision.mul(maxBoostedReward).div(reward);
+        return PCT_BASE.mul(maxBoostedReward).div(reward);
     }
 
     function _earned(address account, uint256 maxBoostedReward) internal view returns (uint256) {

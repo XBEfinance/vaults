@@ -25,6 +25,7 @@ abstract contract ClaimableStrategy is BaseStrategy {
     uint256 public sumWeight;
     address public tokenToAutostake;
     address public voting;
+    bool public feesEnabled;
 
     function _configure(
         address _wantAddress, //in this case it's lP curve
@@ -32,11 +33,13 @@ abstract contract ClaimableStrategy is BaseStrategy {
         address _vaultAddress,
         address _governance,
         address _tokenToAutostake,
-        address _voting
+        address _voting,
+        bool _enableFees
     ) internal {
         _configure(_wantAddress, _controllerAddress, _vaultAddress, _governance);
         tokenToAutostake = _tokenToAutostake;
         voting = _voting;
+        feesEnabled = _enableFees;
     }
 
     function addFeeReceiver(address _to, uint256 _weight, address[] calldata _tokens, bool _callFunc) external onlyOwner {
@@ -70,7 +73,15 @@ abstract contract ClaimableStrategy is BaseStrategy {
     }
 
     //returns sub fee
-    function _distributeFee(address _for, address[] memory _tokens, uint256[] memory _amounts) internal returns(uint256[] memory) {
+    function _distributeFee(
+        address _for,
+        address[] memory _tokens,
+        uint256[] memory _amounts,
+        bool disabled
+    ) internal returns(uint256[] memory) {
+        if (disabled) {
+            return _amounts;
+        }
         require(_tokens.length == _amounts.length, '!length');
         uint256[] memory _fees = new uint256[](_tokens.length);
         for(uint256 j = 0; j < feeWeights.length; j++) {
@@ -119,7 +130,7 @@ abstract contract ClaimableStrategy is BaseStrategy {
       address _vault = IController(controller).vaults(_want);
       require(_vault != address(0), "!vault 0");
 
-      uint256[] memory amountsWithoutFee = _distributeFee(_for, _tokens, _amounts);
+      uint256[] memory amountsWithoutFee = _distributeFee(_for, _tokens, _amounts, feesEnabled);
       for(uint256 i = 0; i < _tokens.length; i++){
           if(amountsWithoutFee[i] > 0){
               if (_tokens[i] == tokenToAutostake) {

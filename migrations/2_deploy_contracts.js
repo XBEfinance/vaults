@@ -368,6 +368,7 @@ const configureContracts = async (params, owner) => {
     owner,
     mockXBE.address,
     voting.address,
+    true,
     [
       dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
       dependentsAddresses.convex.pools[0].crvRewards,

@@ -530,15 +530,28 @@ module.exports = function (deployer, network, accounts) {
           .curve.pool_data);
         params = { dependentsAddresses, ...params };
         await configureContracts(params, owner);
-      } else if (network === 'rinkeby_vaults') {
-        await deployVaults(params);
+      } else if (network === 'rinkeby_config_bonus_campaign') {
+        bonusCampaign = await BonusCampaign.at('0xbce5A336944fa3c270A31bB7D148CbbF01E2C1bc');
+        await bonusCampaign.configure(
+          mockXBE.address,
+          veXBE.address,
+          now.add(params.bonusCampaign.startMintTime),
+          now.add(params.bonusCampaign.stopRegisterTime),
+          params.bonusCampaign.rewardsDuration,
+          params.bonusCampaign.emission,
+          { from: owner },
+        );
       } else {
         console.error(`Unsupported network: ${network}`);
       }
     } else if (network === 'development' || network === 'mainnet_fork') {
-      await deployContracts(deployer, params, owner);
-      await distributeTokens(params, alice, bob, owner);
-      await configureContracts(params, owner);
+        dependentsAddresses = testnet_distro.rinkeby;
+        dependentsAddresses.curve.pools = Object.values(dependentsAddresses
+          .curve.pool_data);
+        params = { dependentsAddresses, ...params };
+        await deployContracts(deployer, params, owner);
+        await distributeTokens(params, alice, bob, owner);
+        await configureContracts(params, owner);
     } else if (network === 'mainnet') {
       // await deployVaultsToMainnet();
     } else {

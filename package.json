@@ -18,7 +18,6 @@
     "verify": "bash ./scripts/verify.sh",
     "rinkeby-fork": "bash ./scripts/rinkeby-rpc.sh",
     "testrpc": "ganache-cli --gasLimit 12000000 -e 10000"
-
   },
   "keywords": [],
   "author": "",
@@ -29,7 +28,6 @@
     "@aragon/os": "^4.4.0",
     "@openzeppelin/contracts": "^3.4.1",
     "@openzeppelin/test-helpers": "0.5.10",
-    "@openzeppelin/upgrades": "^2.8.0",
     "@truffle/hdwallet-provider": "=1.2.2",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "audit": "0.0.6",
@@ -40,7 +38,6 @@
     "@ethersproject/solidity": "^5.0.7",
     "@gnosis.pm/mock-contract": "^4.0.0",
     "@openzeppelin/test-environment": "^0.1.9",
-    "@openzeppelin/truffle-upgrades": "^1.5.0",
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.7.0",
     "babel-register": "^6.26.0",

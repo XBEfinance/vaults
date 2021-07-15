@@ -105,6 +105,7 @@ module.exports = {
 
     rinkeby_all_with_save: rinkebyNetworkConfig,
     rinkeby_conf: rinkebyNetworkConfig,
+    rinkeby_config_bonus_campaign: rinkebyNetworkConfig,
 
     development: ganacheNetworkConfig,
 

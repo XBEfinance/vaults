@@ -107,6 +107,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     mapping(address => uint256) public userPointEpoch;
     mapping(uint256 => int128) public slopeChanges; // time -> signed slope change
 
+    bool public voting;
 
     address public controller;
     bool public transfersEnabled;
@@ -122,6 +123,8 @@ contract VeXBE is Initializable, ReentrancyGuard {
     address public admin;
     address public futureAdmin;
 
+    mapping(address => mapping(address => bool)) public createLockAllowance;
+
     modifier onlyAdmin {
       require(msg.sender == admin, "!admin");
       _;
@@ -136,6 +139,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // """
     function configure(
         address tokenAddr,
+        address votingAddr,
         string calldata _name,
         string calldata _symbol,
         string calldata _version
@@ -152,6 +156,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
         name = _name;
         symbol = _symbol;
         version = _version;
+        voting = votingAddr;
     }
 
     // """
@@ -457,18 +462,29 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // @param _unlock_time Epoch time when tokens unlock, rounded down to whole weeks
     // """
     function createLock(uint256 _value, uint256 _unlockTime) external nonReentrant {
-        assertNotContract(msg.sender);
+        createLockFor(msg.sender, _value, _unlockTime);
+    }
+
+    function setCreateLockAllowance(address _sender, bool _status) external {
+        createLockAllowance[_sender][msg.sender] = _status;
+    }
+
+    function createLockFor(address _for, uint256 _value, uint256 _unlockTime) public nonReentrant {
+        if (msg.sender != voting) {
+            require(createLockAllowance[msg.sender][_for], "!allowed");
+        }
+        assertNotContract(_for);
         uint256 unlockTime = (_unlockTime / WEEK) * WEEK; // # Locktime is rounded down to weeks
-        LockedBalance memory _locked = locked[msg.sender];
+        LockedBalance memory _locked = locked[_for];
 
         require(_value > 0, "!zeroValue");
         require(_locked.amount == 0, "!withdrawOldTokensFirst");
         require(unlockTime > block.timestamp, "lockOnlyToFutureTime");
         require(unlockTime <= block.timestamp + MAXTIME, "lockOnlyToValidFutureTime");
 
-        _lockStarts[msg.sender] = block.timestamp;
+        _lockStarts[_for] = block.timestamp;
 
-        _depositFor(msg.sender, _value, unlockTime, _locked, CREATE_LOCK_TYPE);
+        _depositFor(_for, _value, unlockTime, _locked, CREATE_LOCK_TYPE);
     }
 
     // """

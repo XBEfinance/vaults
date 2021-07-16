@@ -11,7 +11,6 @@ import "@aragon/minime/contracts/MiniMeToken.sol";
 
 import "./interfaces/IBonusCampaign.sol";
 import "./interfaces/IVeXBE.sol";
-import "./interfaces/IVotingEscrow.sol";
 import "./interfaces/IERC20.sol";
 
 contract VotingStakingRewards {
@@ -28,7 +27,7 @@ contract VotingStakingRewards {
     event RewardsDurationUpdated(uint256 newDuration);
     event Recovered(address token, uint256 amount);
 
-    uint64 public constant PCT_BASE = 10 ** 18; // 0% = 0; 1% = 10^16; 100% = 10^18
+    uint256 public constant PCT_BASE = 10 ** 18; // 0% = 0; 1% = 10^16; 100% = 10^18
 
     IBonusCampaign public bonusCampaign;
     address public treasury;
@@ -222,11 +221,17 @@ contract VotingStakingRewards {
         _stake(msg.sender, amount);
     }
 
+    function assertEscrow(address _addr, uint256 _available, uint256 _withdrawAmount) internal view {
+        uint256 escrowed = IVeXBE(address(token)).lockedAmount(_addr);
+        require(_available.sub(_withdrawAmount) >= escrowed, "escrow amount failure");
+    }
+
     function requestWithdrawBonded(uint256 amount) public nonReentrant updateReward(msg.sender) {
         require(!bondedRewardLocks[msg.sender].requested, "alreadyRegistered");
         require(amount > 0, "Cannot request to withdraw 0");
         uint256 bondedAmount = bondedRewardLocks[msg.sender].amount;
         require(bondedAmount > 0 && amount <= bondedAmount, "notEnoughBondedTokens");
+        assertEscrow(msg.sender, _balances[msg.sender], amount);
         if (!breaker) {
             require(voteLock[msg.sender] < block.number, "!locked");
         }
@@ -236,9 +241,8 @@ contract VotingStakingRewards {
     function withdrawBondedOrWithPenalty() public nonReentrant updateReward(msg.sender) {
         require(bondedRewardLocks[msg.sender].requested, "needsToBeRequested");
         uint256 amount = bondedRewardLocks[msg.sender].amount;
-        uint256 toEscrow = IVotingEscrow(address(token)).lockedAmount(msg.sender);
 
-        require(_balances[msg.sender].sub(amount) >= toEscrow, "escrow lock");
+        assertEscrow(msg.sender, _balances[msg.sender], amount);
 
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
@@ -257,8 +261,7 @@ contract VotingStakingRewards {
     function withdrawUnbonded(uint256 amount) public nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
 
-        uint256 toEscrow = IVotingEscrow(address(token)).lockedAmount(msg.sender);
-        require(_balances[msg.sender].sub(amount) >= toEscrow, "escrow lock");
+        assertEscrow(msg.sender, _balances[msg.sender], amount);
 
         if (bondedRewardLocks[msg.sender].amount > 0) {
             require(amount <= _balances[msg.sender].sub(bondedRewardLocks[msg.sender].amount), "cannotWithdrawBondedTokens");

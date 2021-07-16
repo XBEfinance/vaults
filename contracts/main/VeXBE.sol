@@ -241,7 +241,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     }
 
     function lockedAmount(address addr) external view returns(uint256) {
-        return locked[addr].amount;
+        return uint256(locked[addr].amount);
     }
 
     // """

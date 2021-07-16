@@ -11,6 +11,7 @@ import "@aragon/minime/contracts/MiniMeToken.sol";
 
 import "./interfaces/IBonusCampaign.sol";
 import "./interfaces/IVeXBE.sol";
+import "./interfaces/IVotingEscrow.sol";
 import "./interfaces/IERC20.sol";
 
 contract VotingStakingRewards {
@@ -235,6 +236,10 @@ contract VotingStakingRewards {
     function withdrawBondedOrWithPenalty() public nonReentrant updateReward(msg.sender) {
         require(bondedRewardLocks[msg.sender].requested, "needsToBeRequested");
         uint256 amount = bondedRewardLocks[msg.sender].amount;
+        uint256 toEscrow = IVotingEscrow(address(token)).lockedAmount(msg.sender);
+
+        require(_balances[msg.sender].sub(amount) >= toEscrow, "escrow lock");
+
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
         if (block.timestamp > bondedRewardLocks[msg.sender].unlockTime) {
@@ -251,6 +256,10 @@ contract VotingStakingRewards {
 
     function withdrawUnbonded(uint256 amount) public nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
+
+        uint256 toEscrow = IVotingEscrow(address(token)).lockedAmount(msg.sender);
+        require(_balances[msg.sender].sub(amount) >= toEscrow, "escrow lock");
+
         if (bondedRewardLocks[msg.sender].amount > 0) {
             require(amount <= _balances[msg.sender].sub(bondedRewardLocks[msg.sender].amount), "cannotWithdrawBondedTokens");
         }

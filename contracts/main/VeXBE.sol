@@ -107,7 +107,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     mapping(address => uint256) public userPointEpoch;
     mapping(uint256 => int128) public slopeChanges; // time -> signed slope change
 
-    bool public voting;
+    address public voting;
 
     address public controller;
     bool public transfersEnabled;
@@ -238,6 +238,10 @@ contract VeXBE is Initializable, ReentrancyGuard {
 
     function lockStarts(address addr) external view returns(uint256) {
         return _lockStarts[addr];
+    }
+
+    function lockedAmount(address addr) external view returns(uint256) {
+        return locked[addr].amount;
     }
 
     // """
@@ -429,7 +433,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
 //            IERC20(token).safeTransferFrom(_addr, address(this), _value);
 //        }
 
-//        require(VotinStakingRewards(...).hasAmount())
+        require(IERC20(voting).balanceOf(_addr) >= _locked.amount, "not enough stake");
 
         emit Deposit(_addr, _value, _locked.end, _type, block.timestamp);
         emit Supply(supplyBefore, supplyBefore + _value);

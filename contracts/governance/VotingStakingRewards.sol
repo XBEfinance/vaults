@@ -207,11 +207,11 @@ contract VotingStakingRewards {
 
         _stake(_for, amount);
 
-        BondedReward old = bondedRewardLocks[_for];
-        bool unbondOld = old.requested && block.timestamp > old.unlockTime;
+        BondedReward memory rewardLock = bondedRewardLocks[_for];
+        bool unbondOld = rewardLock.requested && block.timestamp > rewardLock.unlockTime;
 
         bondedRewardLocks[_for] = BondedReward({
-          amount: unbondOld ? amount : bondedRewardLocks[_for].amount + amount,
+          amount: unbondOld ? amount : rewardLock.amount + amount,
           unlockTime: block.timestamp + bondedLockDuration,
           requested: false
         });
@@ -226,12 +226,10 @@ contract VotingStakingRewards {
         require(_available.sub(_withdrawAmount) >= escrowed, "escrow amount failure");
     }
 
-    function requestWithdrawBonded(uint256 amount) public nonReentrant updateReward(msg.sender) {
+    function requestWithdrawBonded() public nonReentrant updateReward(msg.sender) {
         require(!bondedRewardLocks[msg.sender].requested, "alreadyRegistered");
-        require(amount > 0, "Cannot request to withdraw 0");
         uint256 bondedAmount = bondedRewardLocks[msg.sender].amount;
-        require(bondedAmount > 0 && amount <= bondedAmount, "notEnoughBondedTokens");
-        assertEscrow(msg.sender, _balances[msg.sender], amount);
+        require(bondedAmount > 0, "notEnoughBondedTokens");
         if (!breaker) {
             require(voteLock[msg.sender] < block.number, "!locked");
         }

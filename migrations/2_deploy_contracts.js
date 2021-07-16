@@ -271,161 +271,161 @@ const distributeTokens = async (params, alice, bob, owner) => {
 const configureContracts = async (params, owner) => {
   const { dependentsAddresses } = params;
 
-  mockXBE = await MockToken.at(getSavedAddress('mockXBE'));
-  xbeInflation = await XBEInflation.at(getSavedAddress('xbeInflation'));
-  bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
+  // mockXBE = await MockToken.at(getSavedAddress('mockXBE'));
+  // xbeInflation = await XBEInflation.at(getSavedAddress('xbeInflation'));
+  // bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
   veXBE = await VeXBE.at(getSavedAddress('veXBE'));
-
-  referralProgram = await ReferralProgram.at(getSavedAddress('referralProgram'));
-  registry = await Registry.at(getSavedAddress('registry'));
-  treasury = await Treasury.at(getSavedAddress('treasury'));
-  controller = await Controller.at(getSavedAddress('controller'));
+  //
+  // referralProgram = await ReferralProgram.at(getSavedAddress('referralProgram'));
+  // registry = await Registry.at(getSavedAddress('registry'));
+  // treasury = await Treasury.at(getSavedAddress('treasury'));
+  // controller = await Controller.at(getSavedAddress('controller'));
 
   voting = await Voting.at(getSavedAddress('voting'));
-
-  hiveVault = await HiveVault.at(getSavedAddress('hiveVault'));
-  hiveStrategy = await HiveStrategy.at(getSavedAddress('hiveStrategy'));
-
-  cvxCrvVault = await HiveVault.at(getSavedAddress('cvxCrvVault'));
-  cvxCrvStrategy = await HiveStrategy.at(getSavedAddress('cvxCrvStrategy'));
-
-  cvxVault = await HiveVault.at(getSavedAddress('cvxVault'));
-  cvxStrategy = await HiveStrategy.at(getSavedAddress('cvxStrategy'));
-
-  sushiVault = await HiveVault.at(getSavedAddress('sushiVault'));
-  sushiStrategy = await HiveStrategy.at(getSavedAddress('sushiStrategy'));
-
-  const now = await time.latest();
-
-  console.log('Starting configuration...');
-
-  await referralProgram.configure(
-    [mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
-    treasury.address,
-    { from: owner },
-  );
-
-  console.log('ReferralProgram configured...');
-
-  await registry.configure(
-    owner,
-    { from: owner },
-  );
-
-  console.log('Registry configured...');
-
-  await treasury.configure(
-    voting.address,
-    voting.address,
-    mockXBE.address,
-    dependentsAddresses.uniswap_router_02,
-    dependentsAddresses.uniswap_factory,
-    params.treasury.slippageTolerance,
-    now.add(params.treasury.swapDeadline),
-    { from: owner },
-  );
-
-  console.log('Treasury configured...');
-
-  await controller.configure(
-    treasury.address,
-    owner,
-    owner,
-    { from: owner },
-  );
-
-  console.log('Controller configured...');
-
-  await controller.setVault(
-    dependentsAddresses.convex.pools[0].lptoken,
-    hiveVault.address,
-    { from: owner },
-  );
-
-  console.log('Controller: vault added...');
-
-  await controller.setApprovedStrategy(
-    dependentsAddresses.convex.pools[0].lptoken,
-    hiveStrategy.address,
-    true,
-    { from: owner },
-  );
-
-  console.log('Controller: strategy approved...');
-
-  await controller.setStrategy(
-    dependentsAddresses.convex.pools[0].lptoken,
-    hiveStrategy.address,
-    { from: owner },
-  );
-
-  console.log('Controller: strategy added...');
-
-  await hiveStrategy.configure(
-    dependentsAddresses.convex.pools[0].lptoken,
-    controller.address,
-    hiveVault.address,
-    owner,
-    mockXBE.address,
-    voting.address,
-    true,
-    [
-      dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
-      dependentsAddresses.convex.pools[0].crvRewards,
-      dependentsAddresses.convex.cvxRewards,
-      dependentsAddresses.convex.booster,
-      ZERO,
-      dependentsAddresses.curve.CRV,
-      dependentsAddresses.convex.cvx
-    ],
-    { from: owner },
-  );
-  console.log('HiveStrategy: configured');
-
-  const _vaults = [
-      [hiveVault, dependentsAddresses.convex.pools[0].lptoken]
-      [cvxVault, dependentsAddresses.convex.cvx]
-      [cvxCrvVault, dependentsAddresses.convex.cvxCrv]
-      [sushiVault, mockLpSushi.address]
-  ];
-
-  for (let i = 0; i < _vaults.length; i++) {
-      await _vaults[i][0].configure(
-        _vaults[i][1],
-        controller.address,
-        owner,
-        referralProgram.address,
-        treasury.address,
-        { from: owner },
-      );
-      console.log(`${_vaults[i].name}: configured`);
-  }
-
-  await xbeInflation.configure(
-    mockXBE.address,
-    params.xbeinflation.initialSupply,
-    params.xbeinflation.initialRate,
-    params.xbeinflation.rateReductionTime,
-    params.xbeinflation.rateReductionCoefficient,
-    params.xbeinflation.rateDenominator,
-    params.xbeinflation.inflationDelay,
-    { from: owner },
-  );
-
-  console.log('XBEInflation: configured');
-
-  await bonusCampaign.configure(
-    mockXBE.address,
-    veXBE.address,
-    now.add(params.bonusCampaign.startMintTime),
-    now.add(params.bonusCampaign.stopRegisterTime),
-    params.bonusCampaign.rewardsDuration,
-    params.bonusCampaign.emission,
-    { from: owner },
-  );
-
-  console.log('BonusCampaign: configured');
-
+  //
+  // hiveVault = await HiveVault.at(getSavedAddress('hiveVault'));
+  // hiveStrategy = await HiveStrategy.at(getSavedAddress('hiveStrategy'));
+  //
+  // cvxCrvVault = await HiveVault.at(getSavedAddress('cvxCrvVault'));
+  // cvxCrvStrategy = await HiveStrategy.at(getSavedAddress('cvxCrvStrategy'));
+  //
+  // cvxVault = await HiveVault.at(getSavedAddress('cvxVault'));
+  // cvxStrategy = await HiveStrategy.at(getSavedAddress('cvxStrategy'));
+  //
+  // sushiVault = await HiveVault.at(getSavedAddress('sushiVault'));
+  // sushiStrategy = await HiveStrategy.at(getSavedAddress('sushiStrategy'));
+  //
+  // const now = await time.latest();
+  //
+  // console.log('Starting configuration...');
+  //
+  // await referralProgram.configure(
+  //   [mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
+  //   treasury.address,
+  //   { from: owner },
+  // );
+  //
+  // console.log('ReferralProgram configured...');
+  //
+  // await registry.configure(
+  //   owner,
+  //   { from: owner },
+  // );
+  //
+  // console.log('Registry configured...');
+  //
+  // await treasury.configure(
+  //   voting.address,
+  //   voting.address,
+  //   mockXBE.address,
+  //   dependentsAddresses.uniswap_router_02,
+  //   dependentsAddresses.uniswap_factory,
+  //   params.treasury.slippageTolerance,
+  //   now.add(params.treasury.swapDeadline),
+  //   { from: owner },
+  // );
+  //
+  // console.log('Treasury configured...');
+  //
+  // await controller.configure(
+  //   treasury.address,
+  //   owner,
+  //   owner,
+  //   { from: owner },
+  // );
+  //
+  // console.log('Controller configured...');
+  //
+  // await controller.setVault(
+  //   dependentsAddresses.convex.pools[0].lptoken,
+  //   hiveVault.address,
+  //   { from: owner },
+  // );
+  //
+  // console.log('Controller: vault added...');
+  //
+  // await controller.setApprovedStrategy(
+  //   dependentsAddresses.convex.pools[0].lptoken,
+  //   hiveStrategy.address,
+  //   true,
+  //   { from: owner },
+  // );
+  //
+  // console.log('Controller: strategy approved...');
+  //
+  // await controller.setStrategy(
+  //   dependentsAddresses.convex.pools[0].lptoken,
+  //   hiveStrategy.address,
+  //   { from: owner },
+  // );
+  //
+  // console.log('Controller: strategy added...');
+  //
+  // await hiveStrategy.configure(
+  //   dependentsAddresses.convex.pools[0].lptoken,
+  //   controller.address,
+  //   hiveVault.address,
+  //   owner,
+  //   mockXBE.address,
+  //   voting.address,
+  //   true,
+  //   [
+  //     dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
+  //     dependentsAddresses.convex.pools[0].crvRewards,
+  //     dependentsAddresses.convex.cvxRewards,
+  //     dependentsAddresses.convex.booster,
+  //     ZERO,
+  //     dependentsAddresses.curve.CRV,
+  //     dependentsAddresses.convex.cvx
+  //   ],
+  //   { from: owner },
+  // );
+  // console.log('HiveStrategy: configured');
+  //
+  // const _vaults = [
+  //     [hiveVault, dependentsAddresses.convex.pools[0].lptoken]
+  //     [cvxVault, dependentsAddresses.convex.cvx]
+  //     [cvxCrvVault, dependentsAddresses.convex.cvxCrv]
+  //     [sushiVault, mockLpSushi.address]
+  // ];
+  //
+  // for (let i = 0; i < _vaults.length; i++) {
+  //     await _vaults[i][0].configure(
+  //       _vaults[i][1],
+  //       controller.address,
+  //       owner,
+  //       referralProgram.address,
+  //       treasury.address,
+  //       { from: owner },
+  //     );
+  //     console.log(`${_vaults[i].name}: configured`);
+  // }
+  //
+  // await xbeInflation.configure(
+  //   mockXBE.address,
+  //   params.xbeinflation.initialSupply,
+  //   params.xbeinflation.initialRate,
+  //   params.xbeinflation.rateReductionTime,
+  //   params.xbeinflation.rateReductionCoefficient,
+  //   params.xbeinflation.rateDenominator,
+  //   params.xbeinflation.inflationDelay,
+  //   { from: owner },
+  // );
+  //
+  // console.log('XBEInflation: configured');
+  //
+  // await bonusCampaign.configure(
+  //   mockXBE.address,
+  //   veXBE.address,
+  //   now.add(params.bonusCampaign.startMintTime),
+  //   now.add(params.bonusCampaign.stopRegisterTime),
+  //   params.bonusCampaign.rewardsDuration,
+  //   params.bonusCampaign.emission,
+  //   { from: owner },
+  // );
+  //
+  // console.log('BonusCampaign: configured');
+  //
   await veXBE.configure(
     mockXBE.address,
     'Voting Escrowed XBE',

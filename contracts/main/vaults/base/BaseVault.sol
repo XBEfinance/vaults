@@ -619,8 +619,8 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
             return rewardsPerTokensStored[_rewardsToken];
         }
         return
-            rewardsPerTokensStored.add(
-                _duration.mul(rewardRates[_rewardToken]).mul(1e18).div(_totalSupply)
+            rewardsPerTokensStored[_rewardsToken].add(
+                _duration.mul(rewardRates[_rewardsToken]).mul(1e18).div(_totalSupply)
             );
     }
 

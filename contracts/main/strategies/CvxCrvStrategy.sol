@@ -35,7 +35,8 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
             _vaultAddress,
             _governance,
             address(0),
-            _voting
+            _voting,
+            true
         );
         poolSettings = _poolSettings;
         rewardTokensToConvexRewardSources[_poolSettings.cvxCrvToken] = _poolSettings.cvxCRVRewards;

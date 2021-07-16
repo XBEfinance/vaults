@@ -34,7 +34,8 @@ contract SushiStrategy is WithClaimAmountStrategy {
             _vaultAddress,
             _governance,
             _tokenToAutostake,
-            _voting
+            _voting,
+            false
         );
         poolSettings = _poolSettings;
         rewardTokensToConvexRewardSources[_poolSettings.cvxToken] = _poolSettings.convexMasterChef;

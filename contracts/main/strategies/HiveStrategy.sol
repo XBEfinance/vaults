@@ -38,7 +38,8 @@ contract HiveStrategy is WithClaimAmountStrategy {
             _vaultAddress,
             _governance,
             _tokenToAutostake,
-            _voting
+            _voting,
+            true
         );
         poolSettings = _poolSettings;
         rewardTokensToConvexRewardSources[_poolSettings.crvToken] = _poolSettings.crvRewards;

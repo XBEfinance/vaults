@@ -186,10 +186,11 @@ contract VotingStakingRewards {
         emit Staked(_from, _amount);
     }
 
-    function lockFunds(uint256 _amount, uint256 _unlockTime) external {
-        veXBE.createLockFor(msg.sender, _amount, _unlockTime);
-        
-    }
+//    function lockFunds(uint256 _amount, uint256 _unlockTime) external {
+//        IVeXBE veXBE = IVeXBE(address(token));
+//        veXBE.createLockFor(msg.sender, _amount, _unlockTime);
+//
+//    }
 
     function setAllowanceOfStaker(address _staker, bool _allowed) external {
         stakeAllowance[_staker][msg.sender] = _allowed;
@@ -203,9 +204,14 @@ contract VotingStakingRewards {
         if (!_strategiesWhoCanAutoStake[msg.sender]) {
             require(stakeAllowance[msg.sender][_for], "stakeNotApproved");
         }
+
         _stake(_for, amount);
-        bondedRewardLocks[msg.sender] = BondedReward({
-          amount: bondedRewardLocks[msg.sender].amount + amount,
+
+        BondedReward old = bondedRewardLocks[_for];
+        bool unbondOld = old.requested && block.timestamp > old.unlockTime;
+
+        bondedRewardLocks[_for] = BondedReward({
+          amount: unbondOld ? amount : bondedRewardLocks[_for].amount + amount,
           unlockTime: block.timestamp + bondedLockDuration,
           requested: false
         });

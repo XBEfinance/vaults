@@ -126,6 +126,10 @@ abstract contract ClaimableStrategy is BaseStrategy {
        return _amounts;
   }
 
+  function setFeesEnabled(bool _isFeesEnabled) external onlyOwner {
+      feesEnabled = _isFeesEnabled;
+  }
+
   function claim(address _for, address[] memory _tokens, uint256[] memory _amounts) override public onlyControllerOrVault returns(bool) {
       address _vault = IController(controller).vaults(_want);
       require(_vault != address(0), "!vault 0");

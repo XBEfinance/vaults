@@ -27,7 +27,7 @@ contract VotingStakingRewards {
     event RewardsDurationUpdated(uint256 newDuration);
     event Recovered(address token, uint256 amount);
 
-    uint64 public constant PCT_BASE = 10 ** 18; // 0% = 0; 1% = 10^16; 100% = 10^18
+    uint256 public constant PCT_BASE = 10 ** 18; // 0% = 0; 1% = 10^16; 100% = 10^18
 
     IBonusCampaign public bonusCampaign;
     address public treasury;
@@ -186,10 +186,11 @@ contract VotingStakingRewards {
         emit Staked(_from, _amount);
     }
 
-    function lockFunds(uint256 _amount, uint256 _unlockTime) external {
-        veXBE.createLockFor(msg.sender, _amount, _unlockTime);
-        
-    }
+//    function lockFunds(uint256 _amount, uint256 _unlockTime) external {
+//        IVeXBE veXBE = IVeXBE(address(token));
+//        veXBE.createLockFor(msg.sender, _amount, _unlockTime);
+//
+//    }
 
     function setAllowanceOfStaker(address _staker, bool _allowed) external {
         stakeAllowance[_staker][msg.sender] = _allowed;
@@ -203,9 +204,14 @@ contract VotingStakingRewards {
         if (!_strategiesWhoCanAutoStake[msg.sender]) {
             require(stakeAllowance[msg.sender][_for], "stakeNotApproved");
         }
+
         _stake(_for, amount);
-        bondedRewardLocks[msg.sender] = BondedReward({
-          amount: bondedRewardLocks[msg.sender].amount + amount,
+
+        BondedReward memory rewardLock = bondedRewardLocks[_for];
+        bool unbondOld = rewardLock.requested && block.timestamp > rewardLock.unlockTime;
+
+        bondedRewardLocks[_for] = BondedReward({
+          amount: unbondOld ? amount : rewardLock.amount + amount,
           unlockTime: block.timestamp + bondedLockDuration,
           requested: false
         });
@@ -215,11 +221,15 @@ contract VotingStakingRewards {
         _stake(msg.sender, amount);
     }
 
-    function requestWithdrawBonded(uint256 amount) public nonReentrant updateReward(msg.sender) {
+    function assertEscrow(address _addr, uint256 _available, uint256 _withdrawAmount) internal view {
+        uint256 escrowed = IVeXBE(address(token)).lockedAmount(_addr);
+        require(_available.sub(_withdrawAmount) >= escrowed, "escrow amount failure");
+    }
+
+    function requestWithdrawBonded() public nonReentrant updateReward(msg.sender) {
         require(!bondedRewardLocks[msg.sender].requested, "alreadyRegistered");
-        require(amount > 0, "Cannot request to withdraw 0");
         uint256 bondedAmount = bondedRewardLocks[msg.sender].amount;
-        require(bondedAmount > 0 && amount <= bondedAmount, "notEnoughBondedTokens");
+        require(bondedAmount > 0, "notEnoughBondedTokens");
         if (!breaker) {
             require(voteLock[msg.sender] < block.number, "!locked");
         }
@@ -229,6 +239,9 @@ contract VotingStakingRewards {
     function withdrawBondedOrWithPenalty() public nonReentrant updateReward(msg.sender) {
         require(bondedRewardLocks[msg.sender].requested, "needsToBeRequested");
         uint256 amount = bondedRewardLocks[msg.sender].amount;
+
+        assertEscrow(msg.sender, _balances[msg.sender], amount);
+
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
         if (block.timestamp > bondedRewardLocks[msg.sender].unlockTime) {
@@ -245,6 +258,9 @@ contract VotingStakingRewards {
 
     function withdrawUnbonded(uint256 amount) public nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
+
+        assertEscrow(msg.sender, _balances[msg.sender], amount);
+
         if (bondedRewardLocks[msg.sender].amount > 0) {
             require(amount <= _balances[msg.sender].sub(bondedRewardLocks[msg.sender].amount), "cannotWithdrawBondedTokens");
         }

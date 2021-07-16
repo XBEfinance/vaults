@@ -7,4 +7,5 @@ interface IVotingEscrow {
     function userPointHistoryTs(address addr, uint256 epoch) external view returns(uint256);
     function balanceOfAt(address addr, uint256 _block) external view returns(uint256);
     function lockStarts(address addr) external view returns(uint256);
+
 }

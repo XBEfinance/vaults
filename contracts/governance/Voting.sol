@@ -2,7 +2,7 @@
  * SPDX-License-Identitifer:    GPL-3.0-or-later
  */
 
-pragma solidity 0.4.24;
+pragma solidity ^0.4.24;
 
 import "@aragon/os/contracts/apps/AragonApp.sol";
 import "@aragon/os/contracts/common/IForwarder.sol";
@@ -15,13 +15,7 @@ import "@aragon/minime/contracts/MiniMeToken.sol";
 import "@aragon/os/contracts/common/UnstructuredStorage.sol";
 import "@aragon/os/contracts/lib/math/Math.sol";
 
-import "./interfaces/IBonusCampaign.sol";
-import "./interfaces/IVeXBE.sol";
-import "./interfaces/IERC20.sol";
-
-import "./VotingStakingRewards.sol";
-
-contract Voting is IForwarder, AragonApp, VotingStakingRewards {
+contract Voting is IForwarder, AragonApp {
     using SafeMath for uint256;
     using SafeMath64 for uint64;
 
@@ -41,6 +35,10 @@ contract Voting is IForwarder, AragonApp, VotingStakingRewards {
     string private constant ERROR_NO_VOTING_POWER = "VOTING_NO_VOTING_POWER";
 
     uint256 public lock = 17280;
+    mapping(address => uint256) public voteLock;
+    uint256 public constant PCT_BASE = 10 ** 18; // 0% = 0; 1% = 10^16; 100% = 10^18
+
+    MiniMeToken public token;
 
     enum VoterState { Absent, Yea, Nay }
 
@@ -93,6 +91,8 @@ contract Voting is IForwarder, AragonApp, VotingStakingRewards {
 
     using UnstructuredStorage for bytes32;
 
+    // function Voting() payable {}
+
     function initialize(MiniMeToken _token, uint64 _supportRequiredPct, uint64 _minAcceptQuorumPct, uint64 _voteTime) external _onlyInit {
         // initialized();
         INITIALIZATION_BLOCK_POSITION.setStorageUint256(getBlockNumber());
@@ -107,51 +107,8 @@ contract Voting is IForwarder, AragonApp, VotingStakingRewards {
         voteTime = _voteTime;
     }
 
-    function configureRewards(
-        address _rewardsDistribution,
-        address _rewardsToken,
-        address _stakingToken,
-        uint256 _rewardsDuration,
-        address[] memory _strategiesWhoCanAutostake
-    ) public auth(MODIFY_QUORUM_ROLE) _onlyInit {
-        _configureRewards(
-            _rewardsDistribution,
-            _rewardsToken,
-            _stakingToken,
-            _rewardsDuration,
-            _strategiesWhoCanAutostake
-        );
-    }
-
     function setLock(uint256 _lock) external auth(MODIFY_QUORUM_ROLE) {
         lock = _lock;
-    }
-
-    function setBreaker(bool _breaker) external auth(MODIFY_QUORUM_ROLE) {
-        breaker = _breaker;
-    }
-
-    function setInverseMaxBoostCoefficient(uint256 _inverseMaxBoostCoefficient)
-        external
-        auth(MODIFY_QUORUM_ROLE)
-    {
-        inverseMaxBoostCoefficient = _inverseMaxBoostCoefficient;
-        require(_inverseMaxBoostCoefficient > 0 && _inverseMaxBoostCoefficient < 100, "invalidInverseMaxBoostCoefficient");
-    }
-
-    function setPenaltyPct(uint256 _penaltyPct)
-        external
-        auth(MODIFY_QUORUM_ROLE)
-    {
-        penaltyPct = _penaltyPct;
-        require(_penaltyPct < PCT_BASE, "tooHighPct");
-    }
-
-    function setBondedLockDuration(uint256 _bondedLockDuration)
-        external
-        auth(MODIFY_QUORUM_ROLE)
-    {
-        bondedLockDuration = _bondedLockDuration;
     }
 
     /**

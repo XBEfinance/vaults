@@ -2,7 +2,7 @@
  * SPDX-License-Identitifer:    GPL-3.0-or-later
  */
 
-pragma solidity 0.4.24;
+pragma solidity ^0.4.24;
 
 import "@aragon/os/contracts/lib/math/SafeMath.sol";
 import "@aragon/os/contracts/lib/math/SafeMath64.sol";
@@ -12,8 +12,14 @@ import "@aragon/minime/contracts/MiniMeToken.sol";
 import "./interfaces/IBonusCampaign.sol";
 import "./interfaces/IVeXBE.sol";
 import "./interfaces/IERC20.sol";
+import "./interfaces/IVoting.sol";
 
-contract VotingStakingRewards {
+import "./utils/VotingPausable.sol";
+import "./utils/VotingNonReentrant.sol";
+import "./utils/VotingOwnable.sol";
+import "./utils/VotingInitializable.sol";
+
+contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnable, VotingInitializable {
 
     using SafeMath for uint256;
     using SafeMath64 for uint64;
@@ -31,6 +37,7 @@ contract VotingStakingRewards {
 
     IBonusCampaign public bonusCampaign;
     address public treasury;
+    IVoting public voting;
 
     mapping(address => bool) internal _strategiesWhoCanAutoStake;
 
@@ -40,7 +47,6 @@ contract VotingStakingRewards {
         bool requested;
     }
 
-    mapping(address => uint256) public voteLock;
     bool public breaker = false;
 
     mapping(address => mapping(address => bool)) public stakeAllowance;
@@ -55,16 +61,10 @@ contract VotingStakingRewards {
     address public stakingToken;
     uint256 public periodFinish = 0;
     uint256 public rewardRate = 0;
-    uint256 public rewardsDuration; //= 7 days;
+    uint256 public rewardsDuration;
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
     address public rewardsDistribution;
-
-    bool public paused;
-
-    uint256 private constant _NOT_ENTERED = 1;
-    uint256 private constant _ENTERED = 2;
-    uint256 private _status = _NOT_ENTERED;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
@@ -74,45 +74,58 @@ contract VotingStakingRewards {
 
     MiniMeToken public token;
 
-    function _configureRewards(
+    function configure(
         address _rewardsDistribution,
         address _rewardsToken,
         address _stakingToken,
         uint256 _rewardsDuration,
+        address _token,
+        address _voting,
         address[] memory __strategiesWhoCanAutostake
-    ) internal {
+    ) public initializer {
         rewardsToken = _rewardsToken;
         stakingToken = _stakingToken;
         rewardsDistribution = _rewardsDistribution;
         rewardsDuration = _rewardsDuration;
+        token = MiniMeToken(_token);
+        voting = IVoting(_voting);
         for (uint256 i = 0; i < __strategiesWhoCanAutostake.length; i++) {
             _strategiesWhoCanAutoStake[__strategiesWhoCanAutostake[i]] = true;
         }
-    }
-
-    modifier nonReentrant {
-        // On the first call to nonReentrant, _notEntered will be true
-        require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
-
-        // Any calls to nonReentrant after this point will fail
-        _status = _ENTERED;
-
-        _;
-
-        // By storing the original value once again, a refund is triggered (see
-        // https://eips.ethereum.org/EIPS/eip-2200)
-        _status = _NOT_ENTERED;
-    }
-
-    modifier whenNotPaused {
-        require(!paused, "paused");
-        _;
     }
 
     modifier onlyRewardsDistribution {
         require(msg.sender == rewardsDistribution, "Caller is not RewardsDistribution contract");
         _;
     }
+
+    function setBreaker(bool _breaker) external onlyOwner {
+        breaker = _breaker;
+    }
+
+    function setInverseMaxBoostCoefficient(uint256 _inverseMaxBoostCoefficient)
+        external
+        onlyOwner
+    {
+        inverseMaxBoostCoefficient = _inverseMaxBoostCoefficient;
+        require(_inverseMaxBoostCoefficient > 0 && _inverseMaxBoostCoefficient < 100, "invalidInverseMaxBoostCoefficient");
+    }
+
+    function setPenaltyPct(uint256 _penaltyPct)
+        external
+        onlyOwner
+    {
+        penaltyPct = _penaltyPct;
+        require(_penaltyPct < PCT_BASE, "tooHighPct");
+    }
+
+    function setBondedLockDuration(uint256 _bondedLockDuration)
+        external
+        onlyOwner
+    {
+        bondedLockDuration = _bondedLockDuration;
+    }
+
 
     /* ========== VIEWS ========== */
 
@@ -186,12 +199,6 @@ contract VotingStakingRewards {
         emit Staked(_from, _amount);
     }
 
-//    function lockFunds(uint256 _amount, uint256 _unlockTime) external {
-//        IVeXBE veXBE = IVeXBE(address(token));
-//        veXBE.createLockFor(msg.sender, _amount, _unlockTime);
-//
-//    }
-
     function setAllowanceOfStaker(address _staker, bool _allowed) external {
         stakeAllowance[_staker][msg.sender] = _allowed;
     }
@@ -231,7 +238,7 @@ contract VotingStakingRewards {
         uint256 bondedAmount = bondedRewardLocks[msg.sender].amount;
         require(bondedAmount > 0, "notEnoughBondedTokens");
         if (!breaker) {
-            require(voteLock[msg.sender] < block.number, "!locked");
+            require(voting.voteLock(msg.sender) < block.number, "!locked");
         }
         bondedRewardLocks[msg.sender].requested = true;
     }
@@ -265,7 +272,7 @@ contract VotingStakingRewards {
             require(amount <= _balances[msg.sender].sub(bondedRewardLocks[msg.sender].amount), "cannotWithdrawBondedTokens");
         }
         if (!breaker) {
-            require(voteLock[msg.sender] < block.number, "!locked");
+            require(voting.voteLock(msg.sender) < block.number, "!locked");
         }
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
@@ -343,7 +350,7 @@ contract VotingStakingRewards {
 
     function getReward() public nonReentrant updateReward(msg.sender) {
         if (!breaker) {
-            require(voteLock[msg.sender] > block.number, "!voted");
+            require(voting.voteLock(msg.sender) > block.number, "!voted");
         }
         uint256 reward = rewards[msg.sender];
         if (reward > 0) {

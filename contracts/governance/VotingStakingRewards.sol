@@ -81,6 +81,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         uint256 _rewardsDuration,
         address _token,
         address _voting,
+        address _bonusCampaign,
         address[] memory __strategiesWhoCanAutostake
     ) public initializer {
         rewardsToken = _rewardsToken;
@@ -89,6 +90,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         rewardsDuration = _rewardsDuration;
         token = MiniMeToken(_token);
         voting = IVoting(_voting);
+        bonusCampaign = IBonusCampaign(_bonusCampaign);
         for (uint256 i = 0; i < __strategiesWhoCanAutostake.length; i++) {
             _strategiesWhoCanAutoStake[__strategiesWhoCanAutostake[i]] = true;
         }

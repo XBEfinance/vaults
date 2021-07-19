@@ -106,7 +106,7 @@ const saveAddresses = () => {
     // mockLpSushi: mockLpSushi.address,
     // mockTokenForSushiPair: mockTokenForSushiPair.address,
     // xbeInflation: xbeInflation.address,
-    // bonusCampaign: bonusCampaign.address,
+    bonusCampaign: bonusCampaign.address,
     veXBE: veXBE.address,
     voting: voting.address,
     votingStakingRewards: votingStakingRewards.address,
@@ -214,8 +214,8 @@ const deployContracts = async (deployer, params, owner) => {
   // // deploy bonus campaign xbeinflation
   // xbeInflation = await deployer.deploy(XBEInflation, { from: owner });
   //
-  // // deploy bonus campaign
-  // bonusCampaign = await deployer.deploy(BonusCampaign, { from: owner });
+  // deploy bonus campaign
+  bonusCampaign = await deployer.deploy(BonusCampaign, { from: owner });
 
   // deploy voting escrow
   veXBE = await deployer.deploy(VeXBE, { from: owner });
@@ -305,6 +305,8 @@ const configureContracts = async (params, owner) => {
 
   voting = await Voting.at(getSavedAddress('voting'));
   votingStakingRewards = await VotingStakingRewards.at(getSavedAddress('votingStakingRewards'));
+  bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
+
 
   //
   // xbeInflation = await XBEInflation.at(getSavedAddress('xbeInflation'));
@@ -546,17 +548,17 @@ const configureContracts = async (params, owner) => {
   //
   // console.log('XBEInflation: configured');
   //
-  // await bonusCampaign.configure(
-  //   mockXBE.address,
-  //   veXBE.address,
-  //   now.add(params.bonusCampaign.startMintTime),
-  //   now.add(params.bonusCampaign.stopRegisterTime),
-  //   params.bonusCampaign.rewardsDuration,
-  //   params.bonusCampaign.emission,
-  //   { from: owner },
-  // );
-  //
-  // console.log('BonusCampaign: configured');
+  await bonusCampaign.configure(
+    mockXBE.address,
+    veXBE.address,
+    now.add(params.bonusCampaign.startMintTime),
+    now.add(params.bonusCampaign.stopRegisterTime),
+    params.bonusCampaign.rewardsDuration,
+    params.bonusCampaign.emission,
+    { from: owner },
+  );
+
+  console.log('BonusCampaign: configured');
 
   await veXBE.configure(
     mockXBE.address,
@@ -586,6 +588,7 @@ const configureContracts = async (params, owner) => {
     months('23'),
     veXBE.address,
     voting.address,
+    bonusCampaign.address,
     [],
   );
 

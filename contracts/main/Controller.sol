@@ -115,7 +115,6 @@ contract Controller is IController, Ownable, Initializable {
         IStrategy(_strategy).getRewards();
     }
 
-
     /// @notice Usual setter with check if param is new
     /// @param _newParts New value
     function setParts(uint256 _newParts) onlyOwner external {

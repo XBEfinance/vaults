@@ -353,43 +353,43 @@ const configureContracts = async (params, owner) => {
     //   ],
     //   token: dependentsAddresses.convex.pools[0].lptoken,
     // },
-    {
-      name: 'cvxCrv',
-      vault: cvxCrvVault,
-      strategy: cvxCrvStrategy,
-      strategyConfigArgs: [
-        dependentsAddresses.convex.cvxCrv, // _wantAddress,
-        controller.address, // _controllerAddress,
-        cvxCrvVault.address, // _vaultAddress,
-        owner, // _governance,
-        // voting.address,
-        ZERO_ADDRESS, // _voting,
-        // _poolSettings
-        [
-          dependentsAddresses.curve.pool_data.mock_pool.lp_token_address, // lpCurve
-          dependentsAddresses.convex.cvxCrvRewards, // cvxCRVRewards
-          dependentsAddresses.convex.crvDepositor, // crvDepositor
-          dependentsAddresses.convex.booster, // convexBooster
-          dependentsAddresses.convex.cvxCrv, // cvxCrvToken
-          dependentsAddresses.curve.CRV, // crvToken
-        ],
-      ],
-      vaultConfigArgs: [
-        dependentsAddresses.convex.cvxCrv, // _initialToken
-        controller.address, // _initialController
-        owner, // _governance
-        referralProgram.address, // _referralProgram
-        treasury.address, // _treasury
-        now.add(months('23')), // _rewardsDuration
-        [ // _rewardTokens
-          dependentsAddresses.convex.cvxCrv,
-          dependentsAddresses.convex.cvxCrv,
-        ],
-        'CC', // _namePostfix
-        'CC', // _symbolPostfix
-      ],
-      token: dependentsAddresses.convex.cvxCrv,
-    },
+    // {
+    //   name: 'cvxCrv',
+    //   vault: cvxCrvVault,
+    //   strategy: cvxCrvStrategy,
+    //   strategyConfigArgs: [
+    //     dependentsAddresses.convex.cvxCrv, // _wantAddress,
+    //     controller.address, // _controllerAddress,
+    //     cvxCrvVault.address, // _vaultAddress,
+    //     owner, // _governance,
+    //     // voting.address,
+    //     ZERO_ADDRESS, // _voting,
+    //     // _poolSettings
+    //     [
+    //       dependentsAddresses.curve.pool_data.mock_pool.lp_token_address, // lpCurve
+    //       dependentsAddresses.convex.cvxCrvRewards, // cvxCRVRewards
+    //       dependentsAddresses.convex.crvDepositor, // crvDepositor
+    //       dependentsAddresses.convex.booster, // convexBooster
+    //       dependentsAddresses.convex.cvxCrv, // cvxCrvToken
+    //       dependentsAddresses.curve.CRV, // crvToken
+    //     ],
+    //   ],
+    //   vaultConfigArgs: [
+    //     dependentsAddresses.convex.cvxCrv, // _initialToken
+    //     controller.address, // _initialController
+    //     owner, // _governance
+    //     referralProgram.address, // _referralProgram
+    //     treasury.address, // _treasury
+    //     now.add(months('23')), // _rewardsDuration
+    //     [ // _rewardTokens
+    //       dependentsAddresses.convex.cvxCrv,
+    //       dependentsAddresses.convex.cvxCrv,
+    //     ],
+    //     'CC', // _namePostfix
+    //     'CC', // _symbolPostfix
+    //   ],
+    //   token: dependentsAddresses.convex.cvxCrv,
+    // },
     // {
     //   name: 'cvx',
     //   vault: cvxVault,
@@ -437,8 +437,7 @@ const configureContracts = async (params, owner) => {
         owner, // _governance
         now.add(months('23')), // _rewardsDuration
         [ // _rewardTokens
-          mockLpSushi.address,
-          mockLpSushi.address,
+          dependentsAddresses.convex.cvx,
         ],
         'SH', // _namePostfix
         'SH', // _symbolPostfix

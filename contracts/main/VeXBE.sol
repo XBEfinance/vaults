@@ -159,6 +159,10 @@ contract VeXBE is Initializable, ReentrancyGuard {
         voting = votingAddr;
     }
 
+    function setVoting(address addr) external onlyAdmin {
+        require(addr != address(0), 'addressIsZero');
+        voting = addr;
+    }
     // """
     // @notice Transfer ownership of VotingEscrow contract to `addr`
     // @param addr Address to have ownership transferred to

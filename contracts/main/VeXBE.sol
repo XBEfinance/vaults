@@ -197,19 +197,19 @@ contract VeXBE is Initializable, ReentrancyGuard {
         smartWalletChecker = futureSmartWalletChecker;
     }
 
-    // """
-    // @notice Check if the call is from a whitelisted smart contract, revert if not
-    // @param addr Address to be checked
-    // """
-    function assertNotContract(address addr) view internal {
-        if (addr != tx.origin) {
-          address checker = smartWalletChecker;
-          if (checker != address(0) && ISmartWalletChecker(checker).check(addr)) {
-              return;
-          }
-          revert("!contract");
-        }
-    }
+    // // """
+    // // @notice Check if the call is from a whitelisted smart contract, revert if not
+    // // @param addr Address to be checked
+    // // """
+    // function assertNotContract(address addr) view internal {
+    //     if (addr != tx.origin) {
+    //       address checker = smartWalletChecker;
+    //       if (checker != address(0) && ISmartWalletChecker(checker).check(addr)) {
+    //           return;
+    //       }
+    //       revert("!contract");
+    //     }
+    // }
 
     // """
     // @notice Get the most recently recorded rate of voting power decrease for `addr`
@@ -468,15 +468,15 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // @param _unlock_time Epoch time when tokens unlock, rounded down to whole weeks
     // """
     function createLock(uint256 _value, uint256 _unlockTime) external nonReentrant {
-        assertNotContract(msg.sender);
-        createLockFor(msg.sender, _value, _unlockTime);
+        // assertNotContract(msg.sender);
+        _createLockFor(msg.sender, _value, _unlockTime);
     }
 
     function setCreateLockAllowance(address _sender, bool _status) external {
         createLockAllowance[_sender][msg.sender] = _status;
     }
 
-    function createLockFor(address _for, uint256 _value, uint256 _unlockTime) public nonReentrant {
+    function _createLockFor(address _for, uint256 _value, uint256 _unlockTime) internal {
         if (msg.sender != voting) {
             require(createLockAllowance[msg.sender][_for], "!allowed");
         }
@@ -493,13 +493,17 @@ contract VeXBE is Initializable, ReentrancyGuard {
         _depositFor(_for, _value, unlockTime, _locked, CREATE_LOCK_TYPE);
     }
 
+    function createLockFor(address _for, uint256 _value, uint256 _unlockTime) public nonReentrant {
+        _createLockFor(_for, _value, _unlockTime);
+    }
+
     // """
     // @notice Deposit `_value` additional tokens for `msg.sender`
     //         without modifying the unlock time
     // @param _value Amount of tokens to deposit and add to the lock
     // """
     function increaseAmount(uint256 _value) external nonReentrant {
-        assertNotContract(msg.sender);
+        // assertNotContract(msg.sender);
         LockedBalance memory _locked = locked[msg.sender];
         require(_value > 0, "!zeroValue");
         require(_locked.amount > 0, "!zeroLockedAmount");
@@ -512,7 +516,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // @param _unlock_time New epoch time for unlocking
     // """
     function increaseUnlockTime(uint256 _unlockTime) external nonReentrant {
-        assertNotContract(msg.sender);
+        // assertNotContract(msg.sender);
         LockedBalance memory _locked = locked[msg.sender];
         uint256 unlockTime = (_unlockTime / WEEK) * WEEK; // Locktime is rounded down to weeks
 

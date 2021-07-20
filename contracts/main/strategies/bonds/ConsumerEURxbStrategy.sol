@@ -14,18 +14,18 @@ import "../../TokenWrapper.sol";
 contract ConsumerEURxbStrategy is BaseStrategy {
 
     function deposit() override external {
+
     }
 
     function _withdrawSome(uint256 _amount) internal override returns(uint) {
         return _amount;
     }
 
-
     function canClaimAmount(address _rewardToken) external view override returns(uint256) {
         return 0;
     }
 
-    function claim(address, address[] calldata, uint256[] calldata) external override returns(bool) {
+    function claim(address) external override returns(bool) {
         return false;
     }
 
@@ -38,10 +38,6 @@ contract ConsumerEURxbStrategy is BaseStrategy {
     }
 
     function getRewards() external override {
-
-    }
-
-    function subFee(uint256[] calldata) external override view returns(uint256[] memory) {
 
     }
 

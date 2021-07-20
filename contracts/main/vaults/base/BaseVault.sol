@@ -4,13 +4,14 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../../interfaces/vault/IVaultCore.sol";
 import "../../interfaces/vault/IVaultTransfers.sol";
@@ -18,9 +19,11 @@ import "../../interfaces/vault/IVaultDelegated.sol";
 import "../../interfaces/IController.sol";
 import "../../interfaces/IStrategy.sol";
 
+import "./VaultWithFeesOnClaim.sol";
+
 /// @title EURxbVault
 /// @notice Base vault contract, used to manage funds of the clients
-contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGuard, Pausable, Initializable {
+abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGuard, Pausable, Initializable {
 
     using EnumerableSet for EnumerableSet.AddressSet;
     using SafeERC20 for IERC20;
@@ -252,10 +255,15 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    function _withdrawFrom(address _from, uint256 _amount) internal returns(uint256) {
+    function _withdrawFrom(address _from, uint256 _amount) internal virtual returns(uint256) {
         require(_amount > 0, "Cannot withdraw 0");
         _totalSupply = _totalSupply.sub(_amount);
         _balances[_from] = _balances[_from].sub(_amount);
+        address strategyAddress = IController(_controller).strategies(address(stakingToken));
+        uint256 amountOnVault = stakingToken.balanceOf(address(this));
+        if (amountOnVault < _amount) {
+            IStrategy(strategyAddress).withdraw(_amount.sub(amountOnVault));
+        }
         stakingToken.safeTransfer(_from, _amount);
         emit Withdrawn(_from, _amount);
         return _amount;
@@ -265,7 +273,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
         return _withdrawFrom(msg.sender, _amount);
     }
 
-    function _deposit(address _from, uint256 _amount) internal returns(uint256) {
+    function _deposit(address _from, uint256 _amount) internal virtual returns(uint256) {
         require(_amount > 0, "Cannot stake 0");
         _totalSupply = _totalSupply.add(_amount);
         _balances[_from] = _balances[_from].add(_amount);
@@ -347,59 +355,28 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
         withdraw(_balances[msg.sender], 0x03);
     }
 
-    function _claimThroughControllerAndReturnClaimed(
-        address _stakingToken,
-        address _for,
-        address _what,
-        uint256 _reward
-    ) internal returns(uint256 _claimed) {
-        uint256 _before = IERC20(_what).balanceOf(address(this));
-        address[] memory _tokensToClaim = new address[](1);
-        _tokensToClaim[0] = _what;
-        uint256[] memory _amountsToClaim = new uint256[](1);
-        _amountsToClaim[0] = _reward;
-        _controller.claim(
-            _stakingToken,
-            _for,
-            _tokensToClaim,
-            _amountsToClaim
-        );
-        uint256 _after = IERC20(_what).balanceOf(address(this));
-        (,_claimed) = _after.trySub(_before);
-    }
-
     function _getReward(
         uint8 _claimMask,
         address _for,
-        address _what,
+        address _rewardToken,
         address _stakingToken
     )
-        internal
+        internal virtual
     {
-        uint256 reward = rewards[_for][_what];
+        uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             if (_claimMask >> 1 == 1 && _claimMask << 7 != 128) {
-                reward = _claimThroughControllerAndReturnClaimed(
-                    _stakingToken,
-                    _for,
-                    _what,
-                    reward
-                );
+                _controller.claim(_stakingToken, _rewardToken);
             } else if (_claimMask >> 1 == 1 && _claimMask << 7 == 128) {
                 IStrategy(_controller.strategies(_stakingToken)).getRewards();
-                reward = _claimThroughControllerAndReturnClaimed(
-                    _stakingToken,
-                    _for,
-                    _what,
-                    reward
-                );
+                _controller.claim(_stakingToken, _rewardToken);
             }
             if (reward > 0) {
-                rewards[_for][_what] = 0;
-                IERC20(_what).safeTransfer(_for, reward);
-                emit RewardPaid(_what, _for, reward);
+                rewards[_for][_rewardToken] = 0;
+                IERC20(_rewardToken).safeTransfer(_for, reward);
+                emit RewardPaid(_rewardToken, _for, reward);
             } else {
-                emit RewardPaid(_what, _for, 0);
+                emit RewardPaid(_rewardToken, _for, 0);
             }
         }
     }
@@ -573,7 +550,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
                 .mul(_share)
                 .div(totalSupply());
         }
-        amounts = IStrategy(_controller.strategies(address(stakingToken))).subFee(amounts);
+        amounts = VaultWithFeesOnClaim(_controller.vaults(address(stakingToken))).subFeeForClaim(amounts);
     }
 
     function earnedVirtual() external view returns(uint256[] memory virtualAmounts) {
@@ -584,7 +561,7 @@ contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, ReentrancyGu
         for (uint256 i = 0; i < virtualAmounts.length; i++) {
             virtualEarned[i] = _strategy.canClaimAmount(_validTokens.at(i));
         }
-        virtualEarned = _strategy.subFee(virtualEarned);
+        virtualEarned = VaultWithFeesOnClaim(_controller.vaults(address(stakingToken))).subFeeForClaim(virtualEarned);
         uint256 _share = balanceOf(msg.sender);
         for(uint256 i = 0; i < realAmounts.length; i++){
             if(_validTokens.at(i) == _tokenThatComesPassively) {

@@ -26,7 +26,7 @@ contract InstitutionalEURxbStrategy is BaseStrategy {
         return 0;
     }
 
-    function claim(address, address[] calldata, uint256[] calldata) external override returns(bool) {
+    function claim(address) external override returns(bool) {
         return false;
     }
 
@@ -39,10 +39,6 @@ contract InstitutionalEURxbStrategy is BaseStrategy {
     }
 
     function getRewards() external override {
-
-    }
-
-    function subFee(uint256[] calldata) external override view returns(uint256[] memory) {
 
     }
 

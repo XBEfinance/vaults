@@ -477,9 +477,6 @@ contract VeXBE is Initializable, ReentrancyGuard {
     }
 
     function _createLockFor(address _for, uint256 _value, uint256 _unlockTime) internal {
-        if (msg.sender != voting) {
-            require(createLockAllowance[msg.sender][_for], "!allowed");
-        }
         uint256 unlockTime = (_unlockTime / WEEK) * WEEK; // # Locktime is rounded down to weeks
         LockedBalance memory _locked = locked[_for];
 
@@ -494,6 +491,9 @@ contract VeXBE is Initializable, ReentrancyGuard {
     }
 
     function createLockFor(address _for, uint256 _value, uint256 _unlockTime) public nonReentrant {
+        if (msg.sender != voting) {
+            require(createLockAllowance[msg.sender][_for], "!allowed");
+        }
         _createLockFor(_for, _value, _unlockTime);
     }
 

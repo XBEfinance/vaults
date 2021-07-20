@@ -87,9 +87,8 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
 
     // TODO: restrict usage by address list
     function feeReceiving(
-        address _for, address[] calldata _tokens, uint256[] calldata _amounts
+        address _for, address _token, uint256 _amount
     ) external {
-        require(_amounts.length == _tokens.length, 'RP!AmountsLength');
         // If notify reward for unregistered _for -> register with root referrer
         if(!users[_for].exists){
             _registerUser(rootAddress, _for);
@@ -97,10 +96,8 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
 
         address upline = users[_for].referrer;
         for(uint256 i = 0; i < distribution.length; i++){
-            for(uint256 j = 0; j < _tokens.length; j++){
-                rewards[upline][_tokens[j]] = rewards[upline][_tokens[j]]
-                    .add(_amounts[j].div(100).mul(distribution[i]));
-            }
+            rewards[upline][_token] = rewards[upline][_token]
+                .add(_amount.div(100).mul(distribution[i]));
             upline = users[upline].referrer;
         }
     }
@@ -115,7 +112,7 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
                     IERC20(tokens[i]).safeTransfer(userAddr, rewards[userAddr][tokens[i]]);
                     rewards[userAddr][tokens[i]] = 0;
                 }
-                
+
             }
         }
         emit RewardsClaimed(userAddr, tokens, amounts);

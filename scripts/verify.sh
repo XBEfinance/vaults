@@ -6,12 +6,12 @@ source ./scripts/utils/generate_truffle_config.sh
 function verifyAll {
 
   generate_truffle_config "0.4.24" ".\/contracts\/governance"
-  truffle run verify Voting@0x4AE71D6fEE2fCf95aD3D9CA68823e737E23cA5Be --network $1
-  truffle run verify VotingStakingRewards@0x86fD94250f15DE849Ae71849201Ba6fFa1cB292e --network $1
+  # truffle run verify Voting@0xd663bcC07FD2C42Ce13c322dA1Eb13F080DDA38B --network $1
+  truffle run verify VotingStakingRewards@0x2987E4658662389758B8c3c915Ef8003feBCFe65 --network $1
 
   generate_truffle_config "0.6.6" ".\/contracts\/main"
-  truffle run verify BonusCampaign@0x073C6972D70DfA72C2637bBe38916d46C015b34F --network $1
-  truffle run verify VeXBE@0x26d26e720f7E592b4d8Af1B7217543938ba2A2A6 --network $1
+  # truffle run verify BonusCampaign@0x02A34637E7673D954A83C7f87E3c51875EE5CF3f --network $1
+  # truffle run verify VeXBE@0xE3cfe95F6D3Fb498FE815255918238c12b15f891 --network $1
   # truffle run verify XBEInflation --network $1
   # truffle run verify MockToken@0xf154BFcA3130c9bf697a625B7Fa5FC9ABcEb55eb --network $1
 

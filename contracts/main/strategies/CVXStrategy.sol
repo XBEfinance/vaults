@@ -23,17 +23,13 @@ contract CVXStrategy is WithClaimAmountStrategy {
         address _controllerAddress,
         address _vaultAddress,
         address _governance,
-        address _voting,
         Settings memory _poolSettings
     ) public initializer {
         _configure(
             _wantAddress,
             _controllerAddress,
             _vaultAddress,
-            _governance,
-            address(0),
-            _voting,
-            true
+            _governance
         );
         poolSettings = _poolSettings;
         rewardTokensToConvexRewardSources[_poolSettings.cvxToken] = _poolSettings.cvxRewards;

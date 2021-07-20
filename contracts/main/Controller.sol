@@ -100,12 +100,10 @@ contract Controller is IController, Ownable, Initializable {
     }
 
     function claim(
-        address _token,
-        address _for,
-        address[] calldata _tokensToClaim,
-        uint256[] calldata _amountsToClaim
+        address _wantToken,
+        address _tokenToClaim
     ) override external {
-        IStrategy(strategies[_token]).claim(_for, _tokensToClaim, _amountsToClaim);
+        IStrategy(strategies[_wantToken]).claim(_tokenToClaim);
     }
 
     /// @notice forces the strategy to take away the rewards due to it

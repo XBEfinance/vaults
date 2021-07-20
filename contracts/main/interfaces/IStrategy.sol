@@ -30,9 +30,7 @@ interface IStrategy {
 
     function canClaimAmount(address _rewardToken) external view returns(uint256);
 
-    function claim(address, address[] calldata, uint256[] calldata) external returns(bool);
-
-    function subFee(uint256[] calldata) external view returns(uint256[] memory);
+    function claim(address) external returns(bool);
 
     function convertTokens(uint256) external;
 }

@@ -39,7 +39,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     address public treasury;
     IVoting public voting;
 
-    mapping(address => bool) internal _strategiesWhoCanAutoStake;
+    mapping(address => bool) internal _vaultsWhoCanAutoStake;
 
     struct BondedReward {
         uint256 amount;
@@ -72,7 +72,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     uint256 internal _totalSupply;
     mapping(address => uint256) internal _balances;
 
-    MiniMeToken public token;
+    address public token;
 
     function configure(
         address _rewardsDistribution,
@@ -82,17 +82,17 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         address _token,
         address _voting,
         address _bonusCampaign,
-        address[] memory __strategiesWhoCanAutostake
+        address[] memory __vaultsWhoCanAutostake
     ) public initializer {
         rewardsToken = _rewardsToken;
         stakingToken = _stakingToken;
         rewardsDistribution = _rewardsDistribution;
         rewardsDuration = _rewardsDuration;
-        token = MiniMeToken(_token);
+        token = _token;
         voting = IVoting(_voting);
         bonusCampaign = IBonusCampaign(_bonusCampaign);
-        for (uint256 i = 0; i < __strategiesWhoCanAutostake.length; i++) {
-            _strategiesWhoCanAutoStake[__strategiesWhoCanAutostake[i]] = true;
+        for (uint256 i = 0; i < __vaultsWhoCanAutostake.length; i++) {
+            _vaultsWhoCanAutoStake[__vaultsWhoCanAutostake[i]] = true;
         }
     }
 
@@ -206,11 +206,11 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     }
 
     function setStrategyWhoCanAutoStake(address _addr, bool _flag) external onlyRewardsDistribution {
-        _strategiesWhoCanAutoStake[_addr] = _flag;
+        _vaultsWhoCanAutoStake[_addr] = _flag;
     }
 
     function stakeFor(address _for, uint256 amount) public nonReentrant whenNotPaused updateReward(_for) {
-        if (!_strategiesWhoCanAutoStake[msg.sender]) {
+        if (!_vaultsWhoCanAutoStake[msg.sender]) {
             require(stakeAllowance[msg.sender][_for], "stakeNotApproved");
         }
 
@@ -231,7 +231,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     }
 
     function assertEscrow(address _addr, uint256 _available, uint256 _withdrawAmount) internal view {
-        uint256 escrowed = IVeXBE(address(token)).lockedAmount(_addr);
+        uint256 escrowed = IVeXBE(token).lockedAmount(_addr);
         require(_available.sub(_withdrawAmount) >= escrowed, "escrow amount failure");
     }
 
@@ -320,7 +320,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     }
 
     function _earned(address account, uint256 maxBoostedReward) internal view returns (uint256) {
-        IVeXBE veXBE = IVeXBE(address(token));
+        IVeXBE veXBE = IVeXBE(token);
         uint256 lockDuration = veXBE.lockedEnd(account) - veXBE.lockStarts(account);
         // if lockup is 23 months or more
         if (lockDuration >= bonusCampaign.rewardsDuration() && block.timestamp < bonusCampaign.periodFinish()) {

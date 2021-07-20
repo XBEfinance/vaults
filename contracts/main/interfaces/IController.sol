@@ -22,7 +22,7 @@ interface IController {
 
     function converters(address, address) external view returns(address);
 
-    function claim(address, address, address[] calldata, uint256[] calldata) external;
+    function claim(address, address) external;
 
     function getRewardStrategy(address _strategy) external;
 

@@ -562,7 +562,7 @@ const configureContracts = async (params, owner) => {
 
   await veXBE.configure(
     mockXBE.address,
-    voting.address,
+    votingStakingRewards.address,
     'Voting Escrowed XBE',
     'veXBE',
     '0.0.1',

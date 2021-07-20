@@ -1,17 +1,7 @@
 pragma solidity ^0.6.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/proxy/Initializable.sol";
-import "@openzeppelin/contracts/GSN/Context.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-
 import "./ClaimableStrategy.sol";
-import '../../interfaces/ITreasury.sol';
-import '../../interfaces/IRewards.sol';
-import "../../interfaces/IVoting.sol";
 
 /// @title ClaimableStrategy
 /// @notice This is contract for yield farming strategy with EURxb token for investors

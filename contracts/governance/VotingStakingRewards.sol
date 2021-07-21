@@ -316,7 +316,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         // inversed = maxBoostedReward.div(reward) # [1 .. 2.5]
         // multiplied by precision coeff: precision.mul(maxBoostedReward).div(reward)
 
-        if (_isLockedForMax()) {
+        if (_isLockedForMax(account)) {
             return PCT_BASE;
         }
 
@@ -327,15 +327,16 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         return PCT_BASE.mul(maxBoostedReward).div(reward);
     }
 
-    function _isLockedForMax() internal view returns(bool) {
+    function _isLockedForMax(address account) internal view returns(bool) {
+        IVeXBE veXBE = IVeXBE(token);
+        uint256 lockDuration = veXBE.lockedEnd(account) - veXBE.lockStarts(account);
         return lockDuration >= bonusCampaign.rewardsDuration() && block.timestamp < bonusCampaign.periodFinish();
     }
 
     function _earned(address account, uint256 maxBoostedReward) internal view returns (uint256) {
         IVeXBE veXBE = IVeXBE(token);
-        uint256 lockDuration = veXBE.lockedEnd(account) - veXBE.lockStarts(account);
         // if lockup is 23 months or more
-        if (_isLockedForMax()) {
+        if (_isLockedForMax(account)) {
             return maxBoostedReward;
         }
 

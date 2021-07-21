@@ -616,7 +616,7 @@ module.exports = function (deployer, network, accounts) {
       rewardsDuration: months('23'),
       emission: ether('5000'),
       stopRegisterTime: days('30'),
-      startMintTime: new BN('0'),
+      startMintTime: months('18'),
     },
     mockTokens: {
       mockedTotalSupplyXBE: ether('2000'),

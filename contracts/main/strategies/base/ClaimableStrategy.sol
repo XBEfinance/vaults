@@ -31,7 +31,8 @@ abstract contract ClaimableStrategy is BaseStrategy {
         if(rewardForEveryone > 0){
             token.safeTransfer(_vault, rewardForEveryone);
             IVaultStakingRewards(_vault).notifyRewardAmount(_rewardToken, rewardForEveryone);
+            return true;
         }
-      return true;
+        return false;
     }
 }

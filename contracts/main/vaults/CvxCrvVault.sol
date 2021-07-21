@@ -16,7 +16,7 @@ contract CvxCrvVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim, Vau
         address _initialToken,
         address _initialController,
         address _governance,
-        uint256 _rewardsDuration,
+        uint256 _rewardsDuration, // ?
         address _tokenToAutostake,
         address _votingStakingRewards,
         bool _enableFees,

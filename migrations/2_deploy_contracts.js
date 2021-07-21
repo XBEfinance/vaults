@@ -381,12 +381,17 @@ const configureContracts = async (params, owner) => {
         dependentsAddresses.convex.cvxCrv, // _initialToken
         controller.address, // _initialController
         owner, // _governance
+        now.add(days('7')), // _rewardsDuration // TODO: to reconcile with customer
+        mockXBE.address, // tokenToAutostake,
+        votingStakingRewards.address, // votingStakingRewards,
+        true, // enableFees ? false
+        owner, // teamWallet ? address(0) ?
         referralProgram.address, // _referralProgram
         treasury.address, // _treasury
-        now.add(months('23')), // _rewardsDuration
         [ // _rewardTokens
-          dependentsAddresses.convex.cvxCrv,
-          dependentsAddresses.convex.cvxCrv,
+          dependentsAddresses.convex.cvxCrv, // ???????
+          mockXBE.address,
+//          dependentsAddresses.convex.cvxCrv, // ???????
         ],
         'CC', // _namePostfix
         'CC', // _symbolPostfix
@@ -423,28 +428,25 @@ const configureContracts = async (params, owner) => {
         controller.address, // _controllerAddress,
         sushiVault.address, // _vaultAddress,
         owner, // _governance,
-        mockXBE.address, // _tokenToAutostake,
-        // voting.address,
-        ZERO_ADDRESS, // _voting,
         // _poolSettings
         [
           mockLpSushi.address,
           dependentsAddresses.convex.chef, // convexMasterChef
           ZERO,
-          dependentsAddresses.curve.CRV,
+          dependentsAddresses.convex.cvx, // ???
         ],
       ],
       vaultConfigArgs: [
         mockLpSushi.address, // _initialToken
         controller.address, // _initialController
         owner, // _governance
-        now.add(months('23')), // _rewardsDuration
+        now.add(days('7')), // _rewardsDuration // TODO: to reconcile with customer
         mockXBE.address, // _tokenToAutostake
         votingStakingRewards.address, // _votingStakingRewards
         true,
         [ // _rewardTokens
-          mockLpSushi.address,
-          mockLpSushi.address,
+          dependentsAddresses.convex.cvx,
+          mockXBE.address,
         ],
         'SH', // _namePostfix
         'SH', // _symbolPostfix
@@ -473,8 +475,8 @@ const configureContracts = async (params, owner) => {
   await treasury.configure(
     voting.address,
     votingStakingRewards.address,
-    owner,
-    ZERO_ADDRESS,
+//    owner,
+//    ZERO_ADDRESS,
     mockXBE.address,
     dependentsAddresses.uniswap_router_02,
     dependentsAddresses.uniswap_factory,

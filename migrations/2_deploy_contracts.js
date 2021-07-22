@@ -48,6 +48,7 @@ const WrappedToUnwrappedTokenConverter = artifacts.require('WrappedToUnwrappedTo
 const IUniswapV2Router02 = artifacts.require('IUniswapV2Router02');
 const IUniswapV2Factory = artifacts.require('IUniswapV2Factory');
 const IUniswapV2Pair = artifacts.require('IUniswapV2Pair');
+const WETH9 = artifacts.require('WETH9');
 
 const ether = (n) => new BN(web3.utils.toWei(n, 'ether'));
 const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
@@ -56,6 +57,23 @@ const YEAR = new BN('86400').mul(new BN('365'));
 const MULTIPLIER = new BN('10').pow(new BN('18'));
 const ONE = new BN('1');
 const ZERO = new BN('0');
+
+const addressStore = {
+  rinkeby: {
+    sushiswap: {
+      router: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
+      factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+    },
+    weth: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
+  },
+  mainnet: {
+    sushiswap: {
+      sushiswapRouter: '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
+      sushiswapFactory: '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac',
+    },
+    weth: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+  },
+};
 
 const sushiSwapAddresses = {
   rinkeby: {
@@ -70,12 +88,13 @@ const sushiSwapAddresses = {
   },
 };
 
-const SUSHISWAP_ROUTER_ADDRESS = '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F';
-const SUSHISWAP_FACTORY_ADDRESS = '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac';
+//const SUSHISWAP_ROUTER_ADDRESS = '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F';
+//const SUSHISWAP_FACTORY_ADDRESS = '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac';
 
 let mockXBE;
 let mockLpSushi;
 let mockTokenForSushiPair;
+let weth9;
 
 let xbeInflation;
 let bonusCampaign;
@@ -104,7 +123,7 @@ const saveAddresses = () => {
   const jsonAddressData = JSON.stringify({
     mockXBE: mockXBE.address,
     mockLpSushi: mockLpSushi.address,
-    mockTokenForSushiPair: mockTokenForSushiPair.address,
+//    mockTokenForSushiPair: mockTokenForSushiPair.address,
     xbeInflation: xbeInflation.address,
     bonusCampaign: bonusCampaign.address,
     veXBE: veXBE.address,
@@ -203,13 +222,19 @@ const deployContracts = async (deployer, params, owner) => {
     { from: owner },
   );
 
-  mockTokenForSushiPair = await deployer.deploy(
-    MockToken,
-    'Mock Token for Sushi Pair',
-    'mTSP',
-    params.mockTokens.mockedTotalSupplyOtherToken,
-    { from: owner },
-  );
+//  mockTokenForSushiPair = await deployer.deploy(
+//    MockToken,
+//    'Mock Token for Sushi Pair',
+//    'mTSP',
+//    params.mockTokens.mockedTotalSupplyOtherToken,
+//    { from: owner },
+//  );
+
+  // get weth ad address
+  weth9 = await WETH9.at(addressStore.rinkeby.weth);
+  console.log('WETH aquired');
+  await weth9.deposit({from:owner, value:ether('1')});
+  console.log('WETH owner balance deposited');
 
   // deploy bonus campaign xbeinflation
   xbeInflation = await deployer.deploy(XBEInflation, { from: owner });
@@ -222,6 +247,7 @@ const deployContracts = async (deployer, params, owner) => {
 
   // deploy voting
 //  voting = await deployer.deploy(Voting, { from: owner });
+  // voting will be deployed separately
   votingStakingRewards = await deployer.deploy(VotingStakingRewards, { from: owner });
 
   const sushiSwapRouter = await IUniswapV2Router02.at(sushiSwap.sushiswapRouter);
@@ -232,18 +258,18 @@ const deployContracts = async (deployer, params, owner) => {
     params.sushiswapPair.xbeAmountForPair,
     { from: owner },
   );
-  await mockTokenForSushiPair.approve(
+  await weth9.approve(
     sushiSwapRouter.address,
-    params.sushiswapPair.mockTokenAmountForPair,
+    params.sushiswapPair.wethAmountForPair,
     { from: owner },
   );
   await sushiSwapRouter.addLiquidity(
     mockXBE.address,
-    mockTokenForSushiPair.address,
+    weth9.address,
     params.sushiswapPair.xbeAmountForPair,
-    params.sushiswapPair.mockTokenAmountForPair,
+    params.sushiswapPair.wethAmountForPair,
     params.sushiswapPair.xbeAmountForPair,
-    params.sushiswapPair.mockTokenAmountForPair,
+    params.sushiswapPair.wethAmountForPair,
     owner,
     now.add(new BN('3600')),
   );
@@ -251,7 +277,7 @@ const deployContracts = async (deployer, params, owner) => {
   mockLpSushi = await IUniswapV2Pair.at(
     await sushiSwapFactory.getPair(
       mockXBE.address,
-      mockTokenForSushiPair.address,
+      weth9.address,
     ),
   );
 
@@ -476,8 +502,6 @@ const configureContracts = async (params, owner) => {
   await treasury.configure(
     voting.address,
     votingStakingRewards.address,
-//    owner,
-//    ZERO_ADDRESS,
     mockXBE.address,
     dependentsAddresses.uniswap_router_02,
     dependentsAddresses.uniswap_factory,
@@ -609,7 +633,7 @@ module.exports = function (deployer, network, accounts) {
   let params = {
     sushiswapPair: {
       xbeAmountForPair: ether('2'),
-      mockTokenAmountForPair: ether('3'),
+      wethAmountForPair: ether('1'),
     },
     treasury: {
       slippageTolerance: new BN('3'),
@@ -619,7 +643,7 @@ module.exports = function (deployer, network, accounts) {
       rewardsDuration: months('23'),
       emission: ether('5000'),
       stopRegisterTime: days('30'),
-      startMintTime: months('18'),
+      startMintTime: ZERO, //months('18'),
     },
     mockTokens: {
       mockedTotalSupplyXBE: ether('2000'),

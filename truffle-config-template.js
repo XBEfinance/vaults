@@ -98,10 +98,12 @@ module.exports = {
     mainnet: mainnetNetworkConfig,
 
     rinkeby_deploy: rinkebyNetworkConfig,
+    rinkeby_deploy_voting: rinkebyNetworkConfig,
 
     rinkeby_tokens: rinkebyNetworkConfig,
 
     rinkeby_configure: rinkebyNetworkConfig,
+    rinkeby_configure_voting: rinkebyNetworkConfig,
 
     rinkeby_all_with_save: rinkebyNetworkConfig,
     rinkeby_conf: rinkebyNetworkConfig,

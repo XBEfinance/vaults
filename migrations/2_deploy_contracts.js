@@ -108,7 +108,7 @@ const saveAddresses = () => {
     xbeInflation: xbeInflation.address,
     bonusCampaign: bonusCampaign.address,
     veXBE: veXBE.address,
-    voting: voting.address,
+//    voting: voting.address,
     votingStakingRewards: votingStakingRewards.address,
     referralProgram: referralProgram.address,
     registry: registry.address,
@@ -174,7 +174,7 @@ const deployContracts = async (deployer, params, owner) => {
     const result = [];
     for (let i = 0; i < items.length; i += 1) {
       result.push(
-        deployer.deploy(
+        await deployer.deploy(
           items[i],
           { from: owner },
         ),
@@ -221,8 +221,7 @@ const deployContracts = async (deployer, params, owner) => {
   veXBE = await deployer.deploy(VeXBE, { from: owner });
 
   // deploy voting
-  voting = await deployer.deploy(Voting, { from: owner });
-
+//  voting = await deployer.deploy(Voting, { from: owner });
   votingStakingRewards = await deployer.deploy(VotingStakingRewards, { from: owner });
 
   const sushiSwapRouter = await IUniswapV2Router02.at(sushiSwap.sushiswapRouter);
@@ -329,6 +328,8 @@ const configureContracts = async (params, owner) => {
 
   sushiVault = await SushiVault.at(getSavedAddress('sushiVault'));
   sushiStrategy = await SushiStrategy.at(getSavedAddress('sushiStrategy'));
+
+  mockLpSushi = await IUniswapV2Pair.at(getSavedAddress('mockLpSushi'));
 
   const strategiesAndVaults = [
     // {
@@ -576,28 +577,28 @@ const configureContracts = async (params, owner) => {
 
   console.log('VeXBE: configured...');
 
-  await voting.initialize(
-    veXBE.address,
-    params.voting.supportRequiredPct,
-    params.voting.minAcceptQuorumPct,
-    params.voting.voteTime,
-    { from: owner },
-  );
+//  await voting.initialize(
+//    veXBE.address,
+//    params.voting.supportRequiredPct,
+//    params.voting.minAcceptQuorumPct,
+//    params.voting.voteTime,
+//    { from: owner },
+//  );
+//
+//  console.log('Voting: configured...');
 
-  console.log('Voting: configured...');
-
-  await votingStakingRewards.configure(
-    owner,
-    mockXBE.address,
-    mockXBE.address,
-    months('23'),
-    veXBE.address,
-    voting.address,
-    bonusCampaign.address,
-    [],
-  );
-
-  console.log('VotingStakingRewards: configured...');
+//  await votingStakingRewards.configure(
+//    owner,
+//    mockXBE.address,
+//    mockXBE.address,
+//    months('23'),
+//    veXBE.address,
+//    voting.address,
+//    bonusCampaign.address,
+//    [],
+//  );
+//
+//  console.log('VotingStakingRewards: configured...');
 };
 
 module.exports = function (deployer, network, accounts) {
@@ -678,6 +679,18 @@ module.exports = function (deployer, network, accounts) {
             ...params,
         };
         await deployContracts(deployer, params, owner);
+      } else if (network === 'rinkeby_deploy_voting') {
+        dependentsAddresses = testnet_distro.rinkeby;
+        dependentsAddresses.curve.pools = Object.values(dependentsAddresses
+            .curve.pool_data);
+        params = {
+            dependentsAddresses,
+            sushiSwap: sushiSwapAddresses.rinkeby,
+            ...params,
+        };
+        // deploy voting
+        voting = await deployer.deploy(Voting, { from: owner });
+        // ...
       } else if (network === 'rinkeby_tokens') {
         dependentsAddresses = testnet_distro.rinkeby;
         dependentsAddresses.curve.pools = Object.values(dependentsAddresses
@@ -698,6 +711,42 @@ module.exports = function (deployer, network, accounts) {
             ...params,
         };
         await configureContracts(params, owner);
+      } else if (network === 'rinkeby_configure_voting') {
+        dependentsAddresses = testnet_distro.rinkeby;
+        dependentsAddresses.curve.pools = Object.values(dependentsAddresses
+            .curve.pool_data);
+        params = {
+            dependentsAddresses,
+            sushiSwap: sushiSwapAddresses.rinkeby,
+            ...params,
+        };
+
+        voting = await Voting.at(getSavedAddress('voting'));
+        votingStakingRewards = await VotingStakingRewards.at(getSavedAddress('votingStakingRewards'));
+        bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
+        veXBE = await VeXBE.at(getSavedAddress('veXBE'));
+        mockXBE = await MockToken.at(getSavedAddress('mockXBE'));
+
+//        await voting.initialize(
+//          veXBE.address,
+//          params.voting.supportRequiredPct,
+//          params.voting.minAcceptQuorumPct,
+//          params.voting.voteTime,
+//          { from: owner },
+//        );
+//        console.log('Voting: configured...');
+
+        await votingStakingRewards.configure(
+          owner,
+          mockXBE.address,
+          mockXBE.address,
+          months('23'),
+          veXBE.address,
+          voting.address,
+          bonusCampaign.address,
+          [],
+        );
+        console.log('VotingStakingRewards: configured...');
       } else if (network === 'rinkeby_all_with_save') {
         dependentsAddresses = testnet_distro.rinkeby;
         dependentsAddresses.curve.pools = Object.values(dependentsAddresses

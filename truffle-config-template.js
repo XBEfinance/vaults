@@ -32,7 +32,7 @@ const rinkebyNetworkConfig = {
   gasLimit: 5000000,
   from: process.env.DEPLOYER_ACCOUNT, // contracts owner address
   websockets: true,
-  gasPrice: 5000000000,
+  gasPrice: 2000000000,
 };
 
 const mainnetNetworkConfig = {

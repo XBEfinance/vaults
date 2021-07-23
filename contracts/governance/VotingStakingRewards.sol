@@ -317,10 +317,10 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         }
 
         if (reward == 0) {
-            return PCT_BASE.mul(inverseMaxBoostCoefficient).div(100);
+            return PCT_BASE.mul(100).div(inverseMaxBoostCoefficient);
         }
 
-        return PCT_BASE.mul(maxBoostedReward).div(reward);
+        return PCT_BASE.mul(reward).div(maxBoostedReward);
     }
 
     function _earned(address account, uint256 maxBoostedReward) internal view returns (uint256) {
@@ -334,11 +334,13 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         uint256 votingBalance = veXBE.balanceOf(account);
         uint256 votingTotal = veXBE.totalSupply();
 
-        uint256 boostedReward = maxBoostedReward * inverseMaxBoostCoefficient / 100;
+        uint256 boostedReward = maxBoostedReward .mul(inverseMaxBoostCoefficient).div(100);
         if (votingTotal == 0 || votingBalance == 0) {
             return boostedReward;
         }
-        boostedReward += lpTotal * votingBalance / votingTotal * (100 - inverseMaxBoostCoefficient) / 100;
+        boostedReward +=
+            lpTotal.mul(votingBalance).mul(100 - inverseMaxBoostCoefficient)
+            .div(votingTotal).div(100);
         return Math.min256(boostedReward, maxBoostedReward);
     }
 

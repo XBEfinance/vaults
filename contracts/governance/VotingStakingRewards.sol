@@ -317,7 +317,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         }
 
         if (reward == 0) {
-            return PCT_BASE.mul(100).div(inverseMaxBoostCoefficient);
+            return PCT_BASE.mul(inverseMaxBoostCoefficient).div(100);
         }
 
         return PCT_BASE.mul(reward).div(maxBoostedReward);

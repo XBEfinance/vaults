@@ -9,7 +9,6 @@ import "@aragon/os/contracts/lib/math/SafeMath64.sol";
 import "@aragon/os/contracts/lib/math/Math.sol";
 import "@aragon/minime/contracts/MiniMeToken.sol";
 
-import "./interfaces/IBonusCampaign.sol";
 import "./interfaces/IVeXBE.sol";
 import "./interfaces/IERC20.sol";
 import "./interfaces/IVoting.sol";
@@ -35,7 +34,6 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
 
     uint256 public constant PCT_BASE = 10 ** 18; // 0% = 0; 1% = 10^16; 100% = 10^18
 
-    IBonusCampaign public bonusCampaign;
     address public treasury;
     IVoting public voting;
 
@@ -81,7 +79,6 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         uint256 _rewardsDuration,
         address _token,
         address _voting,
-        address _bonusCampaign,
         address[] memory __vaultsWhoCanAutostake
     ) public initializer {
         rewardsToken = _rewardsToken;
@@ -90,7 +87,6 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         rewardsDuration = _rewardsDuration;
         token = _token;
         voting = IVoting(_voting);
-        bonusCampaign = IBonusCampaign(_bonusCampaign);
         for (uint256 i = 0; i < __vaultsWhoCanAutostake.length; i++) {
             _vaultsWhoCanAutoStake[__vaultsWhoCanAutostake[i]] = true;
         }
@@ -316,7 +312,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         // inversed = maxBoostedReward.div(reward) # [1 .. 2.5]
         // multiplied by precision coeff: precision.mul(maxBoostedReward).div(reward)
 
-        if (_isLockedForMax(account)) {
+        if (IVeXBE(token).isLockedForMax(account)) {
             return PCT_BASE;
         }
 
@@ -327,16 +323,10 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         return PCT_BASE.mul(maxBoostedReward).div(reward);
     }
 
-    function _isLockedForMax(address account) internal view returns(bool) {
-        IVeXBE veXBE = IVeXBE(token);
-        uint256 lockDuration = veXBE.lockedEnd(account) - veXBE.lockStarts(account);
-        return lockDuration >= bonusCampaign.rewardsDuration() && block.timestamp < bonusCampaign.periodFinish();
-    }
-
     function _earned(address account, uint256 maxBoostedReward) internal view returns (uint256) {
         IVeXBE veXBE = IVeXBE(token);
         // if lockup is 23 months or more
-        if (_isLockedForMax(account)) {
+        if (veXBE.isLockedForMax(account)) {
             return maxBoostedReward;
         }
 

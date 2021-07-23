@@ -14,6 +14,8 @@ contract BonusCampaign is StakingRewards {
 
     mapping(address => bool) public registered;
 
+    address public registrator;
+
     function configure(
         address _rewardsToken,
         address _votingEscrowedToken,
@@ -31,7 +33,12 @@ contract BonusCampaign is StakingRewards {
         bonusEmission = _bonusEmission;
         startMintTime = _startMintTime;
         stopRegisterTime = _stopRegisterTime;
+        registrator = _votingEscrowedToken;
     }
+
+//    function setRegistrator(address _registrator) external onlyOwner {
+//        registrator = _registrator;
+//    }
 
     function stake(uint256 amount) external override {
         revert("!allowed");
@@ -50,18 +57,35 @@ contract BonusCampaign is StakingRewards {
         return uint64(a);
     }
 
-    function register() external nonReentrant whenNotPaused updateReward(msg.sender) {
+    function canRegister(address user) external view returns(bool) {
+        return block.timestamp <= stopRegisterTime && !registered[user];
+    }
+
+    function _registerFor(address user)
+        internal
+        nonReentrant whenNotPaused
+        updateReward(user)
+    {
         require(block.timestamp <= stopRegisterTime, "registerNowIsBlocked");
-        require(!registered[msg.sender], "alreadyRegistered");
+        require(!registered[user], "alreadyRegistered");
         // avoid double staking in this very block by substracting one from block.number
         IVotingEscrow veToken = IVotingEscrow(stakingToken);
-        uint256 amount = veToken.balanceOfAt(msg.sender, _toUint64(block.number) - 1);
+        uint256 amount = veToken.balanceOfAt(user, _toUint64(block.number) - 1);
         require(amount > 0, "!stake0");
-        require(veToken.lockedEnd(msg.sender).sub(veToken.lockStarts(msg.sender)) >= rewardsDuration, "stakedForNotEnoughTime");
+        require(veToken.lockedEnd(user).sub(veToken.lockStarts(user)) >= rewardsDuration, "stakedForNotEnoughTime");
         _totalSupply = _totalSupply.add(amount);
-        _balances[msg.sender] = _balances[msg.sender].add(amount);
-        registered[msg.sender] = true;
-        emit Staked(msg.sender, amount);
+        _balances[user] = _balances[user].add(amount);
+        registered[user] = true;
+        emit Staked(user, amount);
+    }
+
+    function register() external {
+        _registerFor(msg.sender);
+    }
+
+    function registerFor(address user) external {
+        require(msg.sender == registrator, "!registrator");
+        _registerFor(user);
     }
 
     function getReward() public override nonReentrant updateReward(msg.sender) {

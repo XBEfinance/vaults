@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 
 import "./interfaces/ISmartWalletChecker.sol";
+import "./interfaces/IBonusCampaign.sol";
 
 // import "./mocks/StringsConcatenations.sol"; // DELETE THIS IF IT IS STILL EXISTS AFTER TESTS
 
@@ -108,6 +109,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     mapping(uint256 => int128) public slopeChanges; // time -> signed slope change
 
     address public voting;
+    IBonusCampaign public bonus;
 
     address public controller;
     bool public transfersEnabled;
@@ -140,6 +142,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     function configure(
         address tokenAddr,
         address votingAddr,
+        address bonusCampaign,
         string calldata _name,
         string calldata _symbol,
         string calldata _version
@@ -157,6 +160,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
         symbol = _symbol;
         version = _version;
         voting = votingAddr;
+        bonus = IBonusCampaign(bonusCampaign);
     }
 
     function setVoting(address addr) external onlyAdmin {
@@ -246,6 +250,11 @@ contract VeXBE is Initializable, ReentrancyGuard {
 
     function lockedAmount(address addr) external view returns(uint256) {
         return uint256(locked[addr].amount);
+    }
+
+    function isLockedForMax(address account) external view returns(bool) {
+        uint256 lockDuration = locked[account].end - _lockStarts[account];
+        return lockDuration >= bonus.rewardsDuration() && block.timestamp < bonus.periodFinish();
     }
 
     // """
@@ -434,6 +443,10 @@ contract VeXBE is Initializable, ReentrancyGuard {
         _checkpoint(_addr, oldLocked, _locked);
 
         require(IERC20(voting).balanceOf(_addr) >= uint256(_locked.amount), "notEnoughStake");
+
+        if (this.isLockedForMax(_addr) && bonus.canRegister(_addr)) {
+            bonus.registerFor(_addr);
+        }
 
         emit Deposit(_addr, _value, _locked.end, _type, block.timestamp);
         emit Supply(supplyBefore, supplyBefore + _value);

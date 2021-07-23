@@ -129,18 +129,18 @@ const saveAddresses = () => {
     voting: voting.address,
     votingStakingRewards: votingStakingRewards.address,
 
-//    referralProgram: referralProgram.address,
-//    registry: registry.address,
-//    treasury: treasury.address,
-//    controller: controller.address,
-//    hiveStrategy: hiveStrategy.address,
-//    hiveVault: hiveVault.address,
-//    sushiStrategy: sushiStrategy.address,
-//    sushiVault: sushiVault.address,
-//    cvxStrategy: cvxStrategy.address,
-//    cvxVault: cvxVault.address,
-//    cvxCrvStrategy: cvxCrvStrategy.address,
-//    cvxCrvVault: cvxCrvVault.address,
+    referralProgram: referralProgram.address,
+    registry: registry.address,
+    treasury: treasury.address,
+    controller: controller.address,
+    hiveStrategy: hiveStrategy.address,
+    hiveVault: hiveVault.address,
+    sushiStrategy: sushiStrategy.address,
+    sushiVault: sushiVault.address,
+    cvxStrategy: cvxStrategy.address,
+    cvxVault: cvxVault.address,
+    cvxCrvStrategy: cvxCrvStrategy.address,
+    cvxCrvVault: cvxCrvVault.address,
   });
   fs.writeFileSync('addresses.json', jsonAddressData);
 };
@@ -158,61 +158,61 @@ const deployContracts = async (deployer, params, owner) => {
   const { sushiSwap } = params;
   const now = getNowBN();
 
-//  registry = await deployer.deploy(
-//    Registry,
-//    { from: owner },
-//  );
-//
-//  referralProgram = await deployer.deploy(
-//    ReferralProgram,
-//    { from: owner },
-//  );
-//
-//  treasury = await deployer.deploy(
-//    Treasury,
-//    { from: owner },
-//  );
-//
-//  controller = await deployer.deploy(
-//    Controller,
-//    { from: owner },
-//  );
-//
-//  const strategiesAndVaults = [
-//    HiveStrategy,
-//    CVXStrategy,
-//    CvxCrvStrategy,
-//    SushiStrategy,
-//    HiveVault,
-//    CVXVault,
-//    CvxCrvVault,
-//    SushiVault,
-//  ];
-//
-//  const deployStrategiesAndVaults = async (items) => {
-//    const result = [];
-//    for (let i = 0; i < items.length; i += 1) {
-//      result.push(
-//        await deployer.deploy(
-//          items[i],
-//          { from: owner },
-//        ),
-//      );
-//    }
-//
-//    return Promise.all(result);
-//  };
-//
-//  [
-//    hiveStrategy,
-//    cvxStrategy,
-//    cvxCrvStrategy,
-//    sushiStrategy,
-//    hiveVault,
-//    cvxVault,
-//    cvxCrvVault,
-//    sushiVault,
-//  ] = await deployStrategiesAndVaults(strategiesAndVaults);
+  registry = await deployer.deploy(
+    Registry,
+    { from: owner },
+  );
+
+  referralProgram = await deployer.deploy(
+    ReferralProgram,
+    { from: owner },
+  );
+
+  treasury = await deployer.deploy(
+    Treasury,
+    { from: owner },
+  );
+
+  controller = await deployer.deploy(
+    Controller,
+    { from: owner },
+  );
+
+  const strategiesAndVaults = [
+    HiveStrategy,
+    CVXStrategy,
+    CvxCrvStrategy,
+    SushiStrategy,
+    HiveVault,
+    CVXVault,
+    CvxCrvVault,
+    SushiVault,
+  ];
+
+  const deployStrategiesAndVaults = async (items) => {
+    const result = [];
+    for (let i = 0; i < items.length; i += 1) {
+      result.push(
+        await deployer.deploy(
+          items[i],
+          { from: owner },
+        ),
+      );
+    }
+
+    return Promise.all(result);
+  };
+
+  [
+    hiveStrategy,
+    cvxStrategy,
+    cvxCrvStrategy,
+    sushiStrategy,
+    hiveVault,
+    cvxVault,
+    cvxCrvVault,
+    sushiVault,
+  ] = await deployStrategiesAndVaults(strategiesAndVaults);
 // !-----------------------------------
 
   mockXBE = await deployer.deploy(

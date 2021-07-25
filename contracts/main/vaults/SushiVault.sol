@@ -45,12 +45,7 @@ contract SushiVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim {
     {
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
-            if (_claimMask >> 1 == 1 && _claimMask << 7 != 128) {
-                _controller.claim(_stakingToken, _rewardToken);
-            } else if (_claimMask >> 1 == 1 && _claimMask << 7 == 128) {
-                IStrategy(_controller.strategies(_stakingToken)).getRewards();
-                _controller.claim(_stakingToken, _rewardToken);
-            }
+            _controller.claim(_stakingToken, _rewardToken);
             if (reward > 0) {
                 rewards[_for][_rewardToken] = 0;
                 reward = _getAndDistributeFeesOnClaimForToken(_for, _rewardToken, reward);

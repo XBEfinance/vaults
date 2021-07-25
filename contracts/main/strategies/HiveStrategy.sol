@@ -37,8 +37,8 @@ contract HiveStrategy is WithClaimAmountStrategy {
             _governance
         );
         poolSettings = _poolSettings;
-        rewardTokensToConvexRewardSources[_poolSettings.crvToken] = _poolSettings.crvRewards;
-        rewardTokensToConvexRewardSources[_poolSettings.cvxToken] = _poolSettings.cvxRewards;
+        rewardTokensToRewardSources[_poolSettings.crvToken] = _poolSettings.crvRewards;
+        rewardTokensToRewardSources[_poolSettings.cvxToken] = _poolSettings.cvxRewards;
     }
 
     function setPoolIndex(uint256 _newPoolIndex) external onlyOwner {

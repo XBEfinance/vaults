@@ -8,7 +8,7 @@ import "./ClaimableStrategy.sol";
 abstract contract WithClaimAmountStrategy is ClaimableStrategy {
 
     // reward token => IRewards of convex
-    mapping (address => address) public rewardTokensToConvexRewardSources;
+    mapping (address => address) public rewardTokensToRewardSources;
 
     function canClaimAmount(address _rewardToken)
         override
@@ -17,7 +17,7 @@ abstract contract WithClaimAmountStrategy is ClaimableStrategy {
         external
         returns(uint256 _amount)
     {
-        address rewardSourceContractAddress = rewardTokensToConvexRewardSources[_rewardToken];
+        address rewardSourceContractAddress = rewardTokensToRewardSources[_rewardToken];
         if (rewardSourceContractAddress != address(0)) {
             _amount = _getAmountOfPendingRewardEarnedFrom(rewardSourceContractAddress);
         } else {

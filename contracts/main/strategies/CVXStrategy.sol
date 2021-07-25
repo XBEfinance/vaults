@@ -32,7 +32,7 @@ contract CVXStrategy is WithClaimAmountStrategy {
             _governance
         );
         poolSettings = _poolSettings;
-        rewardTokensToConvexRewardSources[_poolSettings.cvxToken] = _poolSettings.cvxRewards;
+        rewardTokensToRewardSources[_poolSettings.cvxToken] = _poolSettings.cvxRewards;
     }
 
     function setPoolIndex(uint256 _newPoolIndex) external onlyOwner {

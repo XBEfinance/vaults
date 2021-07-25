@@ -155,6 +155,8 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
 
     /* ========== RESTRICTED FUNCTIONS ========== */
 
+    uint256 public totalReward;
+
     function notifyRewardAmount(uint256 reward) external onlyRewardsDistribution updateReward(address(0)) {
         if (block.timestamp >= periodFinish) {
             rewardRate = reward.div(rewardsDuration);
@@ -163,6 +165,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
             uint256 leftover = remaining.mul(rewardRate);
             rewardRate = reward.add(leftover).div(rewardsDuration);
         }
+        totalReward = totalReward.add(reward);
 
         // Ensure the provided reward amount is not more than the balance in the contract.
         // This keeps the reward rate in the right range, preventing overflows due to
@@ -330,7 +333,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
             return maxBoostedReward;
         }
 
-        uint256 lpTotal = totalSupply();
+        uint256 rwTotal = totalReward;
         uint256 votingBalance = veXBE.balanceOf(account);
         uint256 votingTotal = veXBE.totalSupply();
 
@@ -339,7 +342,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
             return boostedReward;
         }
         boostedReward +=
-            lpTotal.mul(votingBalance).mul(100 - inverseMaxBoostCoefficient)
+            rwTotal.mul(votingBalance).mul(100 - inverseMaxBoostCoefficient)
             .div(votingTotal).div(100);
         return Math.min256(boostedReward, maxBoostedReward);
     }
@@ -351,7 +354,6 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
           )
           .div(1e18)
           .add(rewards[account]);
-
         return _earned(account, maxBoostedReward);
     }
 
@@ -363,6 +365,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         if (reward > 0) {
             rewards[msg.sender] = 0;
             require(IERC20(rewardsToken).transfer(msg.sender, reward), "!t");
+            totalReward = totalReward.sub(reward);
             emit RewardPaid(msg.sender, reward);
         }
     }

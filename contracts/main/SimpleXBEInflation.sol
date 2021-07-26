@@ -44,12 +44,12 @@ contract SimpleXBEInflation is Initializable {
     function configure(
         address _token,
         uint256 _targetMinted,
-        uint256 _years
+        uint256 _periods
     ) external initializer {
         admin = msg.sender;
         token = _token;
         targetMinted = _targetMinted;
-        periodicEmission = _targetMinted.div(_years);
+        periodicEmission = _targetMinted.div(_periods);
         startInflationTime = block.timestamp;
     }
 

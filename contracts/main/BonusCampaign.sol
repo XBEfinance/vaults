@@ -70,7 +70,7 @@ contract BonusCampaign is StakingRewards {
         require(!registered[user], "alreadyRegistered");
         // avoid double staking in this very block by substracting one from block.number
         IVotingEscrow veToken = IVotingEscrow(stakingToken);
-        uint256 amount = veToken.balanceOfAt(user, _toUint64(block.number) - 1);
+        uint256 amount = veToken.balanceOfAt(user, _toUint64(block.number));
         require(amount > 0, "!stake0");
         require(veToken.lockedEnd(user).sub(veToken.lockStarts(user)) >= rewardsDuration, "stakedForNotEnoughTime");
         _totalSupply = _totalSupply.add(amount);

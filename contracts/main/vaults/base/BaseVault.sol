@@ -510,7 +510,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
 
     /// @notice Transfer tokens to controller, controller transfers it to strategy and earn (farm)
     function earn() external override {
-        uint256 _bal = balance();
+        uint256 _bal = stakingToken.balanceOf(address(this));
         stakingToken.safeTransfer(address(_controller), _bal);
         _controller.earn(address(stakingToken), _bal);
     }

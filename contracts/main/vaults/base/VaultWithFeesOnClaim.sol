@@ -74,7 +74,7 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
         address _rewardToken,
         uint256 _amount
     ) internal returns(uint256) {
-        if (feesEnabled) {
+        if (!feesEnabled) {
             return _amount;
         }
         uint256 fee;

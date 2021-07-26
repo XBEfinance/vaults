@@ -49,12 +49,10 @@ contract XBEInflation is Initializable, IXBEInflation {
 
     uint256 public constant YEAR = 86400 * 365;
 
-    uint256 public initialSupply; //= 1303030303;
     uint256 public initialRate; //= 274815283 * 10 ** 18 / YEAR;
     uint256 public rateReductionTime; //= YEAR;
     uint256 public rateReductionCoefficient; //= 1189207115002721024;
     uint256 public rateDenominator; //= 10 ** 18;
-    uint256 public inflationDelay; //= 86400;
 
     int128 public miningEpoch;
     uint256 public startEpochTime;
@@ -89,13 +87,11 @@ contract XBEInflation is Initializable, IXBEInflation {
     ) external initializer {
         admin = msg.sender;
         token = _token;
-        initialSupply = _initialSupply;
         initialRate = _initialRate;
         rateReductionTime = _rateReductionTime;
         rateReductionCoefficient = _rateReductionCoefficient;
         rateDenominator = _rateDenominator;
-        inflationDelay = _inflationDelay;
-        startEpochTime = block.timestamp.add(inflationDelay).sub(rateReductionTime);
+        startEpochTime = block.timestamp.add(_inflationDelay).sub(rateReductionTime);
         miningEpoch = -1;
         rate = 0;
         uint256 initSupply = _initialSupply.mul(uint256(10) ** ERC20(_token).decimals());

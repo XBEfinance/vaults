@@ -182,13 +182,22 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     /* ========== MODIFIERS ========== */
 
     modifier updateReward(address account) {
+        _updateReward(account);
+        _;
+    }
+
+    function _updateReward(address account) internal {
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = lastTimeRewardApplicable();
         if (account != address(0)) {
             rewards[account] = earned(account);
             userRewardPerTokenPaid[account] = rewardPerTokenStored;
         }
-        _;
+    }
+
+    function updateRewardFromToken(address account) external {
+        require(msg.sender == token, '!token');
+        _updateReward(account);
     }
 
     function _stake(address _from, uint256 _amount) internal {

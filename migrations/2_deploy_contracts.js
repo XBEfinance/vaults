@@ -154,28 +154,28 @@ const addrNames = {
 };
 
 const saveAddresses = () => {
-  const jsonAddressData = JSON.stringify(addressStore.deployed);
-//  const jsonAddressData = JSON.stringify({
-//    mockXBE: mockXBE.address,
-//    mockLpSushi: mockLpSushi.address,
-//    xbeInflation: xbeInflation.address,
-//    bonusCampaign: bonusCampaign.address,
-//    veXBE: veXBE.address,
-//    referralProgram: referralProgram.address,
-//    registry: registry.address,
-//    treasury: treasury.address,
-//    controller: controller.address,
-//    hiveStrategy: hiveStrategy.address,
-//    hiveVault: hiveVault.address,
-//    sushiStrategy: sushiStrategy.address,
-//    sushiVault: sushiVault.address,
-//    cvxStrategy: cvxStrategy.address,
-//    cvxVault: cvxVault.address,
-//    cvxCrvStrategy: cvxCrvStrategy.address,
-//    cvxCrvVault: cvxCrvVault.address,
-//    voting: voting.address,
-//    votingStakingRewards: votingStakingRewards.address,
-//  });
+  const jsonAddressData = JSON.stringify({
+    mockXBE: mockXBE.address,
+    mockLpSushi: mockLpSushi.address,
+    xbeInflation: xbeInflation.address,
+    bonusCampaign: bonusCampaign.address,
+    veXBE: veXBE.address,
+    voting: voting.address,
+    votingStakingRewards: votingStakingRewards.address,
+
+    referralProgram: referralProgram.address,
+    registry: registry.address,
+    treasury: treasury.address,
+    controller: controller.address,
+    hiveStrategy: hiveStrategy.address,
+    hiveVault: hiveVault.address,
+    sushiStrategy: sushiStrategy.address,
+    sushiVault: sushiVault.address,
+    cvxStrategy: cvxStrategy.address,
+    cvxVault: cvxVault.address,
+    cvxCrvStrategy: cvxCrvStrategy.address,
+    cvxCrvVault: cvxCrvVault.address,
+  });
   fs.writeFileSync('addresses.json', jsonAddressData);
 };
 const readJsonAddresses = () => {
@@ -190,7 +190,7 @@ const readJsonAddresses = () => {
 };
 
 const getSavedAddress = (key) => {
-  const addressesJson = readJsonAddresses(); //fs.readFileSync('addresses.json');
+  const addressesJson = fs.readFileSync('addresses.json');
   return JSON.parse(addressesJson)[key];
 };
 
@@ -257,7 +257,7 @@ const deployContracts = async (deployer, params, owner) => {
     cvxCrvVault,
     sushiVault,
   ] = await deployStrategiesAndVaults(strategiesAndVaults);
-// !-----------------------------------
+  // !-----------------------------------
 
   mockXBE = await deployer.deploy(
     MockToken,
@@ -270,7 +270,7 @@ const deployContracts = async (deployer, params, owner) => {
   // get weth ad address
   weth9 = await WETH9.at(addressStore.rinkeby.weth);
   console.log('WETH aquired');
-  await weth9.deposit({from:owner, value:ether('1')});
+  await weth9.deposit({ from: owner, value: ether('1') });
   console.log('WETH owner balance deposited');
 
   // deploy bonus campaign xbeinflation
@@ -313,10 +313,10 @@ const deployContracts = async (deployer, params, owner) => {
     ),
   );
 
-//  // deploy voting
-//  voting = await deployer.deploy(Voting, { from: owner });
-//  // voting will be deployed separately
-//  votingStakingRewards = await deployer.deploy(VotingStakingRewards, { from: owner });
+  // deploy voting
+  voting = await deployer.deploy(Voting, { from: owner });
+  // voting will be deployed separately
+  votingStakingRewards = await deployer.deploy(VotingStakingRewards, { from: owner });
 
   saveAddresses();
 };
@@ -368,7 +368,6 @@ const configureContracts = async (params, owner) => {
   voting = await Voting.at(getSavedAddress('voting'));
   votingStakingRewards = await VotingStakingRewards.at(getSavedAddress('votingStakingRewards'));
   bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
-
 
   //
   xbeInflation = await XBEInflation.at(getSavedAddress('xbeInflation'));
@@ -519,7 +518,7 @@ const configureContracts = async (params, owner) => {
     },
   ];
 
-  console.log('Starting configuration...');
+  // console.log('Starting configuration...');
 
   await referralProgram.configure(
     [mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
@@ -527,14 +526,14 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  console.log('ReferralProgram configured...');
+  // console.log('ReferralProgram configured...');
 
   await registry.configure(
     owner,
     { from: owner },
   );
 
-  console.log('Registry configured...');
+  // console.log('Registry configured...');
 
   await treasury.configure(
     voting.address,
@@ -547,7 +546,7 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  console.log('Treasury configured...');
+  // console.log('Treasury configured...');
 
   await controller.configure(
     treasury.address,
@@ -556,11 +555,11 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  console.log('Controller configured...');
+  // console.log('Controller configured...');
 
-  console.log('Vaults and Strategies configuration...');
+  // console.log('Vaults and Strategies configuration...');
   for (const item of strategiesAndVaults) {
-    console.log(`Configuring ${item.name}...`);
+    // console.log(`Configuring ${item.name}...`);
 
     await controller.setVault(
       item.token,
@@ -568,7 +567,7 @@ const configureContracts = async (params, owner) => {
       { from: owner },
     );
 
-    console.log('Controller: vault added...');
+    // console.log('Controller: vault added...');
 
     await controller.setApprovedStrategy(
       item.token,
@@ -577,7 +576,7 @@ const configureContracts = async (params, owner) => {
       { from: owner },
     );
 
-    console.log('Controller: strategy approved...');
+    // console.log('Controller: strategy approved...');
 
     await controller.setStrategy(
       item.token,
@@ -585,21 +584,21 @@ const configureContracts = async (params, owner) => {
       { from: owner },
     );
 
-    console.log('Controller: strategy added...');
+    // console.log('Controller: strategy added...');
 
     await item.strategy.configure(
       ...item.strategyConfigArgs,
       { from: owner },
     );
 
-    console.log(`${item.name}Strategy: configured`);
+    // console.log(`${item.name}Strategy: configured`);
 
     // eslint-disable-next-line no-await-in-loop
     await item.vault.configure(
       ...item.vaultConfigArgs,
       { from: owner },
     );
-    console.log(`${item.name}Vault: configured`);
+    // console.log(`${item.name}Vault: configured`);
   }
 
   await xbeInflation.configure(
@@ -613,7 +612,7 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  console.log('XBEInflation: configured');
+  // console.log('XBEInflation: configured');
 
   await bonusCampaign.configure(
     mockXBE.address,
@@ -625,7 +624,7 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  console.log('BonusCampaign: configured');
+  // console.log('BonusCampaign: configured');
 
   await veXBE.configure(
     mockXBE.address,
@@ -637,7 +636,7 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  console.log('VeXBE: configured...');
+  // console.log('VeXBE: configured...');
 
   await voting.initialize(
     veXBE.address,
@@ -681,7 +680,7 @@ module.exports = function (deployer, network, accounts) {
       rewardsDuration: months('23'),
       emission: ether('5000'),
       stopRegisterTime: days('30'),
-      startMintTime: ZERO, //months('18'),
+      startMintTime: ZERO, // months('18'),
     },
     mockTokens: {
       mockedTotalSupplyXBE: ether('2000'),
@@ -721,10 +720,10 @@ module.exports = function (deployer, network, accounts) {
     if (network === 'test' || network === 'soliditycoverage') {
       const { exec } = require('child_process');
       exec('cd ../curve-convex && npm run deploy && npm run generate-distro && cd ../yeur', (error, stdout, stderr) => {
-        console.log(`stdout: ${stdout}`);
-        console.log(`stderr: ${stderr}`);
+        // console.log(`stdout: ${stdout}`);
+        // console.log(`stderr: ${stderr}`);
         if (error !== null) {
-          console.log(`exec error: ${error}`);
+          // console.log(`exec error: ${error}`);
         }
       });
       await deployContracts(deployer, params, owner);
@@ -734,21 +733,21 @@ module.exports = function (deployer, network, accounts) {
       if (network === 'rinkeby_deploy') {
         dependentsAddresses = testnet_distro.rinkeby;
         dependentsAddresses.curve.pools = Object.values(dependentsAddresses
-            .curve.pool_data);
+          .curve.pool_data);
         params = {
-            dependentsAddresses,
-            sushiSwap: sushiSwapAddresses.rinkeby,
-            ...params,
+          dependentsAddresses,
+          sushiSwap: sushiSwapAddresses.rinkeby,
+          ...params,
         };
         await deployContracts(deployer, params, owner);
       } else if (network === 'rinkeby_deploy_voting') {
         dependentsAddresses = testnet_distro.rinkeby;
         dependentsAddresses.curve.pools = Object.values(dependentsAddresses
-            .curve.pool_data);
+          .curve.pool_data);
         params = {
-            dependentsAddresses,
-            sushiSwap: sushiSwapAddresses.rinkeby,
-            ...params,
+          dependentsAddresses,
+          sushiSwap: sushiSwapAddresses.rinkeby,
+          ...params,
         };
         // deploy voting
         voting = await deployer.deploy(Voting, { from: owner });
@@ -756,31 +755,31 @@ module.exports = function (deployer, network, accounts) {
       } else if (network === 'rinkeby_tokens') {
         dependentsAddresses = testnet_distro.rinkeby;
         dependentsAddresses.curve.pools = Object.values(dependentsAddresses
-            .curve.pool_data);
+          .curve.pool_data);
         params = {
-            dependentsAddresses,
-            sushiSwap: sushiSwapAddresses.rinkeby,
-            ...params,
+          dependentsAddresses,
+          sushiSwap: sushiSwapAddresses.rinkeby,
+          ...params,
         };
         await distributeTokens(params, alice, bob, owner);
       } else if (network === 'rinkeby_configure') {
         dependentsAddresses = testnet_distro.rinkeby;
         dependentsAddresses.curve.pools = Object.values(dependentsAddresses
-            .curve.pool_data);
+          .curve.pool_data);
         params = {
-            dependentsAddresses,
-            sushiSwap: sushiSwapAddresses.rinkeby,
-            ...params,
+          dependentsAddresses,
+          sushiSwap: sushiSwapAddresses.rinkeby,
+          ...params,
         };
         await configureContracts(params, owner);
       } else if (network === 'rinkeby_configure_voting') {
         dependentsAddresses = testnet_distro.rinkeby;
         dependentsAddresses.curve.pools = Object.values(dependentsAddresses
-            .curve.pool_data);
+          .curve.pool_data);
         params = {
-            dependentsAddresses,
-            sushiSwap: sushiSwapAddresses.rinkeby,
-            ...params,
+          dependentsAddresses,
+          sushiSwap: sushiSwapAddresses.rinkeby,
+          ...params,
         };
 
         voting = await Voting.at(getSavedAddress('voting'));
@@ -849,9 +848,9 @@ module.exports = function (deployer, network, accounts) {
         sushiSwap: sushiSwapAddresses.rinkeby,
         ...params,
       };
-      await deployContracts(deployer, params, owner);
-      await distributeTokens(params, alice, bob, owner);
-      await configureContracts(params, owner);
+      // await deployContracts(deployer, params, owner);
+      // await distributeTokens(params, alice, bob, owner);
+      // await configureContracts(params, owner);
     } else if (network === 'mainnet') {
       // await deployVaultsToMainnet();
     } else {

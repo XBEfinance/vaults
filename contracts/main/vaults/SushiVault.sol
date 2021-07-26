@@ -45,13 +45,12 @@ contract SushiVault is BaseVault, VaultWithAutoStake {
         uint256 reward = rewards[_for][_rewardToken];
         _controller.claim(_stakingToken, _rewardToken);
         if (reward > 0) {
-            if (reward > 0) {
-                rewards[_for][_rewardToken] = 0;
-                _autoStakeForOrSendTo(_rewardToken, reward, _for);
-                emit RewardPaid(_rewardToken, _for, reward);
-            } else {
-                emit RewardPaid(_rewardToken, _for, 0);
-            }
+            rewards[_for][_rewardToken] = 0;
+            reward = _getAndDistributeFeesOnClaimForToken(_for, _rewardToken, reward);
+            _autoStakeForOrSendTo(_rewardToken, reward, _for);
+            emit RewardPaid(_rewardToken, _for, reward);
+        } else {
+            emit RewardPaid(_rewardToken, _for, 0);
         }
     }
 

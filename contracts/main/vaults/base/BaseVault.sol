@@ -371,13 +371,11 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
             _controller.claim(_stakingToken, _rewardToken);
         }
         if (reward > 0) {
-            if (reward > 0) {
-                rewards[_for][_rewardToken] = 0;
-                IERC20(_rewardToken).safeTransfer(_for, reward);
-                emit RewardPaid(_rewardToken, _for, reward);
-            } else {
-                emit RewardPaid(_rewardToken, _for, 0);
-            }
+            rewards[_for][_rewardToken] = 0;
+            IERC20(_rewardToken).safeTransfer(_for, reward);
+            emit RewardPaid(_rewardToken, _for, reward);
+        } else {
+            emit RewardPaid(_rewardToken, _for, 0);
         }
     }
 

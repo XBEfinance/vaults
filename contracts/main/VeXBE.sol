@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/proxy/Initializable.sol";
 
 import "./interfaces/ISmartWalletChecker.sol";
 import "./interfaces/IBonusCampaign.sol";
+import "./interfaces/IVotingStakingRewards.sol";
 
 // import "./mocks/StringsConcatenations.sol"; // DELETE THIS IF IT IS STILL EXISTS AFTER TESTS
 
@@ -447,6 +448,8 @@ contract VeXBE is Initializable, ReentrancyGuard {
         if (this.isLockedForMax(_addr) && bonus.canRegister(_addr)) {
             bonus.registerFor(_addr);
         }
+
+        IVotingStakingRewards(voting).updateRewardFromToken(_addr);
 
         emit Deposit(_addr, _value, _locked.end, _type, block.timestamp);
         emit Supply(supplyBefore, supplyBefore + _value);

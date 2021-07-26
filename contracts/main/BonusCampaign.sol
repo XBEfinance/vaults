@@ -126,6 +126,4 @@ contract BonusCampaign is StakingRewards {
         _mintStarted = true;
         emit RewardAdded(bonusEmission);
     }
-
-
 }

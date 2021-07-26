@@ -129,6 +129,7 @@ contract('Integration tests', (accounts) => {
         lockedAmount: contracts.veXBE.lockedAmount,
         votingStakingRewards: contracts.votingStakingRewards.earned,
         bonusRewards: contracts.bonusCampaign.earned,
+        bonusRewardsPaid: contracts.bonusCampaign.userRewardPerTokenPaid,
       });
 
       expect(await ownerTrackers.boost.get()).to.be.bignumber.equal(
@@ -177,16 +178,11 @@ contract('Integration tests', (accounts) => {
 
       expect(ownerLockedAmount).to.be.bignumber.equal(amount);
       expect(ownerLockEnd).to.be.bignumber.closeTo(lockEnd, days('7'));
-
-      expect(
-        await contracts.bonusCampaign.registered(owner),
-      ).to.be.true;
-
-      logBNTimestamp('rewardsDuration', await contracts.bonusCampaign.rewardsDuration());
-      logBNTimestamp('periodFinish', await contracts.bonusCampaign.periodFinish());
-
       expect(
         await contracts.veXBE.isLockedForMax(owner),
+      ).to.be.true;
+      expect(
+        await contracts.bonusCampaign.registered(owner),
       ).to.be.true;
       // processEventArgs(createLockReceipt, 'Staked', (args) => {
       //   expect(args.user).to.be.bignumber.equal(owner);
@@ -203,35 +199,40 @@ contract('Integration tests', (accounts) => {
       );
 
       /* ========== BONUS CAMPAIGN REWARD DISTRIBUTION ========== */
+      const bonusRewardRate = await contracts.bonusCampaign.rewardRate();
+      const bonusStartMintTime = await contracts.bonusCampaign.startMintTime();
+      const bonusRewardDuration = await contracts.bonusCampaign.rewardsDuration();
+      const bonusPeriodFinish = await contracts.bonusCampaign.periodFinish();
+      const ownerBonusStake = await await contracts.bonusCampaign.balanceOf(owner);
+      const bonusTotalSupply = await contracts.bonusCampaign.totalSupply();
 
-      for (let i = 0; i < 24; i += 1) {
+      let totalClaimedReward = ZERO;
+
+      await time.increaseTo(bonusStartMintTime);
+
+      let now = await time.latest();
+      while (now < bonusPeriodFinish) {
         await time.increase(months('1'));
-        const bonusRewardsDelta = await ownerTrackers.bonusRewards.delta();
         const bonusRewards = await ownerTrackers.bonusRewards.get();
 
-        await contracts.bonusCampaign.getReward();
+        const getRewardReceipt = await contracts.bonusCampaign.getReward();
         const receivedBonusReward = await ownerTrackers.XBE.delta();
-        const userRewards = await ownerTrackers.bonusRewards.get();
+        processEventArgs(getRewardReceipt, 'RewardPaid', (args) => {
+          expect(args.user).to.be.bignumber.equal(owner);
+          expect(args.reward).to.be.bignumber.equal(receivedBonusReward);
+        });
 
-        console.group(`Now + ${i + 1} month`);
+        totalClaimedReward = totalClaimedReward.add(receivedBonusReward);
+        now = await time.latest();
+
+        console.group(`bonusStartMintTime + ${now.sub(bonusStartMintTime).div(months('1'))} months`);
         logBNFromWei('received reward', receivedBonusReward);
-        logBNFromWei('userRewards', userRewards);
         logBNFromWei('userRewards', bonusRewards);
-        logBNFromWei('userRewards delta', bonusRewardsDelta);
-        logBNFromWei('userBalance', await contracts.bonusCampaign.balanceOf(owner));
-        logBNFromWei('totalSupply', await contracts.bonusCampaign.totalSupply());
-        logBNFromWei('rewardRate', await contracts.bonusCampaign.rewardRate());
+        logBNFromWei('ClaimedRewards', totalClaimedReward);
         console.groupEnd();
       }
 
-      /* ========== BONUS CAMPAIGN REWARD CLAIM ========== */
-      await ownerTrackers.XBE.get();
-      await contracts.bonusCampaign.getReward();
-      expect(await ownerTrackers.bonusRewards.get()).to.be.bignumber.equal(ZERO);
-      const receivedBonusReward = await ownerTrackers.XBE.delta();
-      logBNFromWei('received reward', receivedBonusReward);
-      const userRewards = await ownerTrackers.bonusRewards.get();
-      logBNFromWei('userRewards', userRewards);
+      logBNFromWei('Total reward claimed:', totalClaimedReward);
 
       /* ========== WITHDRAW LOCKED AND STAKED ========== */
       // await time.increaseTo(ownerLockEnd.add(months('1')));

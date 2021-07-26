@@ -73,10 +73,10 @@ const defaultParams = {
   //   swapDeadline: new BN('300'),
   // },
   bonusCampaign: {
-    rewardsDuration: months('18'),
+    rewardsDuration: months('6'),
     emission: ether('5000'),
     stopRegisterTime: days('30'),
-    startMintTime: new BN('0'),
+    startMintTime: months('18'),
   },
   mockTokens: {
     mockedTotalSupplyXBE: ether('2000'),
@@ -467,15 +467,15 @@ const deployInfrastructure = (owner, alice, bob, params) => {
         { from: owner },
       );
 
-//      await item.vault.addFeeReceiver(
-//        contracts.treasury.address,
-//        new BN('10'),
-//        [
-//          contracts.mockXBE.address,
-//        ],
-//        true,
-//        { from: owner },
-//      );
+      //      await item.vault.addFeeReceiver(
+      //        contracts.treasury.address,
+      //        new BN('10'),
+      //        [
+      //          contracts.mockXBE.address,
+      //        ],
+      //        true,
+      //        { from: owner },
+      //      );
       // console.log(`${item.name}Vault: configured`);
     }
 

@@ -92,15 +92,18 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
     }
 
     function subFeeForClaim(uint256[] memory _amounts) public view returns(uint256[] memory){
-       for(uint256 i = 0; i < _amounts.length; i++) {
+        if (!feesEnabled) {
+            return _amounts;
+        }
+        for(uint256 i = 0; i < _amounts.length; i++) {
            uint256 value = _amounts[i];
            for(uint256 j = 0; j < feeWeights.length; j++){
                uint256 _fee = _mulDivGasEfficient(feeWeights[j].weight, _amounts[i], PCT_PRECISION);
                value -= _fee;
            }
            _amounts[i] = value;
-       }
-       return _amounts;
+        }
+        return _amounts;
     }
 
     function _mulDivGasEfficient(uint256 x, uint256 y, uint256 z) internal pure returns(uint256) {

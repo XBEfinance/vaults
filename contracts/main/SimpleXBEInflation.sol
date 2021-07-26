@@ -87,11 +87,7 @@ contract SimpleXBEInflation is Initializable {
 
     function setWeight(address _xbeReceiver, uint256 _weight) external onlyAdmin {
         uint256 oldWeight = weights[_xbeReceiver];
-        if (oldWeight > _weight) {
-            sumWeight = sumWeight.sub(oldWeight.sub(_weight));
-        } else if (oldWeight < _weight) {
-            sumWeight = sumWeight.add(_weight.sub(oldWeight));
-        }
+        sumWeight = sumWeight.add(_weight).sub(oldWeight);
         weights[_xbeReceiver] = _weight;
     }
 
@@ -119,9 +115,9 @@ contract SimpleXBEInflation is Initializable {
               .div(sumWeight);
             IMint(token).mint(_to, toMint);
             totalMinted = totalMinted.add(toMint);
-            require(totalMinted == yearlyEmission.mul(_getYearsPassedFromStart()),
-                "availableSupplyDistributed");
         }
+        require(totalMinted == yearlyEmission.mul(_getYearsPassedFromStart()),
+                "availableSupplyDistributed");
         return true;
     }
 }

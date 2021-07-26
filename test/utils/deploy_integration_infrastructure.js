@@ -542,7 +542,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
     // console.log('Voting: configured...');
 
     await contracts.votingStakingRewards.configure(
-      owner,
+      contracts.treasury.address,
       contracts.mockXBE.address,
       contracts.mockXBE.address,
       months('23'),

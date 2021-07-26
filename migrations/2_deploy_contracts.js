@@ -73,6 +73,7 @@ const addressStore = {
     },
     weth: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
   },
+  deployed: {};
 };
 
 const sushiSwapAddresses = {
@@ -116,34 +117,80 @@ let cvxVault;
 let cvxCrvStrategy;
 let cvxCrvVault;
 
-const saveAddresses = () => {
-  const jsonAddressData = JSON.stringify({
-    mockXBE: mockXBE.address,
-    mockLpSushi: mockLpSushi.address,
-    xbeInflation: xbeInflation.address,
-    bonusCampaign: bonusCampaign.address,
-    veXBE: veXBE.address,
-    voting: voting.address,
-    votingStakingRewards: votingStakingRewards.address,
+const saveItem = (item, value, data) => {
+    if (typeof(value) !== 'undefined') {
+        data[item] = value;
+    }
+};
 
-    referralProgram: referralProgram.address,
-    registry: registry.address,
-    treasury: treasury.address,
-    controller: controller.address,
-    hiveStrategy: hiveStrategy.address,
-    hiveVault: hiveVault.address,
-    sushiStrategy: sushiStrategy.address,
-    sushiVault: sushiVault.address,
-    cvxStrategy: cvxStrategy.address,
-    cvxVault: cvxVault.address,
-    cvxCrvStrategy: cvxCrvStrategy.address,
-    cvxCrvVault: cvxCrvVault.address,
-  });
+const readItem = (itemName, data) => {
+    if (data.has(itemName)) {
+        return data[itemName];
+    }
+    return null;
+};
+
+// to minimize risk of making mistake in naming
+const addrNames = {
+    mockXBE: 'mockXBE',
+    mockLpSushi: 'mockLpSushi',
+    xbeInflation: 'xbeInflation',
+    bonusCampaign: 'bonusCampaign',
+    veXBE: 'veXBE',
+    referralProgram: 'referralProgram',
+    registry: 'registry',
+    treasury: 'treasury',
+    controller: 'controller',
+    hiveStrategy: 'hiveStrategy',
+    hiveVault: 'hiveVault',
+    sushiStrategy: 'sushiStrategy',
+    sushiVault: 'sushiVault',
+    cvxStrategy: 'cvxStrategy',
+    cvxVault: 'cvxVault',
+    cvxCrvStrategy: 'cvxCrvStrategy',
+    cvxCrvVault: 'cvxCrvVault',
+    voting: 'voting',
+    votingStakingRewards: 'votingStakingRewards',
+};
+
+const saveAddresses = () => {
+  const jsonAddressData = JSON.stringify(addressStore.deployed);
+//  const jsonAddressData = JSON.stringify({
+//    mockXBE: mockXBE.address,
+//    mockLpSushi: mockLpSushi.address,
+//    xbeInflation: xbeInflation.address,
+//    bonusCampaign: bonusCampaign.address,
+//    veXBE: veXBE.address,
+//    referralProgram: referralProgram.address,
+//    registry: registry.address,
+//    treasury: treasury.address,
+//    controller: controller.address,
+//    hiveStrategy: hiveStrategy.address,
+//    hiveVault: hiveVault.address,
+//    sushiStrategy: sushiStrategy.address,
+//    sushiVault: sushiVault.address,
+//    cvxStrategy: cvxStrategy.address,
+//    cvxVault: cvxVault.address,
+//    cvxCrvStrategy: cvxCrvStrategy.address,
+//    cvxCrvVault: cvxCrvVault.address,
+//    voting: voting.address,
+//    votingStakingRewards: votingStakingRewards.address,
+//  });
   fs.writeFileSync('addresses.json', jsonAddressData);
+};
+const readJsonAddresses = () => {
+    addresses = {};
+
+    const data = JSON.parse(fs.readFileSync('addresses.json'));
+
+    addrNames.forEach((value, key) => {
+        data.has(key) {}
+    });
+
 };
 
 const getSavedAddress = (key) => {
-  const addressesJson = fs.readFileSync('addresses.json');
+  const addressesJson = readJsonAddresses(); //fs.readFileSync('addresses.json');
   return JSON.parse(addressesJson)[key];
 };
 
@@ -220,14 +267,6 @@ const deployContracts = async (deployer, params, owner) => {
     { from: owner },
   );
 
-//  mockTokenForSushiPair = await deployer.deploy(
-//    MockToken,
-//    'Mock Token for Sushi Pair',
-//    'mTSP',
-//    params.mockTokens.mockedTotalSupplyOtherToken,
-//    { from: owner },
-//  );
-
   // get weth ad address
   weth9 = await WETH9.at(addressStore.rinkeby.weth);
   console.log('WETH aquired');
@@ -242,11 +281,6 @@ const deployContracts = async (deployer, params, owner) => {
 
   // deploy voting escrow
   veXBE = await deployer.deploy(VeXBE, { from: owner });
-
-  // deploy voting
-  voting = await deployer.deploy(Voting, { from: owner });
-  // voting will be deployed separately
-  votingStakingRewards = await deployer.deploy(VotingStakingRewards, { from: owner });
 
   const sushiSwapRouter = await IUniswapV2Router02.at(sushiSwap.sushiswapRouter);
   const sushiSwapFactory = await IUniswapV2Factory.at(sushiSwap.sushiswapFactory);
@@ -278,6 +312,11 @@ const deployContracts = async (deployer, params, owner) => {
       weth9.address,
     ),
   );
+
+//  // deploy voting
+//  voting = await deployer.deploy(Voting, { from: owner });
+//  // voting will be deployed separately
+//  votingStakingRewards = await deployer.deploy(VotingStakingRewards, { from: owner });
 
   saveAddresses();
 };
@@ -470,7 +509,7 @@ const configureContracts = async (params, owner) => {
         votingStakingRewards.address, // _votingStakingRewards
         true,
         [ // _rewardTokens
-          dependentsAddresses.convex.cvx,
+//          dependentsAddresses.convex.cvx,
           mockXBE.address,
         ],
         'SH', // _namePostfix
@@ -600,28 +639,28 @@ const configureContracts = async (params, owner) => {
 
   console.log('VeXBE: configured...');
 
-//  await voting.initialize(
-//    veXBE.address,
-//    params.voting.supportRequiredPct,
-//    params.voting.minAcceptQuorumPct,
-//    params.voting.voteTime,
-//    { from: owner },
-//  );
-//
-//  console.log('Voting: configured...');
+  await voting.initialize(
+    veXBE.address,
+    params.voting.supportRequiredPct,
+    params.voting.minAcceptQuorumPct,
+    params.voting.voteTime,
+    { from: owner },
+  );
 
-//  await votingStakingRewards.configure(
-//    owner,
-//    mockXBE.address,
-//    mockXBE.address,
-//    months('23'),
-//    veXBE.address,
-//    voting.address,
-//    bonusCampaign.address,
-//    [],
-//  );
-//
-//  console.log('VotingStakingRewards: configured...');
+  console.log('Voting: configured...');
+
+  await votingStakingRewards.configure(
+    owner,
+    mockXBE.address,
+    mockXBE.address,
+    months('23'),
+    veXBE.address,
+    voting.address,
+    bonusCampaign.address,
+    [],
+  );
+
+  console.log('VotingStakingRewards: configured...');
 };
 
 module.exports = function (deployer, network, accounts) {

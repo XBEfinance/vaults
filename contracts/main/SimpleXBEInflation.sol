@@ -18,10 +18,10 @@ contract SimpleXBEInflation is Initializable {
 
     uint256 public totalMinted;
     uint256 public targetMinted;
-    uint256 public yearlyEmission;
+    uint256 public periodicEmission;
     uint256 public startInflationTime;
 
-    uint256 public constant YEAR = 86400 * 365;
+    uint256 public period = 86400 * 365;
 
     mapping(address => uint256) public weights; // in points relative to sumWeight
     uint256 public sumWeight = 0;
@@ -44,12 +44,12 @@ contract SimpleXBEInflation is Initializable {
     function configure(
         address _token,
         uint256 _targetMinted,
-        uint256 _years
+        uint256 _periods
     ) external initializer {
         admin = msg.sender;
         token = _token;
         targetMinted = _targetMinted;
-        yearlyEmission = _targetMinted.div(_years);
+        periodicEmission = _targetMinted.div(_periods);
         startInflationTime = block.timestamp;
     }
 
@@ -57,7 +57,7 @@ contract SimpleXBEInflation is Initializable {
     // @notice Current number of tokens in existence (claimed or unclaimed)
     // """
     function availableSupply() external view returns(uint256) {
-        return yearlyEmission;
+        return periodicEmission;
     }
 
     // """
@@ -95,8 +95,12 @@ contract SimpleXBEInflation is Initializable {
         weights[_xbeReceiver] = _weight;
     }
 
-    function _getYearsPassedFromStart() internal returns(uint256) {
-        return block.timestamp.sub(startInflationTime).add(YEAR).div(YEAR);
+    function setPeriod(uint256 _period) external onlyAdmin {
+        period = _period;
+    }
+
+    function _getPeriodsPassedFromStart() internal returns(uint256) {
+        return block.timestamp.sub(startInflationTime).add(period).div(period);
     }
 
     // """
@@ -112,14 +116,14 @@ contract SimpleXBEInflation is Initializable {
         for (uint256 i = 0; i < _xbeReceivers.length(); i++) {
             address _to = _xbeReceivers.at(i);
             require(_to != address(0), "!zeroAddress");
-            uint256 toMint = yearlyEmission
+            uint256 toMint = periodicEmission
               .mul(
                 weights[_to]
               )
               .div(sumWeight);
             IMint(token).mint(_to, toMint);
             totalMinted = totalMinted.add(toMint);
-            require(totalMinted == yearlyEmission.mul(_getYearsPassedFromStart()),
+            require(totalMinted == periodicEmission.mul(_getPeriodsPassedFromStart()),
                 "availableSupplyDistributed");
         }
         return true;

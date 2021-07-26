@@ -62,6 +62,8 @@ function verifyAll_1 {
   truffle run verify Registry --network $1
   truffle run verify Treasury --network $1
   truffle run verify Controller --network $1
+  truffle run verify SushiVault --network $1
+  truffle run verify SushiStrategy --network $1
 }
 
 if [ -z $1 ]; then

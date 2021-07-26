@@ -505,7 +505,13 @@ const deployInfrastructure = (owner, alice, bob, params) => {
 
     await contracts.simpleXBEInflation.addXBEReceiver(
       contracts.sushiStrategy.address,
-      new BN('100'),
+      new BN('25'),
+      { from: owner },
+    );
+
+    await contracts.simpleXBEInflation.addXBEReceiver(
+      contracts.treasury.address,
+      new BN('25'),
       { from: owner },
     );
     // console.log('XBEInflation: configured');

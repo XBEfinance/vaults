@@ -44,12 +44,12 @@ contract SimpleXBEInflation is Initializable {
     function configure(
         address _token,
         uint256 _targetMinted,
-        uint256 _periods
+        uint256 _periodsCount
     ) external initializer {
         admin = msg.sender;
         token = _token;
         targetMinted = _targetMinted;
-        periodicEmission = _targetMinted.div(_periods);
+        periodicEmission = _targetMinted.div(_periodsCount);
         startInflationTime = block.timestamp;
     }
 
@@ -95,10 +95,6 @@ contract SimpleXBEInflation is Initializable {
         weights[_xbeReceiver] = _weight;
     }
 
-    function setPeriod(uint256 _period) external onlyAdmin {
-        period = _period;
-    }
-
     function _getPeriodsPassedFromStart() internal returns(uint256) {
         return block.timestamp.sub(startInflationTime).add(period).div(period);
     }
@@ -112,6 +108,8 @@ contract SimpleXBEInflation is Initializable {
         external
         returns(bool)
     {
+        require(totalMinted < periodicEmission.mul(_getPeriodsPassedFromStart()),
+            "availableSupplyDistributed");
         require(totalMinted <= targetMinted, "inflationEnded");
         for (uint256 i = 0; i < _xbeReceivers.length(); i++) {
             address _to = _xbeReceivers.at(i);
@@ -123,8 +121,6 @@ contract SimpleXBEInflation is Initializable {
               .div(sumWeight);
             IMint(token).mint(_to, toMint);
             totalMinted = totalMinted.add(toMint);
-            require(totalMinted == periodicEmission.mul(_getPeriodsPassedFromStart()),
-                "availableSupplyDistributed");
         }
         return true;
     }

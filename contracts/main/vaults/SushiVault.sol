@@ -22,7 +22,6 @@ contract SushiVault is BaseVault, VaultWithAutoStake {
         string memory __symbolPostfix
     ) public initializer {
         _configureVaultWithAutoStake(_tokenToAutostake, _votingStakingRewards);
-        _configureVaultWithFeesOnClaim(_enableFees);
         _configure(
             _initialToken,
             _initialController,
@@ -46,15 +45,10 @@ contract SushiVault is BaseVault, VaultWithAutoStake {
         _controller.claim(_stakingToken, _rewardToken);
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
-            reward = _getAndDistributeFeesOnClaimForToken(_for, _rewardToken, reward);
             _autoStakeForOrSendTo(_rewardToken, reward, _for);
             emit RewardPaid(_rewardToken, _for, reward);
         } else {
             emit RewardPaid(_rewardToken, _for, 0);
         }
-    }
-
-    function _isUserAuthorized(address _user) internal override view returns(bool) {
-        return owner() == _user;
     }
 }

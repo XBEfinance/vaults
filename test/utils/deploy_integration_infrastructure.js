@@ -467,15 +467,15 @@ const deployInfrastructure = (owner, alice, bob, params) => {
         { from: owner },
       );
 
-      await item.vault.addFeeReceiver(
-        contracts.treasury.address,
-        new BN('10'),
-        [
-          contracts.mockXBE.address,
-        ],
-        true,
-        { from: owner },
-      );
+//      await item.vault.addFeeReceiver(
+//        contracts.treasury.address,
+//        new BN('10'),
+//        [
+//          contracts.mockXBE.address,
+//        ],
+//        true,
+//        { from: owner },
+//      );
       // console.log(`${item.name}Vault: configured`);
     }
 

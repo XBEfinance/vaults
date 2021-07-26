@@ -620,15 +620,15 @@ const configureContracts = async (params, owner) => {
         { from: owner },
     );
 
-    await item.vault.addFeeReceiver(
-      treasury.address,
-      new BN('10'),
-      [
-        mockXBE.address,
-      ],
-      true,
-      { from: owner },
-    );
+//    await item.vault.addFeeReceiver(
+//      treasury.address,
+//      new BN('10'),
+//      [
+//        mockXBE.address,
+//      ],
+//      true,
+//      { from: owner },
+//    );
      console.log(`${item.name}Vault: configured`);
   }
 

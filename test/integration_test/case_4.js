@@ -186,6 +186,8 @@ contract('Integration tests', (accounts) => {
 
       await logAllTrackers(aliceTrackers, 'After mintForContracts');
 
+      const isMxbeValid = await contracts.sushiVault.isTokenValid(mockXBE.address);
+      console.log('mxbe is valid ? = ', isMxbeValid);
       const earnedReal = await contracts.sushiVault.earnedReal();
       logBNFromWei('earnedReal', earnedReal[0]);
       const getreward = await contracts.sushiVault.getReward(0x02);

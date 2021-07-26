@@ -110,10 +110,6 @@ contract Treasury is Initializable, Ownable, ITreasury {
         IERC20(_token).safeTransfer(owner(), _amount);
     }
 
-    function setStrategyWhoCanAutoStake(address _strategy, bool _flag) external override onlyOwner {
-        IRewardsDistributionRecipient(rewardsDistributionRecipientContract).setStrategyWhoCanAutoStake(_strategy, _flag);
-    }
-
     function toVoters() override external {
         uint256 _balance = IERC20(rewardsToken).balanceOf(address(this));
         IERC20(rewardsToken).safeTransfer(rewardsDistributionRecipientContract, _balance);

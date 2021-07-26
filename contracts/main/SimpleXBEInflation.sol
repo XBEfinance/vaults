@@ -44,12 +44,12 @@ contract SimpleXBEInflation is Initializable {
     function configure(
         address _token,
         uint256 _targetMinted,
-        uint256 _periods
+        uint256 _periodsCount
     ) external initializer {
         admin = msg.sender;
         token = _token;
         targetMinted = _targetMinted;
-        periodicEmission = _targetMinted.div(_periods);
+        periodicEmission = _targetMinted.div(_periodsCount);
         startInflationTime = block.timestamp;
     }
 
@@ -104,6 +104,8 @@ contract SimpleXBEInflation is Initializable {
         external
         returns(bool)
     {
+        require(totalMinted < periodicEmission.mul(_getPeriodsPassedFromStart()),
+            "availableSupplyDistributed");
         require(totalMinted <= targetMinted, "inflationEnded");
         require(totalMinted < periodicEmission.mul(_getPeriodsPassedFromStart()),
                 "availableSupplyDistributed");

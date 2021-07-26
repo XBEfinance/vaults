@@ -369,7 +369,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
           now.add(months('7')), // _rewardsDuration
           contracts.mockXBE.address, // _tokenToAutostake,
           contracts.votingStakingRewards.address, // _votingStakingRewards
-          true, // _enableFees
+//          true, // _enableFees
           [ // _rewardTokens
             contracts.mockXBE.address,
           ],

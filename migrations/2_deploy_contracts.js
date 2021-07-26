@@ -8,7 +8,7 @@ const fs = require('fs');
 const distro = require('../distro.json');
 const testnet_distro = require('../../curve-convex/rinkeby_distro.json');
 
-const XBEInflation = artifacts.require('XBEInflation');
+const SimpleXbeInflation = artifacts.require('SimpleXBEInflation');
 const VeXBE = artifacts.require('VeXBE');
 
 const Voting = artifacts.require('Voting');
@@ -66,6 +66,7 @@ const addressStore = {
     },
     weth: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
     xbe: '0x8ce5F9558e3E0cd7dE8bE15a93DffABEC83E314e',
+    mockLpSushi: '0xe4aAB3d3Fc1893D7e74AF2a11C69bfD5598632D1',
   },
   mainnet: {
     sushiswap: {
@@ -74,6 +75,7 @@ const addressStore = {
     },
     weth: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
     xbe: '',
+    mockLpSushi: '',
   },
   deployed: {},
 };
@@ -162,8 +164,8 @@ const saveAddresses = () => {
     xbeInflation: xbeInflation.address,
     bonusCampaign: bonusCampaign.address,
     veXBE: veXBE.address,
-//    voting: voting.address,
-//    votingStakingRewards: votingStakingRewards.address,
+    voting: voting.address,
+    votingStakingRewards: votingStakingRewards.address,
 
     referralProgram: referralProgram.address,
     registry: registry.address,
@@ -269,7 +271,9 @@ const deployContracts = async (deployer, params, owner) => {
 //    { from: owner },
 //  );
 
+    // use deployed instance
     mockXBE = await MockToken.at(addressStore.rinkeby.xbe);
+    console.log('mockXBE acquired ', mockXBE.address);
 
   // get weth ad address
   weth9 = await WETH9.at(addressStore.rinkeby.weth);
@@ -284,7 +288,7 @@ const deployContracts = async (deployer, params, owner) => {
   }
 
   // deploy bonus campaign xbeinflation
-  xbeInflation = await deployer.deploy(XBEInflation, { from: owner });
+  xbeInflation = await deployer.deploy(SimpleXBEInflation, { from: owner });
 
   // deploy bonus campaign
   bonusCampaign = await deployer.deploy(BonusCampaign, { from: owner });
@@ -297,29 +301,36 @@ const deployContracts = async (deployer, params, owner) => {
   const sushiSwapFactory = await IUniswapV2Factory.at(sushiSwap.sushiswapFactory);
   console.log('sushiSwapFactory address: ', sushiSwapFactory.address);
 
-  await mockXBE.mintSender(ether('1000'), {from: owner});
-  await mockXBE.approve(
-    sushiSwapRouter.address,
-    params.sushiswapPair.xbeAmountForPair,
-    { from: owner },
-  );
+//  // enough for him
+//  await mockXBE.mintSender(ether('1000'), {from: owner});
 
-  await weth9.approve(
-    sushiSwapRouter.address,
-    params.sushiswapPair.wethAmountForPair,
-    { from: owner },
-  );
-  await sushiSwapRouter.addLiquidity(
-    mockXBE.address,
-    weth9.address,
-    params.sushiswapPair.xbeAmountForPair,
-    params.sushiswapPair.wethAmountForPair,
-    params.sushiswapPair.xbeAmountForPair,
-    params.sushiswapPair.wethAmountForPair,
-    owner,
-    now.add(new BN('3600')),
-  );
+//// not required now
+//  await mockXBE.approve(
+//    sushiSwapRouter.address,
+//    params.sushiswapPair.xbeAmountForPair,
+//    { from: owner },
+//  );
 
+//// already enough
+//  await weth9.approve(
+//    sushiSwapRouter.address,
+//    params.sushiswapPair.wethAmountForPair,
+//    { from: owner },
+//  );
+
+//  // no need to add liquidity each time
+//  await sushiSwapRouter.addLiquidity(
+//    mockXBE.address,
+//    weth9.address,
+//    params.sushiswapPair.xbeAmountForPair,
+//    params.sushiswapPair.wethAmountForPair,
+//    params.sushiswapPair.xbeAmountForPair,
+//    params.sushiswapPair.wethAmountForPair,
+//    owner,
+//    now.add(new BN('3600')),
+//  );
+
+// it is the same each time, bcause mockXBE & weth9 are fixed
   mockLpSushi = await IUniswapV2Pair.at(
     await sushiSwapFactory.getPair(
       mockXBE.address,
@@ -327,12 +338,13 @@ const deployContracts = async (deployer, params, owner) => {
     ),
   );
 
+//  mockLpSushi = await IUniswapV2Pair.at(addressStore.rinkeby.mockLpSushi);
   console.log('mockLpSushi address: ', mockLpSushi.address);
 
-//  // deploy voting
-//  voting = await deployer.deploy(Voting, { from: owner });
-//  // voting will be deployed separately
-//  votingStakingRewards = await deployer.deploy(VotingStakingRewards, { from: owner });
+  // deploy voting
+  voting = await deployer.deploy(Voting, { from: owner });
+  // voting will be deployed separately
+  votingStakingRewards = await deployer.deploy(VotingStakingRewards, { from: owner });
 
   saveAddresses();
 };
@@ -385,8 +397,8 @@ const configureContracts = async (params, owner) => {
   votingStakingRewards = await VotingStakingRewards.at(getSavedAddress('votingStakingRewards'));
   bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
 
-  //
-  xbeInflation = await XBEInflation.at(getSavedAddress('xbeInflation'));
+  xbeInflation = await SimpleXbeInflation.at(getSavedAddress('xbeInflation'));
+
   bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
   veXBE = await VeXBE.at(getSavedAddress('veXBE'));
   //
@@ -629,19 +641,28 @@ const configureContracts = async (params, owner) => {
 //      true,
 //      { from: owner },
 //    );
-     console.log(`${item.name}Vault: configured`);
+    console.log(`${item.name}Vault: configured`);
   }
 
-  await xbeInflation.configure(
-    mockXBE.address,
-    params.xbeinflation.initialSupply,
-    params.xbeinflation.initialRate,
-    params.xbeinflation.rateReductionTime,
-    params.xbeinflation.rateReductionCoefficient,
-    params.xbeinflation.rateDenominator,
-    params.xbeinflation.inflationDelay,
-    { from: owner },
-  );
+  xbeInflation.configure(
+      mockXBE.address, // _token
+      params.simpleXBEInflation.targetMinted, // _targetMinted
+      params.simpleXBEInflation.years, // years
+      { from: owner },
+    );
+
+    await xbeInflation.addXBEReceiver(
+      sushiStrategy.address,
+      new BN('25'),
+      { from: owner },
+    );
+
+    // instead of VotingStakingRewards: reward -> treasury -> votingStakingRewards
+    await xbeInflation.addXBEReceiver(
+      treasury.address,
+      new BN('25'),
+      { from: owner },
+    );
 
    console.log('XBEInflation: configured');
 
@@ -669,28 +690,27 @@ const configureContracts = async (params, owner) => {
 
    console.log('VeXBE: configured...');
 
-//  await voting.initialize(
-//    veXBE.address,
-//    params.voting.supportRequiredPct,
-//    params.voting.minAcceptQuorumPct,
-//    params.voting.voteTime,
-//    { from: owner },
-//  );
-//
-//  console.log('Voting: configured...');
-//
-//  await votingStakingRewards.configure(
-//    owner,
-//    mockXBE.address,
-//    mockXBE.address,
-//    months('23'),
-//    veXBE.address,
-//    voting.address,
-//    bonusCampaign.address,
-//    [],
-//  );
-//
-//  console.log('VotingStakingRewards: configured...');
+  await voting.initialize(
+    veXBE.address,
+    params.voting.supportRequiredPct,
+    params.voting.minAcceptQuorumPct,
+    params.voting.voteTime,
+    { from: owner },
+  );
+
+  console.log('Voting: configured...');
+
+  await votingStakingRewards.configure(
+    owner,
+    mockXBE.address,
+    mockXBE.address,
+    months('23'),
+    veXBE.address,
+    voting.address,
+    [],
+  );
+
+  console.log('VotingStakingRewards: configured...');
 };
 
 module.exports = function (deployer, network, accounts) {
@@ -726,6 +746,10 @@ module.exports = function (deployer, network, accounts) {
       rateReductionCoefficient: new BN('1189207115002721024'), // new BN('10').mul(MULTIPLIER)
       rateDenominator: MULTIPLIER,
       inflationDelay: new BN('86400'),
+    },
+    simpleXBEInflation: {
+      targetMinted: ether('5000'),
+      years: new BN('2'),
     },
     voting: {
       supportRequiredPct: new BN('5100'),

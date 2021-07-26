@@ -48,20 +48,6 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         rewardsDuration = _rewardsDuration;
     }
 
-    function configure(
-        address _rewardsDistribution,
-        address _rewardsToken,
-        address _stakingToken,
-        uint256 _rewardsDuration
-    ) external initializer {
-        _configure(
-            _rewardsDistribution,
-            _rewardsToken,
-            _stakingToken,
-            _rewardsDuration
-        );
-    }
-
     /* ========== VIEWS ========== */
 
     function totalSupply() external override view returns (uint256) {

@@ -44,12 +44,12 @@ contract SimpleXBEInflation is Initializable {
     function configure(
         address _token,
         uint256 _targetMinted,
-        uint256 _periods
+        uint256 _periodsCount
     ) external initializer {
         admin = msg.sender;
         token = _token;
         targetMinted = _targetMinted;
-        periodicEmission = _targetMinted.div(_periods);
+        periodicEmission = _targetMinted.div(_periodsCount);
         startInflationTime = block.timestamp;
     }
 
@@ -87,16 +87,8 @@ contract SimpleXBEInflation is Initializable {
 
     function setWeight(address _xbeReceiver, uint256 _weight) external onlyAdmin {
         uint256 oldWeight = weights[_xbeReceiver];
-        if (oldWeight > _weight) {
-            sumWeight = sumWeight.sub(oldWeight.sub(_weight));
-        } else if (oldWeight < _weight) {
-            sumWeight = sumWeight.add(_weight.sub(oldWeight));
-        }
+        sumWeight = sumWeight.add(_weight).sub(oldWeight);
         weights[_xbeReceiver] = _weight;
-    }
-
-    function setPeriod(uint256 _period) external onlyAdmin {
-        period = _period;
     }
 
     function _getPeriodsPassedFromStart() internal returns(uint256) {
@@ -112,7 +104,11 @@ contract SimpleXBEInflation is Initializable {
         external
         returns(bool)
     {
+        require(totalMinted < periodicEmission.mul(_getPeriodsPassedFromStart()),
+            "availableSupplyDistributed");
         require(totalMinted <= targetMinted, "inflationEnded");
+        require(totalMinted < periodicEmission.mul(_getPeriodsPassedFromStart()),
+                "availableSupplyDistributed");
         for (uint256 i = 0; i < _xbeReceivers.length(); i++) {
             address _to = _xbeReceivers.at(i);
             require(_to != address(0), "!zeroAddress");
@@ -123,8 +119,6 @@ contract SimpleXBEInflation is Initializable {
               .div(sumWeight);
             IMint(token).mint(_to, toMint);
             totalMinted = totalMinted.add(toMint);
-            require(totalMinted == periodicEmission.mul(_getPeriodsPassedFromStart()),
-                "availableSupplyDistributed");
         }
         return true;
     }

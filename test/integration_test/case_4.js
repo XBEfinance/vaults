@@ -149,6 +149,7 @@ contract('Integration tests', (accounts) => {
       });
 
       const receipt = await contracts.simpleXBEInflation.mintForContracts();
+      const votingStakingRewardsReceipt = await contracts.treasury.toVoters();
 
       await logAllTrackers(aliceTrackers, 'Before all');
 
@@ -184,9 +185,10 @@ contract('Integration tests', (accounts) => {
 
       await time.increase(days('200'));
 
+
       await logAllTrackers(aliceTrackers, 'After mintForContracts');
 
-      const isMxbeValid = await contracts.sushiVault.isTokenValid(mockXBE.address);
+      const isMxbeValid = await contracts.sushiVault.isTokenValid(contracts.mockXBE.address);
       console.log('mxbe is valid ? = ', isMxbeValid);
       const earnedReal = await contracts.sushiVault.earnedReal();
       logBNFromWei('earnedReal', earnedReal[0]);

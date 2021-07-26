@@ -48,8 +48,8 @@ contract Treasury is Initializable, Ownable, ITreasury {
         uint256 _slippageTolerance,
         uint256 _swapDeadline
     ) external initializer {
-        setRewardsDistributionRecipientContract(rewardsDistributionRecipientContract);
-        setRewardsToken(_rewardsToken);
+        rewardsDistributionRecipientContract = _rewardsDistributionRecipientContract;
+        rewardsToken = _rewardsToken;
         setAuthorized(_governance, true);
         setAuthorized(address(this), true);
         uniswapRouter = IUniswapV2Router02(_uniswapRouter);
@@ -59,11 +59,11 @@ contract Treasury is Initializable, Ownable, ITreasury {
         transferOwnership(_governance);
     }
 
-    function setRewardsToken(address _rewardsToken) public onlyOwner {
+    function setRewardsToken(address _rewardsToken) external onlyOwner {
         rewardsToken = _rewardsToken;
     }
 
-    function setRewardsDistributionRecipientContract(address _rewardsDistributionRecipientContract) public onlyOwner {
+    function setRewardsDistributionRecipientContract(address _rewardsDistributionRecipientContract) external onlyOwner {
         rewardsDistributionRecipientContract = _rewardsDistributionRecipientContract;
     }
 
@@ -108,10 +108,6 @@ contract Treasury is Initializable, Ownable, ITreasury {
 
     function toGovernance(address _token, uint256 _amount) override external onlyOwner {
         IERC20(_token).safeTransfer(owner(), _amount);
-    }
-
-    function setStrategyWhoCanAutoStake(address _strategy, bool _flag) external override onlyOwner {
-        IRewardsDistributionRecipient(rewardsDistributionRecipientContract).setStrategyWhoCanAutoStake(_strategy, _flag);
     }
 
     function toVoters() override external {

@@ -53,7 +53,7 @@ function verifyAll_1 {
   generate_truffle_config "0.6.6" ".\/contracts\/main"
   truffle run verify BonusCampaign --network $1
   truffle run verify VeXBE --network $1
-  truffle run verify XBEInflation --network $1
+  truffle run verify SimpleXBEInflation --network $1
   truffle run verify MockToken --network $1
 
   truffle run verify HiveStrategy --network $1

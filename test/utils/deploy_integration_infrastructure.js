@@ -505,7 +505,13 @@ const deployInfrastructure = (owner, alice, bob, params) => {
 
     await contracts.simpleXBEInflation.addXBEReceiver(
       contracts.sushiStrategy.address,
-      new BN('100'),
+      new BN('25'),
+      { from: owner },
+    );
+
+    await contracts.simpleXBEInflation.addXBEReceiver(
+      contracts.treasury.address,
+      new BN('25'),
       { from: owner },
     );
     // console.log('XBEInflation: configured');
@@ -542,7 +548,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
     // console.log('Voting: configured...');
 
     await contracts.votingStakingRewards.configure(
-      owner,
+      contracts.treasury.address,
       contracts.mockXBE.address,
       contracts.mockXBE.address,
       months('23'),

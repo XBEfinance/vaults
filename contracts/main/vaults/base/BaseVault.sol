@@ -347,7 +347,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         nonReentrant
         validClaimMask(_claimMask)
     {
-        getReward(_claimMask);
+        __getReward(_claimMask);
         _withdraw(_amount);
     }
 
@@ -364,13 +364,13 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         internal virtual
     {
         uint256 reward = rewards[_for][_rewardToken];
+        if (_claimMask >> 1 == 1 && _claimMask << 7 != 128) {
+            _controller.claim(_stakingToken, _rewardToken);
+        } else if (_claimMask >> 1 == 1 && _claimMask << 7 == 128) {
+            IStrategy(_controller.strategies(_stakingToken)).getRewards();
+            _controller.claim(_stakingToken, _rewardToken);
+        }
         if (reward > 0) {
-            if (_claimMask >> 1 == 1 && _claimMask << 7 != 128) {
-                _controller.claim(_stakingToken, _rewardToken);
-            } else if (_claimMask >> 1 == 1 && _claimMask << 7 == 128) {
-                IStrategy(_controller.strategies(_stakingToken)).getRewards();
-                _controller.claim(_stakingToken, _rewardToken);
-            }
             if (reward > 0) {
                 rewards[_for][_rewardToken] = 0;
                 IERC20(_rewardToken).safeTransfer(_for, reward);
@@ -381,13 +381,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         }
     }
 
-    function getReward(uint8 _claimMask)
-        public
-        virtual
-        nonReentrant
-        validClaimMask(_claimMask)
-        updateReward(msg.sender)
-    {
+    function __getReward(uint8 _claimMask) internal {
         address _stakingToken = address(stakingToken);
         for (uint256 i = 0; i < _validTokens.length(); i++) {
             _getReward(
@@ -397,6 +391,16 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
                 _stakingToken
             );
         }
+    }
+
+    function getReward(uint8 _claimMask)
+        public
+        virtual
+        nonReentrant
+        validClaimMask(_claimMask)
+        updateReward(msg.sender)
+    {
+        __getReward(_claimMask);
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */

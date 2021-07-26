@@ -70,7 +70,7 @@ contract BonusCampaign is StakingRewards {
         require(!registered[user], "alreadyRegistered");
         // avoid double staking in this very block by substracting one from block.number
         IVotingEscrow veToken = IVotingEscrow(stakingToken);
-        uint256 amount = veToken.balanceOfAt(user, _toUint64(block.number) - 1);
+        uint256 amount = veToken.balanceOfAt(user, _toUint64(block.number));
         require(amount > 0, "!stake0");
         require(veToken.lockedEnd(user).sub(veToken.lockStarts(user)) >= rewardsDuration, "stakedForNotEnoughTime");
         _totalSupply = _totalSupply.add(amount);
@@ -88,8 +88,11 @@ contract BonusCampaign is StakingRewards {
         _registerFor(user);
     }
 
+    function lastTimeRewardApplicable() public virtual override view returns (uint256) {
+        return Math.max(startMintTime, Math.min(block.timestamp, periodFinish));
+    }
+
     function getReward() public override nonReentrant updateReward(msg.sender) {
-        require(block.timestamp >= periodFinish, "isNotYetFinished");
         uint256 reward = rewards[msg.sender];
         if (reward > 0) {
             rewards[msg.sender] = 0;
@@ -99,7 +102,6 @@ contract BonusCampaign is StakingRewards {
     }
 
     function startMint() external onlyRewardsDistribution updateReward(address(0)) {
-        require(block.timestamp >= startMintTime, "cannotMintYet");
         require(!_mintStarted, "mintAlreadyHappened");
         if (block.timestamp >= periodFinish) {
             rewardRate = bonusEmission.div(rewardsDuration);
@@ -119,8 +121,8 @@ contract BonusCampaign is StakingRewards {
         uint256 balance = IERC20(rewardsToken).balanceOf(address(this));
         require(rewardRate <= balance.div(rewardsDuration), "Provided balance is too high");
 
-        lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp.add(rewardsDuration);
+        lastUpdateTime = startMintTime;
+        periodFinish = startMintTime.add(rewardsDuration);
         _mintStarted = true;
         emit RewardAdded(bonusEmission);
     }

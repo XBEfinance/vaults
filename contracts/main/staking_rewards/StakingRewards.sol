@@ -72,11 +72,11 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         return _balances[account];
     }
 
-    function lastTimeRewardApplicable() public override view returns (uint256) {
+    function lastTimeRewardApplicable() public virtual override view returns (uint256) {
         return Math.min(block.timestamp, periodFinish);
     }
 
-    function rewardPerToken() public override view returns (uint256) {
+    function rewardPerToken() public virtual override view returns (uint256) {
         if (_totalSupply == 0) {
             return rewardPerTokenStored;
         }

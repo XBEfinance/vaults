@@ -65,6 +65,7 @@ const addressStore = {
       factory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
     },
     weth: '0xc778417E063141139Fce010982780140Aa0cD5Ab',
+    xbe: '0x8ce5F9558e3E0cd7dE8bE15a93DffABEC83E314e',
   },
   mainnet: {
     sushiswap: {
@@ -72,8 +73,9 @@ const addressStore = {
       sushiswapFactory: '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac',
     },
     weth: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+    xbe: '',
   },
-  deployed: {};
+  deployed: {},
 };
 
 const sushiSwapAddresses = {
@@ -160,8 +162,8 @@ const saveAddresses = () => {
     xbeInflation: xbeInflation.address,
     bonusCampaign: bonusCampaign.address,
     veXBE: veXBE.address,
-    voting: voting.address,
-    votingStakingRewards: votingStakingRewards.address,
+//    voting: voting.address,
+//    votingStakingRewards: votingStakingRewards.address,
 
     referralProgram: referralProgram.address,
     registry: registry.address,
@@ -178,16 +180,16 @@ const saveAddresses = () => {
   });
   fs.writeFileSync('addresses.json', jsonAddressData);
 };
-const readJsonAddresses = () => {
-    addresses = {};
-
-    const data = JSON.parse(fs.readFileSync('addresses.json'));
-
-    addrNames.forEach((value, key) => {
-        data.has(key) {}
-    });
-
-};
+//const readJsonAddresses = () => {
+//    addresses = {};
+//
+//    const data = JSON.parse(fs.readFileSync('addresses.json'));
+//
+//    addrNames.forEach((value, key) => {
+//        data.has(key) {}
+//    });
+//
+//};
 
 const getSavedAddress = (key) => {
   const addressesJson = fs.readFileSync('addresses.json');
@@ -259,19 +261,27 @@ const deployContracts = async (deployer, params, owner) => {
   ] = await deployStrategiesAndVaults(strategiesAndVaults);
   // !-----------------------------------
 
-  mockXBE = await deployer.deploy(
-    MockToken,
-    'Mock XBE',
-    'mXBE',
-    params.mockTokens.mockedTotalSupplyXBE,
-    { from: owner },
-  );
+//  mockXBE = await deployer.deploy(
+//    MockToken,
+//    'Mock XBE',
+//    'mXBE',
+//    params.mockTokens.mockedTotalSupplyXBE,
+//    { from: owner },
+//  );
+
+    mockXBE = await MockToken.at(addressStore.rinkeby.xbe);
 
   // get weth ad address
   weth9 = await WETH9.at(addressStore.rinkeby.weth);
-  console.log('WETH aquired');
-  await weth9.deposit({ from: owner, value: ether('1') });
-  console.log('WETH owner balance deposited');
+  console.log('WETH acquired');
+  let ownerEthBalance = await weth9.balanceOf(owner);
+  if ((new BN(ownerEthBalance)).lt(ether('1'))) {
+    await weth9.deposit({ from: owner, value: ether('1') });
+    ownerEthBalance = await weth9.balanceOf(owner);
+    console.log('WETH owner balance deposited, new balance: ', new BN(ownerEthBalance).toString());
+  } else {
+    console.log('owner eth balance is enough:', new BN(ownerEthBalance).toString(), 'no deposit required');
+  }
 
   // deploy bonus campaign xbeinflation
   xbeInflation = await deployer.deploy(XBEInflation, { from: owner });
@@ -283,13 +293,17 @@ const deployContracts = async (deployer, params, owner) => {
   veXBE = await deployer.deploy(VeXBE, { from: owner });
 
   const sushiSwapRouter = await IUniswapV2Router02.at(sushiSwap.sushiswapRouter);
+  console.log('sushiSwapRouter address: ', sushiSwapRouter.address);
   const sushiSwapFactory = await IUniswapV2Factory.at(sushiSwap.sushiswapFactory);
+  console.log('sushiSwapFactory address: ', sushiSwapFactory.address);
 
+  await mockXBE.mintSender(ether('1000'), {from: owner});
   await mockXBE.approve(
     sushiSwapRouter.address,
     params.sushiswapPair.xbeAmountForPair,
     { from: owner },
   );
+
   await weth9.approve(
     sushiSwapRouter.address,
     params.sushiswapPair.wethAmountForPair,
@@ -313,10 +327,12 @@ const deployContracts = async (deployer, params, owner) => {
     ),
   );
 
-  // deploy voting
-  voting = await deployer.deploy(Voting, { from: owner });
-  // voting will be deployed separately
-  votingStakingRewards = await deployer.deploy(VotingStakingRewards, { from: owner });
+  console.log('mockLpSushi address: ', mockLpSushi.address);
+
+//  // deploy voting
+//  voting = await deployer.deploy(Voting, { from: owner });
+//  // voting will be deployed separately
+//  votingStakingRewards = await deployer.deploy(VotingStakingRewards, { from: owner });
 
   saveAddresses();
 };
@@ -494,8 +510,8 @@ const configureContracts = async (params, owner) => {
         // _poolSettings
         [
           mockLpSushi.address,
-          dependentsAddresses.convex.chef, // convexMasterChef
-          ZERO,
+//          dependentsAddresses.convex.chef, // convexMasterChef
+//          ZERO,
           dependentsAddresses.convex.cvx, // ???
         ],
       ],
@@ -518,7 +534,7 @@ const configureContracts = async (params, owner) => {
     },
   ];
 
-  // console.log('Starting configuration...');
+   console.log('Starting configuration...');
 
   await referralProgram.configure(
     [mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
@@ -526,14 +542,14 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  // console.log('ReferralProgram configured...');
+   console.log('ReferralProgram configured...');
 
   await registry.configure(
     owner,
     { from: owner },
   );
 
-  // console.log('Registry configured...');
+   console.log('Registry configured...');
 
   await treasury.configure(
     voting.address,
@@ -546,7 +562,7 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  // console.log('Treasury configured...');
+   console.log('Treasury configured...');
 
   await controller.configure(
     treasury.address,
@@ -555,11 +571,11 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  // console.log('Controller configured...');
+   console.log('Controller configured...');
 
-  // console.log('Vaults and Strategies configuration...');
+   console.log('Vaults and Strategies configuration...');
   for (const item of strategiesAndVaults) {
-    // console.log(`Configuring ${item.name}...`);
+     console.log(`Configuring ${item.name}...`);
 
     await controller.setVault(
       item.token,
@@ -567,7 +583,7 @@ const configureContracts = async (params, owner) => {
       { from: owner },
     );
 
-    // console.log('Controller: vault added...');
+     console.log('Controller: vault added...');
 
     await controller.setApprovedStrategy(
       item.token,
@@ -576,7 +592,7 @@ const configureContracts = async (params, owner) => {
       { from: owner },
     );
 
-    // console.log('Controller: strategy approved...');
+     console.log('Controller: strategy approved...');
 
     await controller.setStrategy(
       item.token,
@@ -584,21 +600,36 @@ const configureContracts = async (params, owner) => {
       { from: owner },
     );
 
-    // console.log('Controller: strategy added...');
+     console.log('Controller: strategy added...');
 
     await item.strategy.configure(
       ...item.strategyConfigArgs,
       { from: owner },
     );
 
-    // console.log(`${item.name}Strategy: configured`);
+     console.log(`${item.name}Strategy: configured`);
 
     // eslint-disable-next-line no-await-in-loop
     await item.vault.configure(
       ...item.vaultConfigArgs,
       { from: owner },
     );
-    // console.log(`${item.name}Vault: configured`);
+
+    await item.vault.setRewardsDistribution(
+        item.strategy.address,
+        { from: owner },
+    );
+
+    await item.vault.addFeeReceiver(
+      treasury.address,
+      new BN('10'),
+      [
+        mockXBE.address,
+      ],
+      true,
+      { from: owner },
+    );
+     console.log(`${item.name}Vault: configured`);
   }
 
   await xbeInflation.configure(
@@ -612,7 +643,7 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  // console.log('XBEInflation: configured');
+   console.log('XBEInflation: configured');
 
   await bonusCampaign.configure(
     mockXBE.address,
@@ -624,7 +655,7 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  // console.log('BonusCampaign: configured');
+   console.log('BonusCampaign: configured');
 
   await veXBE.configure(
     mockXBE.address,
@@ -636,30 +667,30 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  // console.log('VeXBE: configured...');
+   console.log('VeXBE: configured...');
 
-  await voting.initialize(
-    veXBE.address,
-    params.voting.supportRequiredPct,
-    params.voting.minAcceptQuorumPct,
-    params.voting.voteTime,
-    { from: owner },
-  );
-
-  console.log('Voting: configured...');
-
-  await votingStakingRewards.configure(
-    owner,
-    mockXBE.address,
-    mockXBE.address,
-    months('23'),
-    veXBE.address,
-    voting.address,
-    bonusCampaign.address,
-    [],
-  );
-
-  console.log('VotingStakingRewards: configured...');
+//  await voting.initialize(
+//    veXBE.address,
+//    params.voting.supportRequiredPct,
+//    params.voting.minAcceptQuorumPct,
+//    params.voting.voteTime,
+//    { from: owner },
+//  );
+//
+//  console.log('Voting: configured...');
+//
+//  await votingStakingRewards.configure(
+//    owner,
+//    mockXBE.address,
+//    mockXBE.address,
+//    months('23'),
+//    veXBE.address,
+//    voting.address,
+//    bonusCampaign.address,
+//    [],
+//  );
+//
+//  console.log('VotingStakingRewards: configured...');
 };
 
 module.exports = function (deployer, network, accounts) {

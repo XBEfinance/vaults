@@ -132,9 +132,9 @@ contract('Integration tests', (accounts) => {
       contracts.treasury.address,
     );
     const votingStakingRewardsReceipt = await contracts.treasury.toVoters();
-    expect(await votingStakingRewardsXBETracker.delta()).to.be.bignumber.equal(
-      treasuryRewardBalance,
-    );
+    expect(await votingStakingRewardsXBETracker.delta()).to.be.bignumber
+      .greaterThan(ZERO)
+      .equal(treasuryRewardBalance);
     logBNFromWei('votingStakingRewards XBE balance', await votingStakingRewardsXBETracker.get());
   }
 
@@ -212,16 +212,23 @@ contract('Integration tests', (accounts) => {
       /* ========== MINT REWARDS AND CHECK DISTRIBUTION ========== */
       for (let i = 0; i < 24; i += 1) {
         await mintForInflationAndSendToVoters();
-        logBNFromWei('Earned after mint',
-          await contracts.votingStakingRewards.earned(owner));
-        await time.increase(days('365'));
+
+        const votingXBEBalance = await contracts.mockXBE.balanceOf(
+          contracts.votingStakingRewards.address,
+        );
+        const ownerVoterRewards = await contracts.votingStakingRewards.earned(owner);
+
+        expect(votingXBEBalance);
+
+        logBNFromWei('Earned after mint', ownerVoterRewards);
+        await time.increase(days('14'));
       }
 
-      logBNFromWei('Earned after mint',
-        await contracts.votingStakingRewards.earned(owner));
-      await time.increase(days(14));
-      logBNFromWei('Earned after 14 days',
-        await contracts.votingStakingRewards.earned(owner));
+      // logBNFromWei('Earned after mint',
+      //   await contracts.votingStakingRewards.earned(owner));
+      // await time.increase(days(14));
+      // logBNFromWei('Earned after 14 days',
+      //   await contracts.votingStakingRewards.earned(owner));
 
       /* ========== UNLOCK AND UNSTAKE ========== */
       if (await time.latest() < ownerLockEnd.add(months('1'))) {
@@ -237,134 +244,139 @@ contract('Integration tests', (accounts) => {
       expect(await ownerTrackers.stakedAmount.deltaInvertedSign()).to.be.bignumber.equal(amount);
       expect(await ownerTrackers.XBE.delta()).to.be.bignumber.equal(amount);
     });
-    // it('bonus campaign', async () => {
-    //   const amount = ether('10');
-    //   const inverseMaxBoostCoefficient = await contracts.votingStakingRewards
-    //     .inverseMaxBoostCoefficient();
-    //   const PCT_BASE = await contracts.votingStakingRewards.PCT_BASE();
-    //   const ownerTrackers = await getValueTrackers(owner, {
-    //     XBE: contracts.mockXBE.balanceOf,
-    //     boost: contracts.votingStakingRewards.calculateBoostLevel,
-    //     stakedAmount: contracts.votingStakingRewards.balanceOf,
-    //     lockedAmount: contracts.veXBE.lockedAmount,
-    //     votingStakingRewards: contracts.votingStakingRewards.earned,
-    //     bonusRewards: contracts.bonusCampaign.earned,
-    //     bonusRewardsPaid: contracts.bonusCampaign.userRewardPerTokenPaid,
-    //   });
+    it('bonus campaign', async () => {
+      const amount = ether('10');
+      const inverseMaxBoostCoefficient = await contracts.votingStakingRewards
+        .inverseMaxBoostCoefficient();
+      const PCT_BASE = await contracts.votingStakingRewards.PCT_BASE();
+      const ownerTrackers = await getValueTrackers(owner, {
+        XBE: contracts.mockXBE.balanceOf,
+        boost: contracts.votingStakingRewards.calculateBoostLevel,
+        stakedAmount: contracts.votingStakingRewards.balanceOf,
+        lockedAmount: contracts.veXBE.lockedAmount,
+        votingStakingRewards: contracts.votingStakingRewards.earned,
+        bonusRewards: contracts.bonusCampaign.earned,
+        bonusRewardsPaid: contracts.bonusCampaign.userRewardPerTokenPaid,
+      });
 
-    //   expect(await ownerTrackers.boost.get()).to.be.bignumber.equal(
-    //     PCT_BASE.mul(inverseMaxBoostCoefficient).div(new BN('100')),
-    //   );
+      expect(await ownerTrackers.boost.get()).to.be.bignumber.equal(
+        PCT_BASE.mul(inverseMaxBoostCoefficient).div(new BN('100')),
+      );
 
-    //   /* ========== START BONUS CAMPAIGN ========== */
-    //   await startBonusCampaign();
+      /* ========== START BONUS CAMPAIGN ========== */
+      await startBonusCampaign();
 
-    //   /* ========== STAKE ========== */
-    //   await contracts.mockXBE.approve(
-    //     contracts.votingStakingRewards.address,
-    //     amount,
-    //     { from: owner },
-    //   );
-    //   const stakeReceipt = await contracts.votingStakingRewards.stake(amount, { from: owner });
-    //   expectEvent(stakeReceipt, 'Staked', {
-    //     user: owner,
-    //     amount,
-    //   });
-    //   expect(await ownerTrackers.stakedAmount.get()).to.be.bignumber.equal(amount);
-    //   expect(await ownerTrackers.XBE.deltaInvertedSign()).to.be.bignumber.equal(amount);
-    //   expect(await ownerTrackers.boost.get()).to.be.bignumber.equal(
-    //     PCT_BASE.mul(inverseMaxBoostCoefficient).div(new BN('100')),
-    //   );
+      /* ========== STAKE ========== */
+      await contracts.mockXBE.approve(
+        contracts.votingStakingRewards.address,
+        amount,
+        { from: owner },
+      );
+      const stakeReceipt = await contracts.votingStakingRewards.stake(amount, { from: owner });
+      expectEvent(stakeReceipt, 'Staked', {
+        user: owner,
+        amount,
+      });
+      expect(await ownerTrackers.stakedAmount.get()).to.be.bignumber.equal(amount);
+      expect(await ownerTrackers.XBE.deltaInvertedSign()).to.be.bignumber.equal(amount);
+      expect(await ownerTrackers.boost.get()).to.be.bignumber.equal(
+        PCT_BASE.mul(inverseMaxBoostCoefficient).div(new BN('100')),
+      );
 
-    //   /* ========== CREATE LOCK ========== */
-    //   const latestFullWeek = await getLatestFullWeek();
-    //   const lockEnd = latestFullWeek.add(months(23));
-    //   await contracts.mockXBE.approve(
-    //     contracts.veXBE.address,
-    //     amount,
-    //     { from: owner },
-    //   );
+      /* ========== CREATE LOCK ========== */
+      const latestFullWeek = await getLatestFullWeek();
+      const lockEnd = latestFullWeek.add(months(23));
+      await contracts.mockXBE.approve(
+        contracts.veXBE.address,
+        amount,
+        { from: owner },
+      );
 
-    //   expect(
-    //     await contracts.bonusCampaign.canRegister(owner),
-    //   ).to.be.true;
+      expect(
+        await contracts.bonusCampaign.canRegister(owner),
+      ).to.be.true;
 
-    //   const createLockReceipt = await contracts.veXBE.createLock(amount, lockEnd);
+      const createLockReceipt = await contracts.veXBE.createLock(amount, lockEnd);
 
-    //   const ownerLockedAmount = await ownerTrackers.lockedAmount.get();
-    //   const ownerLockEnd = await contracts.veXBE.lockedEnd(owner);
+      const ownerLockedAmount = await ownerTrackers.lockedAmount.get();
+      const ownerLockEnd = await contracts.veXBE.lockedEnd(owner);
 
-    //   expect(ownerLockedAmount).to.be.bignumber.equal(amount);
-    //   expect(ownerLockEnd).to.be.bignumber.closeTo(lockEnd, days('7'));
-    //   expect(
-    //     await contracts.veXBE.isLockedForMax(owner),
-    //   ).to.be.true;
-    //   expect(
-    //     await contracts.bonusCampaign.registered(owner),
-    //   ).to.be.true;
-    //   // processEventArgs(createLockReceipt, 'Staked', (args) => {
-    //   //   expect(args.user).to.be.bignumber.equal(owner);
-    //   //   expect(args.amount).to.be.bignumber.greaterThan(ZERO);
-    //   // });
+      expect(ownerLockedAmount).to.be.bignumber.equal(amount);
+      expect(ownerLockEnd).to.be.bignumber.closeTo(lockEnd, days('7'));
+      expect(
+        await contracts.veXBE.isLockedForMax(owner),
+      ).to.be.true;
+      expect(
+        await contracts.bonusCampaign.registered(owner),
+      ).to.be.true;
+      // processEventArgs(createLockReceipt, 'Staked', (args) => {
+      //   expect(args.user).to.be.bignumber.equal(owner);
+      //   expect(args.amount).to.be.bignumber.greaterThan(ZERO);
+      // });
 
-    //   expect(await ownerTrackers.boost.get()).to.be.bignumber.equal(ether('1'));
+      expect(await ownerTrackers.boost.get()).to.be.bignumber.equal(ether('1'));
 
-    //   /* ========== TRY TO WITHDRAW WITH ACTIVE LOCK ========== */
-    //   const ownerStaked = await contracts.votingStakingRewards.balanceOf(owner);
-    //   await expectRevert(
-    //     contracts.votingStakingRewards.withdrawUnbonded(ownerStaked),
-    //     'escrow amount failure',
-    //   );
+      /* ========== TRY TO WITHDRAW WITH ACTIVE LOCK ========== */
+      const ownerStaked = await contracts.votingStakingRewards.balanceOf(owner);
+      await expectRevert(
+        contracts.votingStakingRewards.withdrawUnbonded(ownerStaked),
+        'escrow amount failure',
+      );
 
-    //   /* ========== BONUS CAMPAIGN REWARD DISTRIBUTION ========== */
-    //   const bonusRewardRate = await contracts.bonusCampaign.rewardRate();
-    //   const bonusStartMintTime = await contracts.bonusCampaign.startMintTime();
-    //   const bonusRewardDuration = await contracts.bonusCampaign.rewardsDuration();
-    //   const bonusPeriodFinish = await contracts.bonusCampaign.periodFinish();
-    //   const ownerBonusStake = await await contracts.bonusCampaign.balanceOf(owner);
-    //   const bonusTotalSupply = await contracts.bonusCampaign.totalSupply();
+      /* ========== BONUS CAMPAIGN REWARD DISTRIBUTION ========== */
+      const bonusRewardRate = await contracts.bonusCampaign.rewardRate();
+      const bonusStartMintTime = await contracts.bonusCampaign.startMintTime();
+      const bonusRewardDuration = await contracts.bonusCampaign.rewardsDuration();
+      const bonusPeriodFinish = await contracts.bonusCampaign.periodFinish();
+      const ownerBonusStake = await await contracts.bonusCampaign.balanceOf(owner);
+      const bonusTotalSupply = await contracts.bonusCampaign.totalSupply();
 
-    //   let totalClaimedReward = ZERO;
+      expect(
+        await ownerTrackers.bonusRewards.get(),
+      ).to.be.bignumber.equal(ZERO);
 
-    //   await time.increaseTo(bonusStartMintTime);
+      let totalClaimedReward = ZERO;
 
-    //   let now = await time.latest();
-    //   while (now < bonusPeriodFinish) {
-    //     await time.increase(months('1'));
-    //     const bonusRewards = await ownerTrackers.bonusRewards.get();
+      await time.increaseTo(bonusStartMintTime);
 
-    //     const getRewardReceipt = await contracts.bonusCampaign.getReward();
-    //     const receivedBonusReward = await ownerTrackers.XBE.delta();
-    //     processEventArgs(getRewardReceipt, 'RewardPaid', (args) => {
-    //       expect(args.user).to.be.bignumber.equal(owner);
-    //       expect(args.reward).to.be.bignumber.equal(receivedBonusReward);
-    //     });
+      let now = await time.latest();
+      while (now < bonusPeriodFinish) {
+        await time.increase(months('1'));
+        const bonusRewards = await ownerTrackers.bonusRewards.get();
+        expect(bonusRewards).to.be.bignumber.greaterThan(ZERO);
 
-    //     totalClaimedReward = totalClaimedReward.add(receivedBonusReward);
-    //     now = await time.latest();
+        const getRewardReceipt = await contracts.bonusCampaign.getReward();
+        const receivedBonusReward = await ownerTrackers.XBE.delta();
+        processEventArgs(getRewardReceipt, 'RewardPaid', (args) => {
+          expect(args.user).to.be.bignumber.equal(owner);
+          expect(args.reward).to.be.bignumber.equal(receivedBonusReward);
+        });
 
-    //     console.group(`bonusStartMintTime + ${now.sub(bonusStartMintTime).div(months('1'))} months`);
-    //     logBNFromWei('received reward', receivedBonusReward);
-    //     logBNFromWei('userRewards', bonusRewards);
-    //     logBNFromWei('ClaimedRewards', totalClaimedReward);
-    //     console.groupEnd();
-    //   }
+        totalClaimedReward = totalClaimedReward.add(receivedBonusReward);
+        now = await time.latest();
 
-    //   logBNFromWei('Total reward claimed', totalClaimedReward);
+        console.group(`bonusStartMintTime + ${now.sub(bonusStartMintTime).div(months('1'))} months`);
+        logBNFromWei('received reward', receivedBonusReward);
+        logBNFromWei('userRewards', bonusRewards);
+        logBNFromWei('ClaimedRewards', totalClaimedReward);
+        console.groupEnd();
+      }
 
-    //   /* ========== WITHDRAW LOCKED AND STAKED ========== */
-    //   if (await time.latest() < ownerLockEnd.add(months('1'))) {
-    //     await time.increaseTo(ownerLockEnd.add(months('1')));
-    //   }
-    //   await contracts.veXBE.withdraw();
-    //   const ownerBondedRewardLocks = await contracts.votingStakingRewards.bondedRewardLocks(owner);
-    //   const withdrawAmount = (await ownerTrackers.stakedAmount.get())
-    //     .sub(ownerBondedRewardLocks.amount);
+      logBNFromWei('Total reward claimed', totalClaimedReward);
 
-    //   await contracts.votingStakingRewards.withdrawUnbonded(withdrawAmount);
+      /* ========== WITHDRAW LOCKED AND STAKED ========== */
+      if (await time.latest() < ownerLockEnd.add(months('1'))) {
+        await time.increaseTo(ownerLockEnd.add(months('1')));
+      }
+      await contracts.veXBE.withdraw();
+      const ownerBondedRewardLocks = await contracts.votingStakingRewards.bondedRewardLocks(owner);
+      const withdrawAmount = (await ownerTrackers.stakedAmount.get())
+        .sub(ownerBondedRewardLocks.amount);
 
-    //   expect(await ownerTrackers.stakedAmount.deltaInvertedSign()).to.be.bignumber.equal(amount);
-    //   expect(await ownerTrackers.XBE.delta()).to.be.bignumber.equal(amount);
-    // });
+      await contracts.votingStakingRewards.withdrawUnbonded(withdrawAmount);
+
+      expect(await ownerTrackers.stakedAmount.deltaInvertedSign()).to.be.bignumber.equal(amount);
+      expect(await ownerTrackers.XBE.delta()).to.be.bignumber.equal(amount);
+    });
   });
 });

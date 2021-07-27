@@ -132,9 +132,9 @@ contract('Integration tests', (accounts) => {
       contracts.treasury.address,
     );
     const votingStakingRewardsReceipt = await contracts.treasury.toVoters();
-    expect(await votingStakingRewardsXBETracker.delta()).to.be.bignumber.equal(
-      treasuryRewardBalance,
-    );
+    expect(await votingStakingRewardsXBETracker.delta()).to.be.bignumber
+      .greaterThan(ZERO)
+      .equal(treasuryRewardBalance);
     logBNFromWei('votingStakingRewards XBE balance', await votingStakingRewardsXBETracker.get());
   }
 
@@ -212,16 +212,23 @@ contract('Integration tests', (accounts) => {
       /* ========== MINT REWARDS AND CHECK DISTRIBUTION ========== */
       for (let i = 0; i < 24; i += 1) {
         await mintForInflationAndSendToVoters();
-        logBNFromWei('Earned after mint',
-          await contracts.votingStakingRewards.earned(owner));
-        await time.increase(days('365'));
+
+        const votingXBEBalance = await contracts.mockXBE.balanceOf(
+          contracts.votingStakingRewards.address,
+        );
+        const ownerVoterRewards = await contracts.votingStakingRewards.earned(owner);
+
+        expect(votingXBEBalance);
+
+        logBNFromWei('Earned after mint', ownerVoterRewards);
+        await time.increase(days('14'));
       }
 
-      logBNFromWei('Earned after mint',
-        await contracts.votingStakingRewards.earned(owner));
-      await time.increase(days(14));
-      logBNFromWei('Earned after 14 days',
-        await contracts.votingStakingRewards.earned(owner));
+      // logBNFromWei('Earned after mint',
+      //   await contracts.votingStakingRewards.earned(owner));
+      // await time.increase(days(14));
+      // logBNFromWei('Earned after 14 days',
+      //   await contracts.votingStakingRewards.earned(owner));
 
       /* ========== UNLOCK AND UNSTAKE ========== */
       if (await time.latest() < ownerLockEnd.add(months('1'))) {
@@ -324,6 +331,10 @@ contract('Integration tests', (accounts) => {
       const ownerBonusStake = await await contracts.bonusCampaign.balanceOf(owner);
       const bonusTotalSupply = await contracts.bonusCampaign.totalSupply();
 
+      expect(
+        await ownerTrackers.bonusRewards.get(),
+      ).to.be.bignumber.equal(ZERO);
+
       let totalClaimedReward = ZERO;
 
       await time.increaseTo(bonusStartMintTime);
@@ -332,6 +343,7 @@ contract('Integration tests', (accounts) => {
       while (now < bonusPeriodFinish) {
         await time.increase(months('1'));
         const bonusRewards = await ownerTrackers.bonusRewards.get();
+        expect(bonusRewards).to.be.bignumber.greaterThan(ZERO);
 
         const getRewardReceipt = await contracts.bonusCampaign.getReward();
         const receivedBonusReward = await ownerTrackers.XBE.delta();

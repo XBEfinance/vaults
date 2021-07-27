@@ -135,6 +135,8 @@ contract('Integration tests', (accounts) => {
       contracts.sushiVault.address,
     ));
     logBNFromWei('earned in vault', await trackers.vaultEarned.get());
+    logBNFromWei('earnedReal in vault',
+      (await contracts.sushiVault.earnedReal({ from: alice }))[0]);
     logBNFromWei('rewards in votingSR', await trackers.votingStakingRewards.get());
     logBNFromWei('staked in votingSR', await trackers.votingStaked.get());
     // logBNFromWei('treasuty xbe balance', await contracts.mockXBE.balanceOf(
@@ -160,8 +162,6 @@ contract('Integration tests', (accounts) => {
         ),
       });
       await startBonusCampaign();
-      await contracts.simpleXBEInflation.mintForContracts();
-      await contracts.treasury.toVoters();
 
       await logAllTrackers(aliceTrackers, 'Before all');
 
@@ -194,16 +194,23 @@ contract('Integration tests', (accounts) => {
 
       await logAllTrackers(aliceTrackers, 'After vault.earn()');
 
+      await contracts.simpleXBEInflation.mintForContracts();
+      await contracts.treasury.toVoters();
+      await logAllTrackers(aliceTrackers, 'After mintForContracts');
+
       await time.increase(days('14'));
 
-      await logAllTrackers(aliceTrackers, 'After vault.earn() + 14 days');
+      await logAllTrackers(aliceTrackers, '+ 14 days');
 
       const isMxbeValid = await contracts.sushiVault.isTokenValid(contracts.mockXBE.address);
       console.log('mxbe is valid ? = ', isMxbeValid);
       const earnedReal = await contracts.sushiVault.earnedReal();
       logBNFromWei('earnedReal', earnedReal[0]);
-      const getreward = await contracts.sushiVault.getReward(0x02, { from: alice });
+      const getrewardReceipt = await contracts.sushiVault.getReward(0x02, { from: alice });
 
+      processEventArgs(getrewardReceipt, 'RewardPaid', (args) => {
+        logBNFromWei('RewardPaid amount', args.reward);
+      });
       await logAllTrackers(aliceTrackers, 'After getReward');
 
       await time.increase(days('365'));

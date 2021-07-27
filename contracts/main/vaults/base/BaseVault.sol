@@ -370,13 +370,12 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
             IStrategy(_controller.strategies(_stakingToken)).getRewards();
             _controller.claim(_stakingToken, _rewardToken);
         }
+        __updateReward(_for);
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
             IERC20(_rewardToken).safeTransfer(_for, reward);
-            emit RewardPaid(_rewardToken, _for, reward);
-        } else {
-            emit RewardPaid(_rewardToken, _for, 0);
         }
+        emit RewardPaid(_rewardToken, _for, reward);
     }
 
     function __getReward(uint8 _claimMask) internal {
@@ -396,7 +395,6 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         virtual
         nonReentrant
         validClaimMask(_claimMask)
-        updateReward(msg.sender)
     {
         __getReward(_claimMask);
     }
@@ -490,11 +488,15 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         }
     }
 
-    modifier updateReward(address _account) {
+    function __updateReward(address _account) internal {
         lastUpdateTime = lastTimeRewardApplicable();
         for (uint256 i = 0; i < _validTokens.length(); i++) {
             _updateReward(_validTokens.at(i), _account);
         }
+    }
+
+    modifier updateReward(address _account) {
+        __updateReward(_account);
         _;
     }
 
@@ -545,6 +547,11 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         amounts = _strategy.earned(_tokenRewards);
         uint256 _share = balanceOf(msg.sender);
         for(uint256 i = 0; i < _tokenRewards.length; i++){
+            if(totalSupply() == 0){
+                amounts[i] = 0;
+                break;
+            }
+            
             amounts[i] = amounts[i]
                 .add(
                     IERC20(_tokenRewards[i]).balanceOf(address(this))

@@ -367,7 +367,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
           contracts.sushiLP.address, // _initialToken
           contracts.controller.address, // _initialController
           owner, // _governance
-          now.add(days('7')), // _rewardsDuration
+          days('7'), // _rewardsDuration
           contracts.mockXBE.address, // _tokenToAutostake,
           contracts.votingStakingRewards.address, // _votingStakingRewards
           //          true, // _enableFees

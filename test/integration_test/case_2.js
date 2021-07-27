@@ -73,12 +73,6 @@ contract('Integration tests', (accounts) => {
     return latestTimestamp.div(WEEK).mul(WEEK);
   }
 
-  async function getLatestFullWeekFromBlock() {
-    const latestTimestamp = await time.latest();
-    const WEEK = await contracts.veXBE.WEEK();
-    return latestTimestamp.div(WEEK).mul(WEEK);
-  }
-
   async function shiftToWeeks(weeks) {
     const latestTimestamp = await time.latest();
     const WEEK = await contracts.veXBE.WEEK();
@@ -95,6 +89,23 @@ contract('Integration tests', (accounts) => {
       }
     }
     return trackers;
+  }
+
+  async function mintForInflationAndSendToVoters() {
+    /* ========== MINT FROM INFLATION AND SEND TO VOTERS ========== */
+    const receipt = await contracts.simpleXBEInflation.mintForContracts();
+    const votingStakingRewardsXBETracker = await UniversalTracker(
+      contracts.votingStakingRewards.address,
+      contracts.mockXBE.balanceOf,
+    );
+    const treasuryRewardBalance = await contracts.mockXBE.balanceOf(
+      contracts.treasury.address,
+    );
+    const votingStakingRewardsReceipt = await contracts.treasury.toVoters();
+    expect(await votingStakingRewardsXBETracker.delta()).to.be.bignumber.equal(
+      treasuryRewardBalance,
+    );
+    logBNFromWei('votingStakingRewards XBE balance', await votingStakingRewardsXBETracker.get());
   }
 
   async function provideLiquidity(account, amount) {
@@ -115,13 +126,38 @@ contract('Integration tests', (accounts) => {
     );
   }
 
+  async function stake(from, amount) {
+    await contracts.mockXBE.approve(
+      contracts.votingStakingRewards.address,
+      amount,
+      { from },
+    );
+    return contracts.votingStakingRewards.stake(amount, { from });
+  }
+
+  async function createLock(from, amount, duration) {
+  /* ========== CREATE LOCK ========== */
+    const latestFullWeek = await getLatestFullWeek();
+    const lockEnd = latestFullWeek.add(duration);
+    const createLockReceipt = await contracts.veXBE.createLock(amount, lockEnd, { from });
+  }
+
+  async function startBonusCampaign() {
+    const bonusEmission = await contracts.bonusCampaign.bonusEmission();
+    const startMintReceipt = await contracts.bonusCampaign.startMint();
+    expectEvent(startMintReceipt, 'RewardAdded', { reward: bonusEmission });
+  }
+
   describe('Case #1', () => {
     beforeEach(deployAndConfigure);
     it('should pass', async () => {
       const amount = ether('10');
+
       const inverseMaxBoostCoefficient = await contracts.votingStakingRewards
         .inverseMaxBoostCoefficient();
+
       const PCT_BASE = await contracts.votingStakingRewards.PCT_BASE();
+
       const ownerTrackers = await getValueTrackers(owner, {
         XBE: contracts.mockXBE.balanceOf,
         boost: contracts.votingStakingRewards.calculateBoostLevel,
@@ -129,52 +165,11 @@ contract('Integration tests', (accounts) => {
         lockedAmount: contracts.veXBE.lockedAmount,
         votingStakingRewards: contracts.votingStakingRewards.earned,
         bonusRewards: contracts.bonusCampaign.earned,
+        veXBE: contracts.veXBE.balanceOf,
       });
 
-      expect(await ownerTrackers.boost.get()).to.be.bignumber.equal(
-        PCT_BASE.mul(inverseMaxBoostCoefficient).div(new BN('100')),
-      );
-
-      const aliceTrackers = await getValueTrackers(alice, {
-        XBE: contracts.mockXBE.balanceOf,
-        sushiLP: contracts.sushiLP.balanceOf,
-        sushiStaked: contracts.sushiVault.balanceOf,
-        votingStakingRewards: contracts.votingStakingRewards.earned,
-      });
-
-      /* ===== Provide liquidity to XBE/WETH ==== */
-      logBNFromWei('Alice XBE', await aliceTrackers.XBE.get());
-      logBNFromWei('tSupply', await contracts.sushiLP.totalSupply());
-      await provideLiquidity(alice, amount);
-      const aliceLP = await aliceTrackers.sushiLP.get();
-      const tl = await contracts.sushiLP.totalSupply();
-      logBNFromWei('alicelp', aliceLP);
-      logBNFromWei('tl', await contracts.sushiLP.totalSupply());
-
-      /* ====== Stake LP tokens ===== */
-      const lpAmountToStake = await aliceTrackers.sushiLP.get();
-      await contracts.sushiLP.approve(
-        contracts.sushiVault.address,
-        lpAmountToStake,
-        { from: alice },
-      );
-      const sushiStakeReceipt = await contracts.sushiVault.deposit(
-        lpAmountToStake,
-        { from: alice },
-      );
-      expectEvent(sushiStakeReceipt, 'Staked', {
-        user: alice,
-        amount: lpAmountToStake,
-      });
-      logBNFromWei('aliceLPStaked', await aliceTrackers.sushiStaked.get());
-
-      /* ========== STAKE ========== */
-      await contracts.mockXBE.approve(
-        contracts.votingStakingRewards.address,
-        amount,
-        { from: owner },
-      );
-      const stakeReceipt = await contracts.votingStakingRewards.stake(amount, { from: owner });
+      await startBonusCampaign();
+      const stakeReceipt = await stake(owner, amount);
       expectEvent(stakeReceipt, 'Staked', {
         user: owner,
         amount,
@@ -185,39 +180,39 @@ contract('Integration tests', (accounts) => {
         PCT_BASE.mul(inverseMaxBoostCoefficient).div(new BN('100')),
       );
 
-      /* ========== CREATE LOCK ========== */
-      const latestFullWeek = await getLatestFullWeek();
-      const lockEnd = latestFullWeek.add(months('1'));
-      // await contracts.mockXBE.approve(
-      //   contracts.veXBE.address,
-      //   amount,
-      //   { from: owner },
-      // );
-      const createLockReceipt = await contracts.veXBE.createLock(amount, lockEnd);
-
+      await createLock(owner, amount, months('1'));
       const ownerLockedAmount = await ownerTrackers.lockedAmount.get();
       const ownerLockEnd = await contracts.veXBE.lockedEnd(owner);
-
       expect(ownerLockedAmount).to.be.bignumber.equal(amount);
       // expect(ownerLockEnd).to.be.bignumber.equal(lockEnd);
 
-      /* ========== START BONUS CAMPAIGN ========== */
-      const bonusEmission = await contracts.bonusCampaign.bonusEmission();
-      const startMintReceipt = await contracts.bonusCampaign.startMint();
-      expectEvent(startMintReceipt, 'RewardAdded', { reward: bonusEmission });
+      for (let i = 1; i < 10; i += 1) {
+        await contracts.mockXBE.mintSender(ether('100'), { from: accounts[i] });
+        await stake(accounts[i], amount);
+        await createLock(accounts[i], amount, months('23'));
+        expect(await contracts.veXBE.isLockedForMax(accounts[i])).to.be.true;
+      }
 
+      await mintForInflationAndSendToVoters();
+
+      logBNFromWei('CURRENT BOOST', await ownerTrackers.boost.get());
       /* ========== CHECK BOOST CHANGE ========== */
       for (let i = 0; i < 6; i += 1) {
         const oldLockedEnd = await contracts.veXBE.lockedEnd(owner);
-        const newLockedEnd = oldLockedEnd.add(months('1'));
+        const newLockedEnd = oldLockedEnd.add(days('7'));
 
         await contracts.veXBE.increaseUnlockTime(newLockedEnd);
         const currentBoost = await ownerTrackers.boost.get();
         const earned = await ownerTrackers.votingStakingRewards.get();
+        const totalVotingPower = await contracts.veXBE.totalSupply();
+        const userVotingPower = await ownerTrackers.veXBE.get();
+
         console.group(`Month ${i + 1}`);
         logBNTimestamp('oldLockedEnd', oldLockedEnd);
         logBNTimestamp('newLockedEnd', newLockedEnd);
         logBNTimestamp('actualLockedEnd', await contracts.veXBE.lockedEnd(owner));
+        logBNFromWei('Owner voting power', userVotingPower);
+        logBNFromWei('Total voting power', totalVotingPower);
         logBNFromWei('votingStakingRewards', earned);
         logBNFromWei('CURRENT BOOST', currentBoost);
         console.groupEnd();

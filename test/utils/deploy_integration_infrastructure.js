@@ -94,7 +94,7 @@ const defaultParams = {
   },
   simpleXBEInflation: {
     targetMinted: ether('5000'),
-    years: new BN('2'),
+    periodsCount: new BN('24'),
   },
   voting: {
     supportRequiredPct: new BN('5100'),
@@ -366,10 +366,10 @@ const deployInfrastructure = (owner, alice, bob, params) => {
           contracts.sushiLP.address, // _initialToken
           contracts.controller.address, // _initialController
           owner, // _governance
-          now.add(months('7')), // _rewardsDuration
+          now.add(days('7')), // _rewardsDuration
           contracts.mockXBE.address, // _tokenToAutostake,
           contracts.votingStakingRewards.address, // _votingStakingRewards
-//          true, // _enableFees
+          //          true, // _enableFees
           [ // _rewardTokens
             contracts.mockXBE.address,
           ],
@@ -499,7 +499,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
     contracts.simpleXBEInflation.configure(
       contracts.mockXBE.address, // _token
       params.simpleXBEInflation.targetMinted, // _targetMinted
-      params.simpleXBEInflation.years, // years
+      params.simpleXBEInflation.periodsCount, // periodsCount
       { from: owner },
     );
 

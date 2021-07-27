@@ -97,6 +97,12 @@ contract('Integration tests', (accounts) => {
     return trackers;
   }
 
+  async function startBonusCampaign() {
+    const bonusEmission = await contracts.bonusCampaign.bonusEmission();
+    const startMintReceipt = await contracts.bonusCampaign.startMint();
+    expectEvent(startMintReceipt, 'RewardAdded', { reward: bonusEmission });
+  }
+
   async function provideLiquidity(account, amount) {
     const now = await time.latest();
     await contracts.weth9.deposit({ from: account, value: amount });
@@ -114,21 +120,26 @@ contract('Integration tests', (accounts) => {
       { from: account },
     );
   }
-  async function logAllTrackers(trackers, groupTitle = '') {
+
+  async function logAllTrackers(trackers, groupTitle = 'Trackers') {
     console.group(groupTitle);
     logBNFromWei('XBE', await trackers.XBE.get());
     logBNFromWei('sushiLP', await trackers.sushiLP.get());
     logBNFromWei('sushiStaked', await trackers.sushiStaked.get());
-    logBNFromWei('votingStakingRewards', await trackers.votingStakingRewards.get());
     logBNFromWei('sushiStrategyTotalDeposited',
       await contracts.sushiStrategy.balanceOf());
     logBNFromWei('sushiStrategy XBE balance', await contracts.mockXBE.balanceOf(
       contracts.sushiStrategy.address,
     ));
-    logBNFromWei('earned in vault', await trackers.vaultEarned.get());
-    logBNFromWei('treasuty xbe balance', await contracts.mockXBE.balanceOf(
-      contracts.treasury.address,
+    logBNFromWei('sushiVault XBE balance', await contracts.mockXBE.balanceOf(
+      contracts.sushiVault.address,
     ));
+    logBNFromWei('earned in vault', await trackers.vaultEarned.get());
+    logBNFromWei('rewards in votingSR', await trackers.votingStakingRewards.get());
+    logBNFromWei('staked in votingSR', await trackers.votingStaked.get());
+    // logBNFromWei('treasuty xbe balance', await contracts.mockXBE.balanceOf(
+    //   contracts.treasury.address,
+    // ));
     console.groupEnd();
   }
 
@@ -142,14 +153,15 @@ contract('Integration tests', (accounts) => {
         sushiLP: contracts.sushiLP.balanceOf,
         sushiStaked: contracts.sushiVault.balanceOf,
         votingStakingRewards: contracts.votingStakingRewards.earned,
+        votingStaked: contracts.votingStakingRewards.balanceOf,
         vaultEarned: (account) => contracts.sushiVault.earned(
           contracts.mockXBE.address,
           account,
         ),
       });
-
-      const receipt = await contracts.simpleXBEInflation.mintForContracts();
-      const votingStakingRewardsReceipt = await contracts.treasury.toVoters();
+      await startBonusCampaign();
+      await contracts.simpleXBEInflation.mintForContracts();
+      await contracts.treasury.toVoters();
 
       await logAllTrackers(aliceTrackers, 'Before all');
 
@@ -165,7 +177,6 @@ contract('Integration tests', (accounts) => {
         lpAmountToStake,
         { from: alice },
       );
-      const stakingToken = await contracts.sushiVault.stakingToken();
       const sushiStakeReceipt = await contracts.sushiVault.deposit(
         lpAmountToStake,
         { from: alice },
@@ -183,18 +194,21 @@ contract('Integration tests', (accounts) => {
 
       await logAllTrackers(aliceTrackers, 'After vault.earn()');
 
-      await time.increase(days('200'));
+      await time.increase(days('14'));
 
-
-      await logAllTrackers(aliceTrackers, 'After mintForContracts');
+      await logAllTrackers(aliceTrackers, 'After vault.earn() + 14 days');
 
       const isMxbeValid = await contracts.sushiVault.isTokenValid(contracts.mockXBE.address);
       console.log('mxbe is valid ? = ', isMxbeValid);
       const earnedReal = await contracts.sushiVault.earnedReal();
       logBNFromWei('earnedReal', earnedReal[0]);
-      const getreward = await contracts.sushiVault.getReward(0x02);
+      const getreward = await contracts.sushiVault.getReward(0x02, { from: alice });
 
       await logAllTrackers(aliceTrackers, 'After getReward');
+
+      await time.increase(days('365'));
+
+      await logAllTrackers(aliceTrackers, 'After getReward + 365 days');
 
       await contracts.sushiVault.withdraw(await aliceTrackers.sushiStaked.get(), { from: alice });
       await logAllTrackers(aliceTrackers, 'After withdraw');

@@ -240,7 +240,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
     {
         return _balances[account]
           .mul(
-            rewardPerToken(_rewardToken).sub(userRewardPerTokenPaid[account][_rewardToken])
+            rewardPerToken(_rewardToken).sub(userRewardPerTokenPaid[_rewardToken][account])
           )
           .div(1e18).add(rewards[account][_rewardToken]);
     }
@@ -578,7 +578,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
                 _rewardPerTokenForDuration(_rewardsToken, _duration)
                     .sub(userRewardPerTokenPaid[_rewardsToken][msg.sender]))
             .div(1e18)
-            .add(rewards[_rewardsToken][msg.sender]);
+            .add(rewards[msg.sender][_rewardsToken]);
         return _rewardsAmount;
     }
 }

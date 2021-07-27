@@ -135,8 +135,8 @@ contract('Integration tests', (accounts) => {
       contracts.sushiVault.address,
     ));
     logBNFromWei('earned in vault', await trackers.vaultEarned.get());
-    logBNFromWei('earnedReal in vault',
-      (await contracts.sushiVault.earnedReal({ from: alice }))[0]);
+    // logBNFromWei('earnedReal in vault',
+    //   (await contracts.sushiVault.earnedReal({ from: alice }))[0]);
     logBNFromWei('rewards in votingSR', await trackers.votingStakingRewards.get());
     logBNFromWei('staked in votingSR', await trackers.votingStaked.get());
     logBNFromWei('rewards alice', await contracts.sushiVault.rewards(
@@ -204,8 +204,8 @@ contract('Integration tests', (accounts) => {
       // await time.increase(days('14'));
       // await logAllTrackers(aliceTrackers, '+ 14 days');
 
-      const earnedReal = await contracts.sushiVault.earnedReal();
-      logBNFromWei('earnedReal', earnedReal[0]);
+      // const earnedReal = await contracts.sushiVault.earnedReal();
+      // logBNFromWei('earnedReal', earnedReal[0]);
 
 
       // await logAllTrackers(aliceTrackers, 'After getReward');

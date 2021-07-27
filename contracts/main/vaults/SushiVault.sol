@@ -56,7 +56,7 @@ contract SushiVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim {
     )
         internal override
     {
-        // _updateReward(_rewardToken, _for);
+        _updateReward(_rewardToken, _for);
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;

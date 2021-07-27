@@ -553,11 +553,14 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       contracts.treasury.address,
       contracts.mockXBE.address,
       contracts.mockXBE.address,
-      months('23'),
+      days('7'),
       contracts.veXBE.address,
       contracts.voting.address,
-      [contracts.sushiVault.address],
+      [
+        contracts.sushiVault.address,
+      ],
     );
+
     // console.log('VotingStakingRewards: configured...');
 
     console.log('Contracts configured');

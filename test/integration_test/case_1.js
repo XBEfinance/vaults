@@ -150,7 +150,7 @@ contract('Integration tests', (accounts) => {
         boost: contracts.votingStakingRewards.calculateBoostLevel,
         stakedAmount: contracts.votingStakingRewards.balanceOf,
         lockedAmount: contracts.veXBE.lockedAmount,
-        votingStakingRewards: contracts.votingStakingRewards.earned,
+        votingStakingRewardsEarned: contracts.votingStakingRewards.earned,
         bonusRewards: contracts.bonusCampaign.earned,
         bonusRewardsPaid: contracts.bonusCampaign.userRewardPerTokenPaid,
       });
@@ -210,25 +210,37 @@ contract('Integration tests', (accounts) => {
         'escrow amount failure',
       );
       /* ========== MINT REWARDS AND CHECK DISTRIBUTION ========== */
-      for (let i = 0; i < 24; i += 1) {
+      for (let i = 0; i < 52; i += 1) {
         await mintForInflationAndSendToVoters();
 
+        await time.increase(days('7'));
         const votingXBEBalance = await contracts.mockXBE.balanceOf(
           contracts.votingStakingRewards.address,
         );
+        const votingXBERewards = votingXBEBalance.sub(
+          await contracts.votingStakingRewards.totalSupply(),
+        );
+
         const ownerVoterRewards = await contracts.votingStakingRewards.earned(owner);
 
-        expect(votingXBEBalance);
-
         logBNFromWei('Earned after mint', ownerVoterRewards);
-        await time.increase(days('14'));
+        expect(votingXBERewards).to.be.bignumber.closeTo(
+          await ownerTrackers.votingStakingRewardsEarned.get(),
+          new BN(1e8),
+        );
       }
 
-      // logBNFromWei('Earned after mint',
-      //   await contracts.votingStakingRewards.earned(owner));
-      // await time.increase(days(14));
-      // logBNFromWei('Earned after 14 days',
-      //   await contracts.votingStakingRewards.earned(owner));
+      /* ========== GET REWARD ========== */
+      await contracts.votingStakingRewards.setBreaker(true);
+
+      const earnedBeforeGetReward = await ownerTrackers.votingStakingRewardsEarned.get();
+      const getRewardReceipt = await contracts.votingStakingRewards.getReward();
+      processEventArgs(getRewardReceipt, 'RewardPaid', (args) => {
+        expect(args.user).to.be.bignumber.equal(owner);
+        expect(args.reward).to.be.bignumber.equal(earnedBeforeGetReward);
+      });
+
+      logBNFromWei('owner XBE balance', await ownerTrackers.XBE.get());
 
       /* ========== UNLOCK AND UNSTAKE ========== */
       if (await time.latest() < ownerLockEnd.add(months('1'))) {

@@ -21,7 +21,7 @@ contract SimpleXBEInflation is Initializable {
     uint256 public periodicEmission;
     uint256 public startInflationTime;
 
-    uint256 public periodDuration = 86400; // seconds
+    uint256 public periodDuration; // seconds
 
     mapping(address => uint256) public weights; // in points relative to sumWeight
     uint256 public sumWeight = 0;

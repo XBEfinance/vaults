@@ -703,7 +703,7 @@ const configureContracts = async (params, owner) => {
   console.log('Voting: configured...');
 
   await votingStakingRewards.configure(
-    owner,
+    treasury.address,
     mockXBE.address,
     mockXBE.address,
     months('23'),

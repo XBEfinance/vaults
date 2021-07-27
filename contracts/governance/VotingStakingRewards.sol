@@ -97,10 +97,6 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         _;
     }
 
-    function setRewardsDistribution(address _rewardsDistribution) external onlyOwner {
-        rewardsDistribution = _rewardsDistribution;
-    }
-
     function setBreaker(bool _breaker) external onlyOwner {
         breaker = _breaker;
     }

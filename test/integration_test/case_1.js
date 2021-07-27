@@ -210,13 +210,11 @@ contract('Integration tests', (accounts) => {
         'escrow amount failure',
       );
       /* ========== MINT REWARDS AND CHECK DISTRIBUTION ========== */
-      await mintForInflationAndSendToVoters();
-
-      for (let i = 0; i < 23; i += 1) {
-        await time.increase(days('365'));
-        // logBNFromWei('Earned after mint',
-        //   await contracts.votingStakingRewards.earned(owner));
+      for (let i = 0; i < 24; i += 1) {
         await mintForInflationAndSendToVoters();
+        logBNFromWei('Earned after mint',
+          await contracts.votingStakingRewards.earned(owner));
+        await time.increase(days('365'));
       }
 
       logBNFromWei('Earned after mint',

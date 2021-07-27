@@ -34,6 +34,20 @@ contract SushiVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim {
         );
     }
 
+    function getValidTokensLength() public view returns (uint256) {
+        return _validTokens.length();
+    }
+
+    /// @notice Transfer tokens to controller, controller transfers it to strategy and earn (farm)
+    function earn() external virtual override {
+        uint256 _bal = stakingToken.balanceOf(address(this));
+        stakingToken.safeTransfer(address(_controller), _bal);
+        _controller.earn(address(stakingToken), _bal);
+        for (uint256 i = 0; i < _validTokens.length(); i++) {
+            _controller.claim(address(stakingToken), _validTokens.at(i));
+        }
+    }
+
     function _getReward(
         uint8 _claimMask,
         address _for,
@@ -43,14 +57,12 @@ contract SushiVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim {
         internal override
     {
         uint256 reward = rewards[_for][_rewardToken];
-        _controller.claim(_stakingToken, _rewardToken);
-        __updateReward(_for);
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
             reward = _getAndDistributeFeesOnClaimForToken(_for, _rewardToken, reward);
             _autoStakeForOrSendTo(_rewardToken, reward, _for);
         }
-        
+
         emit RewardPaid(_rewardToken, _for, reward);
     }
 

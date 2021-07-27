@@ -233,11 +233,15 @@ contract('Integration tests', (accounts) => {
       /* ========== GET REWARD ========== */
       await contracts.votingStakingRewards.setBreaker(true);
 
+      logBNFromWei('owner XBE balance before gerReward', await ownerTrackers.XBE.get());
       const earnedBeforeGetReward = await ownerTrackers.votingStakingRewardsEarned.get();
       const getRewardReceipt = await contracts.votingStakingRewards.getReward();
-      processEventArgs(getRewardReceipt, 'RewardPaid', (args) => {
+      const xbeDelta = await ownerTrackers.XBE.delta();
+      processEventArgs(getRewardReceipt, 'RewardPaid', async (args) => {
         expect(args.user).to.be.bignumber.equal(owner);
         expect(args.reward).to.be.bignumber.equal(earnedBeforeGetReward);
+        logBNFromWei('owner XBE delta', xbeDelta);
+        expect(xbeDelta).to.be.bignumber.equal(args.reward);
       });
 
       logBNFromWei('owner XBE balance', await ownerTrackers.XBE.get());

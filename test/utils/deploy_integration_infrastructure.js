@@ -556,7 +556,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       months('23'),
       contracts.veXBE.address,
       contracts.voting.address,
-      [],
+      [contracts.sushiVault.address],
     );
     // console.log('VotingStakingRewards: configured...');
 

@@ -174,6 +174,14 @@ contract('Integration tests', (accounts) => {
 
       await logAllTrackers(aliceTrackers, 'After AddLiquidity');
 
+      /* ====== EMULATE BACKEND ===== */
+      await contracts.simpleXBEInflation.mintForContracts();
+      await contracts.treasury.toVoters();
+      await logAllTrackers(aliceTrackers, 'After mintForContracts');
+
+      await contracts.sushiVault.earn();
+      await logAllTrackers(aliceTrackers, 'After vault.earn()');
+
       /* ====== Stake LP tokens ===== */
       const lpAmountToStake = await aliceTrackers.sushiLP.get();
       await contracts.sushiLP.approve(
@@ -193,30 +201,20 @@ contract('Integration tests', (accounts) => {
 
       await logAllTrackers(aliceTrackers, 'After LP Stake');
 
-      /* ====== EMULATE BACKEND ===== */
-      await contracts.simpleXBEInflation.mintForContracts();
-      await contracts.treasury.toVoters();
-      await logAllTrackers(aliceTrackers, 'After mintForContracts');
-
-      await contracts.sushiVault.earn();
-      await logAllTrackers(aliceTrackers, 'After vault.earn()');
-
       // await time.increase(days('14'));
       // await logAllTrackers(aliceTrackers, '+ 14 days');
 
-      const isMxbeValid = await contracts.sushiVault.isTokenValid(contracts.mockXBE.address);
-      console.log('mxbe is valid ? = ', isMxbeValid);
       const earnedReal = await contracts.sushiVault.earnedReal();
       logBNFromWei('earnedReal', earnedReal[0]);
 
-      const getrewardReceipt = await contracts.sushiVault.getReward(0x02, { from: alice });
 
-      await logAllTrackers(aliceTrackers, 'After getReward');
-      processEventArgs(getrewardReceipt, 'RewardPaid', (args) => {
-        logBNFromWei('RewardPaid amount', args.reward);
-      });
+      // await logAllTrackers(aliceTrackers, 'After getReward');
+      // processEventArgs(getrewardReceipt, 'RewardPaid', (args) => {
+      //   logBNFromWei('RewardPaid amount', args.reward);
+      // });
 
       await time.increase(days('7'));
+      const getrewardReceipt = await contracts.sushiVault.getReward(0x02, { from: alice });
       // for (let i = 0; i < 7; i += 1) {
       //   await time.increase(days('1'));
       //   await logAllTrackers(aliceTrackers, `After getReward + ${i} days`);

@@ -531,7 +531,7 @@ const configureContracts = async (params, owner) => {
         mockLpSushi.address, // _initialToken
         controller.address, // _initialController
         owner, // _governance
-        now.add(days('7')), // _rewardsDuration // TODO: to reconcile with customer
+        days('7'), // _rewardsDuration // TODO: to reconcile with customer
         mockXBE.address, // _tokenToAutostake
         votingStakingRewards.address, // _votingStakingRewards
         [ // _rewardTokens

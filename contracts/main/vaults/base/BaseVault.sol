@@ -395,7 +395,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         virtual
         nonReentrant
         validClaimMask(_claimMask)
-        // updateReward(msg.sender)
+         updateReward(msg.sender)
     {
         __getReward(_claimMask);
     }

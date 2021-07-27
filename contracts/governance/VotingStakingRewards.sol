@@ -311,59 +311,97 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         return _rewardsAmount;
     }
 
-    function calculateBoostLevel(address account) external view returns (uint256) {
-        uint256 maxBoostedReward = _balances[account]
-          .mul(
-            rewardPerToken().sub(userRewardPerTokenPaid[account])
-          )
-          .div(1e18)
-          .add(rewards[account]);
-
-        uint256 reward = _earned(account, maxBoostedReward);
-        // real boost level = reward.div(maxBoostedReward) # [0.4 .. 1]
-        // inversed = maxBoostedReward.div(reward) # [1 .. 2.5]
-        // multiplied by precision coeff: precision.mul(maxBoostedReward).div(reward)
-
-        if (IVeXBE(token).isLockedForMax(account)) {
-            return PCT_BASE;
-        }
-
-        if (reward == 0) {
-            return PCT_BASE.mul(inverseMaxBoostCoefficient).div(100);
-        }
-
-        return PCT_BASE.mul(reward).div(maxBoostedReward);
-    }
-
-    function _earned(address account, uint256 maxBoostedReward) internal view returns (uint256) {
+    function calculateBoostLevel(address account) public view returns (uint256) {
         IVeXBE veXBE = IVeXBE(token);
-        // if lockup is 23 months or more
-        if (veXBE.isLockedForMax(account)) {
-            return maxBoostedReward;
-        }
-
-        uint256 rwTotal = totalReward;
         uint256 votingBalance = veXBE.balanceOf(account);
         uint256 votingTotal = veXBE.totalSupply();
+        uint256 userStake = _balances[account];
 
-        uint256 boostedReward = maxBoostedReward .mul(inverseMaxBoostCoefficient).div(100);
-        if (votingTotal == 0 || votingBalance == 0) {
-            return boostedReward;
+        if (votingBalance == 0 || userStake == 0) {
+            return PCT_BASE
+                .mul(inverseMaxBoostCoefficient)
+                .div(100);
         }
-        boostedReward +=
-            rwTotal.mul(votingBalance).mul(100 - inverseMaxBoostCoefficient)
-            .div(votingTotal).div(100);
-        return Math.min256(boostedReward, maxBoostedReward);
+
+        uint256 res = PCT_BASE.mul(
+            inverseMaxBoostCoefficient.add(
+                uint256(100).sub(inverseMaxBoostCoefficient)
+                .mul(_totalSupply)
+                .mul(votingBalance)
+                .div(votingTotal)
+                .div(userStake)
+            )
+        ).div(100);
+
+        return res;
     }
+
+//    function calculateBoostLevel(address account) external view returns (uint256) {
+//        uint256 maxBoostedReward = _balances[account]
+//          .mul(
+//            rewardPerToken().sub(userRewardPerTokenPaid[account])
+//          )
+//          .div(1e18)
+//          .add(rewards[account]);
+//
+//        uint256 reward = _earned(account, maxBoostedReward);
+//        // real boost level = reward.div(maxBoostedReward) # [0.4 .. 1]
+//        // inversed = maxBoostedReward.div(reward) # [1 .. 2.5]
+//        // multiplied by precision coeff: precision.mul(maxBoostedReward).div(reward)
+//
+//        if (IVeXBE(token).isLockedForMax(account)) {
+//            return PCT_BASE;
+//        }
+//
+//        if (reward == 0) {
+//            return PCT_BASE.mul(inverseMaxBoostCoefficient).div(100);
+//        }
+//
+//        return PCT_BASE.mul(reward).div(maxBoostedReward);
+//    }
+
+//    function _earned(address account, uint256 maxBoostedReward) internal view returns (uint256) {
+//        IVeXBE veXBE = IVeXBE(token);
+//        // if lockup is 23 months or more
+//        if (veXBE.isLockedForMax(account)) {
+//            return maxBoostedReward;
+//        }
+//
+//        uint256 rwTotal = totalReward;
+//        uint256 votingBalance = veXBE.balanceOf(account);
+//        uint256 votingTotal = veXBE.totalSupply();
+//
+//        uint256 boostedReward = maxBoostedReward .mul(inverseMaxBoostCoefficient).div(100);
+//        if (votingTotal == 0 || votingBalance == 0) {
+//            return boostedReward;
+//        }
+//        boostedReward +=
+//            rwTotal.mul(votingBalance).mul(100 - inverseMaxBoostCoefficient)
+//            .div(votingTotal).div(100);
+//        return Math.min256(boostedReward, maxBoostedReward);
+//    }
+
+//    function earned(address account) public view returns (uint256) {
+//        uint256 maxBoostedReward = _balances[account]
+//          .mul(
+//            rewardPerToken().sub(userRewardPerTokenPaid[account])
+//          )
+//          .div(1e18)
+//          .add(rewards[account]);
+//        return _earned(account, maxBoostedReward);
+//    }
 
     function earned(address account) public view returns (uint256) {
         uint256 maxBoostedReward = _balances[account]
-          .mul(
-            rewardPerToken().sub(userRewardPerTokenPaid[account])
-          )
-          .div(1e18)
-          .add(rewards[account]);
-        return _earned(account, maxBoostedReward);
+            .mul(
+                rewardPerToken().sub(userRewardPerTokenPaid[account])
+            )
+            .div(1e18);
+
+        return maxBoostedReward
+            .mul(calculateBoostLevel(account))
+            .div(1e18)
+            .add(rewards[account]);
     }
 
     function getReward() public nonReentrant updateReward(msg.sender) {

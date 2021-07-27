@@ -122,7 +122,7 @@ contract SimpleXBEInflation is Initializable {
         uint256 amountToPay =  plannedToMint.sub(totalMinted);
 
         totalMinted = totalMinted.add(amountToPay);
-        
+
         for (uint256 i = 0; i < _xbeReceivers.length(); i++) {
             address _to = _xbeReceivers.at(i);
             require(_to != address(0), "!zeroAddress");
@@ -133,6 +133,7 @@ contract SimpleXBEInflation is Initializable {
 
             IMint(token).mint(_to, toMint);
         }
+
         return true;
     }
 }

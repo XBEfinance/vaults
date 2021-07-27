@@ -21,7 +21,7 @@ contract SimpleXBEInflation is Initializable {
     uint256 public periodicEmission;
     uint256 public startInflationTime;
 
-    uint256 public periodDuration = 86400; // seconds
+    uint256 public periodDuration; // seconds
 
     mapping(address => uint256) public weights; // in points relative to sumWeight
     uint256 public sumWeight = 0;
@@ -121,6 +121,8 @@ contract SimpleXBEInflation is Initializable {
         require(totalMinted < plannedToMint, "availableSupplyDistributed");
         uint256 amountToPay =  plannedToMint.sub(totalMinted);
 
+        totalMinted = totalMinted.add(amountToPay);
+        
         for (uint256 i = 0; i < _xbeReceivers.length(); i++) {
             address _to = _xbeReceivers.at(i);
             require(_to != address(0), "!zeroAddress");
@@ -130,7 +132,6 @@ contract SimpleXBEInflation is Initializable {
               .div(sumWeight);
 
             IMint(token).mint(_to, toMint);
-            totalMinted = totalMinted.add(toMint);
         }
         return true;
     }

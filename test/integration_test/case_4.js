@@ -135,8 +135,6 @@ contract('Integration tests', (accounts) => {
       contracts.sushiVault.address,
     ));
     logBNFromWei('earned in vault', await trackers.vaultEarned.get());
-    logBNFromWei('earnedReal in vault',
-      (await contracts.sushiVault.earnedReal({ from: alice }))[0]);
     logBNFromWei('rewards in votingSR', await trackers.votingStakingRewards.get());
     logBNFromWei('staked in votingSR', await trackers.votingStaked.get());
     logBNFromWei('rewards alice', await contracts.sushiVault.rewards(
@@ -206,8 +204,6 @@ contract('Integration tests', (accounts) => {
 
       const isMxbeValid = await contracts.sushiVault.isTokenValid(contracts.mockXBE.address);
       console.log('mxbe is valid ? = ', isMxbeValid);
-      const earnedReal = await contracts.sushiVault.earnedReal();
-      logBNFromWei('earnedReal', earnedReal[0]);
 
       const getrewardReceipt = await contracts.sushiVault.getReward(0x02, { from: alice });
 

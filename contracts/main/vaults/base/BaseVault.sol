@@ -240,7 +240,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
     {
         return _balances[account]
           .mul(
-            rewardPerToken(_rewardToken).sub(userRewardPerTokenPaid[account][_rewardToken])
+            rewardPerToken(_rewardToken).sub(userRewardPerTokenPaid[_rewardToken][account])
           )
           .div(1e18).add(rewards[account][_rewardToken]);
     }
@@ -395,7 +395,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         virtual
         nonReentrant
         validClaimMask(_claimMask)
-        updateReward(msg.sender)
+        // updateReward(msg.sender)
     {
         __getReward(_claimMask);
     }
@@ -484,7 +484,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
     function _updateReward(address _what, address _account) internal {
         rewardsPerTokensStored[_what] = rewardPerToken(_what);
         if (_account != address(0)) {
-            rewards[_what][_account] = earned(_what, _account);
+            rewards[_account][_what] = earned(_what, _account);
             userRewardPerTokenPaid[_what][_account] = rewardsPerTokensStored[_what];
         }
     }
@@ -539,49 +539,6 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
                 .add(strategy.balanceOf());
     }
 
-    function earnedReal() public view returns(uint256[] memory amounts) {
-        address[] memory _tokenRewards = new address[](_validTokens.length());
-        for (uint256 i = 0; i < _tokenRewards.length; i++) {
-            _tokenRewards[i] = _validTokens.at(i);
-        }
-        IStrategy _strategy = IStrategy(_controller.strategies(address(stakingToken)));
-        amounts = _strategy.earned(_tokenRewards);
-        uint256 _share = balanceOf(msg.sender);
-        for(uint256 i = 0; i < _tokenRewards.length; i++){
-            if(totalSupply() == 0){
-                amounts[i] = 0;
-                break;
-            }
-
-            amounts[i] = amounts[i]
-                .add(
-                    IERC20(_tokenRewards[i]).balanceOf(address(this))
-                )
-                .mul(_share)
-                .div(totalSupply());
-        }
-        amounts = VaultWithFeesOnClaim(_controller.vaults(address(stakingToken))).subFeeForClaim(amounts);
-    }
-
-    function earnedVirtual() external view returns(uint256[] memory virtualAmounts) {
-        uint256[] memory realAmounts = earnedReal();
-        uint256[] memory virtualEarned = new uint256[](realAmounts.length);
-        virtualAmounts = new uint256[](realAmounts.length);
-        IStrategy _strategy = IStrategy(_controller.strategies(address(stakingToken)));
-        for (uint256 i = 0; i < virtualAmounts.length; i++) {
-            virtualEarned[i] = _strategy.canClaimAmount(_validTokens.at(i));
-        }
-        virtualEarned = VaultWithFeesOnClaim(_controller.vaults(address(stakingToken))).subFeeForClaim(virtualEarned);
-        uint256 _share = balanceOf(msg.sender);
-        for(uint256 i = 0; i < realAmounts.length; i++){
-            if(_validTokens.at(i) == _tokenThatComesPassively) {
-                virtualAmounts[i] = realAmounts[i].mul(_share).div(totalSupply());
-            } else {
-                virtualAmounts[i] = realAmounts[i].add(virtualEarned[i]).mul(_share).div(totalSupply());
-            }
-        }
-    }
-
     function getPoolRewardForDuration(address _rewardToken, uint256 _duration)
         public view returns(uint256)
     {
@@ -621,7 +578,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
                 _rewardPerTokenForDuration(_rewardsToken, _duration)
                     .sub(userRewardPerTokenPaid[_rewardsToken][msg.sender]))
             .div(1e18)
-            .add(rewards[_rewardsToken][msg.sender]);
+            .add(rewards[msg.sender][_rewardsToken]);
         return _rewardsAmount;
     }
 }

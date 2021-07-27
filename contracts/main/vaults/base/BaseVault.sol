@@ -363,7 +363,6 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
     )
         internal virtual
     {
-        uint256 reward = rewards[_for][_rewardToken];
         if (_claimMask >> 1 == 1 && _claimMask << 7 != 128) {
             _controller.claim(_stakingToken, _rewardToken);
         } else if (_claimMask >> 1 == 1 && _claimMask << 7 == 128) {
@@ -371,6 +370,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
             _controller.claim(_stakingToken, _rewardToken);
         }
         __updateReward(_for);
+        uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
             IERC20(_rewardToken).safeTransfer(_for, reward);
@@ -395,6 +395,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         virtual
         nonReentrant
         validClaimMask(_claimMask)
+        updateReward(msg.sender)
     {
         __getReward(_claimMask);
     }
@@ -511,7 +512,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
     }
 
     /// @notice Transfer tokens to controller, controller transfers it to strategy and earn (farm)
-    function earn() external override {
+    function earn() external virtual override {
         uint256 _bal = stakingToken.balanceOf(address(this));
         stakingToken.safeTransfer(address(_controller), _bal);
         _controller.earn(address(stakingToken), _bal);
@@ -551,7 +552,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
                 amounts[i] = 0;
                 break;
             }
-            
+
             amounts[i] = amounts[i]
                 .add(
                     IERC20(_tokenRewards[i]).balanceOf(address(this))

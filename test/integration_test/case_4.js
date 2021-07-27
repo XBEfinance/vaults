@@ -139,6 +139,10 @@ contract('Integration tests', (accounts) => {
       (await contracts.sushiVault.earnedReal({ from: alice }))[0]);
     logBNFromWei('rewards in votingSR', await trackers.votingStakingRewards.get());
     logBNFromWei('staked in votingSR', await trackers.votingStaked.get());
+    logBNFromWei('rewards alice', await contracts.sushiVault.rewards(
+      contracts.mockXBE.address,
+      alice,
+    ));
     // logBNFromWei('treasuty xbe balance', await contracts.mockXBE.balanceOf(
     //   contracts.treasury.address,
     // ));
@@ -190,35 +194,45 @@ contract('Integration tests', (accounts) => {
       await logAllTrackers(aliceTrackers, 'After LP Stake');
 
       /* ====== EMULATE BACKEND ===== */
-      await contracts.sushiVault.earn();
-
-      await logAllTrackers(aliceTrackers, 'After vault.earn()');
-
       await contracts.simpleXBEInflation.mintForContracts();
       await contracts.treasury.toVoters();
       await logAllTrackers(aliceTrackers, 'After mintForContracts');
 
-      await time.increase(days('14'));
+      await contracts.sushiVault.earn();
+      await logAllTrackers(aliceTrackers, 'After vault.earn()');
 
-      await logAllTrackers(aliceTrackers, '+ 14 days');
+      // await time.increase(days('14'));
+      // await logAllTrackers(aliceTrackers, '+ 14 days');
 
       const isMxbeValid = await contracts.sushiVault.isTokenValid(contracts.mockXBE.address);
       console.log('mxbe is valid ? = ', isMxbeValid);
       const earnedReal = await contracts.sushiVault.earnedReal();
       logBNFromWei('earnedReal', earnedReal[0]);
+
       const getrewardReceipt = await contracts.sushiVault.getReward(0x02, { from: alice });
 
+      await logAllTrackers(aliceTrackers, 'After getReward');
       processEventArgs(getrewardReceipt, 'RewardPaid', (args) => {
         logBNFromWei('RewardPaid amount', args.reward);
       });
-      await logAllTrackers(aliceTrackers, 'After getReward');
 
-      await time.increase(days('365'));
+      await time.increase(days('7'));
+      // for (let i = 0; i < 7; i += 1) {
+      //   await time.increase(days('1'));
+      //   await logAllTrackers(aliceTrackers, `After getReward + ${i} days`);
+      // }
 
-      await logAllTrackers(aliceTrackers, 'After getReward + 365 days');
+      await logAllTrackers(aliceTrackers, 'After getReward + 7 days');
 
-      await contracts.sushiVault.withdraw(await aliceTrackers.sushiStaked.get(), { from: alice });
+      const withdraw = await contracts.sushiVault
+        .withdraw(await aliceTrackers.sushiStaked.get(), { from: alice });
       await logAllTrackers(aliceTrackers, 'After withdraw');
+
+      const events = await contracts.votingStakingRewards.getPastEvents('Staked');
+
+      processEventArgs(withdraw, 'RewardPaid', (args) => {
+        logBNFromWei('RewardPaid amount', args.reward);
+      });
 
       // await contracts.treasury.toVoters();
       // await logAllTrackers(aliceTrackers, 'After toVoters');

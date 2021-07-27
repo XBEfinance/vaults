@@ -288,7 +288,7 @@ const deployContracts = async (deployer, params, owner) => {
   }
 
   // deploy bonus campaign xbeinflation
-  xbeInflation = await deployer.deploy(SimpleXBEInflation, { from: owner });
+  xbeInflation = await deployer.deploy(SimpleXbeInflation, { from: owner });
 
   // deploy bonus campaign
   bonusCampaign = await deployer.deploy(BonusCampaign, { from: owner });
@@ -534,7 +534,6 @@ const configureContracts = async (params, owner) => {
         now.add(days('7')), // _rewardsDuration // TODO: to reconcile with customer
         mockXBE.address, // _tokenToAutostake
         votingStakingRewards.address, // _votingStakingRewards
-        true,
         [ // _rewardTokens
 //          dependentsAddresses.convex.cvx,
           mockXBE.address,
@@ -646,8 +645,9 @@ const configureContracts = async (params, owner) => {
 
   xbeInflation.configure(
       mockXBE.address, // _token
-      params.simpleXBEInflation.targetMinted, // _targetMinted
-      params.simpleXBEInflation.years, // years
+      params.simpleXBEInflation.targetMinted,
+      params.simpleXBEInflation.periodsCount,
+      params.simpleXBEInflation.periodDuration,
       { from: owner },
     );
 
@@ -675,6 +675,8 @@ const configureContracts = async (params, owner) => {
     params.bonusCampaign.emission,
     { from: owner },
   );
+
+  await bonusCampaign.startMint({ from: owner });
 
    console.log('BonusCampaign: configured');
 
@@ -749,7 +751,8 @@ module.exports = function (deployer, network, accounts) {
     },
     simpleXBEInflation: {
       targetMinted: ether('5000'),
-      years: new BN('2'),
+      periodsCount: new BN('52'),
+      periodDuration: new BN('604800'),
     },
     voting: {
       supportRequiredPct: new BN('5100'),

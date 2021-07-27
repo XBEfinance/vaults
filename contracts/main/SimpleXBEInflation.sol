@@ -21,7 +21,7 @@ contract SimpleXBEInflation is Initializable {
     uint256 public periodicEmission;
     uint256 public startInflationTime;
 
-    uint256 public period = 86400 * 365;
+    uint256 public periodDuration = 86400; // seconds
 
     mapping(address => uint256) public weights; // in points relative to sumWeight
     uint256 public sumWeight = 0;
@@ -40,16 +40,20 @@ contract SimpleXBEInflation is Initializable {
     // @param _name Token full name
     // @param _symbol Token symbol
     // @param _decimals Number of decimals for token
+    // @param _targetMinted max amount minted during
     // """
     function configure(
         address _token,
         uint256 _targetMinted,
-        uint256 _periodsCount
+        uint256 _periodsCount,
+        uint256 _periodDuration
     ) external initializer {
         admin = msg.sender;
         token = _token;
         targetMinted = _targetMinted;
         periodicEmission = _targetMinted.div(_periodsCount);
+        periodDuration = _periodDuration;
+        require(periodDuration > 0, "periodDuration=0");
         startInflationTime = block.timestamp;
     }
 
@@ -91,32 +95,40 @@ contract SimpleXBEInflation is Initializable {
         weights[_xbeReceiver] = _weight;
     }
 
-    function _getPeriodsPassedFromStart() internal returns(uint256) {
-        return block.timestamp.sub(startInflationTime).add(period).div(period);
+    function _getPeriodsPassed() internal view returns(uint256) {
+        return block.timestamp.sub(startInflationTime).div(periodDuration);
     }
 
     // """
     // @notice Mint part of available supply of tokens and assign them to approved contracts
     // @dev Emits a Transfer event originating from 0x00
     // @return bool success
-    // """
+    // """u
     function mintForContracts()
         external
         returns(bool)
     {
-        require(totalMinted < periodicEmission.mul(_getPeriodsPassedFromStart()),
-            "availableSupplyDistributed");
         require(totalMinted <= targetMinted, "inflationEnded");
-        require(totalMinted < periodicEmission.mul(_getPeriodsPassedFromStart()),
-                "availableSupplyDistributed");
+        if (_xbeReceivers.length() > 0) {
+            require(sumWeight > 0, "sumWeights=0");
+        }
+
+        // distribute prepaid amount for the upfront period
+        uint256 periodsToPay = _getPeriodsPassed().add(1);
+        // if we missed a payment, the amount will be multiplied
+
+        uint256 plannedToMint = periodsToPay.mul(periodicEmission);
+        require(totalMinted < plannedToMint, "availableSupplyDistributed");
+        uint256 amountToPay =  plannedToMint.sub(totalMinted);
+
         for (uint256 i = 0; i < _xbeReceivers.length(); i++) {
             address _to = _xbeReceivers.at(i);
             require(_to != address(0), "!zeroAddress");
-            uint256 toMint = periodicEmission
-              .mul(
-                weights[_to]
-              )
+
+            uint256 toMint = amountToPay
+              .mul(weights[_to])
               .div(sumWeight);
+
             IMint(token).mint(_to, toMint);
             totalMinted = totalMinted.add(toMint);
         }

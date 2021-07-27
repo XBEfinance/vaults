@@ -94,7 +94,8 @@ const defaultParams = {
   },
   simpleXBEInflation: {
     targetMinted: ether('5000'),
-    periodsCount: new BN('24'),
+    periodsCount: new BN('52'),
+    periodDuration: new BN('604800'),
   },
   voting: {
     supportRequiredPct: new BN('5100'),
@@ -500,6 +501,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       contracts.mockXBE.address, // _token
       params.simpleXBEInflation.targetMinted, // _targetMinted
       params.simpleXBEInflation.periodsCount, // periodsCount
+      params.simpleXBEInflation.periodDuration,
       { from: owner },
     );
 

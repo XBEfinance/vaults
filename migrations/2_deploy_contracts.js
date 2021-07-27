@@ -645,8 +645,9 @@ const configureContracts = async (params, owner) => {
 
   xbeInflation.configure(
       mockXBE.address, // _token
-      params.simpleXBEInflation.targetMinted, // _targetMinted
-      params.simpleXBEInflation.years, // years
+      params.simpleXBEInflation.targetMinted,
+      params.simpleXBEInflation.periodsCount,
+      params.simpleXBEInflation.periodDuration,
       { from: owner },
     );
 
@@ -750,7 +751,8 @@ module.exports = function (deployer, network, accounts) {
     },
     simpleXBEInflation: {
       targetMinted: ether('5000'),
-      years: new BN('2'),
+      periodsCount: new BN('52'),
+      periodDuration: new BN('604800'),
     },
     voting: {
       supportRequiredPct: new BN('5100'),

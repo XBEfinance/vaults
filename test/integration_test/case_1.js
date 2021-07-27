@@ -231,7 +231,7 @@ contract('Integration tests', (accounts) => {
       }
 
       /* ========== GET REWARD ========== */
-      await contracts.votingStakingRewards.setBreaker(true);
+      // await contracts.votingStakingRewards.setBreaker(true);
 
       const earnedBeforeGetReward = await ownerTrackers.votingStakingRewardsEarned.get();
       const getRewardReceipt = await contracts.votingStakingRewards.getReward();

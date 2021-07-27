@@ -186,7 +186,7 @@ contract('Integration tests', (accounts) => {
       expect(ownerLockedAmount).to.be.bignumber.equal(amount);
       // expect(ownerLockEnd).to.be.bignumber.equal(lockEnd);
 
-      for (let i = 1; i < 10; i += 1) {
+      for (let i = 1; i < 3; i += 1) {
         await contracts.mockXBE.mintSender(ether('100'), { from: accounts[i] });
         await stake(accounts[i], amount);
         await createLock(accounts[i], amount, months('23'));
@@ -197,9 +197,9 @@ contract('Integration tests', (accounts) => {
 
       logBNFromWei('CURRENT BOOST', await ownerTrackers.boost.get());
       /* ========== CHECK BOOST CHANGE ========== */
-      for (let i = 0; i < 6; i += 1) {
+      for (let i = 0; i < 22; i += 1) {
         const oldLockedEnd = await contracts.veXBE.lockedEnd(owner);
-        const newLockedEnd = oldLockedEnd.add(days('7'));
+        const newLockedEnd = oldLockedEnd.add(months('1'));
 
         await contracts.veXBE.increaseUnlockTime(newLockedEnd);
         const currentBoost = await ownerTrackers.boost.get();

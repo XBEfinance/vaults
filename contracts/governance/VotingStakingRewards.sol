@@ -333,7 +333,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
             )
         ).div(100);
 
-        return res;
+        return res < PCT_BASE ? res : PCT_BASE;
     }
 
 //    function calculateBoostLevel(address account) external view returns (uint256) {

@@ -176,7 +176,7 @@ contract('Integration tests', (accounts) => {
 
         for (let j = 0; j < 7; j += 1) {
           const ownerVoterRewards = await ownerTrackers.votingStakingRewardsEarned.get();
-          logBNFromWei(`[Day ${(i + 1) * (j + 1)}] Earned after mint`, ownerVoterRewards);
+          logBNFromWei(`[Day ${ i*7 + j + 1}] Earned after mint`, ownerVoterRewards);
           await time.increase(days('1'));
         }
       }

@@ -32,7 +32,7 @@ abstract contract VaultWithFeesOnDeposit is Authorizable {
         returns(uint256 _sumWithoutFee)
     {
         if(feePercentage > 0) {
-            uint256 _fee = _mulDiv(feePercentage, _amount, PCT_BASE);
+            uint256 _fee = _mulDiv1(feePercentage, _amount, PCT_BASE);
             _stakingToken.safeTransfer(teamWallet, _fee);
             _sumWithoutFee =  _amount.sub(_fee);
         } else {
@@ -47,7 +47,7 @@ abstract contract VaultWithFeesOnDeposit is Authorizable {
         emit SetPercentage(_newPercentage);
     }
 
-    function _mulDiv(uint256 x, uint256 y, uint256 z) internal pure returns(uint256) {
+    function _mulDiv1(uint256 x, uint256 y, uint256 z) internal pure returns(uint256) {
         return x.mul(y).div(z);
     }
 }

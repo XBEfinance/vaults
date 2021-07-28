@@ -79,7 +79,7 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
         }
         uint256 fee;
         for (uint256 i = 0; i < feeWeights.length; i++) {
-            fee = _mulDiv(feeWeights[i].weight, _amount, PCT_PRECISION);
+            fee = _mulDiv2(feeWeights[i].weight, _amount, PCT_PRECISION);
             if(feeWeights[i].tokens[_rewardToken]){
                 IERC20(_rewardToken).safeTransfer(feeWeights[i].to, fee);
             }
@@ -98,7 +98,7 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
         for(uint256 i = 0; i < _amounts.length; i++) {
            uint256 value = _amounts[i];
            for(uint256 j = 0; j < feeWeights.length; j++){
-               uint256 _fee = _mulDiv(feeWeights[j].weight, _amounts[i], PCT_PRECISION);
+               uint256 _fee = _mulDiv2(feeWeights[j].weight, _amounts[i], PCT_PRECISION);
                value -= _fee;
            }
            _amounts[i] = value;
@@ -106,7 +106,7 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
         return _amounts;
     }
 
-    function _mulDiv(uint256 x, uint256 y, uint256 z) internal pure returns(uint256) {
+    function _mulDiv2(uint256 x, uint256 y, uint256 z) virtual internal pure returns(uint256) {
         return x.mul(y).div(z);
     }
 }

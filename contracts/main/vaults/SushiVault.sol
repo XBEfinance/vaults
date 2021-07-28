@@ -4,6 +4,8 @@ import "./base/BaseVault.sol";
 import "./base/VaultWithAutoStake.sol";
 import "./base/VaultWithFeesOnClaim.sol";
 
+import "../../mocks/StringsConcatenations.sol";
+
 /// @title SushiVault
 /// @notice Vault for staking LP Sushiswap and receive rewards in CVX
 contract SushiVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim {
@@ -56,15 +58,28 @@ contract SushiVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim {
     )
         internal override
     {
-        _updateReward(_rewardToken, _for);
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
+            revert(StringsConcatenations.uint2str(reward));
             rewards[_for][_rewardToken] = 0;
             reward = _getAndDistributeFeesOnClaimForToken(_for, _rewardToken, reward);
             _autoStakeForOrSendTo(_rewardToken, reward, _for);
         }
 
         emit RewardPaid(_rewardToken, _for, reward);
+    }
+
+    function __getReward(uint8 _claimMask) override internal {
+        address _stakingToken = address(stakingToken);
+        __updateReward(msg.sender);
+        for (uint256 i = 0; i < _validTokens.length(); i++) {
+            _getReward(
+                _claimMask,
+                msg.sender,
+                _validTokens.at(i),
+                _stakingToken
+            );
+        }
     }
 
     function _isUserAuthorized(address _user) internal override view returns(bool) {

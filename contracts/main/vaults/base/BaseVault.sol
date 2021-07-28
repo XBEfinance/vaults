@@ -19,6 +19,8 @@ import "../../interfaces/vault/IVaultDelegated.sol";
 import "../../interfaces/IController.sol";
 import "../../interfaces/IStrategy.sol";
 
+import "../../mocks/StringsConcatenations.sol";
+
 import "./VaultWithFeesOnClaim.sol";
 
 /// @title EURxbVault
@@ -51,7 +53,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
     // reward token => reward rate
     mapping(address => uint256) public rewardRates;
 
-    // user => valid token => amount
+    // valid token => user => amount
     mapping(address => mapping(address => uint256)) public userRewardPerTokenPaid;
 
     // user => valid token => amount
@@ -378,7 +380,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         emit RewardPaid(_rewardToken, _for, reward);
     }
 
-    function __getReward(uint8 _claimMask) internal {
+    function __getReward(uint8 _claimMask) virtual internal {
         address _stakingToken = address(stakingToken);
         for (uint256 i = 0; i < _validTokens.length(); i++) {
             _getReward(
@@ -395,7 +397,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         virtual
         nonReentrant
         validClaimMask(_claimMask)
-         updateReward(msg.sender)
+        // updateReward(msg.sender)
     {
         __getReward(_claimMask);
     }

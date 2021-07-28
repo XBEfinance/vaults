@@ -48,8 +48,6 @@ abstract contract VaultWithFeesOnDeposit is Authorizable {
     }
 
     function _mulDiv(uint256 x, uint256 y, uint256 z) internal pure returns(uint256) {
-        uint256 a = x / z; uint256 b = x % z; // x = a * z + b
-        uint256 c = y / z; uint256 d = y % z; // y = c * z + d
-        return a * b * z + a * d + b * c + b * d / z;
+        return x.mul(y).div(z);
     }
 }

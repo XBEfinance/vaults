@@ -4,7 +4,7 @@ import "./base/BaseVault.sol";
 import "./base/VaultWithAutoStake.sol";
 import "./base/VaultWithFeesOnClaim.sol";
 
-import "../../mocks/StringsConcatenations.sol";
+import "../mocks/StringsConcatenations.sol";
 
 /// @title SushiVault
 /// @notice Vault for staking LP Sushiswap and receive rewards in CVX

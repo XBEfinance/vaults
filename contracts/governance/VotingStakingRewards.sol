@@ -406,7 +406,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
 
     function getReward() public nonReentrant updateReward(msg.sender) {
         if (!breaker) {
-            require(voting.voteLock(msg.sender) < block.number, "!voted");
+            require(voting.voteLock(msg.sender) > block.number, "!voted");
         }
         uint256 reward = rewards[msg.sender];
         if (reward > 0) {

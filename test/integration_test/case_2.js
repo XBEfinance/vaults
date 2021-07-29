@@ -148,7 +148,7 @@ contract('Integration tests', (accounts) => {
     expectEvent(startMintReceipt, 'RewardAdded', { reward: bonusEmission });
   }
 
-  describe('Case #1', () => {
+  describe('Case #2', () => {
     beforeEach(deployAndConfigure);
     it('should pass', async () => {
       const amount = ether('10');
@@ -187,7 +187,7 @@ contract('Integration tests', (accounts) => {
       // expect(ownerLockEnd).to.be.bignumber.equal(lockEnd);
 
       // Stake and lock more users
-      for (let i = 1; i < 2; i += 1) {
+      for (let i = 1; i < 3; i += 1) {
         await contracts.mockXBE.mintSender(ether('100'), { from: accounts[i] });
         await stake(accounts[i], amount);
         await createLock(accounts[i], amount, months('23'));
@@ -218,16 +218,16 @@ contract('Integration tests', (accounts) => {
       logBNFromWei('Owner max reward', ownerMaxReward);
 
       /* ========== CHECK BOOST CHANGE ========== */
-      for (let i = 0; i < 52; i += 1) {
+      for (let i = 0; i < 23; i += 1) {
         const oldLockedEnd = await contracts.veXBE.lockedEnd(owner);
-        const newLockedEnd = oldLockedEnd.add(days('7'));
+        const newLockedEnd = oldLockedEnd.add(months('1'));
 
         await contracts.veXBE.increaseUnlockTime(newLockedEnd);
         const totalVotingPower = await contracts.veXBE.totalSupply();
         const userVotingPower = await ownerTrackers.veXBE.get();
         const currentBoost = await ownerTrackers.boost.get();
         const earned = await ownerTrackers.votingStakingRewardsEarned.get();
-        const expectedEarned = ownerMaxReward.mul(currentBoost).div(new BN(100)).div(PCT_BASE);
+        const expectedEarned = ownerMaxReward.mul(currentBoost).div(PCT_BASE);
 
         // expect(earned).to.be.bignumber.closeTo(
         //   expectedEarned,

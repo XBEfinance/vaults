@@ -12,7 +12,6 @@ import "./interfaces/vault/IVaultCore.sol";
 import "./interfaces/vault/IVaultDelegated.sol";
 import "./interfaces/vault/IVaultWrapped.sol";
 
-import "./mocks/StringsConcatenations.sol";
 
 /// @title Registry
 /// @notice The contract is the middleman actor through which the Keeper

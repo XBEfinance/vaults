@@ -139,7 +139,7 @@ contract('Integration tests', (accounts) => {
     logBNFromWei('staked in votingSR', await trackers.votingStaked.get());
     logBNFromWei('rewards alice', await contracts.sushiVault.userRewardPerTokenPaid(
       alice,
-      contracts.mockXBE.address
+      contracts.mockXBE.address,
     ));
     // logBNFromWei('treasuty xbe balance', await contracts.mockXBE.balanceOf(
     //   contracts.treasury.address,
@@ -172,14 +172,6 @@ contract('Integration tests', (accounts) => {
 
       await logAllTrackers(aliceTrackers, 'After AddLiquidity');
 
-      /* ====== EMULATE BACKEND ===== */
-      await contracts.simpleXBEInflation.mintForContracts();
-      await contracts.treasury.toVoters();
-      await logAllTrackers(aliceTrackers, 'After mintForContracts');
-
-      await contracts.sushiVault.earn();
-      await logAllTrackers(aliceTrackers, 'After vault.earn()');
-
       /* ====== Stake LP tokens ===== */
       const lpAmountToStake = await aliceTrackers.sushiLP.get();
       await contracts.sushiLP.approve(
@@ -196,7 +188,15 @@ contract('Integration tests', (accounts) => {
         amount: lpAmountToStake,
       });
       expect(await aliceTrackers.sushiStaked.delta()).to.be.bignumber.equal(lpAmountToStake);
+      await logAllTrackers(aliceTrackers, 'After LP Stake');
 
+      /* ====== EMULATE BACKEND ===== */
+      await contracts.simpleXBEInflation.mintForContracts();
+      await contracts.treasury.toVoters();
+      await logAllTrackers(aliceTrackers, 'After mintForContracts');
+
+      await contracts.sushiVault.earn();
+      await logAllTrackers(aliceTrackers, 'After vault.earn()');
 
       // await time.increase(days('14'));
       // await logAllTrackers(aliceTrackers, '+ 14 days');
@@ -207,8 +207,7 @@ contract('Integration tests', (accounts) => {
       // });
 
       await time.increase(days('7'));
-      await logAllTrackers(aliceTrackers, 'After LP Stake');
-      console.log((await contracts.sushiVault.earned(contracts.mockXBE.address, alice)).toString());
+      await logAllTrackers(aliceTrackers, '+7 days');
 
       // for (let i = 0; i < 7; i += 1) {
       //   await time.increase(days('1'));
@@ -216,7 +215,11 @@ contract('Integration tests', (accounts) => {
       // }
 
       const getrewardReceipt = await contracts.sushiVault.getReward(0x02, { from: alice });
-      await logAllTrackers(aliceTrackers, 'After getReward + 7 days');
+
+      await logAllTrackers(aliceTrackers, 'After getReward');
+      processEventArgs(getrewardReceipt, 'RewardPaid', (args) => {
+        logBNFromWei('RewardPaid amount', args.reward);
+      });
 
       const withdraw = await contracts.sushiVault
         .withdraw(await aliceTrackers.sushiStaked.get(), { from: alice });

@@ -231,8 +231,6 @@ contract('Integration tests', (accounts) => {
       }
 
       /* ========== GET REWARD ========== */
-      // await contracts.votingStakingRewards.setBreaker(true);
-
       logBNFromWei('owner XBE balance before getReward', await ownerTrackers.XBE.get());
       const earnedBeforeGetReward = await ownerTrackers.votingStakingRewardsEarned.get();
       const getRewardReceipt = await contracts.votingStakingRewards.getReward();

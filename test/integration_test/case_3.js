@@ -137,13 +137,23 @@ contract('Integration tests', (accounts) => {
     logBNFromWei('votingStakingRewards XBE balance', await votingStakingRewardsXBETracker.get());
   }
 
+  async function stake(from, amount) {
+    await contracts.mockXBE.approve(
+      contracts.votingStakingRewards.address,
+      amount,
+      { from },
+    );
+    return contracts.votingStakingRewards.stake(amount, { from });
+  }
+
   describe('Case #3', () => {
     beforeEach(deployAndConfigure);
-    it('reward from simpleXBEinflation', async () => {
+    it('should pass', async () => {
       const amount = ether('10');
       const PCT_BASE = await contracts.votingStakingRewards.PCT_BASE();
       const inverseMaxBoostCoefficient = await contracts.votingStakingRewards
         .inverseMaxBoostCoefficient();
+      const minimalBoost = PCT_BASE.mul(inverseMaxBoostCoefficient).div(new BN('100'));
 
       const ownerTrackers = await getValueTrackers(owner, {
         XBE: contracts.mockXBE.balanceOf,
@@ -157,9 +167,15 @@ contract('Integration tests', (accounts) => {
 
       await startBonusCampaign();
 
-      expect(await ownerTrackers.boost.get()).to.be.bignumber.equal(
-        PCT_BASE.mul(inverseMaxBoostCoefficient).div(new BN('100')),
+      await stake(owner, amount);
+      await ownerTrackers.XBE.get();
+
+      const votingStakingRewardsXBEBalance = UniversalTracker(
+        contracts.votingStakingRewards.address,
+        contracts.mockXBE.balanceOf,
       );
+      const ownerBoost = await ownerTrackers.boost.get();
+      expect(ownerBoost).to.be.bignumber.equal(minimalBoost);
 
       /* ========== MINT REWARDS AND CHECK DISTRIBUTION ========== */
       const periodDuration = await contracts.simpleXBEInflation.periodDuration();
@@ -170,28 +186,51 @@ contract('Integration tests', (accounts) => {
         expectTargetMinted,
         new BN(1000),
       );
+      logBNFromWei('periodicEmission', periodicEmission);
 
+      const votingXBEBalanceTracker = await UniversalTracker(
+        contracts.votingStakingRewards.address,
+        contracts.mockXBE.balanceOf,
+      );
+      let totalEarned = ZERO;
       for (let i = 0; i < 52; i += 1) {
         await mintForInflationAndSendToVoters();
+        const maxDailyReward = (await votingXBEBalanceTracker.delta()).div(new BN('7'));
+        logBNFromWei('maxDailyReward', maxDailyReward);
 
         for (let j = 0; j < 7; j += 1) {
-          const ownerVoterRewards = await ownerTrackers.votingStakingRewardsEarned.get();
-          logBNFromWei(`[Day ${ i*7 + j + 1}] Earned after mint`, ownerVoterRewards);
           await time.increase(days('1'));
+          const earnedRewards = await ownerTrackers.votingStakingRewardsEarned.delta();
+          const ownerVotingRewards = await ownerTrackers.votingStakingRewardsEarned.get();
+          console.group(`[Day ${i * 7 + j + 1}]`);
+          logBNFromWei('Earned since last check', earnedRewards);
+          logBNFromWei('Total earned', ownerVotingRewards);
+          console.groupEnd();
+          totalEarned = totalEarned.add(earnedRewards);
+          expect(earnedRewards).to.be.bignumber.closeTo(
+            maxDailyReward.mul(ownerBoost).div(PCT_BASE),
+            new BN(1e15),
+          );
         }
       }
 
-      // logBNFromWei('Earned after mint',
-      //   await contracts.votingStakingRewards.earned(owner));
-      // await time.increase(days(14));
-      // logBNFromWei('Earned after 14 days',
-      //   await contracts.votingStakingRewards.earned(owner));
+      logBNFromWei('Total rewards expected', totalEarned);
+      const getRewardReceipt = await contracts.votingStakingRewards.getReward();
+      processEventArgs(getRewardReceipt, 'RewardPaid', (args) => {
+        expect(args.user).to.be.bignumber.equal(owner);
+        logBNFromWei('Paid reward amount', args.reward);
+        expect(args.reward).to.be.bignumber.equal(totalEarned);
+      });
 
       /* ========== UNLOCK AND UNSTAKE ========== */
-      await contracts.veXBE.withdraw();
       const ownerBondedRewardLocks = await contracts.votingStakingRewards.bondedRewardLocks(owner);
       const withdrawAmount = (await ownerTrackers.stakedAmount.get())
         .sub(ownerBondedRewardLocks.amount);
+      await ownerTrackers.XBE.get();
+
+      logBNTimestamp('ownerBondedRewardLocks.unlockTime', ownerBondedRewardLocks.unlockTime);
+      logBNFromWei('ownerBondedRewardLocks.amount', ownerBondedRewardLocks.amount);
+      logBNFromWei('withdrawAmount', withdrawAmount);
 
       await contracts.votingStakingRewards.withdrawUnbonded(withdrawAmount);
 

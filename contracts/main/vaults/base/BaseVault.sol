@@ -371,7 +371,6 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
             IStrategy(_controller.strategies(_stakingToken)).getRewards();
             _controller.claim(_stakingToken, _rewardToken);
         }
-        __updateReward(_for);
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
@@ -382,6 +381,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
 
     function __getReward(uint8 _claimMask) virtual internal {
         address _stakingToken = address(stakingToken);
+        __updateReward(msg.sender);
         for (uint256 i = 0; i < _validTokens.length(); i++) {
             _getReward(
                 _claimMask,
@@ -397,7 +397,6 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         virtual
         nonReentrant
         validClaimMask(_claimMask)
-        // updateReward(msg.sender)
     {
         __getReward(_claimMask);
     }

@@ -9,7 +9,6 @@ import "./interfaces/ISmartWalletChecker.sol";
 import "./interfaces/IBonusCampaign.sol";
 import "./interfaces/IVotingStakingRewards.sol";
 
-// import "./mocks/StringsConcatenations.sol"; // DELETE THIS IF IT IS STILL EXISTS AFTER TESTS
 
 // @title Voting Escrow XBE
 // @author Curve Finance | Translation to Solidity - Integral Team O

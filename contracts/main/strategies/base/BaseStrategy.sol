@@ -12,7 +12,6 @@ import "../../interfaces/IConverter.sol";
 import "../../interfaces/vault/IVaultCore.sol";
 import '../../interfaces/IStrategy.sol';
 import '../../interfaces/IController.sol';
-// import "../../mocks/StringsConcatenations.sol";
 
 /// @title EURxbStrategy
 /// @notice This is base contract for yield farming strategy with EURxb token

@@ -163,7 +163,7 @@ contract('Integration tests', (accounts) => {
         boost: contracts.votingStakingRewards.calculateBoostLevel,
         stakedAmount: contracts.votingStakingRewards.balanceOf,
         lockedAmount: contracts.veXBE.lockedAmount,
-        votingStakingRewards: contracts.votingStakingRewards.earned,
+        votingStakingRewardsEarned: contracts.votingStakingRewards.earned,
         bonusRewards: contracts.bonusCampaign.earned,
         veXBE: contracts.veXBE.balanceOf,
       });
@@ -186,35 +186,63 @@ contract('Integration tests', (accounts) => {
       expect(ownerLockedAmount).to.be.bignumber.equal(amount);
       // expect(ownerLockEnd).to.be.bignumber.equal(lockEnd);
 
-      for (let i = 1; i < 3; i += 1) {
+      // Stake and lock more users
+      for (let i = 1; i < 2; i += 1) {
         await contracts.mockXBE.mintSender(ether('100'), { from: accounts[i] });
         await stake(accounts[i], amount);
         await createLock(accounts[i], amount, months('23'));
         expect(await contracts.veXBE.isLockedForMax(accounts[i])).to.be.true;
       }
 
+      const votingXBEBalanceTracker = await UniversalTracker(
+        contracts.votingStakingRewards.address,
+        contracts.mockXBE.balanceOf,
+      );
+
       await mintForInflationAndSendToVoters();
 
+      // Shift to periodFinish
+      await time.increase(days('7'));
+
+      async function getReverseStakeShare(account) {
+        const totalStake = await contracts.votingStakingRewards.totalSupply();
+        const userStake = await contracts.votingStakingRewards.balanceOf(account);
+        return totalStake.div(userStake);
+      }
       logBNFromWei('CURRENT BOOST', await ownerTrackers.boost.get());
+      const totalRewards = await votingXBEBalanceTracker.delta();
+      const ownerStakeReverseShare = await getReverseStakeShare(owner);
+      const ownerMaxReward = totalRewards.div(ownerStakeReverseShare);
+      logBNFromWei('totalRewards', totalRewards);
+      logBN('Owner reverse stake share', ownerStakeReverseShare);
+      logBNFromWei('Owner max reward', ownerMaxReward);
+
       /* ========== CHECK BOOST CHANGE ========== */
-      for (let i = 0; i < 22; i += 1) {
+      for (let i = 0; i < 52; i += 1) {
         const oldLockedEnd = await contracts.veXBE.lockedEnd(owner);
-        const newLockedEnd = oldLockedEnd.add(months('1'));
+        const newLockedEnd = oldLockedEnd.add(days('7'));
 
         await contracts.veXBE.increaseUnlockTime(newLockedEnd);
-        const currentBoost = await ownerTrackers.boost.get();
-        const earned = await ownerTrackers.votingStakingRewards.get();
         const totalVotingPower = await contracts.veXBE.totalSupply();
         const userVotingPower = await ownerTrackers.veXBE.get();
+        const currentBoost = await ownerTrackers.boost.get();
+        const earned = await ownerTrackers.votingStakingRewardsEarned.get();
+        const expectedEarned = ownerMaxReward.mul(currentBoost).div(new BN(100)).div(PCT_BASE);
+
+        // expect(earned).to.be.bignumber.closeTo(
+        //   expectedEarned,
+        //   new BN(1e15),
+        // );
 
         console.group(`Month ${i + 1}`);
         logBNTimestamp('oldLockedEnd', oldLockedEnd);
         logBNTimestamp('newLockedEnd', newLockedEnd);
         logBNTimestamp('actualLockedEnd', await contracts.veXBE.lockedEnd(owner));
-        logBNFromWei('Owner voting power', userVotingPower);
-        logBNFromWei('Total voting power', totalVotingPower);
-        logBNFromWei('votingStakingRewards', earned);
+        // logBNFromWei('Owner voting power', userVotingPower);
+        // logBNFromWei('Total voting power', totalVotingPower);
         logBNFromWei('CURRENT BOOST', currentBoost);
+        logBNFromWei('votingStakingRewards', earned);
+        logBNFromWei('expectedEarned', expectedEarned);
         console.groupEnd();
       }
 
@@ -224,7 +252,7 @@ contract('Integration tests', (accounts) => {
       //   const currentTimestamp = await time.latest();
       //   const bonusRewardsDelta = await ownerTrackers.bonusRewards.delta();
       //   const bonusRewards = await ownerTrackers.bonusRewards.get();
-      //   const votingStakingRewards = await ownerTrackers.votingStakingRewards.get();
+      //   const votingStakingRewards = await ownerTrackers.rs.votingStakingRewardsEarned.get();
       //   const sushiVaultReward = await contracts.sushiVault
       //     .earned(contracts.mockXBE.address, alice);
 

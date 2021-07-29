@@ -4,7 +4,7 @@ import "./base/BaseVault.sol";
 import "./base/VaultWithAutoStake.sol";
 import "./base/VaultWithFeesOnClaim.sol";
 
-import "../../mocks/StringsConcatenations.sol";
+import "../mocks/StringsConcatenations.sol";
 
 /// @title SushiVault
 /// @notice Vault for staking LP Sushiswap and receive rewards in CVX
@@ -60,7 +60,6 @@ contract SushiVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim {
     {
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
-            revert(StringsConcatenations.uint2str(reward));
             rewards[_for][_rewardToken] = 0;
             reward = _getAndDistributeFeesOnClaimForToken(_for, _rewardToken, reward);
             _autoStakeForOrSendTo(_rewardToken, reward, _for);

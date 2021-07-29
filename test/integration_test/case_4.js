@@ -208,6 +208,7 @@ contract('Integration tests', (accounts) => {
 
       await time.increase(days('7'));
       await logAllTrackers(aliceTrackers, 'After LP Stake');
+      console.log((await contracts.sushiVault.earned(contracts.mockXBE.address, alice)).toString());
 
       // for (let i = 0; i < 7; i += 1) {
       //   await time.increase(days('1'));

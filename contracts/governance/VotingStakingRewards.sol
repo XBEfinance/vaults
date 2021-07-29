@@ -45,7 +45,6 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         bool requested;
     }
 
-    bool public breaker = false;
 
     mapping(address => mapping(address => bool)) public stakeAllowance;
     mapping(address => BondedReward) public bondedRewardLocks;
@@ -95,10 +94,6 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     modifier onlyRewardsDistribution {
         require(msg.sender == rewardsDistribution, "Caller is not RewardsDistribution contract");
         _;
-    }
-
-    function setBreaker(bool _breaker) external onlyOwner {
-        breaker = _breaker;
     }
 
     function setInverseMaxBoostCoefficient(uint256 _inverseMaxBoostCoefficient)
@@ -247,9 +242,6 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         require(!bondedRewardLocks[msg.sender].requested, "alreadyRegistered");
         uint256 bondedAmount = bondedRewardLocks[msg.sender].amount;
         require(bondedAmount > 0, "notEnoughBondedTokens");
-        if (!breaker) {
-            require(voting.voteLock(msg.sender) < block.number, "!locked");
-        }
         bondedRewardLocks[msg.sender].requested = true;
     }
 
@@ -281,9 +273,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         if (bondedRewardLocks[msg.sender].amount > 0) {
             require(amount <= _balances[msg.sender].sub(bondedRewardLocks[msg.sender].amount), "cannotWithdrawBondedTokens");
         }
-        if (!breaker) {
-            require(voting.voteLock(msg.sender) < block.number, "!locked");
-        }
+
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
 
@@ -405,9 +395,6 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     }
 
     function getReward() public nonReentrant updateReward(msg.sender) {
-        if (!breaker) {
-            require(voting.voteLock(msg.sender) < block.number, "!voted");
-        }
         uint256 reward = rewards[msg.sender];
         if (reward > 0) {
             rewards[msg.sender] = 0;

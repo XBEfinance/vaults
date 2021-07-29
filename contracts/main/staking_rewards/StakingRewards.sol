@@ -73,7 +73,11 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     }
 
     function earned(address account) public override virtual view returns (uint256) {
-        return _balances[account].mul(rewardPerToken().sub(userRewardPerTokenPaid[account])).div(1e18).add(rewards[account]);
+        return _balances[account].mul(
+            rewardPerToken().sub(userRewardPerTokenPaid[account])
+        )
+        .div(1e18)
+        .add(rewards[account]);
     }
 
     function getRewardForDuration() external override view returns (uint256) {

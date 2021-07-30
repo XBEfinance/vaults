@@ -448,7 +448,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
             bonus.registerFor(_addr);
         }
 
-        IVotingStakingRewards(voting).updateRewardFromToken(_addr);
+//        IVotingStakingRewards(voting).updateRewardFromToken(_addr);
 
         emit Deposit(_addr, _value, _locked.end, _type, block.timestamp);
         emit Supply(supplyBefore, supplyBefore + _value);

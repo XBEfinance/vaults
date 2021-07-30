@@ -712,6 +712,11 @@ contract VeXBE is Initializable, ReentrancyGuard {
       return totalSupply(block.timestamp);
     }
 
+    // returns supply of locked tokens
+    function lockedSupply() external view returns(uint256) {
+        return supply;
+    }
+
     function totalSupply(uint256 t) public view returns(uint256) {
         uint256 _epoch = epoch;
         Point memory lastPoint = pointHistory[_epoch];

@@ -10,5 +10,6 @@ interface IVeXBE {
     function balanceOfAt(address addr, uint256 _block) external view returns(uint256);
     function balanceOf(address addr) external view returns(uint256);
     function totalSupply() external view returns(uint256);
+    function lockedSupply() external view returns(uint256);
     function lockStarts(address addr) external view returns(uint256);
 }

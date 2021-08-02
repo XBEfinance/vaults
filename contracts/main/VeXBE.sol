@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 
-import "./interfaces/ISmartWalletChecker.sol";
 import "./interfaces/IBonusCampaign.sol";
 import "./interfaces/IVotingStakingRewards.sol";
 
@@ -19,7 +18,8 @@ import "./interfaces/IVotingStakingRewards.sol";
 //     more than `MAXTIME` (4 years).
 contract VeXBE is Initializable, ReentrancyGuard {
 
-  using SafeERC20 for IERC20;
+    using SafeERC20 for IERC20;
+    using SafeMath for uint256;
 
     // # Voting escrow to have time-weighted votes
     // # Votes have a weight depending on time, so that users are committed
@@ -69,12 +69,12 @@ contract VeXBE is Initializable, ReentrancyGuard {
     int128 public constant CREATE_LOCK_TYPE = 1;
     int128 public constant INCREASE_LOCK_AMOUNT = 2;
     int128 public constant INCREASE_UNLOCK_TIME = 3;
-    uint256 public constant WEEK = 7 * 86400;  // all future times are rounded by week
-    uint256 public constant MAXTIME = 4 * 365 * 86400;  // 4 years
-    uint256 public constant MULTIPLIER = 10 ** 18;
 
     // General constants
     uint256 public constant YEAR = 86400 * 365;
+    uint256 public constant WEEK = 7 * 86400;  // all future times are rounded by week
+    uint256 public constant MAXTIME = 2 * YEAR;  // 4 years
+    uint256 public constant MULTIPLIER = 10 ** 18;
 
     // # Allocation:
     // # =========
@@ -93,7 +93,6 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // uint256 public constant RATE_DENOMINATOR = 10 ** 18;
     // uint256 public constant INFLATION_DELAY = 86400;
 
-    address public token;
     uint256 public supply;
 
     mapping(address => LockedBalance) public locked;
@@ -108,19 +107,15 @@ contract VeXBE is Initializable, ReentrancyGuard {
     mapping(address => uint256) public userPointEpoch;
     mapping(uint256 => int128) public slopeChanges; // time -> signed slope change
 
-    address public voting;
-    IBonusCampaign public bonus;
+    address public votingStakingRewards;
+    IBonusCampaign public bonusCampaign;
 
     address public controller;
-    bool public transfersEnabled;
 
     string public name;
     string public symbol;
     string public version;
     uint256 public decimals;
-
-    address public futureSmartWalletChecker;
-    address public smartWalletChecker;
 
     address public admin;
     address public futureAdmin;
@@ -141,31 +136,29 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // """
     function configure(
         address tokenAddr,
-        address votingAddr,
-        address bonusCampaign,
+        address _votingStakingRewards,
+        address _bonusCampaign,
         string calldata _name,
         string calldata _symbol,
         string calldata _version
     ) external initializer {
         admin = msg.sender;
-        token = tokenAddr;
         pointHistory[0].blk = block.number;
         pointHistory[0].ts = block.timestamp;
         controller = msg.sender;
-        transfersEnabled = true;
-        uint256 _decimals = ERC20(token).decimals();
+        uint256 _decimals = ERC20(tokenAddr).decimals();
         require(_decimals <= 255, "decimalsOverflow");
         decimals = _decimals;
         name = _name;
         symbol = _symbol;
         version = _version;
-        voting = votingAddr;
-        bonus = IBonusCampaign(bonusCampaign);
+        votingStakingRewards = _votingStakingRewards;
+        bonusCampaign = IBonusCampaign(_bonusCampaign);
     }
 
-    function setVoting(address addr) external onlyAdmin {
-        require(addr != address(0), 'addressIsZero');
-        voting = addr;
+    function setVoting(address _votingStakingRewards) external onlyAdmin {
+        require(_votingStakingRewards != address(0), 'addressIsZero');
+        votingStakingRewards = _votingStakingRewards;
     }
     // """
     // @notice Transfer ownership of VotingEscrow contract to `addr`
@@ -185,35 +178,6 @@ contract VeXBE is Initializable, ReentrancyGuard {
         admin = _admin;
         emit ApplyOwnership(_admin);
     }
-
-    // """
-    // @notice Set an external contract to check for approved smart contract wallets
-    // @param addr Address of Smart contract checker
-    // """
-    function commitSmartWalletChecker(address addr) external onlyAdmin {
-        futureSmartWalletChecker = addr;
-    }
-
-    // """
-    // @notice Apply setting external contract to check approved smart contract wallets
-    // """
-    function applySmartWalletChecker() external onlyAdmin {
-        smartWalletChecker = futureSmartWalletChecker;
-    }
-
-    // // """
-    // // @notice Check if the call is from a whitelisted smart contract, revert if not
-    // // @param addr Address to be checked
-    // // """
-    // function assertNotContract(address addr) view internal {
-    //     if (addr != tx.origin) {
-    //       address checker = smartWalletChecker;
-    //       if (checker != address(0) && ISmartWalletChecker(checker).check(addr)) {
-    //           return;
-    //       }
-    //       revert("!contract");
-    //     }
-    // }
 
     // """
     // @notice Get the most recently recorded rate of voting power decrease for `addr`
@@ -253,8 +217,8 @@ contract VeXBE is Initializable, ReentrancyGuard {
     }
 
     function isLockedForMax(address account) external view returns(bool) {
-        uint256 lockDuration = locked[account].end - _lockStarts[account];
-        return lockDuration >= bonus.rewardsDuration() && block.timestamp < bonus.periodFinish();
+        uint256 lockDuration = locked[account].end.sub(_lockStarts[account]);
+        return lockDuration >= bonusCampaign.rewardsDuration() && block.timestamp < bonusCampaign.periodFinish();
     }
 
     // """
@@ -442,13 +406,11 @@ contract VeXBE is Initializable, ReentrancyGuard {
         // # _locked.end > block.timestamp (always)
         _checkpoint(_addr, oldLocked, _locked);
 
-        require(IERC20(voting).balanceOf(_addr) >= uint256(_locked.amount), "notEnoughStake");
+        require(IERC20(votingStakingRewards).balanceOf(_addr) >= uint256(_locked.amount), "notEnoughStake");
 
-        if (this.isLockedForMax(_addr) && bonus.canRegister(_addr)) {
-            bonus.registerFor(_addr);
+        if (this.isLockedForMax(_addr) && bonusCampaign.canRegister(_addr)) {
+            bonusCampaign.registerFor(_addr);
         }
-
-//        IVotingStakingRewards(voting).updateRewardFromToken(_addr);
 
         emit Deposit(_addr, _value, _locked.end, _type, block.timestamp);
         emit Supply(supplyBefore, supplyBefore + _value);
@@ -506,7 +468,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     }
 
     function createLockFor(address _for, uint256 _value, uint256 _unlockTime) public nonReentrant {
-        if (msg.sender != voting) {
+        if (msg.sender != votingStakingRewards) {
             require(createLockAllowance[msg.sender][_for], "!allowed");
         }
         _createLockFor(_for, _value, _unlockTime);

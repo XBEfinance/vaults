@@ -9,6 +9,7 @@ interface IVeXBE {
     function userPointHistoryTs(address addr, uint256 epoch) external view returns(uint256);
     function balanceOfAt(address addr, uint256 _block) external view returns(uint256);
     function balanceOf(address addr) external view returns(uint256);
+    function balanceOf(address addr, uint256 timestamp) external view returns(uint256);
     function totalSupply() external view returns(uint256);
     function lockedSupply() external view returns(uint256);
     function lockStarts(address addr) external view returns(uint256);

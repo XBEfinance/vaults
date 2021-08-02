@@ -33,6 +33,10 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     event Recovered(address token, uint256 amount);
 
     uint256 public constant PCT_BASE = 10 ** 18; // 0% = 0; 1% = 10^16; 100% = 10^18
+    uint256 internal constant maxBoostLevel = PCT_BASE;
+    uint256 internal constant baseBoostLevel = PCT_BASE
+        .mul(inverseMaxBoostCoefficient)
+        .div(100);
 
     address public treasury;
     IVoting public voting;
@@ -200,7 +204,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         _totalSupply = _totalSupply.add(_amount);
         _balances[_from] = _balances[_from].add(_amount);
 
-        require(IERC20(stakingToken).transferFrom(_from, address(this), _amount), "!t");
+        require(IERC20(stakingToken).transferFrom(msg.sender, address(this), _amount), "!t");
         emit Staked(_from, _amount);
     }
 
@@ -212,7 +216,11 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         _vaultsWhoCanAutoStake[_addr] = _flag;
     }
 
-    function stakeFor(address _for, uint256 amount) public nonReentrant whenNotPaused updateReward(_for) {
+    function stakeFor(address _for, uint256 amount)
+        public
+        nonReentrant whenNotPaused
+        updateReward(_for)
+    {
         if (!_vaultsWhoCanAutoStake[msg.sender]) {
             require(stakeAllowance[msg.sender][_for], "stakeNotApproved");
         }
@@ -282,35 +290,35 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         emit Withdrawn(msg.sender, amount);
     }
 
-    function _rewardPerTokenForDuration(uint256 duration) internal view returns (uint256) {
-        if (_totalSupply == 0) {
-            return rewardPerTokenStored;
-        }
-        return
-            rewardPerTokenStored.add(
-                duration.mul(rewardRate).mul(1e18).div(_totalSupply)
-            );
-    }
+//    function _rewardPerTokenForDuration(uint256 duration) internal view returns (uint256) {
+//        if (_totalSupply == 0) {
+//            return rewardPerTokenStored;
+//        }
+//        return
+//            rewardPerTokenStored.add(
+//                duration.mul(rewardRate).mul(1e18).div(_totalSupply)
+//            );
+//    }
 
-    function potentialXbeReturns(uint256 duration) public view returns (uint256) {
-        uint256 _rewardsAmount = _balances[msg.sender]
-            .mul(
-                _rewardPerTokenForDuration(duration).sub(userRewardPerTokenPaid[msg.sender]))
-            .div(1e18)
-            .add(rewards[msg.sender]);
-        return _rewardsAmount;
-    }
+//    function potentialXbeReturns(uint256 duration) public view returns (uint256) {
+//        uint256 _rewardsAmount = _balances[msg.sender]
+//            .mul(
+//                _rewardPerTokenForDuration(duration).sub(userRewardPerTokenPaid[msg.sender]))
+//            .div(1e18)
+//            .add(rewards[msg.sender]);
+//        return _rewardsAmount;
+//    }
 
     function _lockedBoostLevel(address account) internal view returns(uint256) {
         IVeXBE veXBE = IVeXBE(token);
-        uint256 votingBalance = veXBE.balanceOf(account);
+        uint256 votingBalance = veXBE.balanceOf(account, lastTimeRewardApplicable());
         uint256 votingTotal = veXBE.totalSupply();
         uint256 userLock = veXBE.lockedAmount(account);
 
         if (votingTotal == 0 || votingBalance == 0) {
             return PCT_BASE
-            .mul(inverseMaxBoostCoefficient)
-            .div(100);
+                .mul(inverseMaxBoostCoefficient)
+                .div(100);
         }
 
         uint256 res = PCT_BASE.mul(
@@ -329,24 +337,21 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     function calculateBoostLevel(address account) public view returns (uint256) {
         IVeXBE veXBE = IVeXBE(token);
         uint256 userLock = veXBE.lockedAmount(account);
-        uint256 baseBoost = PCT_BASE
-            .mul(inverseMaxBoostCoefficient)
-            .div(100);
 
         uint256 userStake = _balances[account];
         if (userStake == 0 || userLock == 0) {
-            return baseBoost;
+            return baseBoostLevel;
         }
 
         uint256 lockedBoost = _lockedBoostLevel(account);
         if (lockedBoost == 0) {
-            return baseBoost;
+            return baseBoostLevel;
         }
 
         return
             lockedBoost.mul(userLock)
             .add(
-                baseBoost.mul(userStake.sub(userLock))
+                baseBoostLevel.mul(userStake.sub(userLock))
             )
             .div(userStake);
     }

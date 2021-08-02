@@ -244,7 +244,8 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
           .mul(
             rewardPerToken(_rewardToken).sub(userRewardPerTokenPaid[_rewardToken][account])
           )
-          .div(1e18).add(rewards[account][_rewardToken]);
+          .div(1e18)
+        .add(rewards[account][_rewardToken]);
     }
 
     function getRewardForDuration(address _rewardToken)
@@ -365,9 +366,9 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
     )
         internal virtual
     {
-        if (_claimMask >> 1 == 1 && _claimMask << 7 != 128) {
+        if (_claimMask == 2) {
             _controller.claim(_stakingToken, _rewardToken);
-        } else if (_claimMask >> 1 == 1 && _claimMask << 7 == 128) {
+        } else if (_claimMask == 3) {
             IStrategy(_controller.strategies(_stakingToken)).getRewards();
             _controller.claim(_stakingToken, _rewardToken);
         }
@@ -397,6 +398,7 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         virtual
         nonReentrant
         validClaimMask(_claimMask)
+        updateReward(msg.sender)
     {
         __getReward(_claimMask);
     }
@@ -482,8 +484,17 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         _;
     }
 
+    function userReward(address _account, address _token)
+        external view
+        onlyValidToken(_token)
+        returns(uint256)
+    {
+        return rewards[_account][_token];
+    }
+
     function _updateReward(address _what, address _account) internal {
         rewardsPerTokensStored[_what] = rewardPerToken(_what);
+        lastUpdateTime = lastTimeRewardApplicable();
         if (_account != address(0)) {
             rewards[_account][_what] = earned(_what, _account);
             userRewardPerTokenPaid[_what][_account] = rewardsPerTokensStored[_what];
@@ -491,10 +502,10 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
     }
 
     function __updateReward(address _account) internal {
-        lastUpdateTime = lastTimeRewardApplicable();
         for (uint256 i = 0; i < _validTokens.length(); i++) {
             _updateReward(_validTokens.at(i), _account);
         }
+        lastUpdateTime = lastTimeRewardApplicable();
     }
 
     modifier updateReward(address _account) {

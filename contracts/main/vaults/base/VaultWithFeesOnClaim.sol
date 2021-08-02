@@ -25,7 +25,6 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
 
     FeeWeight[] internal feeWeights;
 
-    uint64 public countReceiver;
     uint256 public sumWeight;
     bool public feesEnabled;
 
@@ -40,7 +39,6 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
     }
 
     function addFeeReceiver(address _to, uint256 _weight, address[] calldata _tokens, bool _callFunc) external auth(msg.sender) {
-        require(sumWeight.add(_weight) < PCT_PRECISION, '!weight < PCT_PRECISION');
         FeeWeight storage newWeight;
         newWeight.to = _to;
         newWeight.weight = _weight;
@@ -49,23 +47,21 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
             newWeight.tokens[_tokens[i]] = true;
         }
         feeWeights.push(newWeight);
-        countReceiver++;
+    }
+
+    function feeReceiversCount() external view returns(uint256) {
+        return feeWeights.length;
     }
 
     function removeFeeReceiver(uint256 _index) external auth(msg.sender) {
+        require(_index < feeWeights.length, 'indexOutOfBound');
         sumWeight = sumWeight.sub(feeWeights[_index].weight);
         delete feeWeights[_index];
-        countReceiver--;
     }
 
     function setWeight(uint256 _index, uint256 _weight) external auth(msg.sender) {
-        uint256 oldWeight = feeWeights[_index].weight;
-        if (oldWeight > _weight) {
-            sumWeight = sumWeight.sub(oldWeight.sub(_weight));
-        } else if (oldWeight < _weight) {
-            sumWeight = sumWeight.add(_weight.sub(oldWeight));
-            require(sumWeight < PCT_PRECISION, "invalidSumWeight");
-        }
+        require(_index < feeWeights.length, 'indexOutOfBound');
+        sumWeight = sumWeight.add(_weight).sub(feeWeights[_index].weight);
         feeWeights[_index].weight = _weight;
     }
 
@@ -99,7 +95,7 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
            uint256 value = _amounts[i];
            for(uint256 j = 0; j < feeWeights.length; j++){
                uint256 _fee = _mulDiv2(feeWeights[j].weight, _amounts[i], PCT_PRECISION);
-               value -= _fee;
+               value = value.sub(_fee);
            }
            _amounts[i] = value;
         }

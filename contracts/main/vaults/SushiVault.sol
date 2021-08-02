@@ -68,19 +68,6 @@ contract SushiVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim {
         emit RewardPaid(_rewardToken, _for, reward);
     }
 
-    function __getReward(uint8 _claimMask) override internal {
-        address _stakingToken = address(stakingToken);
-        __updateReward(msg.sender);
-        for (uint256 i = 0; i < _validTokens.length(); i++) {
-            _getReward(
-                _claimMask,
-                msg.sender,
-                _validTokens.at(i),
-                _stakingToken
-            );
-        }
-    }
-
     function _isUserAuthorized(address _user) internal override view returns(bool) {
         return owner() == _user;
     }

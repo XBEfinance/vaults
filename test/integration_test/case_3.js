@@ -17,9 +17,9 @@ const {
   ONE,
   getMockTokenPrepared,
   processEventArgs,
-} = require('../utils/common');
+} = require('../utils/old/common');
 
-const UniversalTracker = require('../utils/UniversalTracker');
+const UniversalTracker = require('../utils/old/UniversalTracker');
 
 const {
   deployInfrastructure,
@@ -28,7 +28,7 @@ const {
   days,
   defaultParams,
   months,
-} = require('../utils/deploy_integration_infrastructure');
+} = require('../utils/old/deploy_integration_infrastructure');
 
 const { ZERO_ADDRESS } = constants;
 

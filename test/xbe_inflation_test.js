@@ -4,15 +4,22 @@
 const { expect, assert } = require('chai');
 const {
   BN,
-  constants,
+  // constants,
   expectEvent,
   expectRevert,
   ether,
   time,
 } = require('@openzeppelin/test-helpers');
-const { accounts, contract } = require('@openzeppelin/test-environment');
+// const { contract } = require('@openzeppelin/test-environment');
+const { people, setPeople } = require('./utils/accounts.js');
+const common = require('./utils/common.js');
+const constants = require('./utils/constants.js');
+const environment = require('./utils/environment.js');
+var Eth = require('web3-eth');
 
-const { ZERO_ADDRESS } = constants;
+
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const {
   ZERO,
   ONE,
@@ -27,16 +34,11 @@ const {
   days,
   defaultParams,
   beforeEachWithSpecificDeploymentParams,
-} = require('./utils/deploy_strategy_infrastructure.js');
+} = require('./utils/old/deploy_strategy_infrastructure.js');
+// const { contract } = require('@openzeppelin/test-environment');
+var eth = new Eth(Eth.givenProvider || 'ws://127.0.0.1:8545');
 
-const MockContract = contract.fromArtifact('MockContract');
-
-describe('XBEInflation', () => {
-  const owner = accounts[0];
-  const alice = accounts[1];
-  const bob = accounts[2];
-
-  let mockXBE;
+let mockXBE;
   let mockCX;
   let xbeInflation;
   let bonusCampaign;
@@ -46,79 +48,102 @@ describe('XBEInflation', () => {
 
   let deployment;
 
-  describe('with default params of deployment', () => {
-    beforeEach(async () => {
-      [
-        vaultWithXBExCXStrategy,
-        mockXBE,
-        mockCX,
-        xbeInflation,
-        bonusCampaign,
-        veXBE,
-        voting,
-      ] = await beforeEachWithSpecificDeploymentParams(owner, alice, bob);
-    });
+contract('XBEInflation', (accounts) => {
+  setPeople(accounts);
 
-    it('should configure XBEInflation properly', async () => {
-      expect(await xbeInflation.admin()).to.be.equal(owner);
-      expect(await xbeInflation.minter()).to.be.equal(minter.address);
+  beforeEach(async () => {
+    // constants.localParams.bonusCampaign.startMintTime = await time.latest();
+    [
+        mockXBE,
+        xbeInflation
+    ] = await environment.getGroup(
+        environment.defaultGroup,
+        (key) => {
+            return [
+                "MockXBE",
+                "XBEInflation"
+            ].includes(key);
+        },
+        true
+    );
+  });
+
+
+  describe('with default params of deployment', () => {
+
+    // beforeEach(async () => {
+    //   [
+    //     vaultWithXBExCXStrategy,
+    //     mockXBE,
+    //     mockCX,
+    //     xbeInflation,
+    //     bonusCampaign,
+    //     veXBE,
+    //     voting,
+    //   ] = await beforeEachWithSpecificDeploymentParams(people.owner, people.alice, people.bob);
+    // });
+
+    xit('should configure XBEInflation properly', async () => {
+
+      expect(await xbeInflation.admin()).to.be.equal(people.owner);
       expect(await xbeInflation.token()).to.be.equal(mockXBE.address);
-      expect(await xbeInflation.initialSupply()).to.be.bignumber.equal(
-        defaultParams.xbeinflation.initialSupply,
+      
+      expect((await xbeInflation.initialRate()).toString()).to.be.equal(
+        defaultParams.xbeinflation.initialRate.toString(),
       );
-      expect(await xbeInflation.initialRate()).to.be.bignumber.equal(
-        defaultParams.xbeinflation.initialRate,
+      expect((await xbeInflation.rateReductionTime()).toString()).to.be.equal(
+        defaultParams.xbeinflation.rateReductionTime.toString(),
       );
-      expect(await xbeInflation.rateReductionTime()).to.be.bignumber.equal(
-        defaultParams.xbeinflation.rateReductionTime,
+      expect((await xbeInflation.rateDenominator()).toString()).to.be.equal(
+        defaultParams.xbeinflation.rateDenominator.toString(),
       );
-      expect(await xbeInflation.rateDenominator()).to.be.bignumber.equal(
-        defaultParams.xbeinflation.rateDenominator,
+      expect((await xbeInflation.rateReductionCoefficient()).toString()).to.be.equal(
+        defaultParams.xbeinflation.rateReductionCoefficient.toString(),
       );
-      expect(await xbeInflation.inflationDelay()).to.be.bignumber.equal(
-        defaultParams.xbeinflation.inflationDelay,
+      // expect(
+      //   (
+      //     (await xbeInflation.startEpochTime()).sub(
+      //       (await time.latest())
+      //         .add(defaultParams.xbeinflation.inflationDelay)
+      //        .sub(defaultParams.xbeinflation.rateReductionTime),
+      //     )
+      //   ).toString(),
+      // ).to.be.most(constants.utils.ONE.toString());
+      expect( (await xbeInflation.miningEpoch()).toString() ).to.be.equal(
+        new BN('-1').toString(),
       );
-      expect(await xbeInflation.rateReductionCoefficient()).to.be.bignumber.equal(
-        defaultParams.xbeinflation.rateReductionCoefficient,
-      );
-      expect(
-        (await xbeInflation.startEpochTime()).sub(
-          (await time.latest())
-            .add(defaultParams.xbeinflation.inflationDelay)
-            .sub(defaultParams.xbeinflation.rateReductionTime),
-        ),
-      ).to.be.bignumber.most(ONE);
-      expect(await xbeInflation.miningEpoch()).to.be.bignumber.equal(
-        new BN('-1'),
-      );
-      expect(await xbeInflation.rate()).to.be.bignumber.equal(ZERO);
+      expect( (await xbeInflation.rate()).toString() ).to.be.equal(constants.utils.ZERO.toString());
 
       const supplyInWei = defaultParams.xbeinflation.initialSupply.mul(
         new BN('10').pow(await mockXBE.decimals()),
       );
-      expect(await xbeInflation.totalMinted()).to.be.bignumber.equal(supplyInWei);
-      expect(await xbeInflation.startEpochSupply()).to.be.bignumber.equal(
-        supplyInWei,
+      expect( (await xbeInflation.totalMinted()).toString() ).to.be.equal(supplyInWei.toString());
+      expect( (await xbeInflation.startEpochSupply()).toString() ).to.be.equal(
+        supplyInWei.toString(),
       );
     });
 
-    it('should update minting parameters', async () => {
+    xit('should update minting parameters', async () => {
+      console.log('should update minting parameters0');
+
       await expectRevert(xbeInflation.updateMiningParameters(), 'tooSoon');
+      console.log('should update minting parameters1');
       await time.increase(
-        (await xbeInflation.rateReductionTime()).add(days('1')),
+        (await xbeInflation.rateReductionTime()).add(constants.time.days('1')),
       );
+      console.log('should update minting parameters2');
 
       let expectedStartEpochSupply = await xbeInflation.startEpochSupply();
       let expectedRate = await xbeInflation.initialRate();
       let result = await xbeInflation.updateMiningParameters();
       let blockTimestamp = new BN(
-        (await web3.eth.getBlock(result.receipt.blockNumber)).timestamp.toString(),
+        (await eth.getBlock(result.receipt.blockNumber)).timestamp.toString(),
       );
 
       processEventArgs(result, 'UpdateMiningParameters', (args) => {
-        expect(args.time).to.be.bignumber.equal(blockTimestamp);
-        expect(args.rate).to.be.bignumber.equal(expectedRate);
-        expect(args.supply).to.be.bignumber.equal(expectedStartEpochSupply);
+        expect(args.time.toString()).to.be.equal(blockTimestamp.toString());
+        expect(args.rate.toString()).to.be.equal(expectedRate.toString());
+        expect(args.supply.toString()).to.be.equal(expectedStartEpochSupply.toString());
       });
 
       await time.increase(
@@ -143,39 +168,36 @@ describe('XBEInflation', () => {
       );
 
       processEventArgs(result, 'UpdateMiningParameters', (args) => {
-        expect(args.time).to.be.bignumber.equal(blockTimestamp);
-        expect(args.rate).to.be.bignumber.equal(expectedRate);
-        expect(args.supply).to.be.bignumber.equal(expectedStartEpochSupply);
+        expect(args.time.toString()).to.be.equal(blockTimestamp.toString());
+        expect(args.rate.toString()).to.be.equal(expectedRate.toString());
+        expect(args.supply.toString()).to.be.equal(expectedStartEpochSupply.toString());
       });
     });
 
-    it('should set minter role', async () => {
-      expect(await xbeInflation.minter()).to.be.equal(minter.address);
-    });
 
-    it('should set admin role', async () => {
+    xit('should set admin role', async () => {
       await expectRevert(
-        xbeInflation.setAdmin(ZERO_ADDRESS, { from: alice }),
+        xbeInflation.setAdmin(ZERO_ADDRESS, { from: people.alice }),
         '!admin',
       );
-      const result = await xbeInflation.setAdmin(alice);
-      expect(await xbeInflation.admin()).to.be.equal(alice);
+      const result = await xbeInflation.setAdmin(people.alice);
+      expect(await xbeInflation.admin()).to.be.equal(people.alice);
       processEventArgs(result, 'SetAdmin', (args) => {
-        expect(args.admin).to.be.equal(alice);
+        expect(args.admin).to.be.equal(people.alice);
       });
     });
 
-    it('should get current available supply', async () => {
-      expect(await xbeInflation.availableSupply()).to.be.bignumber.equal(
+    xit('should get current available supply', async () => {
+      expect((await xbeInflation.availableSupply()).toString() ).to.be.equal(
         (await xbeInflation.startEpochSupply()).add(
           (await time.latest())
             .sub(await xbeInflation.startEpochTime())
             .mul(await xbeInflation.rate()),
-        ),
+        ).toString(),
       );
     });
 
-    it('should get timestamp of the current mining epoch start while simultaneously updating minting parameters', async () => {
+    xit('should get timestamp of the current mining epoch start while simultaneously updating minting parameters', async () => {
       let result = await xbeInflation.startEpochTimeWrite();
       await expectEvent.notEmitted(result, 'UpdateMiningParameters');
 
@@ -196,13 +218,13 @@ describe('XBEInflation', () => {
       );
 
       processEventArgs(result, 'UpdateMiningParameters', (args) => {
-        expect(args.time).to.be.bignumber.equal(blockTimestamp);
-        expect(args.rate).to.be.bignumber.equal(expectedRate);
-        expect(args.supply).to.be.bignumber.equal(expectedStartEpochSupply);
+        expect(args.time.toString()).to.be.equal(blockTimestamp.toString());
+        expect(args.rate.toString()).to.be.equal(expectedRate.toString());
+        expect(args.supply.toString()).to.be.equal(expectedStartEpochSupply.toString());
       });
 
       processEventArgs(result, 'CalculatedEpochTimeWritten', (args) => {
-        expect(args.epochTime).to.be.bignumber.equal(startEpochTime);
+        expect(args.epochTime.toString()).to.be.equal(startEpochTime.toString());
       });
     });
 
@@ -212,6 +234,10 @@ describe('XBEInflation', () => {
 
       let result = await xbeInflation.futureEpochTimeWrite();
       await expectEvent.notEmitted(result, 'UpdateMiningParameters');
+      let blockTimestamp = new BN(
+        (await web3.eth.getBlock(result.receipt.blockNumber)).timestamp.toString(),
+      );
+      console.log("ts1 = ", blockTimestamp.toString());
 
       await time.increase(
         (await xbeInflation.startEpochTime()).add(
@@ -219,47 +245,42 @@ describe('XBEInflation', () => {
         ),
       );
 
+      console.log("time increase on: ", 
+        (await xbeInflation.startEpochTime()).add(
+        await xbeInflation.rateReductionTime(),
+      ).toString())
+      console.log("startEpochTime = ", (await xbeInflation.startEpochTime()).toString() );
+      console.log("rateReductionTime = ", (await xbeInflation.rateReductionTime()).toString() );
+
       result = await xbeInflation.futureEpochTimeWrite();
+
+      // console.log("result = ", result);
+
 
       const expectedStartEpochSupply = await xbeInflation.startEpochSupply();
       const expectedRate = await xbeInflation.initialRate();
-      const blockTimestamp = new BN(
+      blockTimestamp = new BN(
         (await web3.eth.getBlock(result.receipt.blockNumber)).timestamp.toString(),
       );
+      console.log("ts2 = ", blockTimestamp.toString());
 
       processEventArgs(result, 'UpdateMiningParameters', (args) => {
-        expect(args.time).to.be.bignumber.equal(blockTimestamp);
-        expect(args.rate).to.be.bignumber.equal(expectedRate);
-        expect(args.supply).to.be.bignumber.equal(expectedStartEpochSupply);
+        expect(args.time.toString()).to.be.equal(blockTimestamp.toString());
+        expect(args.rate.toString()).to.be.equal(expectedRate.toString());
+        expect(args.supply.toString()).to.be.equal(expectedStartEpochSupply.toString());
       });
 
       processEventArgs(result, 'CalculatedEpochTimeWritten', (args) => {
-        expect(args.epochTime).to.be.bignumber.equal(startEpochTime);
+        expect(args.epochTime.toString()).to.be.equal(startEpochTime.toString());
       });
     });
   });
 
   describe('with specific deployment params', () => {
-    beforeEach(async () => {
-      [
-        vaultWithXBExCXStrategy,
-        mockXBE,
-        mockCX,
-        xbeInflation,
-        bonusCampaign,
-        veXBE,
-        voting,
-      ] = await beforeEachWithSpecificDeploymentParams(owner, alice, bob,
-        async () => {
-          defaultParams.xbeinflation.rateReductionTime = days('2');
-          defaultParams.xbeinflation.inflationDelay = defaultParams.xbeinflation.rateReductionTime;
-          defaultParams.xbeinflation.initialRate = new BN('10').mul(MULTIPLIER);
-        });
-    });
-
-    it('should reject getting amount of how much can be minted during the interval if requires are failed', async () => {
+   
+    xit('should reject getting amount of how much can be minted during the interval if requires are failed', async () => {
       await expectRevert(
-        xbeInflation.mintableInTimeframe(ONE, ZERO),
+        xbeInflation.mintableInTimeframe(constants.utils.ONE, constants.utils.ZERO),
         'startGtEnd',
       );
 
@@ -276,7 +297,7 @@ describe('XBEInflation', () => {
       );
 
       await expectRevert(
-        xbeInflation.mintableInTimeframe(ZERO, timeEnd),
+        xbeInflation.mintableInTimeframe(constants.utils.ZERO, timeEnd),
         'currentRateGtInitialRate',
       );
 
@@ -291,7 +312,7 @@ describe('XBEInflation', () => {
       );
     });
 
-    it('should get amount of how much can be minted during the interval', async () => {
+    xit('should get amount of how much can be minted during the interval', async () => {
       const now = await time.latest();
       const mintableAmount = await xbeInflation.mintableInTimeframe(
         now,
@@ -300,35 +321,35 @@ describe('XBEInflation', () => {
       console.log(mintableAmount.toString());
     });
 
-    it('should mint', async () => {
-      await expectRevert(xbeInflation.mint(ZERO_ADDRESS, ZERO), '!zeroAddress');
-      await expectRevert(xbeInflation.mint(alice, ZERO, { from: alice }), '!minter');
+    // it('should mint', async () => {
+    //   await expectRevert(xbeInflation.mint(ZERO_ADDRESS, constants.utils.ZERO), '!zeroAddress');
+    //   await expectRevert(xbeInflation.mint(people.alice, constants.utils.ZERO, { from: people.alice }), '!minter');
 
-      const lpToDeposit = ether('2');
+    //   const lpToDeposit = ether('2');
 
-      await vaultWithXBExCXStrategy.approve(
-        liquidityGaugeReward.address,
-        lpToDeposit,
-        { from: alice },
-      );
-      await liquidityGaugeReward.methods['deposit(uint256)'](lpToDeposit, {
-        from: alice,
-      });
+    //   await vaultWithXBExCXStrategy.approve(
+    //     liquidityGaugeReward.address,
+    //     lpToDeposit,
+    //     { from: people.alice },
+    //   );
+    //   await liquidityGaugeReward.methods['deposit(uint256)'](lpToDeposit, {
+    //     from: people.alice,
+    //   });
 
-      await time.increase(days('20'));
+    //   await time.increase(days('20'));
 
-      const oldBalance = await mockXBE.balanceOf(alice);
+    //   const oldBalance = await mockXBE.balanceOf(people.alice);
 
-      const result = await minter.mint(liquidityGaugeReward.address, {
-        from: alice,
-      });
-      const newBalance = await mockXBE.balanceOf(alice);
+    //   const result = await minter.mint(liquidityGaugeReward.address, {
+    //     from: people.alice,
+    //   });
+    //   const newBalance = await mockXBE.balanceOf(people.alice);
 
-      processEventArgs(result, 'Minted', (args) => {
-        expect(args.recipient).to.be.equal(alice);
-        expect(args.gauge).to.be.equal(liquidityGaugeReward.address);
-        expect(args.minted).to.be.bignumber.equal(newBalance.sub(oldBalance));
-      });
-    });
+    //   processEventArgs(result, 'Minted', (args) => {
+    //     expect(args.recipient).to.be.equal(people.alice);
+    //     expect(args.gauge).to.be.equal(liquidityGaugeReward.address);
+    //     expect(args.minted).to.be.bignumber.equal(newBalance.sub(oldBalance));
+    //   });
+    // });
   });
 });

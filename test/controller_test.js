@@ -4,72 +4,68 @@
 const { expect, assert } = require('chai');
 const {
   BN,
-  constants,
+  // constants,
   expectEvent,
   expectRevert,
   ether,
-  time
+  time,
 } = require('@openzeppelin/test-helpers');
-const { accounts, contract } = require('@openzeppelin/test-environment');
+const common = require('./utils/common');
+const constants = require('./utils/constants');
+const { ZERO } = require('./utils/constants').utils;
+const environment = require('./utils/environment');
+const { people, setPeople } = require('./utils/accounts');
+
+const {
+  MockToken,
+  Controller,
+  MockContract,
+  UnwrappedToWrappedTokenConverter,
+  IConverter,
+  IStrategy,
+  IOneSplitAudit,
+  IERC20,
+
+} = require('./utils/artifacts');
+
 const { ZERO_ADDRESS } = constants;
 
-const { ZERO, CONVERSION_WEI_CONSTANT, getMockTokenPrepared } = require('./utils/common');
-const { vaultInfrastructureRedeploy } = require('./utils/vault_infrastructure_redeploy');
-const { defaultParams } = require('./utils/deploy_strategy_infrastructure.js');
-
-const Controller = contract.fromArtifact("Controller");
-const IERC20 = contract.fromArtifact("IERC20");
-const IStrategy = contract.fromArtifact("IStrategy");
-const MockToken = contract.fromArtifact('MockToken');
-const IConverter = contract.fromArtifact('IConverter');
-const IOneSplitAudit = contract.fromArtifact('IOneSplitAudit');
-const InstitutionalEURxbStrategy = contract.fromArtifact('InstitutionalEURxbStrategy');
-const InstitutionalEURxbVault = contract.fromArtifact('InstitutionalEURxbVault');
-const UnwrappedToWrappedTokenConverter = contract.fromArtifact('UnwrappedToWrappedTokenConverter');
-const TokenWrapper = contract.fromArtifact('TokenWrapper');
-
-const MockContract = contract.fromArtifact("MockContract");
-
-describe('Controller', () => {
-
-  const governance = accounts[0];
-  const miris = accounts[1];
-  const strategist = accounts[2];
-
+contract('Controller', (accounts) => {
+  setPeople(accounts);
 
   let revenueToken;
   let controller;
   let strategy;
   let vault;
-  let treasury
+  let treasury;
   let mock;
   let wrapper;
 
   beforeEach(async () => {
-    [mock, controller, strategy, vault, revenueToken, treasury] = await vaultInfrastructureRedeploy(
-      governance,
-      strategist,
-      InstitutionalEURxbStrategy,
-      InstitutionalEURxbVault,
-      defaultParams
-    );
-    wrapper = await TokenWrapper.new(
-      "Banked EURxb",
-      "bEURxb",
-      revenueToken.address,
-      strategy.address
-    );
+    // constants.localParams.bonusCampaign.startMintTime = await time.latest();
+    [
+      mock,
+      controller,
+      strategy,
+      vault,
+      revenueToken,
+      treasury,
 
-    await vault.configure(
-      revenueToken.address,
-      controller.address,
-      wrapper.address,
-      {from: governance}
+    ] = await environment.getGroup(
+      environment.defaultGroup,
+      (key) => [
+        'MockContract',
+        'Controller',
+        'InstitutionalEURxbStrategy',
+        'InstitutionalEURxbVault',
+        'MockXBE',
+        'Treasury',
+      ].includes(key),
     );
   });
 
   it('should configure properly', async () => {
-    expect(await controller.strategist()).to.be.equal(strategist);
+    expect(await controller.strategist()).to.be.equal(people.bob);
     expect(await controller.rewards()).to.be.equal(treasury.address);
   });
 
@@ -77,60 +73,76 @@ describe('Controller', () => {
     const amount = ether('10');
     const toEvacuateByGovernance = ether('5');
     const toEvacuateByStrategist = ether('5');
-    const mockToken = await MockToken.new('Mock Token', 'MT', ether('123'), {from: miris});
-    mockToken.approve(controller.address, amount, {from: miris});
-    mockToken.transfer(controller.address, amount, {from: miris});
+    const mockToken = await MockToken.new('Mock Token', 'MT', ether('123'), { from: people.alice });
+    mockToken.approve(controller.address, amount, { from: people.alice });
+    mockToken.transfer(controller.address, amount, { from: people.alice });
 
     await expectRevert(controller.inCaseTokensGetStuck(
       mockToken.address, toEvacuateByGovernance,
-      {from: miris}
-    ), "!governance|strategist");
+      { from: people.alice },
+    ), '!governance|strategist');
 
     await controller.inCaseTokensGetStuck(
       mockToken.address, toEvacuateByGovernance,
-      {from: governance}
+      { from: people.owner },
     );
     await controller.inCaseTokensGetStuck(
       mockToken.address, toEvacuateByStrategist,
-      {from: strategist}
+      { from: people.bob },
     );
-    expect(await mockToken.balanceOf(governance)).to.be.bignumber.equals(toEvacuateByGovernance);
-    expect(await mockToken.balanceOf(strategist)).to.be.bignumber.equals(toEvacuateByStrategist);
+    expect(await mockToken.balanceOf(people.owner)).to.be.bignumber.equals(toEvacuateByGovernance);
+    expect(await mockToken.balanceOf(people.bob)).to.be.bignumber.equals(toEvacuateByStrategist);
   });
 
   it('should evacuate all tokens from strategy', async () => {
-    console.log(governance);
-    await expectRevert(controller.inCaseStrategyTokenGetStuck(strategy.address, revenueToken.address, {from: governance}),
-      "!want");
+    console.log(people.owner);
+    await expectRevert(
+      controller.inCaseStrategyTokenGetStuck(
+        strategy.address,
+        revenueToken.address,
+        { from: people.owner },
+      ),
+      '!want',
+    );
     const mockedBalance = ether('10');
-    let mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, ether('123'), miris);
+    let mockToken = await common.getMockTokenPrepared(strategy.address, mockedBalance, ether('123'), people.alice);
 
     await expectRevert(
       controller.inCaseStrategyTokenGetStuck(
         strategy.address,
         mockToken.address,
-        {from: miris}
+        { from: people.alice },
       ),
-      "!governance|strategist"
+      '!governance|strategist',
     );
 
-    await controller.inCaseStrategyTokenGetStuck(strategy.address, mockToken.address, {from: governance});
+    await controller.inCaseStrategyTokenGetStuck(
+      strategy.address,
+      mockToken.address,
+      { from: people.owner },
+    );
     expect(await mockToken.balanceOf(controller.address)).to.be.bignumber.equal(mockedBalance);
 
     mock = await MockContract.new();
     mockToken = await MockToken.at(mock.address);
-    await expectRevert(controller.inCaseStrategyTokenGetStuck(strategy.address, mockToken.address, {from: governance}),
-      "!transfer");
+    await expectRevert(
+      controller.inCaseStrategyTokenGetStuck(
+        strategy.address,
+        mockToken.address,
+        { from: people.owner },
+      ),
+      '!transfer',
+    );
   });
 
   it('should withdraw tokens from strategy', async () => {
-    let mockedBalance = ether('10');
-    let toWithdraw = ether('5');
+    const mockedBalance = ether('10');
+    const toWithdraw = ether('5');
     const balanceOfStrategyCalldata = revenueToken.contract
       .methods.balanceOf(strategy.address).encodeABI();
     await mock.givenCalldataReturnUint(balanceOfStrategyCalldata, mockedBalance);
 
-    await strategy.setController(mock.address, {from: governance});
+    await strategy.setController(mock.address, { from: people.owner });
 
     const vaultsCalldata = controller.contract
       .methods.vaults(revenueToken.address).encodeABI();
@@ -142,10 +154,10 @@ describe('Controller', () => {
 
     expect(invalidVault).to.be.equal(ZERO_ADDRESS);
 
-    await strategy.setController(controller.address, {from: governance});
+    await strategy.setController(controller.address, { from: people.owner });
 
     const transferCalldata = revenueToken.contract
-      .methods.transfer(miris, 0).encodeABI();
+      .methods.transfer(people.alice, 0).encodeABI();
 
     await mock.givenMethodReturnBool(transferCalldata, false);
 
@@ -153,37 +165,37 @@ describe('Controller', () => {
     await converter.configure(revenueToken.address);
 
     await expectRevert(controller.withdraw(revenueToken.address, toWithdraw),
-      "!transferVault");
+      '!transferVault');
   });
 
   it('should set one split parts', async () => {
     const oldParts = await controller.parts();
-    await expectRevert(controller.setParts(oldParts, {from: governance}), '!old');
+    await expectRevert(controller.setParts(oldParts, { from: people.owner }), '!old');
     const newParts = new BN('10');
-    await controller.setParts(newParts, {from: governance});
+    await controller.setParts(newParts, { from: people.owner });
     expect(await controller.parts()).to.be.bignumber.equal(newParts);
   });
 
   it('should set treasury address', async () => {
-    await expectRevert(controller.setRewards(ZERO_ADDRESS, {from: governance}), '!treasury');
-    await expectRevert(controller.setRewards(miris, {from: governance}), '!contract');
-    await expectRevert(controller.setRewards(await controller.rewards(), {from: governance}), '!old');
+    await expectRevert(controller.setRewards(ZERO_ADDRESS, { from: people.owner }), '!treasury');
+    await expectRevert(controller.setRewards(people.alice, { from: people.owner }), '!contract');
+    await expectRevert(controller.setRewards(await controller.rewards(), { from: people.owner }), '!old');
     const newTreasury = mock.address;
-    await controller.setRewards(newTreasury, {from: governance});
+    await controller.setRewards(newTreasury, { from: people.owner });
     expect(await controller.rewards()).to.be.bignumber.equal(newTreasury);
   });
 
   it('should set one split address', async () => {
-    await expectRevert(controller.setOneSplit(await controller.oneSplit(), {from: governance}), '!old');
+    await expectRevert(controller.setOneSplit(await controller.oneSplit(), { from: people.owner }), '!old');
     const newOneSplit = mock.address;
-    await controller.setOneSplit(newOneSplit, {from: governance});
+    await controller.setOneSplit(newOneSplit, { from: people.owner });
     expect(await controller.oneSplit()).to.be.equal(newOneSplit);
   });
 
   it('should set strategist address', async () => {
-    await expectRevert(controller.setStrategist(strategist, {from: governance}), '!old');
-    const newStrategist = miris;
-    await controller.setStrategist(newStrategist, {from: governance});
+    await expectRevert(controller.setStrategist(people.bob, { from: people.owner }), '!old');
+    const newStrategist = people.alice;
+    await controller.setStrategist(newStrategist, { from: people.owner });
     expect(await controller.strategist()).to.be.equal(newStrategist);
   });
 
@@ -199,47 +211,75 @@ describe('Controller', () => {
     expect(await controller.strategies(revenueToken.address)).to.be.equal(strategy.address);
   });
 
-
   it('should set vault by token', async () => {
-    let mockToken = await getMockTokenPrepared(strategy.address, ether('10'), ether('123'), miris);
-    await expectRevert(controller.setVault(revenueToken.address, vault.address, {from: governance}), '!vault 0');
-    await controller.setVault(mockToken.address, mock.address, {from: governance});
+    const mockToken = await common.getMockTokenPrepared(strategy.address, ether('10'), ether('123'), people.alice);
+    await expectRevert(controller.setVault(revenueToken.address, vault.address, { from: people.owner }), '!vault 0');
+    await controller.setVault(mockToken.address, mock.address, { from: people.owner });
     expect(await controller.vaults(mockToken.address)).to.be.equal(mock.address);
   });
 
   it('should set converter address', async () => {
-    const mockToken = await MockToken.new('Mock Token', 'MT', ether('123'), {from: miris});
-    await controller.setConverter(revenueToken.address, mockToken.address, mock.address, {from: governance});
-    expect(await controller.converters(revenueToken.address, mockToken.address, {from: governance})).to.be.equal(mock.address);
+    const mockToken = await MockToken.new('Mock Token', 'MT', ether('123'), { from: people.alice });
+    await controller.setConverter(
+      revenueToken.address,
+      mockToken.address,
+      mock.address,
+      { from: people.owner },
+    );
+    expect(
+      await controller.converters(revenueToken.address, mockToken.address, { from: people.owner }),
+    ).to.be.equal(mock.address);
   });
 
   it('should set strategy address', async () => {
-    await expectRevert(controller.setStrategy(revenueToken.address, mock.address, {from: governance}), '!approved');
+    await expectRevert(controller.setStrategy(revenueToken.address, mock.address, { from: people.owner }), '!approved');
 
     const transferCalldata = revenueToken.contract
-      .methods.transfer(miris, 0).encodeABI();
+      .methods.transfer(people.alice, 0).encodeABI();
     const balanceOfCalldata = revenueToken.contract
-      .methods.balanceOf(miris).encodeABI();
+      .methods.balanceOf(people.alice).encodeABI();
     const mockedBalance = ether('10');
 
     await mock.givenMethodReturnUint(balanceOfCalldata, mockedBalance);
     await mock.givenMethodReturnBool(transferCalldata, true);
 
-    await controller.setApprovedStrategy(revenueToken.address, mock.address, true, {from: governance});
-    const receipt = await controller.setStrategy(revenueToken.address, mock.address, {from: governance});
+    await controller.setApprovedStrategy(
+      revenueToken.address,
+      mock.address,
+      true,
+      { from: people.owner },
+    );
+    const receipt = await controller.setStrategy(
+      revenueToken.address,
+      mock.address,
+      { from: people.owner },
+    );
     expectEvent(receipt, 'WithdrawToVaultAll', {
-      _token: revenueToken.address
+      _token: revenueToken.address,
     });
     expect(await controller.strategies(revenueToken.address)).to.be.equal(mock.address);
   });
 
   it('should approve strategy address', async () => {
-    await controller.setApprovedStrategy(revenueToken.address, mock.address, true, {from: governance});
-    expect(await controller.approvedStrategies(revenueToken.address, mock.address, {from: governance})).to.be.equal(true);
+    await controller.setApprovedStrategy(
+      revenueToken.address,
+      mock.address,
+      true,
+      { from: people.owner },
+    );
+    expect(
+      await controller.approvedStrategies(
+        revenueToken.address,
+        mock.address,
+        { from: people.owner },
+      ),
+    ).to.be.equal(true);
   });
 
   it('should get approved strategy address', async () => {
-    expect(await controller.approvedStrategies(revenueToken.address, mock.address)).to.be.equal(false);
+    expect(
+      await controller.approvedStrategies(revenueToken.address, mock.address),
+    ).to.be.equal(false);
   });
 
   it('should send tokens to the strategy and earn', async () => {
@@ -247,25 +287,40 @@ describe('Controller', () => {
     const sumToEarn = ether('1');
     const sumToEarnInRevenueToken = ether('2');
 
-    let mockToken = await getMockTokenPrepared(strategy.address, mockedBalance, ether('123'), miris);
+    const mockToken = await common.getMockTokenPrepared(strategy.address, mockedBalance, ether('123'), people.alice);
 
-    ////
-    await controller.setApprovedStrategy(mockToken.address, strategy.address, true, {from: governance});
-    await controller.setStrategy(mockToken.address, strategy.address, {from: governance});
+    /// /
+    await controller.setApprovedStrategy(
+      mockToken.address,
+      strategy.address,
+      true,
+      { from: people.owner },
+    );
+    await controller.setStrategy(mockToken.address, strategy.address, { from: people.owner });
 
-    await expectRevert(controller.earn(mockToken.address, sumToEarn, {from: miris}), '!converter');
-    ////
+    await expectRevert(controller.earn(mockToken.address, sumToEarn, { from: people.alice }), '!converter');
+    /// /
 
-    ////
+    /// /
 
     await mock.reset();
 
     const secondMock = await MockContract.new();
 
-    await controller.setApprovedStrategy(secondMock.address, mock.address, true, {from: governance});
-    await controller.setStrategy(secondMock.address, mock.address, {from: governance});
+    await controller.setApprovedStrategy(
+      secondMock.address,
+      mock.address,
+      true,
+      { from: people.owner },
+    );
+    await controller.setStrategy(secondMock.address, mock.address, { from: people.owner });
 
-    await controller.setConverter(secondMock.address, mock.address, mock.address, {from: governance});
+    await controller.setConverter(
+      secondMock.address,
+      mock.address,
+      mock.address,
+      { from: people.owner },
+    );
 
     const wantCalldata = (await IStrategy.at(mock.address)).contract
       .methods.want().encodeABI();
@@ -275,10 +330,10 @@ describe('Controller', () => {
       .methods.transfer(secondMock.address, 0).encodeABI();
     await secondMock.givenMethodReturnBool(transferSecondMockCalldata, false);
 
-    await expectRevert(controller.earn(secondMock.address, sumToEarn, {from: miris}), '!transferConverterToken');
-    ////
+    await expectRevert(controller.earn(secondMock.address, sumToEarn, { from: people.alice }), '!transferConverterToken');
+    /// /
 
-    ////
+    /// /
     const converterCalldata = (await IConverter.at(mock.address)).contract
       .methods.convert(strategy.address).encodeABI();
 
@@ -290,17 +345,17 @@ describe('Controller', () => {
     await secondMock.givenMethodReturnBool(transferSecondMockCalldata, true);
 
     await mock.givenMethodReturnBool(transferCalldata, false);
-    await expectRevert(controller.earn(secondMock.address, sumToEarn, {from: miris}), '!transferStrategyWant');
+    await expectRevert(controller.earn(secondMock.address, sumToEarn, { from: people.alice }), '!transferStrategyWant');
 
     await mock.givenMethodReturnBool(transferCalldata, true);
 
-    let receipt = await controller.earn(secondMock.address, sumToEarn, {from: miris});
-    await expectEvent(receipt, "Earn");
-    ////
+    let receipt = await controller.earn(secondMock.address, sumToEarn, { from: people.alice });
+    await expectEvent(receipt, 'Earn');
+    /// /
 
     ///
-    const vaultTransferCalldata = revenueToken.contract.
-      methods.transfer(vault.address, 0).encodeABI();
+    const vaultTransferCalldata = revenueToken.contract
+      .methods.transfer(vault.address, 0).encodeABI();
     await mock.givenMethodReturnBool(vaultTransferCalldata, true);
     let transferMockCalldata = revenueToken.contract
       .methods.transfer(mock.address, 0).encodeABI();
@@ -312,26 +367,26 @@ describe('Controller', () => {
       .methods.transfer(mock.address, 0).encodeABI();
     await mock.givenMethodReturnBool(transferMockCalldata, true);
     receipt = await controller.earn(revenueToken.address, sumToEarnInRevenueToken);
-    await expectEvent(receipt, "Earn", {
+    await expectEvent(receipt, 'Earn', {
       _token: revenueToken.address,
-      _amount: sumToEarnInRevenueToken
+      _amount: sumToEarnInRevenueToken,
     });
-
   });
 
   const getMockTokenForStrategy = async () => {
     const tokensForStrategy = ether('10');
-    return await getMockTokenPrepared(strategy.address, tokensForStrategy, ether('20'), miris);
+    return common.getMockTokenPrepared(strategy.address, tokensForStrategy, ether('20'), people.alice);
   };
 
   it('should reject harvest if strategy want token is token passed into parameters', async () => {
-    await expectRevert(controller.harvest(strategy.address, revenueToken.address, {from: governance}), '!want');
+    await expectRevert(controller.harvest(strategy.address, revenueToken.address, { from: people.owner }), '!want');
   });
 
   it('should emit no events if withdraw from strategy does not return any tokens', async () => {
     const mockToken = await getMockTokenForStrategy();
-    let receipt = await controller.harvest(mock.address, mockToken.address, {from: governance});
-    await expectEvent.notEmitted(receipt, "Transfer");
+    const receipt = await controller
+      .harvest(mock.address, mockToken.address, { from: people.owner });
+    await expectEvent.notEmitted(receipt, 'Transfer');
   });
 
   const prepareOneSplitCalls = async (swappedToWantAmount) => {
@@ -344,9 +399,9 @@ describe('Controller', () => {
     await mock.givenMethodReturn(
       expectedReturnCalldata,
       web3.eth.abi.encodeParameters(
-        ["uint256", "uint256[]"],
-        [swappedToWantAmount, [ZERO, ZERO]]
-      )
+        ['uint256', 'uint256[]'],
+        [swappedToWantAmount, [ZERO, ZERO]],
+      ),
     );
   };
 
@@ -359,7 +414,7 @@ describe('Controller', () => {
   it('should not emit Harvest event when #harvest() if one split return less tokens', async () => {
     const mockToken = await getMockTokenForStrategy();
 
-    await controller.setOneSplit(mock.address, {from: governance});
+    await controller.setOneSplit(mock.address, { from: people.owner });
 
     const swappedToWantAmount = ether('1');
     const balanceOfWant = ether('1.5');
@@ -367,8 +422,9 @@ describe('Controller', () => {
     await prepareOneSplitCalls(swappedToWantAmount);
     await setBalanceOfWantToken(balanceOfWant);
 
-    receipt = await controller.harvest(strategy.address, mockToken.address, {from: governance});
-    await expectEvent.notEmitted(receipt, "Harvest");
+    const receipt = await controller
+      .harvest(strategy.address, mockToken.address, { from: people.owner });
+    await expectEvent.notEmitted(receipt, 'Harvest');
   });
 
   const setEarnTransferStatus = async (swappedToWantAmount, balanceOfWant, status) => {
@@ -391,7 +447,7 @@ describe('Controller', () => {
 
   it('should reject when #harvest() when transfer to treasury failed', async () => {
     const mockToken = await getMockTokenForStrategy();
-    await controller.setOneSplit(mock.address, {from: governance});
+    await controller.setOneSplit(mock.address, { from: people.owner });
 
     const swappedToWantAmount = ether('12');
     const balanceOfWant = ether('0.1');
@@ -405,20 +461,19 @@ describe('Controller', () => {
       controller.harvest(
         strategy.address,
         mockToken.address,
-        {from: governance}
+        { from: people.owner },
       ),
-      "!transferTreasury"
+      '!transferTreasury',
     );
   });
 
   it('should revert if #harvest() called not by governance or strategy contract', async () => {
-    await expectRevert(controller.harvest(ZERO_ADDRESS, ZERO_ADDRESS, {from: miris}), "!governance|strategist");
+    await expectRevert(controller.harvest(ZERO_ADDRESS, ZERO_ADDRESS, { from: people.alice }), '!governance|strategist');
   });
 
   it('should harvest tokens from the strategy', async () => {
-
     const mockToken = await getMockTokenForStrategy();
-    await controller.setOneSplit(mock.address, {from: governance});
+    await controller.setOneSplit(mock.address, { from: people.owner });
 
     const swappedToWantAmount = ether('1');
     const balanceOfWant = ether('0.1');
@@ -428,12 +483,11 @@ describe('Controller', () => {
     await setEarnTransferStatus(swappedToWantAmount, balanceOfWant, true);
     await setWantTokenTransferStatus(true);
 
-    receipt = await controller.harvest(strategy.address, mockToken.address, {from: governance});
-    await expectEvent(receipt, "Harvest", {
+    const receipt = await controller
+      .harvest(strategy.address, mockToken.address, { from: people.owner });
+    await expectEvent(receipt, 'Harvest', {
       _strategy: strategy.address,
-      _token: mockToken.address
+      _token: mockToken.address,
     });
-
   });
-
 });

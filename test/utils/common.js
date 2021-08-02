@@ -1,8 +1,6 @@
-const { BN, ether, expectRevert } = require('@openzeppelin/test-helpers');
-
-// const { accounts, contract } = require('@openzeppelin/test-environment');
-
-const MockToken = artifacts.require('MockToken');
+const { BN } = require('@openzeppelin/test-helpers');
+const constants = require('./constants');
+const artifacts = require('./artifacts');
 
 const revertToSnapShot = (id) => new Promise((resolve, reject) => {
   web3.currentProvider.send({
@@ -27,18 +25,14 @@ const takeSnapshot = () => new Promise((resolve, reject) => {
   });
 });
 
-/* eslint-disable */
-const compactView = value_BN => web3.utils.fromWei(value_BN.toString(), 'ether');
-const Ether = value_str => new BN(web3.utils.toWei(value_str, 'ether'));
-const newBN = (value_str = '1.0') => new BN(web3.utils.toWei(value_str, 'ether'));
-/* eslint-enable */
-
 const getMockTokenPrepared = async (mintTo, mockedAmount, totalSupply, from) => {
-  const mockToken = await MockToken.new('Mock Token', 'MT', totalSupply, { from });
+  const mockToken = await artifacts.MockToken.new('Mock Token', 'MT', totalSupply, { from });
+
   if (mintTo !== from) {
     await mockToken.approve(mintTo, mockedAmount, { from });
     await mockToken.transfer(mintTo, mockedAmount, { from });
   }
+
   return mockToken;
 };
 
@@ -51,6 +45,18 @@ const processEventArgs = async (result, eventName, processArgs) => {
   await processArgs(eventArgs);
 };
 
+const overrideConfigureArgsIfNeeded = async (
+  originalConfigureParams,
+  overridenConfigureParams,
+  originalConfigureParamsLength
+) => {
+  const result = [];
+  for (let i = 0; i < originalConfigureParamsLength; i++) {
+    result.push(overridenConfigureParams[i] ? overridenConfigureParams[i] : await originalConfigureParams[i]());
+  }
+  return result;
+}
+
 const checkSetter = async (
   setterMethodName,
   getterName,
@@ -59,21 +65,52 @@ const checkSetter = async (
   nonValidSender,
   contractInstance,
   revertMessage,
+  expect,
+  expectRevert,
 ) => {
   await contractInstance[setterMethodName](newValue, { from: validSender });
   expect(await contractInstance[getterName]()).to.be.equal(newValue);
-  await expectRevert(contractInstance[setterMethodName](newValue, { from: nonValidSender }), revertMessage);
+  await expectRevert(
+    contractInstance[setterMethodName](newValue, { from: nonValidSender }),
+    revertMessage,
+  );
 };
 
+const waitFor = (key, container, logMetadata) => new Promise((resolve) => {
+  const timeId = setInterval(() => {
+    if (key in container) {
+      resolve(container[key]);
+      clearInterval(timeId);
+      console.log(`Found ${key}! - ${!logMetadata ? "no metadata" : logMetadata}`);
+     } else {
+      console.log(`Waiting for ${key}... - ${!logMetadata ? "no metadata" : logMetadata}`);
+    }
+  }, constants.waitingForPollingInterval);
+});
+
+const cacheAndReturn = async (key, force, container, getInstance) => {
+    if (key in container && !force) {
+      return container[key];
+    }
+    const instance = await getInstance();
+    container[key] = instance;
+    return instance;
+}
+
+const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
+const months = (n) => days('30').mul(new BN(n));
+const getNowBN = () => new BN(Date.now() / 1000);
+
 module.exports = {
-  DAY: 86400,
-  HOUR: 3600,
-  ZERO: new BN('0'),
-  ONE: new BN('1'),
-  CONVERSION_WEI_CONSTANT: ether('1'),
   getMockTokenPrepared,
   processEventArgs,
   checkSetter,
   revertToSnapShot,
   takeSnapshot,
+  days,
+  months,
+  waitFor,
+  getNowBN,
+  cacheAndReturn,
+  overrideConfigureArgsIfNeeded
 };

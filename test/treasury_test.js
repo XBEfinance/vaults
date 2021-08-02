@@ -26,7 +26,7 @@ const Governance = contract.fromArtifact('Governance');
 
 const MockContract = contract.fromArtifact("MockContract");
 
-describe('Treasury', () => {
+contract('Treasury', () => {
 
   const governance = accounts[0];
   const alice = accounts[1];

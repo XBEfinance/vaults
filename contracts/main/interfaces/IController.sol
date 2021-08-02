@@ -18,8 +18,6 @@ interface IController {
 
     function setStrategy(address, address) external;
 
-    function harvest(address, address) external;
-
     function converters(address, address) external view returns(address);
 
     function claim(address, address) external;

@@ -36,9 +36,9 @@ contract BonusCampaign is StakingRewards {
         registrator = _votingEscrowedToken;
     }
 
-//    function setRegistrator(address _registrator) external onlyOwner {
-//        registrator = _registrator;
-//    }
+    function setRegistrator(address _registrator) external onlyOwner {
+        registrator = _registrator;
+    }
 
     function stake(uint256 amount) external override {
         revert("!allowed");
@@ -68,7 +68,7 @@ contract BonusCampaign is StakingRewards {
     {
         require(block.timestamp <= stopRegisterTime, "registerNowIsBlocked");
         require(!registered[user], "alreadyRegistered");
-        // avoid double staking in this very block by substracting one from block.number
+        // avoid double staking in this very block by subtracting one from block.number
         IVotingEscrow veToken = IVotingEscrow(stakingToken);
         uint256 amount = veToken.balanceOfAt(user, _toUint64(block.number));
         require(amount > 0, "!stake0");

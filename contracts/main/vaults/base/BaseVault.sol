@@ -505,7 +505,6 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         for (uint256 i = 0; i < _validTokens.length(); i++) {
             _updateReward(_validTokens.at(i), _account);
         }
-        lastUpdateTime = lastTimeRewardApplicable();
     }
 
     modifier updateReward(address _account) {

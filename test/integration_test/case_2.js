@@ -180,6 +180,8 @@ contract('Integration tests', (accounts) => {
         PCT_BASE.mul(inverseMaxBoostCoefficient).div(new BN('100')),
       );
 
+      // ownwer (account_0 locks funds not for max, first for 40 days
+      // and then increases the lock duration to see how it affects boost level
       await createLock(owner, amount, days('40'));
       const ownerLockedAmount = await ownerTrackers.lockedAmount.get();
       const ownerLockEnd = await contracts.veXBE.lockedEnd(owner);
@@ -189,8 +191,12 @@ contract('Integration tests', (accounts) => {
       // Stake and lock more users
       for (let i = 1; i < 4; i += 1) {
         await contracts.mockXBE.mintSender(ether('100'), { from: accounts[i] });
-        await stake(accounts[i], amount);
-        await createLock(accounts[i], i < 3 ? amount: new BN(amount).div(new BN('2')), months('23'));
+        await stake(accounts[i], amount); // all accounts stake 100 XBE
+        // account_3 lock 50 XBE, 1&2 lock 100 XBE
+        const lockAmount = i < 3 ? amount: new BN(amount).div(new BN('2'));
+        const lockDuration = i === 2 ? months('12') : months('23');
+        await createLock(accounts[i], lockAmount, lockDuration);
+        // all accounts 1-3 lock their funds for full term
         expect(await contracts.veXBE.isLockedForMax(accounts[i])).to.be.true;
       }
 
@@ -234,6 +240,7 @@ contract('Integration tests', (accounts) => {
         const urptp = await contracts.votingStakingRewards.userRewardPerTokenPaid(owner);
         const rewards = await contracts.votingStakingRewards.rewards(owner);
         const acc1bl = await contracts.votingStakingRewards.calculateBoostLevel(accounts[1]);
+        const acc2bl = await contracts.votingStakingRewards.calculateBoostLevel(accounts[2]);
         const acc3bl = await contracts.votingStakingRewards.calculateBoostLevel(accounts[3]);
 
 
@@ -253,14 +260,24 @@ contract('Integration tests', (accounts) => {
         logBNTimestamp('actualLockedEnd', await contracts.veXBE.lockedEnd(owner));
         logBNFromWei('Owner voting power', userVotingPower);
         logBNFromWei('Total voting power', totalVotingPower);
-        logBNFromWei('CURRENT BOOST', currentBoost);
-        logBNFromWei('acc1 boost level', acc1bl);
-        logBNFromWei('acc3 boost level', acc3bl);
+        logBNFromWei('owner BOOST', currentBoost);
+        logBNFromWei('acc1 BOOST', acc1bl);
+        logBNFromWei('acc2 BOOST', acc2bl);
+        logBNFromWei('acc3 BOOST', acc3bl);
         logBNFromWei('votingStakingRewards', earned);
         logBNFromWei('expectedEarned', expectedEarned);
-        logBN('earned owner', await contracts.votingStakingRewards.earned(owner));
+        const ownerEarned = new BN(await contracts.votingStakingRewards.earned(owner));
+        logBN('earned owner', ownerEarned);
+        const ownerEarnedExpected =
+          bal.mul(rpt.sub(urptp))
+            .div(PCT_BASE).mul(currentBoost).div(PCT_BASE)
+            .add(rewards);
+        logBN('earned owner check in js', ownerEarnedExpected);
+        expect(ownerEarned.toString())
+          .to.be.bignumber
+          .closeTo(ownerEarnedExpected.toString(), new BN(1e15));
         logBN('earned account_1', await contracts.votingStakingRewards.earned(accounts[1]));
-        logBN('earned owner in js', bal.mul(rpt.sub(urptp)).div(PCT_BASE).mul(currentBoost).div(PCT_BASE).add(rewards));
+
         console.groupEnd();
         await time.increase(months('1'));
       }

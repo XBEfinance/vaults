@@ -123,24 +123,35 @@ contract('Integration tests', (accounts) => {
 
   async function logAllTrackers(trackers, groupTitle = 'Trackers') {
     console.group(groupTitle);
-    logBNFromWei('XBE', await trackers.XBE.get());
-    logBNFromWei('sushiLP', await trackers.sushiLP.get());
-    logBNFromWei('sushiStaked', await trackers.sushiStaked.get());
+    logBNFromWei('alice XBE', await trackers.XBE.get());
+    logBNFromWei('alice sushiLP', await trackers.sushiLP.get());
+    logBNFromWei('alice sushiStaked', await trackers.sushiStaked.get());
     logBNFromWei('sushiStrategyTotalDeposited',
-      await contracts.sushiStrategy.balanceOf());
+      await contracts.sushiStrategy.balanceOf()
+    );
+
     logBNFromWei('sushiStrategy XBE balance', await contracts.mockXBE.balanceOf(
       contracts.sushiStrategy.address,
     ));
+
     logBNFromWei('sushiVault XBE balance', await contracts.mockXBE.balanceOf(
       contracts.sushiVault.address,
     ));
-    logBNFromWei('earned in vault', await trackers.vaultEarned.get());
-    logBNFromWei('rewards in votingSR', await trackers.votingStakingRewards.get());
-    logBNFromWei('staked in votingSR', await trackers.votingStaked.get());
-    logBNFromWei('rewards alice', await contracts.sushiVault.userRewardPerTokenPaid(
+
+    logBNFromWei('alice earned in vault', await trackers.vaultEarned.get());
+    logBNFromWei('rewards in VSR', await trackers.votingStakingRewards.get());
+    logBNFromWei('staked in VSR', await trackers.votingStaked.get());
+    logBNFromWei('urptp alice', await contracts.sushiVault.userRewardPerTokenPaid(
+      contracts.mockXBE.address,
       alice,
+    ));
+    logBNFromWei('rpt stored', await contracts.sushiVault.rewardsPerTokensStored(
       contracts.mockXBE.address,
     ));
+    logBNFromWei('alice reward', await contracts.sushiVault.userReward(
+      alice, contracts.mockXBE.address
+    ));
+
     // logBNFromWei('treasuty xbe balance', await contracts.mockXBE.balanceOf(
     //   contracts.treasury.address,
     // ));
@@ -162,6 +173,7 @@ contract('Integration tests', (accounts) => {
           contracts.mockXBE.address,
           account,
         ),
+
       });
       await startBonusCampaign();
 
@@ -198,28 +210,41 @@ contract('Integration tests', (accounts) => {
       await contracts.sushiVault.earn();
       await logAllTrackers(aliceTrackers, 'After vault.earn()');
 
-      // await time.increase(days('14'));
-      // await logAllTrackers(aliceTrackers, '+ 14 days');
+      for (let i = 0; i < 7; i += 1) {
+        await time.increase(days('1'));
+        await logAllTrackers(aliceTrackers, `After getReward + ${i} days`);
+        await contracts.sushiVault.getReward(3, { from: alice });
+      }
+
+      await time.increase(days('14'));
+      await contracts.sushiVault.getReward(3, { from: alice });
+      await logAllTrackers(aliceTrackers, '+ 14 days');
 
       // await logAllTrackers(aliceTrackers, 'After getReward');
       // processEventArgs(getrewardReceipt, 'RewardPaid', (args) => {
       //   logBNFromWei('RewardPaid amount', args.reward);
       // });
 
-      await time.increase(days('7'));
-      await logAllTrackers(aliceTrackers, '+7 days');
+      await time.increase(days('14'));
+      await contracts.sushiVault.getReward(3, { from: alice });
+      await logAllTrackers(aliceTrackers, '+14 days');
 
       // for (let i = 0; i < 7; i += 1) {
       //   await time.increase(days('1'));
       //   await logAllTrackers(aliceTrackers, `After getReward + ${i} days`);
       // }
 
-      const getrewardReceipt = await contracts.sushiVault.getReward(0x02, { from: alice });
+      // logBNFromWei('alice reward', await contracts.sushiVault.rewards(alice, contracts.mockXBE.address));
+      // console.log('get alice userReward', await contracts.sushiVault.userReward(alice, contracts.mockXBE.address));
+      const getrewardReceipt = await contracts.sushiVault.getReward(3, { from: alice });
+      // logBNFromWei('alice reward', await contracts.sushiVault.rewards(alice, contracts.mockXBE.address));
 
       await logAllTrackers(aliceTrackers, 'After getReward');
       processEventArgs(getrewardReceipt, 'RewardPaid', (args) => {
         logBNFromWei('RewardPaid amount', args.reward);
       });
+
+      logBNFromWei('alice reward', await contracts.sushiVault.rewards(alice, contracts.mockXBE.address));
 
       const withdraw = await contracts.sushiVault
         .withdraw(await aliceTrackers.sushiStaked.get(), { from: alice });

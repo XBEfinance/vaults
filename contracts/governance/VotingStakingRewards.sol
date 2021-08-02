@@ -311,7 +311,8 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
 
     function _lockedBoostLevel(address account) internal view returns(uint256) {
         IVeXBE veXBE = IVeXBE(token);
-        uint256 votingBalance = veXBE.balanceOf(account, lastTimeRewardApplicable());
+//        uint256 votingBalance = veXBE.balanceOf(account, lastTimeRewardApplicable());
+        uint256 votingBalance = veXBE.balanceOf(account);
         uint256 votingTotal = veXBE.totalSupply();
         uint256 userLock = veXBE.lockedAmount(account);
 

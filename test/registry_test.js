@@ -54,12 +54,11 @@ contract('Registry', (accounts) => {
       [
         "MockContract",
         "MockXBE",
-        "Treasury",
         "MockLPSushi",
         "Controller",
         "SushiVault",
         "SushiStrategy",
-        "TokenWrapper",
+        "Treasury",
         "Registry"
       ],
       (key) => {
@@ -70,7 +69,6 @@ contract('Registry', (accounts) => {
           "Controller",
           "SushiVault",
           "SushiStrategy",
-          "TokenWrapper",
           "Registry"
         ].includes(key);
       },

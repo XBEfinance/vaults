@@ -56,9 +56,9 @@ function verifyAll_1 {
   truffle run verify SimpleXBEInflation --network $1
   truffle run verify MockToken --network $1
 
-  truffle run verify HiveStrategy --network $1
-  truffle run verify HiveVault --network $1
-  truffle run verify ReferralProgram --network $1
+#  truffle run verify HiveStrategy --network $1
+#  truffle run verify HiveVault --network $1
+#  truffle run verify ReferralProgram --network $1
   truffle run verify Registry --network $1
   truffle run verify Treasury --network $1
   truffle run verify Controller --network $1

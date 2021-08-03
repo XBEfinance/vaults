@@ -61,23 +61,20 @@ contract HiveVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim, Vault
     )
         internal override
     {
+        if (_claimMask == 2) {
+            _controller.claim(_stakingToken, _rewardToken);
+        } else if (_claimMask == 3) {
+            IStrategy(_controller.strategies(_stakingToken)).getRewards();
+            _controller.claim(_stakingToken, _rewardToken);
+        }
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
-            if (_claimMask >> 1 == 1 && _claimMask << 7 != 128) {
-                _controller.claim(_stakingToken, _rewardToken);
-            } else if (_claimMask >> 1 == 1 && _claimMask << 7 == 128) {
-                IStrategy(_controller.strategies(_stakingToken)).getRewards();
-                _controller.claim(_stakingToken, _rewardToken);
-            }
-            if (reward > 0) {
-                rewards[_for][_rewardToken] = 0;
-                reward = _getAndDistributeFeesOnClaimForToken(_for, _rewardToken, reward);
-                _autoStakeForOrSendTo(_rewardToken, reward, _for);
-                emit RewardPaid(_rewardToken, _for, reward);
-            } else {
-                emit RewardPaid(_rewardToken, _for, 0);
-            }
+            rewards[_for][_rewardToken] = 0;
+            reward = _getAndDistributeFeesOnClaimForToken(_for, _rewardToken, reward);
+            _autoStakeForOrSendTo(_rewardToken, reward, _for);
+            emit RewardPaid(_rewardToken, _for, reward);
         }
+        emit RewardPaid(_rewardToken, _for, reward);
     }
 
     function _isUserAuthorized(address _user) internal override view returns(bool) {

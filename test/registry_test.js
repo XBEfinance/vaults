@@ -31,7 +31,7 @@ contract('Registry', (accounts) => {
   let vault;
   let mock;
   let registry;
-  let wrapper;
+  let mockLpSushi;
 
   const addVaults = async () => {
     const vaults = [vault.address];
@@ -45,31 +45,30 @@ contract('Registry', (accounts) => {
     [
       mock,
       revenueToken,
+      mockLpSushi,
       controller,
       vault,
       strategy,
-      wrapper,
       registry
     ] = await environment.getGroup(
       [
         "MockContract",
         "MockXBE",
-        "Treasury",
         "MockLPSushi",
         "Controller",
         "SushiVault",
         "SushiStrategy",
-        "TokenWrapper",
+        "Treasury",
         "Registry"
       ],
       (key) => {
         return [
           "MockContract",
           "MockXBE",
+          "MockLPSushi",
           "Controller",
           "SushiVault",
           "SushiStrategy",
-          "TokenWrapper",
           "Registry"
         ].includes(key);
       },
@@ -237,7 +236,9 @@ contract('Registry', (accounts) => {
     await registry.addVault(firstVaultMock.address, {from: people.owner});
     await registry.addVault(secondVaultMock.address, {from: people.owner});
 
-    expect(await registry.getControllersLength()).to.be.bignumber.equal(ONE);
+    const controllersLength = await registry.getControllersLength();
+    console.log(controllersLength);
+    expect(controllersLength).to.be.bignumber.equal(ONE);
   });
 
   it('should get vault stats if vault is wrapped', async () => {
@@ -326,7 +327,9 @@ contract('Registry', (accounts) => {
   it('should remove vault properly', async () => {
     await registry.addVault(vault.address, {from: people.owner});
     await registry.removeVault(vault.address, {from: people.owner});
-    expect(await registry.getVaultsLength()).to.be.bignumber.equal(ZERO);
+    const result = await registry.getVaultsLength();
+    console.log(result);
+    expect(result).to.be.bignumber.equal(ZERO);
   });
 
   it('should get vault properly', async () => {
@@ -363,7 +366,7 @@ contract('Registry', (accounts) => {
     for (let i = 0; i < vaults.length; i++) {
       const vaultInfo = await registry.getVaultInfo(vaults[i]);
       expect(vaultInfo[0]).to.be.equal(controller.address);
-      expect(vaultInfo[1]).to.be.equal(wrapper.address);
+      expect(vaultInfo[1]).to.be.equal(mockLpSushi.address);
       expect(vaultInfo[2]).to.be.equal(strategy.address);
       expect(vaultInfo[3]).to.be.equal(false);
       expect(vaultInfo[4]).to.be.equal(false);
@@ -376,7 +379,7 @@ contract('Registry', (accounts) => {
     for (let i = 0; i < vaults.length; i++) {
       expect(vaultsInfo[0][i]).to.be.equal(vaults[i]);
       expect(vaultsInfo[1][i]).to.be.equal(controller.address);
-      expect(vaultsInfo[2][i]).to.be.equal(wrapper.address);
+      expect(vaultsInfo[2][i]).to.be.equal(mockLpSushi.address);
       expect(vaultsInfo[3][i]).to.be.equal(strategy.address);
       expect(vaultsInfo[4][i]).to.be.equal(false);
       expect(vaultsInfo[5][i]).to.be.equal(false);

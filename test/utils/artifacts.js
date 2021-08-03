@@ -31,8 +31,9 @@ module.exports = {
   IController: getContract('IController'),
   IVaultCore: getContract('IVaultCore'),
   IStrategy: getContract('IStrategy'),
-  IVaultWrapped: getContract("IVaultWrapped"),
-  IVaultDelegated: getContract("IVaultDelegated"),
+  IVaultWrapped: getContract('IVaultWrapped'),
+  IVaultDelegated: getContract('IVaultDelegated'),
+  IConverter: getContract('IConverter'),
   MockContract: getContract('MockContract'),
   MockToken: getContract('MockToken'),
   XBEInflation: getContract('XBEInflation'),
@@ -45,5 +46,5 @@ module.exports = {
   Registry: getContract('Registry'),
   Controller: getContract('Controller'),
   WETH9: getContract('WETH9'),
-  SimpleXBEInflation: getContract('SimpleXBEInflation')
+  SimpleXBEInflation: getContract('SimpleXBEInflation'),
 };

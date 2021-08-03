@@ -645,7 +645,8 @@ const getGroup = async (keys, filterPredicate, force, overrideConfigureParamsLis
   const promises = [];
   for (let i = 0; i < keys.length; i++) {
     if (keys[i] in environment) {
-      promises.push(environment[keys[i]](force, overrideConfigureParamsList[keys[i]]));
+      const overridenParams = overrideConfigureParamsList ? overrideConfigureParamsList[keys[i]] : {};
+      promises.push(environment[keys[i]](force, overridenParams));
     }
   }
   const contracts = await Promise.all(promises);

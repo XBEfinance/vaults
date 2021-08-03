@@ -11,10 +11,10 @@ const {
   time,
 } = require('@openzeppelin/test-helpers');
 // const { contract } = require('@openzeppelin/test-environment');
-const { people, setPeople } = require('./utils/accounts.js');
-const common = require('./utils/common.js');
-const constants = require('./utils/constants.js');
-const environment = require('./utils/environment.js');
+const { people, setPeople } = require('./utils/accounts');
+const common = require('./utils/common');
+const constants = require('./utils/constants');
+const environment = require('./utils/environment');
 var Eth = require('web3-eth');
 
 
@@ -26,7 +26,8 @@ const {
   getMockTokenPrepared,
   processEventArgs,
   processAllEvents,
-} = require('./utils/common.js');
+} = require('./utils/old/common');
+
 const {
   deployInfrastructure,
   YEAR,
@@ -87,7 +88,7 @@ contract('XBEInflation', (accounts) => {
 
       expect(await xbeInflation.admin()).to.be.equal(people.owner);
       expect(await xbeInflation.token()).to.be.equal(mockXBE.address);
-      
+
       expect((await xbeInflation.initialRate()).toString()).to.be.equal(
         defaultParams.xbeinflation.initialRate.toString(),
       );
@@ -245,7 +246,7 @@ contract('XBEInflation', (accounts) => {
         ),
       );
 
-      console.log("time increase on: ", 
+      console.log("time increase on: ",
         (await xbeInflation.startEpochTime()).add(
         await xbeInflation.rateReductionTime(),
       ).toString())
@@ -277,7 +278,7 @@ contract('XBEInflation', (accounts) => {
   });
 
   describe('with specific deployment params', () => {
-   
+
     xit('should reject getting amount of how much can be minted during the interval if requires are failed', async () => {
       await expectRevert(
         xbeInflation.mintableInTimeframe(constants.utils.ONE, constants.utils.ZERO),

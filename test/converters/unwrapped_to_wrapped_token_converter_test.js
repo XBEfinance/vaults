@@ -12,7 +12,7 @@ const {
 } = require('@openzeppelin/test-helpers');
 const { accounts, contract } = require('@openzeppelin/test-environment');
 const { ZERO_ADDRESS } = constants;
-const { ZERO, ONE, getMockTokenPrepared } = require('../utils/common');
+const { ZERO, ONE, getMockTokenPrepared } = require('../utils/old/common');
 
 const IERC20 = contract.fromArtifact("IERC20");
 const IStrategy = contract.fromArtifact("IStrategy");

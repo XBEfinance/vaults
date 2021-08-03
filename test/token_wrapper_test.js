@@ -12,9 +12,9 @@ const {
 } = require('@openzeppelin/test-helpers');
 const { accounts, contract } = require('@openzeppelin/test-environment');
 const { ZERO_ADDRESS } = constants;
-const { ZERO, ONE, getMockTokenPrepared, processEventArgs, checkSetter } = require('./utils/common');
+const { ZERO, ONE, getMockTokenPrepared, processEventArgs, checkSetter } = require('./utils/old/common');
 const { activeActor, actorStake, deployAndConfigureGovernance } = require(
-  './utils/governance_redeploy'
+  './utils/old/governance_redeploy'
 );
 
 const IERC20 = contract.fromArtifact("IERC20");

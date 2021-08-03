@@ -16,7 +16,7 @@ const {
   ONE,
   getMockTokenPrepared,
   processEventArgs,
-} = require("./utils/common.js");
+} = require("./utils/old/common");
 const {
   deployInfrastructure,
   YEAR,
@@ -24,7 +24,7 @@ const {
   days,
   defaultParams,
   beforeEachWithSpecificDeploymentParams
-} = require("./utils/deploy_strategy_infrastructure.js");
+} = require("./utils/old/deploy_strategy_infrastructure");
 
 
 const { ZERO_ADDRESS } = constants;

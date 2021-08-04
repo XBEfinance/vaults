@@ -68,4 +68,5 @@ contract CVXStrategy is WithClaimAmountStrategy {
     }
 
     function convertTokens(uint256 _amount) override external {}
+    function convertAndStakeTokens(uint256 _amount) override external {}
 }

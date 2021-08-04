@@ -50,7 +50,6 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         bool requested;
     }
 
-
     mapping(address => mapping(address => bool)) public stakeAllowance;
     mapping(address => BondedReward) public bondedRewardLocks;
 

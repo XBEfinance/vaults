@@ -52,7 +52,7 @@ const overrideConfigureArgsIfNeeded = async (
 ) => {
   const result = [];
   for (let i = 0; i < originalConfigureParamsLength; i++) {
-    result.push(overridenConfigureParams[i] ? overridenConfigureParams[i] : await originalConfigureParams[i]());
+    result.push(overridenConfigureParams && overridenConfigureParams[i] ? overridenConfigureParams[i] : await originalConfigureParams[i]());
   }
   return result;
 }

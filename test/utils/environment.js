@@ -353,17 +353,9 @@ const environment = {
     }),
   MockContract: async (force) => await common.cacheAndReturn('MockContract', force, deployedAndConfiguredContracts,
     async () => await deployment.MockContract()),
-  VotingStakingRewards: async (force) => await common.cacheAndReturn('VotingStakingRewards', force, deployedAndConfiguredContracts,
+  VotingStakingRewards: async (force, overridenConfigureParams) => await common.cacheAndReturn('VotingStakingRewards', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.VotingStakingRewards();
-      const vaultsWhoCanAutostake = [
-        (
-          await common.waitFor(
-            'SushiVault',
-            deployment.deployedContracts,
-          )
-        ).address,
-      ];
       const mockXBE = await common.waitFor(
         'MockXBE',
         deployedAndConfiguredContracts,
@@ -372,25 +364,39 @@ const environment = {
         'Treasury',
         deployment.deployedContracts,
       );
-      await instance.configure(
-        treasury.address,
-        mockXBE.address,
-        mockXBE.address,
-        common.days('14'),
-        (await common.waitFor(
+      const originalConfigureParams = [
+        async () => treasury.address,
+        async () => mockXBE.address,
+        async () => mockXBE.address,
+        async () => common.days('14'),
+        async () => (await common.waitFor(
           'VeXBE',
           deployment.deployedContracts,
         )).address,
-        (await common.waitFor(
+        async () => (await common.waitFor(
           'Voting',
           deployment.deployedContracts,
         )).address,
-        (await common.waitFor(
+        async () => (await common.waitFor(
           'LockSubscription',
           deployment.deployedContracts,
         )).address,
-        treasury.address,
-        vaultsWhoCanAutostake,
+        async () => treasury.address,
+        async () => [
+          (
+            await common.waitFor(
+              'SushiVault',
+              deployment.deployedContracts,
+            )
+          ).address,
+        ]
+      ]
+      await instance.configure(
+        ...(await common.overrideConfigureArgsIfNeeded(
+          originalConfigureParams,
+          overridenConfigureParams,
+          originalConfigureParams.length,
+        )),
       );
         return instance;
       }
@@ -504,7 +510,6 @@ const environment = {
         async () => constants.localParams.treasury.slippageTolerance,
         async () => constants.localParams.treasury.swapDeadline,
       ];
-
       await instance.configure(
         ...(await common.overrideConfigureArgsIfNeeded(
           originalConfigureParams,
@@ -593,7 +598,7 @@ const getGroup = async (keys, filterPredicate, force, overrideConfigureParamsLis
   const promises = [];
   for (let i = 0; i < keys.length; i++) {
     if (keys[i] in environment) {
-      const overridenParams = overrideConfigureParamsList[keys[i]]
+      const overridenParams = overrideConfigureParamsList
         ? overrideConfigureParamsList[keys[i]] : {};
       promises.push(environment[keys[i]](force, overridenParams));
     }

@@ -46,5 +46,6 @@ module.exports = {
   Registry: getContract('Registry'),
   Controller: getContract('Controller'),
   WETH9: getContract('WETH9'),
+  LockSubscription: getContract('LockSubscription'),
   SimpleXBEInflation: getContract('SimpleXBEInflation'),
 };

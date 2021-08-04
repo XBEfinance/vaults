@@ -6,7 +6,9 @@ import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "./interfaces/ILockSubscriber.sol";
 
 contract LockSubscription is Ownable {
+
     using EnumerableSet for EnumerableSet.AddressSet;
+
     EnumerableSet.AddressSet private subscribers;
     address private eventSource;
 
@@ -38,7 +40,9 @@ contract LockSubscription is Ownable {
         uint256 lockStart,
         uint256 lockEnd,
         uint256 amount
-    ) external onlyEventSource
+    )
+      external
+      onlyEventSource
     {
         uint256 count = subscribers.length();
         if (count != 0) {

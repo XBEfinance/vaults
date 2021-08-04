@@ -26,6 +26,7 @@ module.exports = {
   CVXStrategy: async () => [await getDefaultTxParams()],
   CvxCrvStrategy: async () => [await getDefaultTxParams()],
   Voting: async () => [await getDefaultTxParams()],
+  LockSubscription: async () => [await getDefaultTxParams()],
   VotingStakingRewards: async () => [await getDefaultTxParams()],
   UnwrappedToWrappedTokenConverter: async () => [await getDefaultTxParams()],
   WrappedToUnwrappedTokenConverter: async () => [await getDefaultTxParams()],

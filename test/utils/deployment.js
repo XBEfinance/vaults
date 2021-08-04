@@ -42,6 +42,7 @@ module.exports = {
       }
     );
   },
+  LockSubscription: getDeployerFuncWithDefaultConstructor('LockSubscription'),
   ConsumerEURxbVault: getDeployerFuncWithDefaultConstructor('ConsumerEURxbVault'),
   InstitutionalEURxbVault: getDeployerFuncWithDefaultConstructor('InstitutionalEURxbVault'),
   HiveVault: getDeployerFuncWithDefaultConstructor('HiveVault'),

@@ -12,8 +12,8 @@ const {
 } = require('@openzeppelin/test-helpers');
 const { accounts, contract } = require('@openzeppelin/test-environment');
 const { ZERO_ADDRESS } = constants;
-const { ZERO, ONE } = require('../utils/common');
-const { vaultInfrastructureRedeploy } = require('../utils/vault_infrastructure_redeploy');
+const { ZERO, ONE } = require('../utils/old/common');
+const { vaultInfrastructureRedeploy } = require('../utils/old/vault_infrastructure_redeploy');
 
 const IController = contract.fromArtifact("IController");
 const IERC20 = contract.fromArtifact("IERC20");

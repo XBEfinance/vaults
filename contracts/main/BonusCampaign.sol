@@ -45,7 +45,8 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         address account,
         uint256 lockStart,
         uint256 lockEnd,
-        uint256 amount) override external onlyRegistrator
+        uint256 amount
+    ) override external onlyRegistrator
     {
         if (block.timestamp < periodFinish
             && (lockEnd.sub(lockStart) >= rewardsDuration)

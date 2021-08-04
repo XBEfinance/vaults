@@ -42,4 +42,6 @@ contract InstitutionalEURxbStrategy is BaseStrategy {
 
     }
 
+    function convertAndStakeTokens(uint256 _amount) override external {}
+
 }

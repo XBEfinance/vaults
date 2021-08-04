@@ -33,4 +33,6 @@ interface IStrategy {
     function claim(address) external returns(bool);
 
     function convertTokens(uint256) external;
+
+    function convertAndStakeTokens(uint256) external;
 }

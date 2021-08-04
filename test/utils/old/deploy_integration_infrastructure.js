@@ -556,6 +556,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       days('7'),
       contracts.veXBE.address,
       contracts.voting.address,
+      contracts.bonusCampaign.address,
       [
         contracts.sushiVault.address,
       ],

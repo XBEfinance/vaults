@@ -684,7 +684,7 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-  await bonusCampaign.setRegistrator(registrator.address, {from: owner });
+  await bonusCampaign.setRegistrator(registrator.address, { from: owner });
 
   await bonusCampaign.startMint({ from: owner });
 
@@ -700,7 +700,11 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-   console.log('VeXBE: configured...');
+  console.log('registrator address', registrator.address);
+  await registrator.addSubscriber(bonusCampaign.address, { from: owner });
+  await registrator.setEventSource(veXBE.address, { from: owner });
+
+  console.log('VeXBE: configured...');
 
   await voting.initialize(
     veXBE.address,
@@ -720,6 +724,7 @@ const configureContracts = async (params, owner) => {
     veXBE.address,
     voting.address,
     bonusCampaign.address, // works as a boost logic provider for now
+    treasury.address, // to send remaining shares
     [],
   );
 

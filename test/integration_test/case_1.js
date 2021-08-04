@@ -194,7 +194,7 @@ contract('Integration tests', (accounts) => {
       expect(ownerLockedAmount).to.be.bignumber.equal(amount);
       expect(ownerLockEnd).to.be.bignumber.closeTo(lockEnd, days('7'));
       expect(
-        await contracts.veXBE.isLockedForMax(owner),
+        await contracts.bonusCampaign.hasMaxBoostLevel(owner),
       ).to.be.true;
       // processEventArgs(createLockReceipt, 'Staked', (args) => {
       //   expect(args.user).to.be.bignumber.equal(owner);
@@ -318,7 +318,7 @@ contract('Integration tests', (accounts) => {
       expect(ownerLockedAmount).to.be.bignumber.equal(amount);
       expect(ownerLockEnd).to.be.bignumber.closeTo(lockEnd, days('7'));
       expect(
-        await contracts.veXBE.isLockedForMax(owner),
+        await contracts.bonusCampaign.hasMaxBoostLevel(owner),
       ).to.be.true;
       expect(
         await contracts.bonusCampaign.registered(owner),

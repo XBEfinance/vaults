@@ -31,6 +31,7 @@ const VeXBE = artifacts.require('VeXBE');
 const Voting = artifacts.require('Voting');
 const VotingStakingRewards = artifacts.require('VotingStakingRewards');
 // const StakingRewards = artifacts.require('StakingRewards');
+const Registrator = artifacts.require('LockSubscription');
 const BonusCampaign = artifacts.require('BonusCampaign');
 const ReferralProgram = artifacts.require('ReferralProgram');
 const MockToken = artifacts.require('MockToken');
@@ -202,6 +203,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
     await contracts.weth9.deposit({ from: owner, value: ether('1') });
 
     contracts.bonusCampaign = await BonusCampaign.new({ from: owner });
+    contracts.registrator = await Registrator.new({ from: owner });
     contracts.veXBE = await VeXBE.new({ from: owner });
     contracts.voting = await Voting.new({ from: owner });
     contracts.votingStakingRewards = await VotingStakingRewards.new({ from: owner });
@@ -527,12 +529,21 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       params.bonusCampaign.emission,
       { from: owner },
     );
+
+    await contracts.bonusCampaign.setRegistrator(
+      contracts.registrator.address,
+      { from: owner },
+    );
     // console.log('BonusCampaign: configured');
+
+    console.log('registrator address', contracts.registrator.address);
+    await contracts.registrator.addSubscriber(contracts.bonusCampaign.address, { from: owner });
+    await contracts.registrator.setEventSource(contracts.veXBE.address, { from: owner });
 
     await contracts.veXBE.configure(
       contracts.mockXBE.address,
       contracts.votingStakingRewards.address,
-      contracts.bonusCampaign.address,
+      contracts.registrator.address,
       'Voting Escrowed XBE',
       'veXBE',
       '0.0.1',
@@ -557,6 +568,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       contracts.veXBE.address,
       contracts.voting.address,
       contracts.bonusCampaign.address,
+      contracts.treasury.address,
       [
         contracts.sushiVault.address,
       ],

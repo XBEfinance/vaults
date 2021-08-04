@@ -197,7 +197,7 @@ contract('Integration tests', (accounts) => {
         const lockDuration = i === 2 ? months('12') : months('23');
         await createLock(accounts[i], lockAmount, lockDuration);
         // all accounts 1-3 lock their funds for full term
-        expect(await contracts.veXBE.isLockedForMax(accounts[i])).to.be.true;
+        expect(await contracts.bonusCampaign.hasMaxBoostLevel(accounts[i])).to.be.true;
       }
 
       const votingXBEBalanceTracker = await UniversalTracker(
@@ -228,7 +228,7 @@ contract('Integration tests', (accounts) => {
         const oldLockedEnd = await contracts.veXBE.lockedEnd(owner);
         const newLockedEnd = oldLockedEnd.add(days('60'));
 
-        await contracts.veXBE.increaseUnlockTime(newLockedEnd);
+        await contracts.veXBE.increaseUnlockTime(newLockedEnd, { from: owner });
         const totalVotingPower = await contracts.veXBE.totalSupply();
         const userVotingPower = await ownerTrackers.veXBE.get();
         const currentBoost = await ownerTrackers.boost.get();
@@ -242,6 +242,7 @@ contract('Integration tests', (accounts) => {
         const acc1bl = await contracts.votingStakingRewards.calculateBoostLevel(accounts[1]);
         const acc2bl = await contracts.votingStakingRewards.calculateBoostLevel(accounts[2]);
         const acc3bl = await contracts.votingStakingRewards.calculateBoostLevel(accounts[3]);
+        const treasuryBalance = await contracts.mockXBE.balanceOf(await contracts.treasury.address);
 
 
         // expect(earned).to.be.bignumber.closeTo(
@@ -277,6 +278,9 @@ contract('Integration tests', (accounts) => {
           .to.be.bignumber
           .closeTo(ownerEarnedExpected.toString(), new BN(1e15));
         logBN('earned account_1', await contracts.votingStakingRewards.earned(accounts[1]));
+        logBNFromWei('treasury balance', treasuryBalance);
+        await contracts.votingStakingRewards.getReward({ from: owner });
+        await contracts.votingStakingRewards.getReward({ from: accounts[3] });
 
         console.groupEnd();
         await time.increase(months('1'));

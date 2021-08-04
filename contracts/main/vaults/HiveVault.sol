@@ -64,7 +64,7 @@ contract HiveVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim, Vault
         if (_claimMask == 2) {
             _controller.claim(_stakingToken, _rewardToken);
         } else if (_claimMask == 3) {
-            IStrategy(_controller.strategies(_stakingToken)).getRewards();
+            _controller.getRewardStrategy(_stakingToken);
             _controller.claim(_stakingToken, _rewardToken);
         }
         uint256 reward = rewards[_for][_rewardToken];
@@ -72,7 +72,6 @@ contract HiveVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim, Vault
             rewards[_for][_rewardToken] = 0;
             reward = _getAndDistributeFeesOnClaimForToken(_for, _rewardToken, reward);
             _autoStakeForOrSendTo(_rewardToken, reward, _for);
-            emit RewardPaid(_rewardToken, _for, reward);
         }
         emit RewardPaid(_rewardToken, _for, reward);
     }

@@ -64,7 +64,7 @@ contract CvxCrvVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim, Vau
         if (_claimMask == 2) {
             _controller.claim(_stakingToken, _rewardToken);
         } else if (_claimMask == 3) {
-            IStrategy(_controller.strategies(_stakingToken)).getRewards();
+            _controller.getRewardStrategy(_stakingToken);
             _controller.claim(_stakingToken, _rewardToken);
         }
         uint256 reward = rewards[_for][_rewardToken];

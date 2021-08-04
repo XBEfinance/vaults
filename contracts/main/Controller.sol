@@ -108,9 +108,9 @@ contract Controller is IController, Ownable, Initializable {
 
     /// @notice forces the strategy to take away the rewards due to it
     // this method must call via backend
-    /// @param _strategy strategy address
-    function getRewardStrategy(address _strategy) external override {
-        IStrategy(_strategy).getRewards();
+    /// @param _token want token address
+    function getRewardStrategy(address _token) external override {
+        IStrategy(strategies[_token]).getRewards();
     }
 
     /// @notice Usual setter with check if param is new

@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 
-import "./interfaces/IBonusCampaign.sol";
+import "./interfaces/ILockSubscription.sol";
 import "./interfaces/IVotingStakingRewards.sol";
 
 
@@ -108,7 +108,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     mapping(uint256 => int128) public slopeChanges; // time -> signed slope change
 
     address public votingStakingRewards;
-    IBonusCampaign public bonusCampaign;
+    ILockSubscription public registrationMediator;
 
     address public controller;
 
@@ -137,7 +137,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     function configure(
         address tokenAddr,
         address _votingStakingRewards,
-        address _bonusCampaign,
+        address _registrationMediator,
         string calldata _name,
         string calldata _symbol,
         string calldata _version
@@ -153,7 +153,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
         symbol = _symbol;
         version = _version;
         votingStakingRewards = _votingStakingRewards;
-        bonusCampaign = IBonusCampaign(_bonusCampaign);
+        registrationMediator = ILockSubscription(_registrationMediator);
     }
 
     function setVoting(address _votingStakingRewards) external onlyAdmin {
@@ -214,11 +214,6 @@ contract VeXBE is Initializable, ReentrancyGuard {
 
     function lockedAmount(address addr) external view returns(uint256) {
         return uint256(locked[addr].amount);
-    }
-
-    function isLockedForMax(address account) external view returns(bool) {
-        uint256 lockDuration = locked[account].end.sub(_lockStarts[account]);
-        return lockDuration >= bonusCampaign.rewardsDuration() && block.timestamp < bonusCampaign.periodFinish();
     }
 
     // """
@@ -408,9 +403,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
 
         require(IERC20(votingStakingRewards).balanceOf(_addr) >= uint256(_locked.amount), "notEnoughStake");
 
-        if (this.isLockedForMax(_addr) && bonusCampaign.canRegister(_addr)) {
-            bonusCampaign.registerFor(_addr);
-        }
+        registrationMediator.processLockEvent(_addr, _lockStarts[_addr], _locked.end, uint256(_locked.amount));
 
         emit Deposit(_addr, _value, _locked.end, _type, block.timestamp);
         emit Supply(supplyBefore, supplyBefore + _value);

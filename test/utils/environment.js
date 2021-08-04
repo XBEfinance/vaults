@@ -387,10 +387,15 @@ const environment = {
           'Voting',
           deployment.deployedContracts,
         )).address,
-        vaultsWhoCanAutostake,
-      );
-      return instance;
-    }),
+        (await common.waitFor(
+            'BonusCampaign',
+            deployment.deployedContracts,
+          )).address,
+          vaultsWhoCanAutostake,
+        );
+        return instance;
+      }
+    ),
 
   UnwrappedToWrappedTokenConverter: {},
   WrappedToUnwrappedTokenConverter: {},

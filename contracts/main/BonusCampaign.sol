@@ -2,9 +2,10 @@ pragma solidity ^0.6.0;
 
 import "./interfaces/minting/IMint.sol";
 import "./interfaces/IVotingEscrow.sol";
+import "./interfaces/ILockSubscriber.sol";
 import "./staking_rewards/StakingRewards.sol";
 
-contract BonusCampaign is StakingRewards {
+contract BonusCampaign is StakingRewards, ILockSubscriber {
 
     uint256 public bonusEmission;
     uint256 public startMintTime;
@@ -33,7 +34,25 @@ contract BonusCampaign is StakingRewards {
         bonusEmission = _bonusEmission;
         startMintTime = _startMintTime;
         stopRegisterTime = _stopRegisterTime;
-        registrator = _votingEscrowedToken;
+    }
+
+    modifier onlyRegistrator() {
+        require(msg.sender == registrator, "!registrator");
+        _;
+    }
+
+    function processLockEvent(
+        address account,
+        uint256 lockStart,
+        uint256 lockEnd,
+        uint256 amount) override external onlyRegistrator
+    {
+        if (block.timestamp < periodFinish
+            && (lockEnd.sub(lockStart) >= rewardsDuration)
+            && _canRegister(account))
+        {
+            _registerFor(account);
+        }
     }
 
     function setRegistrator(address _registrator) external onlyOwner {
@@ -57,8 +76,12 @@ contract BonusCampaign is StakingRewards {
         return uint64(a);
     }
 
-    function canRegister(address user) external view returns(bool) {
-        return block.timestamp <= stopRegisterTime && !registered[user];
+    function _canRegister(address account) internal view returns(bool) {
+        return block.timestamp <= stopRegisterTime && !registered[account];
+    }
+
+    function canRegister(address account) external view returns(bool) {
+        return _canRegister(account);
     }
 
     function _registerFor(address user)
@@ -125,5 +148,11 @@ contract BonusCampaign is StakingRewards {
         periodFinish = startMintTime.add(rewardsDuration);
         _mintStarted = true;
         emit RewardAdded(bonusEmission);
+    }
+
+    function hasMaxBoostLevel(address account) external view returns (bool) {
+        return
+            block.timestamp < periodFinish  // is campaign active
+            && registered[account];         // is user registered
     }
 }

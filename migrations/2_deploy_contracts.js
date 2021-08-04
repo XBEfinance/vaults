@@ -8,6 +8,7 @@ const fs = require('fs');
 const distro = require('../distro.json');
 const testnet_distro = require('../../curve-convex/rinkeby_distro.json');
 
+const Registrator = artifacts.require('LockSubscription');
 const SimpleXbeInflation = artifacts.require('SimpleXBEInflation');
 const VeXBE = artifacts.require('VeXBE');
 
@@ -99,6 +100,7 @@ let mockTokenForSushiPair;
 let weth9;
 
 let xbeInflation;
+let registrator;
 let bonusCampaign;
 let veXBE;
 let controller;
@@ -139,6 +141,7 @@ const addrNames = {
     mockXBE: 'mockXBE',
     mockLpSushi: 'mockLpSushi',
     xbeInflation: 'xbeInflation',
+    registrator: 'registrator',
     bonusCampaign: 'bonusCampaign',
     veXBE: 'veXBE',
     referralProgram: 'referralProgram',
@@ -162,6 +165,7 @@ const saveAddresses = () => {
     mockXBE: mockXBE.address,
     mockLpSushi: mockLpSushi.address,
     xbeInflation: xbeInflation.address,
+    registrator: registrator.address,
     bonusCampaign: bonusCampaign.address,
     veXBE: veXBE.address,
     voting: voting.address,
@@ -290,6 +294,8 @@ const deployContracts = async (deployer, params, owner) => {
   // deploy bonus campaign xbeinflation
   xbeInflation = await deployer.deploy(SimpleXbeInflation, { from: owner });
 
+  registrator = await deployer.deploy(Registrator, { from: owner });
+
   // deploy bonus campaign
   bonusCampaign = await deployer.deploy(BonusCampaign, { from: owner });
 
@@ -395,8 +401,8 @@ const configureContracts = async (params, owner) => {
 
   voting = await Voting.at(getSavedAddress('voting'));
   votingStakingRewards = await VotingStakingRewards.at(getSavedAddress('votingStakingRewards'));
-  bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
-
+  // bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
+  registrator = await Registrator.at(getSavedAddress('registrator'));
   xbeInflation = await SimpleXbeInflation.at(getSavedAddress('xbeInflation'));
 
   bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
@@ -666,6 +672,8 @@ const configureContracts = async (params, owner) => {
 
    console.log('XBEInflation: configured');
 
+
+
   await bonusCampaign.configure(
     mockXBE.address,
     veXBE.address,
@@ -676,6 +684,8 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
+  await bonusCampaign.setRegistrator(registrator.address, {from: owner });
+
   await bonusCampaign.startMint({ from: owner });
 
    console.log('BonusCampaign: configured');
@@ -683,7 +693,7 @@ const configureContracts = async (params, owner) => {
   await veXBE.configure(
     mockXBE.address,
     votingStakingRewards.address,
-    bonusCampaign.address,
+    registrator.address,
     'Voting Escrowed XBE',
     'veXBE',
     '0.0.1',
@@ -709,6 +719,7 @@ const configureContracts = async (params, owner) => {
     months('23'),
     veXBE.address,
     voting.address,
+    bonusCampaign.address, // works as a boost logic provider for now
     [],
   );
 
@@ -862,6 +873,7 @@ module.exports = function (deployer, network, accounts) {
           months('23'),
           veXBE.address,
           voting.address,
+          bonusCampaign.address,
           [],
         );
         console.log('VotingStakingRewards: configured...');

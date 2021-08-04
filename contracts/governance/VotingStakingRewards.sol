@@ -12,6 +12,7 @@ import "@aragon/minime/contracts/MiniMeToken.sol";
 import "./interfaces/IVeXBE.sol";
 import "./interfaces/IERC20.sol";
 import "./interfaces/IVoting.sol";
+import "./interfaces/IBoostLogicProvider.sol";
 
 import "./utils/VotingPausable.sol";
 import "./utils/VotingNonReentrant.sol";
@@ -74,6 +75,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     mapping(address => uint256) internal _balances;
 
     address public token;
+    IBoostLogicProvider public boostLogicProvider;
 
     function configure(
         address _rewardsDistribution,
@@ -82,6 +84,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         uint256 _rewardsDuration,
         address _token,
         address _voting,
+        address _boostLogicProvider,
         address[] memory __vaultsWhoCanAutostake
     ) public initializer {
         rewardsToken = _rewardsToken;
@@ -90,6 +93,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         rewardsDuration = _rewardsDuration;
         token = _token;
         voting = IVoting(_voting);
+        boostLogicProvider = IBoostLogicProvider(_boostLogicProvider);
         for (uint256 i = 0; i < __vaultsWhoCanAutostake.length; i++) {
             _vaultsWhoCanAutoStake[__vaultsWhoCanAutostake[i]] = true;
         }
@@ -121,6 +125,13 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         onlyOwner
     {
         bondedLockDuration = _bondedLockDuration;
+    }
+
+    function setBoostLogicProvider(address _boostLogicProvider)
+        external
+        onlyOwner
+    {
+        boostLogicProvider = IBoostLogicProvider(_boostLogicProvider);
     }
 
 
@@ -189,14 +200,13 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = lastTimeRewardApplicable();
         if (account != address(0)) {
-            rewards[account] = earned(account);
+            uint256 boostLevel = calculateBoostLevel(account);
+            var (userEarned, toTreasury) = _earned(account, boostLevel);
+            rewards[account] = userEarned;
             userRewardPerTokenPaid[account] = rewardPerTokenStored;
+            // transfer remaining reward share to treasury
+            require(IERC20(stakingToken).transfer(treasury, toTreasury), "!boostDelta");
         }
-    }
-
-    function updateRewardFromToken(address account) external {
-        require(msg.sender == token, '!token');
-        _updateReward(account);
     }
 
     function _stake(address _from, uint256 _amount) internal {
@@ -290,32 +300,30 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         emit Withdrawn(msg.sender, amount);
     }
 
-//    function _rewardPerTokenForDuration(uint256 duration) internal view returns (uint256) {
-//        if (_totalSupply == 0) {
-//            return rewardPerTokenStored;
-//        }
-//        return
-//            rewardPerTokenStored.add(
-//                duration.mul(rewardRate).mul(1e18).div(_totalSupply)
-//            );
-//    }
+    function _rewardPerTokenForDuration(uint256 duration) internal view returns (uint256) {
+        if (_totalSupply == 0) {
+            return rewardPerTokenStored;
+        }
+        return
+            rewardPerTokenStored.add(
+                duration.mul(rewardRate).mul(1e18).div(_totalSupply)
+            );
+    }
 
-//    function potentialXbeReturns(uint256 duration) public view returns (uint256) {
-//        uint256 _rewardsAmount = _balances[msg.sender]
-//            .mul(
-//                _rewardPerTokenForDuration(duration).sub(userRewardPerTokenPaid[msg.sender]))
-//            .div(1e18)
-//            .add(rewards[msg.sender]);
-//        return _rewardsAmount;
-//    }
+    function potentialXbeReturns(uint256 duration) public view returns (uint256) {
+        uint256 _rewardsAmount = _balances[msg.sender]
+            .mul(
+                _rewardPerTokenForDuration(duration).sub(userRewardPerTokenPaid[msg.sender]))
+            .div(1e18)
+            .add(rewards[msg.sender]);
+        return _rewardsAmount;
+    }
 
     function _lockedBoostLevel(address account) internal view returns(uint256) {
         IVeXBE veXBE = IVeXBE(token);
-//        uint256 votingBalance = veXBE.balanceOf(account, lastTimeRewardApplicable());
         uint256 votingBalance = veXBE.balanceOf(account);
         uint256 votingTotal = veXBE.totalSupply();
         uint256 userLock = veXBE.lockedAmount(account);
-
         if (votingTotal == 0 || votingBalance == 0) {
             return PCT_BASE
                 .mul(inverseMaxBoostCoefficient)
@@ -335,7 +343,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         return res < PCT_BASE ? res : PCT_BASE;
     }
 
-    function calculateBoostLevel(address account) public view returns (uint256) {
+    function _calculateBoostLevel(address account) internal view returns (uint256) {
         IVeXBE veXBE = IVeXBE(token);
         uint256 userLock = veXBE.lockedAmount(account);
 
@@ -344,30 +352,41 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
             return baseBoostLevel;
         }
 
-        uint256 lockedBoost = _lockedBoostLevel(account);
-        if (lockedBoost == 0) {
-            return baseBoostLevel;
-        }
+        uint256 lockedBoost = IBoostLogicProvider(boostLogicProvider).hasMaxBoostLevel(account) ?
+            maxBoostLevel : _lockedBoostLevel(account);
 
-        return
-            lockedBoost.mul(userLock)
+        return lockedBoost.mul(userLock)
             .add(
                 baseBoostLevel.mul(userStake.sub(userLock))
             )
             .div(userStake);
     }
 
-    function earned(address account) public view returns (uint256) {
+    function calculateBoostLevel(address account) public view returns (uint256) {
+        return _calculateBoostLevel(account);
+    }
+
+    function _earned(address account, uint256 boostLevel)
+        internal view
+        returns (uint256, uint256) // userEarned, toTreasury
+    {
+        require(boostLevel < maxBoostLevel, 'badBoostLevel');
+
         uint256 maxBoostedReward = _balances[account]
             .mul(
                 rewardPerToken().sub(userRewardPerTokenPaid[account])
-            )
-            .div(1e18);
+            ).div(1e18);
 
-        return maxBoostedReward
-            .mul(calculateBoostLevel(account))
-            .div(1e18)
-            .add(rewards[account]);
+        uint256 toUser = maxBoostedReward.mul(boostLevel).div(1e18);
+        uint256 toTreasury = maxBoostedReward.sub(toUser);
+
+        return (toUser.add(rewards[account]), toTreasury);
+    }
+
+    function earned(address account) public view returns (uint256) {
+        uint256 boostLevel = calculateBoostLevel(account);
+        (uint256 userEarned, ) = _earned(account, boostLevel);
+        return userEarned;
     }
 
     function getReward() public nonReentrant updateReward(msg.sender) {

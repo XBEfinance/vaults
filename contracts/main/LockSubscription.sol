@@ -8,12 +8,28 @@ import "./interfaces/ILockSubscriber.sol";
 contract LockSubscription is Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     EnumerableSet.AddressSet private subscribers;
+    address private eventSource;
 
-    function addSubscriber(address s) public onlyOwner {
+    modifier onlyEventSource() {
+        require(msg.sender == eventSource, '!eventSource');
+        _;
+    }
+
+    function _setEventSource(address _eventSource) internal {
+        require(_eventSource != address(0), 'zeroAddress');
+        eventSource = _eventSource;
+    }
+
+    function setEventSource(address _eventSource) public onlyOwner {
+        _setEventSource(_eventSource);
+    }
+
+    function addSubscriber(address s) external onlyOwner {
+        require(s != address(0), 'zeroAddress');
         subscribers.add(s);
     }
 
-    function removeSubscriber(address s) public onlyOwner {
+    function removeSubscriber(address s) external onlyOwner {
         subscribers.remove(s);
     }
 
@@ -22,7 +38,7 @@ contract LockSubscription is Ownable {
         uint256 lockStart,
         uint256 lockEnd,
         uint256 amount
-    ) external
+    ) external onlyEventSource
     {
         uint256 count = subscribers.length();
         if (count != 0) {

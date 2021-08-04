@@ -56,6 +56,7 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
     }
 
     function setRegistrator(address _registrator) external onlyOwner {
+        require(_registrator != address(0), "zeroAddress");
         registrator = _registrator;
     }
 
@@ -106,10 +107,10 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         _registerFor(msg.sender);
     }
 
-    function registerFor(address user) external {
-        require(msg.sender == registrator, "!registrator");
-        _registerFor(user);
-    }
+//    function registerFor(address user) external {
+//        require(msg.sender == registrator, "!registrator");
+//        _registerFor(user);
+//    }
 
     function lastTimeRewardApplicable() public virtual override view returns (uint256) {
         return Math.max(startMintTime, Math.min(block.timestamp, periodFinish));

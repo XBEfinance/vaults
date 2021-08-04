@@ -85,6 +85,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         address _token,
         address _voting,
         address _boostLogicProvider,
+        address _treasury,
         address[] memory __vaultsWhoCanAutostake
     ) public initializer {
         rewardsToken = _rewardsToken;
@@ -94,6 +95,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         token = _token;
         voting = IVoting(_voting);
         boostLogicProvider = IBoostLogicProvider(_boostLogicProvider);
+        treasury = _treasury;
         for (uint256 i = 0; i < __vaultsWhoCanAutostake.length; i++) {
             _vaultsWhoCanAutoStake[__vaultsWhoCanAutostake[i]] = true;
         }
@@ -370,7 +372,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         internal view
         returns (uint256, uint256) // userEarned, toTreasury
     {
-        require(boostLevel < maxBoostLevel, 'badBoostLevel');
+        require(boostLevel <= maxBoostLevel, 'badBoostLevel');
 
         uint256 maxBoostedReward = _balances[account]
             .mul(
@@ -384,7 +386,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     }
 
     function earned(address account) public view returns (uint256) {
-        uint256 boostLevel = calculateBoostLevel(account);
+        uint256 boostLevel = _calculateBoostLevel(account);
         (uint256 userEarned, ) = _earned(account, boostLevel);
         return userEarned;
     }

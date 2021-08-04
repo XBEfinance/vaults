@@ -356,7 +356,6 @@ const environment = {
   VotingStakingRewards: async (force) => await common.cacheAndReturn('VotingStakingRewards', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.VotingStakingRewards();
-
       const vaultsWhoCanAutostake = [
         (
           await common.waitFor(
@@ -365,19 +364,18 @@ const environment = {
           )
         ).address,
       ];
+      const mockXBE = await common.waitFor(
+        'MockXBE',
+        deployedAndConfiguredContracts,
+      );
+      const treasury = await common.waitFor(
+        'Treasury',
+        deployment.deployedContracts,
+      );
       await instance.configure(
-        (await common.waitFor(
-          'Treasury',
-          deployment.deployedContracts,
-        )).address,
-        (await common.waitFor(
-          'MockXBE',
-          deployedAndConfiguredContracts,
-        )).address,
-        (await common.waitFor(
-          'MockXBE',
-          deployedAndConfiguredContracts,
-        )).address,
+        treasury.address,
+        mockXBE.address,
+        mockXBE.address,
         common.days('14'),
         (await common.waitFor(
           'VeXBE',
@@ -388,11 +386,12 @@ const environment = {
           deployment.deployedContracts,
         )).address,
         (await common.waitFor(
-            'BonusCampaign',
-            deployment.deployedContracts,
-          )).address,
-          vaultsWhoCanAutostake,
-        );
+          'LockSubscription',
+          deployment.deployedContracts,
+        )).address,
+        treasury.address,
+        vaultsWhoCanAutostake,
+      );
         return instance;
       }
     ),
@@ -432,7 +431,7 @@ const environment = {
           deployment.deployedContracts,
         )).address,
         (await common.waitFor(
-          'BonusCampaign',
+          'LockSubscription',
           deployment.deployedContracts,
         )).address,
         'Voting Escrowed XBE',
@@ -563,6 +562,25 @@ const environment = {
         constants.localParams.simpleXBEInflation.targetMinted,
         constants.localParams.simpleXBEInflation.periodsCount,
         constants.localParams.simpleXBEInflation.periodDuration,
+      );
+      return instance;
+    }),
+  LockSubscription: async (force) => common.cacheAndReturn('LockSubscription', force, deployedAndConfiguredContracts,
+    async () => {
+      const instance = await deployment.LockSubscription();
+      await instance.setEventSource(
+        (await common.waitFor(
+          "VeXBE",
+          deployedAndConfiguredContracts,
+          "environment - waiting for VeXBE as dep for LockSubscription"
+        )).address
+      );
+      await instance.addSubscriber(
+        (await common.waitFor(
+          "BonusCampaign",
+          deployedAndConfiguredContracts,
+          "environment - waiting for BonusCampaign as dep for LockSubscription"
+        )).address
       );
       return instance;
     }),

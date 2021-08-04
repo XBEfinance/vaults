@@ -125,6 +125,10 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         }
     }
 
+    function evacuate(uint256 amount) external onlyOwner {
+        IERC20(rewardsToken).safeTransfer(owner(), amount);
+    }
+
     function startMint() external onlyRewardsDistribution updateReward(address(0)) {
         require(!_mintStarted, "mintAlreadyHappened");
         if (block.timestamp >= periodFinish) {

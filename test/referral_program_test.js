@@ -17,14 +17,14 @@ const {
   ONE,
   getMockTokenPrepared,
   processEventArgs,
-} = require('./utils/common');
+} = require('./utils/old/common');
 const {
   deployInfrastructure,
   YEAR,
   MULTIPLIER,
   days,
   defaultParams,
-} = require('./utils/deploy_infrastructure');
+} = require('./utils/old/deploy_infrastructure');
 
 const { ZERO_ADDRESS } = constants;
 const MockContract = artifacts.require('MockContract');

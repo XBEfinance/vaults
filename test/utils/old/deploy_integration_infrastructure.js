@@ -18,7 +18,7 @@ const {
   processEventArgs,
 } = require('./common');
 
-const distro = require('../../distro.json');
+const distro = require('../../../distro.json');
 
 const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
 const months = (n) => days('30').mul(new BN(n));

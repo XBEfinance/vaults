@@ -15,7 +15,7 @@ const { accounts, contract } = require('@openzeppelin/test-environment');
 const Voting = contract.fromArtifact("Voting");
 const EVMScriptExecutorMock = contract.fromArtifact("EVMScriptExecutorMock");
 
-const { newApp, newDao, ANY_ADDRESS, APP_ID } = require("./utils/dao.js");
+const { newApp, newDao, ANY_ADDRESS, APP_ID } = require("./utils/old/dao");
 
 const { ZERO_ADDRESS } = constants;
 const {
@@ -23,14 +23,14 @@ const {
   ONE,
   getMockTokenPrepared,
   processEventArgs,
-} = require("./utils/common.js");
+} = require("./utils/old/common");
 const {
   deployInfrastructure,
   YEAR,
   MULTIPLIER,
   days,
   defaultParams,
-} = require("./utils/deploy_infrastructure.js");
+} = require("./utils/old/deploy_infrastructure");
 
 describe("Voting", () => {
   const owner = accounts[0];

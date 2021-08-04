@@ -51,10 +51,10 @@ const ganacheNetworkConfig = {
   port: 8545,
   network_id: '*',
   // networkCheckTimeout: 10000000,
-  gasLimit: 9000000,
+  // gasLimit: 9000000,
   // gas: 9000000,
   // confirmations: 2,
-  gasPrice: 125000000000,
+  gasPrice: 1000000000,
 };
 
 const mainnetForkNetworkConfig = {
@@ -143,7 +143,7 @@ module.exports = {
           enabled: true,
           runs: 200,
         },
-      }
+      },
     },
   },
 

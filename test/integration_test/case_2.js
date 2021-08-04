@@ -200,6 +200,17 @@ contract('Integration tests', (accounts) => {
         expect(await contracts.bonusCampaign.hasMaxBoostLevel(accounts[i])).to.be.true;
       }
 
+      for (let i = 0; i < 4; i += 1) {
+        let deltaTime =
+          new BN(await contracts.veXBE.lockedEnd(accounts[i]))
+          - new BN(await contracts.veXBE.lockStarts(accounts[i]));
+        console.log(`user[${i}] registered`,
+          await contracts.bonusCampaign.registered(accounts[i]),
+          'lock time:',
+          deltaTime/months('1')
+        );
+      }
+
       const votingXBEBalanceTracker = await UniversalTracker(
         contracts.votingStakingRewards.address,
         contracts.mockXBE.balanceOf,

@@ -15,8 +15,8 @@ const VeXBE = artifacts.require('VeXBE');
 const Voting = artifacts.require('Voting');
 const VotingStakingRewards = artifacts.require('VotingStakingRewards');
 
-// const HiveStrategy = artifacts.require('HiveStrategy');
-// const HiveVault = artifacts.require('HiveVault');
+const HiveStrategy = artifacts.require('HiveStrategy');
+const HiveVault = artifacts.require('HiveVault');
 
 const SushiStrategy = artifacts.require('SushiStrategy');
 const SushiVault = artifacts.require('SushiVault');
@@ -148,8 +148,8 @@ const addrNames = {
     registry: 'registry',
     treasury: 'treasury',
     controller: 'controller',
-    // hiveStrategy: 'hiveStrategy',
-    // hiveVault: 'hiveVault',
+    hiveStrategy: 'hiveStrategy',
+    hiveVault: 'hiveVault',
     sushiStrategy: 'sushiStrategy',
     sushiVault: 'sushiVault',
     cvxStrategy: 'cvxStrategy',
@@ -175,8 +175,8 @@ const saveAddresses = () => {
     registry: registry.address,
     treasury: treasury.address,
     controller: controller.address,
-    // hiveStrategy: hiveStrategy.address,
-    // hiveVault: hiveVault.address,
+    hiveStrategy: hiveStrategy.address,
+    hiveVault: hiveVault.address,
     sushiStrategy: sushiStrategy.address,
     sushiVault: sushiVault.address,
     cvxStrategy: cvxStrategy.address,
@@ -231,11 +231,11 @@ const deployContracts = async (deployer, params, owner) => {
   );
 
   const strategiesAndVaults = [
-    // HiveStrategy,
+    HiveStrategy,
     CVXStrategy,
     CvxCrvStrategy,
     SushiStrategy,
-    // HiveVault,
+    HiveVault,
     CVXVault,
     CvxCrvVault,
     SushiVault,
@@ -256,11 +256,11 @@ const deployContracts = async (deployer, params, owner) => {
   };
 
   [
-    // hiveStrategy,
+    hiveStrategy,
     cvxStrategy,
     cvxCrvStrategy,
     sushiStrategy,
-    // hiveVault,
+    hiveVault,
     cvxVault,
     cvxCrvVault,
     sushiVault,
@@ -413,8 +413,8 @@ const configureContracts = async (params, owner) => {
   treasury = await Treasury.at(getSavedAddress('treasury'));
   controller = await Controller.at(getSavedAddress('controller'));
 
-  // hiveVault = await HiveVault.at(getSavedAddress('hiveVault'));
-  // hiveStrategy = await HiveStrategy.at(getSavedAddress('hiveStrategy'));
+  hiveVault = await HiveVault.at(getSavedAddress('hiveVault'));
+  hiveStrategy = await HiveStrategy.at(getSavedAddress('hiveStrategy'));
 
   cvxCrvVault = await CvxCrvVault.at(getSavedAddress('cvxCrvVault'));
   cvxCrvStrategy = await CvxCrvStrategy.at(getSavedAddress('cvxCrvStrategy'));
@@ -428,31 +428,31 @@ const configureContracts = async (params, owner) => {
   mockLpSushi = await IUniswapV2Pair.at(getSavedAddress('mockLpSushi'));
 
   const strategiesAndVaults = [
-    // {
-    //   name: 'hive',
-    //   vault: hiveVault,
-    //   strategy: hiveStrategy,
-    //   strategyConfigArgs: [
-    //     dependentsAddresses.convex.pools[0].lptoken, // _wantAddress,
-    //     controller.address, // _controllerAddress,
-    //     hiveVault.address, // _vaultAddress,
-    //     owner, // _governance,
-    //     // mockXBE.address, // _tokenToAutostake,
-    //     // voting.address,
-    //     // ZERO_ADDRESS, // _voting,
-    //     // _poolSettings
-    //     [
-    //       dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
-    //       dependentsAddresses.convex.pools[0].crvRewards,
-    //       dependentsAddresses.convex.cvxRewards,
-    //       dependentsAddresses.convex.booster,
-    //       ZERO,
-    //       dependentsAddresses.curve.CRV,
-    //       dependentsAddresses.convex.cvx,
-    //     ],
-    //   ],
-    //   token: dependentsAddresses.convex.pools[0].lptoken,
-    // },
+    {
+      name: 'hive',
+      vault: hiveVault,
+      strategy: hiveStrategy,
+      strategyConfigArgs: [
+        dependentsAddresses.convex.pools[0].lptoken, // _wantAddress,
+        controller.address, // _controllerAddress,
+        hiveVault.address, // _vaultAddress,
+        owner, // _governance,
+        // mockXBE.address, // _tokenToAutostake,
+        // voting.address,
+        // ZERO_ADDRESS, // _voting,
+        // _poolSettings
+        [
+          dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
+          dependentsAddresses.convex.pools[0].crvRewards,
+          dependentsAddresses.convex.cvxRewards,
+          dependentsAddresses.convex.booster,
+          ZERO,
+          dependentsAddresses.curve.CRV,
+          dependentsAddresses.convex.cvx,
+        ],
+      ],
+      token: dependentsAddresses.convex.pools[0].lptoken,
+    },
     {
       name: 'cvxCrv',
       vault: cvxCrvVault,
@@ -753,7 +753,7 @@ const configureContracts = async (params, owner) => {
       sushiVault.address,
       cvxVault.address,
       cvxCrvVault.address,
-      /*hiveVault.address*/
+      hiveVault.address
     ],
   );
 

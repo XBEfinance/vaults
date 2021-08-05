@@ -478,7 +478,7 @@ const configureContracts = async (params, owner) => {
         dependentsAddresses.convex.cvxCrv, // _initialToken
         controller.address, // _initialController
         owner, // _governance
-        now.add(days('7')), // _rewardsDuration // TODO: to reconcile with customer
+        days('7'), // _rewardsDuration // TODO: to reconcile with customer
         mockXBE.address, // tokenToAutostake,
         votingStakingRewards.address, // votingStakingRewards,
         false, // enableFees ? false
@@ -521,7 +521,7 @@ const configureContracts = async (params, owner) => {
       //       referralProgram.address,
       //       treasury.address,
       vaultConfigArgs: [
-        dependentsAddresses.curve.pool_data.mock_pool.lp_token_address, // _initialToken
+        dependentsAddresses.convex.cvx, // _initialToken
         controller.address, // _initialController
         owner, // _governance
         days('7'),

@@ -451,6 +451,26 @@ const configureContracts = async (params, owner) => {
           dependentsAddresses.convex.cvx,
         ],
       ],
+      vaultConfigArgs: [
+        dependentsAddresses.convex.pools[0].lptoken, // _wantAddress,
+        controller.address, // _initialController
+        owner, // _governance
+        days('7'), // _rewardsDuration // TODO: to reconcile with customer
+        mockXBE.address, // tokenToAutostake,
+        votingStakingRewards.address, // votingStakingRewards,
+        true, // enableFees ? false
+        owner, // teamWallet ? address(0) ?
+        referralProgram.address, // _referralProgram
+        treasury.address, // _treasury
+        [ // _rewardTokens
+          dependentsAddresses.curve.CRV,
+          dependentsAddresses.convex.cvx, // ???????
+          mockXBE.address
+//          dependentsAddresses.convex.cvxCrv, // ???????
+        ],
+        'Hive', // _namePostfix
+        'HV', // _symbolPostfix
+      ],
       token: dependentsAddresses.convex.pools[0].lptoken,
     },
     {
@@ -481,7 +501,7 @@ const configureContracts = async (params, owner) => {
         days('7'), // _rewardsDuration // TODO: to reconcile with customer
         mockXBE.address, // tokenToAutostake,
         votingStakingRewards.address, // votingStakingRewards,
-        false, // enableFees ? false
+        true, // enableFees ? false
         owner, // teamWallet ? address(0) ?
         referralProgram.address, // _referralProgram
         treasury.address, // _treasury
@@ -490,8 +510,8 @@ const configureContracts = async (params, owner) => {
           mockXBE.address,
 //          dependentsAddresses.convex.cvxCrv, // ???????
         ],
-        'CC', // _namePostfix
-        'CC', // _symbolPostfix
+        'cvxCRV', // _namePostfix
+        'CR', // _symbolPostfix
       ],
       token: dependentsAddresses.convex.cvxCrv,
     },
@@ -527,7 +547,7 @@ const configureContracts = async (params, owner) => {
         days('7'),
         mockXBE.address, // tokenToAutostake,
         votingStakingRewards.address, // votingStakingRewards,
-        false,
+        true,
         owner, // teamWallet ? address(0) ?
         referralProgram.address, // _referralProgram
         treasury.address, // _treasury
@@ -575,7 +595,7 @@ const configureContracts = async (params, owner) => {
     },
   ];
 
-   console.log('Starting configuration...');
+  console.log('Starting configuration...');
 
   // await referralProgram.configure(
   //   [mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],

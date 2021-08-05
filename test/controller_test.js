@@ -71,7 +71,7 @@ contract('Controller', (accounts) => {
       ].includes(key),
       true,
       {
-        Treasury: {
+        "Treasury": {
           1: ZERO_ADDRESS,
         },
       },

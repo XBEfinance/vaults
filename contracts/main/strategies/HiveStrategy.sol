@@ -56,7 +56,7 @@ contract HiveStrategy is WithClaimAmountStrategy {
     }
 
     function checkIfPoolIndexNeedsToBeUpdated() public view returns(bool) {
-        return checkPoolIndex(poolSettings.poolIndex);
+        return !checkPoolIndex(poolSettings.poolIndex);
     }
 
     /// @dev Function that controller calls

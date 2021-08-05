@@ -58,12 +58,17 @@ function verifyAll_1 {
 
 #  truffle run verify HiveStrategy --network $1
 #  truffle run verify HiveVault --network $1
-#  truffle run verify ReferralProgram --network $1
+  truffle run verify SushiStrategy --network $1
+  truffle run verify SushiVault --network $1
+  truffle run verify CVXStrategy --network $1
+  truffle run verify CVXVault --network $1
+  truffle run verify CvxCrvStrategy --network $1
+  truffle run verify CvxCrvVault --network $1
+  truffle run verify ReferralProgram --network $1
   truffle run verify Registry --network $1
   truffle run verify Treasury --network $1
   truffle run verify Controller --network $1
-  truffle run verify SushiVault --network $1
-  truffle run verify SushiStrategy --network $1
+  truffle run verify LockSubscription --network $1
 }
 
 if [ -z $1 ]; then

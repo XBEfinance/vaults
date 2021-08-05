@@ -15,8 +15,8 @@ const VeXBE = artifacts.require('VeXBE');
 const Voting = artifacts.require('Voting');
 const VotingStakingRewards = artifacts.require('VotingStakingRewards');
 
-const HiveStrategy = artifacts.require('HiveStrategy');
-const HiveVault = artifacts.require('HiveVault');
+// const HiveStrategy = artifacts.require('HiveStrategy');
+// const HiveVault = artifacts.require('HiveVault');
 
 const SushiStrategy = artifacts.require('SushiStrategy');
 const SushiVault = artifacts.require('SushiVault');
@@ -148,8 +148,8 @@ const addrNames = {
     registry: 'registry',
     treasury: 'treasury',
     controller: 'controller',
-    hiveStrategy: 'hiveStrategy',
-    hiveVault: 'hiveVault',
+    // hiveStrategy: 'hiveStrategy',
+    // hiveVault: 'hiveVault',
     sushiStrategy: 'sushiStrategy',
     sushiVault: 'sushiVault',
     cvxStrategy: 'cvxStrategy',
@@ -171,7 +171,7 @@ const saveAddresses = () => {
     voting: voting.address,
     votingStakingRewards: votingStakingRewards.address,
 
-    // referralProgram: referralProgram.address,
+    referralProgram: referralProgram.address,
     registry: registry.address,
     treasury: treasury.address,
     controller: controller.address,
@@ -179,10 +179,10 @@ const saveAddresses = () => {
     // hiveVault: hiveVault.address,
     sushiStrategy: sushiStrategy.address,
     sushiVault: sushiVault.address,
-    // cvxStrategy: cvxStrategy.address,
-    // cvxVault: cvxVault.address,
-    // cvxCrvStrategy: cvxCrvStrategy.address,
-    // cvxCrvVault: cvxCrvVault.address,
+    cvxStrategy: cvxStrategy.address,
+    cvxVault: cvxVault.address,
+    cvxCrvStrategy: cvxCrvStrategy.address,
+    cvxCrvVault: cvxCrvVault.address,
   });
   fs.writeFileSync('addresses.json', jsonAddressData);
 };
@@ -215,10 +215,10 @@ const deployContracts = async (deployer, params, owner) => {
     { from: owner },
   );
 
-  // referralProgram = await deployer.deploy(
-  //   ReferralProgram,
-  //   { from: owner },
-  // );
+  referralProgram = await deployer.deploy(
+    ReferralProgram,
+    { from: owner },
+  );
 
   treasury = await deployer.deploy(
     Treasury,
@@ -232,12 +232,12 @@ const deployContracts = async (deployer, params, owner) => {
 
   const strategiesAndVaults = [
     // HiveStrategy,
-    // CVXStrategy,
-    // CvxCrvStrategy,
+    CVXStrategy,
+    CvxCrvStrategy,
     SushiStrategy,
     // HiveVault,
-    // CVXVault,
-    // CvxCrvVault,
+    CVXVault,
+    CvxCrvVault,
     SushiVault,
   ];
 
@@ -257,12 +257,12 @@ const deployContracts = async (deployer, params, owner) => {
 
   [
     // hiveStrategy,
-    // cvxStrategy,
-    // cvxCrvStrategy,
+    cvxStrategy,
+    cvxCrvStrategy,
     sushiStrategy,
     // hiveVault,
-    // cvxVault,
-    // cvxCrvVault,
+    cvxVault,
+    cvxCrvVault,
     sushiVault,
   ] = await deployStrategiesAndVaults(strategiesAndVaults);
   // !-----------------------------------
@@ -408,7 +408,7 @@ const configureContracts = async (params, owner) => {
   bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
   veXBE = await VeXBE.at(getSavedAddress('veXBE'));
   //
-  // referralProgram = await ReferralProgram.at(getSavedAddress('referralProgram'));
+  referralProgram = await ReferralProgram.at(getSavedAddress('referralProgram'));
   registry = await Registry.at(getSavedAddress('registry'));
   treasury = await Treasury.at(getSavedAddress('treasury'));
   controller = await Controller.at(getSavedAddress('controller'));
@@ -416,11 +416,11 @@ const configureContracts = async (params, owner) => {
   // hiveVault = await HiveVault.at(getSavedAddress('hiveVault'));
   // hiveStrategy = await HiveStrategy.at(getSavedAddress('hiveStrategy'));
 
-  // cvxCrvVault = await CvxCrvVault.at(getSavedAddress('cvxCrvVault'));
-  // cvxCrvStrategy = await CvxCrvStrategy.at(getSavedAddress('cvxCrvStrategy'));
+  cvxCrvVault = await CvxCrvVault.at(getSavedAddress('cvxCrvVault'));
+  cvxCrvStrategy = await CvxCrvStrategy.at(getSavedAddress('cvxCrvStrategy'));
 
-  // cvxVault = await CVXVault.at(getSavedAddress('cvxVault'));
-  // cvxStrategy = await CVXStrategy.at(getSavedAddress('cvxStrategy'));
+  cvxVault = await CVXVault.at(getSavedAddress('cvxVault'));
+  cvxStrategy = await CVXStrategy.at(getSavedAddress('cvxStrategy'));
 
   sushiVault = await SushiVault.at(getSavedAddress('sushiVault'));
   sushiStrategy = await SushiStrategy.at(getSavedAddress('sushiStrategy'));
@@ -437,9 +437,9 @@ const configureContracts = async (params, owner) => {
     //     controller.address, // _controllerAddress,
     //     hiveVault.address, // _vaultAddress,
     //     owner, // _governance,
-    //     mockXBE.address, // _tokenToAutostake,
+    //     // mockXBE.address, // _tokenToAutostake,
     //     // voting.address,
-    //     ZERO_ADDRESS, // _voting,
+    //     // ZERO_ADDRESS, // _voting,
     //     // _poolSettings
     //     [
     //       dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
@@ -453,69 +453,93 @@ const configureContracts = async (params, owner) => {
     //   ],
     //   token: dependentsAddresses.convex.pools[0].lptoken,
     // },
-//     {
-//       name: 'cvxCrv',
-//       vault: cvxCrvVault,
-//       strategy: cvxCrvStrategy,
-//       strategyConfigArgs: [
-//         dependentsAddresses.convex.cvxCrv, // _wantAddress,
-//         controller.address, // _controllerAddress,
-//         cvxCrvVault.address, // _vaultAddress,
-//         owner, // _governance,
-//         // voting.address,
-//         ZERO_ADDRESS, // _voting,
-//         // _poolSettings
-//         [
-//           dependentsAddresses.curve.pool_data.mock_pool.lp_token_address, // lpCurve
-//           dependentsAddresses.convex.cvxCrvRewards, // cvxCRVRewards
-//           dependentsAddresses.convex.crvDepositor, // crvDepositor
-//           dependentsAddresses.convex.booster, // convexBooster
-//           dependentsAddresses.convex.cvxCrv, // cvxCrvToken
-//           dependentsAddresses.curve.CRV, // crvToken
-//         ],
-//       ],
-//       vaultConfigArgs: [
-//         dependentsAddresses.convex.cvxCrv, // _initialToken
-//         controller.address, // _initialController
-//         owner, // _governance
-//         now.add(days('7')), // _rewardsDuration // TODO: to reconcile with customer
-//         mockXBE.address, // tokenToAutostake,
-//         votingStakingRewards.address, // votingStakingRewards,
-//         true, // enableFees ? false
-//         owner, // teamWallet ? address(0) ?
-//         referralProgram.address, // _referralProgram
-//         treasury.address, // _treasury
-//         [ // _rewardTokens
-//           dependentsAddresses.convex.cvxCrv, // ???????
-//           mockXBE.address,
-// //          dependentsAddresses.convex.cvxCrv, // ???????
-//         ],
-//         'CC', // _namePostfix
-//         'CC', // _symbolPostfix
-//       ],
-//       token: dependentsAddresses.convex.cvxCrv,
-//     },
-    // {
-    //   name: 'cvx',
-    //   vault: cvxVault,
-    //   strategy: cvxStrategy,
-    //   strategyConfigArgs: [
-    //     dependentsAddresses.convex.cvx, // _wantAddress,
-    //     controller.address, // _controllerAddress,
-    //     cvxVault.address, // _vaultAddress,
-    //     owner, // _governance,
-    //     // voting.address,
-    //     ZERO_ADDRESS, // _voting,
-    //     // _poolSettings
-    //     [
-    //       dependentsAddresses.convex.cvxRewards, // cvxRewards
-    //       dependentsAddresses.convex.cvx, // cvxToken
-    //       ZERO, // poolIndex
-    //     ],
+    {
+      name: 'cvxCrv',
+      vault: cvxCrvVault,
+      strategy: cvxCrvStrategy,
+      strategyConfigArgs: [
+        dependentsAddresses.convex.cvxCrv, // _wantAddress,
+        controller.address, // _controllerAddress,
+        cvxCrvVault.address, // _vaultAddress,
+        owner, // _governance,
+        // voting.address,
+        ZERO_ADDRESS, // _voting,
+        // _poolSettings
+        [
+          dependentsAddresses.curve.pool_data.mock_pool.lp_token_address, // lpCurve
+          dependentsAddresses.convex.cvxCrvRewards, // cvxCRVRewards
+          dependentsAddresses.convex.crvDepositor, // crvDepositor
+          dependentsAddresses.convex.booster, // convexBooster
+          dependentsAddresses.convex.cvxCrv, // cvxCrvToken
+          dependentsAddresses.curve.CRV, // crvToken
+        ],
+      ],
+      vaultConfigArgs: [
+        dependentsAddresses.convex.cvxCrv, // _initialToken
+        controller.address, // _initialController
+        owner, // _governance
+        now.add(days('7')), // _rewardsDuration // TODO: to reconcile with customer
+        mockXBE.address, // tokenToAutostake,
+        votingStakingRewards.address, // votingStakingRewards,
+        false, // enableFees ? false
+        owner, // teamWallet ? address(0) ?
+        referralProgram.address, // _referralProgram
+        treasury.address, // _treasury
+        [ // _rewardTokens
+          dependentsAddresses.convex.cvxCrv, // ???????
+          mockXBE.address,
+//          dependentsAddresses.convex.cvxCrv, // ???????
+        ],
+        'CC', // _namePostfix
+        'CC', // _symbolPostfix
+      ],
+      token: dependentsAddresses.convex.cvxCrv,
+    },
+    {
+      name: 'cvx',
+      vault: cvxVault,
+      strategy: cvxStrategy,
+      strategyConfigArgs: [
+        dependentsAddresses.convex.cvx, // _wantAddress,
+        controller.address, // _controllerAddress,
+        cvxVault.address, // _vaultAddress,
+        owner, // _governance,
+        // voting.address,
+        // ZERO_ADDRESS, // _voting,
+        // _poolSettings
+        [
+          dependentsAddresses.convex.cvxRewards, // cvxRewards
+          dependentsAddresses.convex.cvx, // cvxToken
+          ZERO, // poolIndex
+        ],
 
-    //   ],
-    //   token: dependentsAddresses.convex.cvx,
-    // },
+      ],
+      token: dependentsAddresses.convex.cvx,
+      //       dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
+      //       controller.address,
+      //       owner,
+      //       referralProgram.address,
+      //       treasury.address,
+      vaultConfigArgs: [
+        dependentsAddresses.curve.pool_data.mock_pool.lp_token_address, // _initialToken
+        controller.address, // _initialController
+        owner, // _governance
+        days('7'),
+        mockXBE.address, // tokenToAutostake,
+        votingStakingRewards.address, // votingStakingRewards,
+        false,
+        owner, // teamWallet ? address(0) ?
+        referralProgram.address, // _referralProgram
+        treasury.address, // _treasury
+        [ // _rewardTokens
+          dependentsAddresses.convex.cvxCrv, // ???????
+          mockXBE.address,
+//          dependentsAddresses.convex.cvxCrv, // ???????
+        ],
+        'XC', // _namePostfix
+        'XC', // _symbolPostfix
+      ],
+    },
     {
       name: 'sushi',
       vault: sushiVault,
@@ -725,7 +749,12 @@ const configureContracts = async (params, owner) => {
     voting.address,
     bonusCampaign.address, // works as a boost logic provider for now
     treasury.address, // to send remaining shares
-    [],
+    [
+      sushiVault.address,
+      cvxVault.address,
+      cvxCrvVault.address,
+      /*hiveVault.address*/
+    ],
   );
 
   console.log('VotingStakingRewards: configured...');

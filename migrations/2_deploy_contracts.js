@@ -275,9 +275,9 @@ const deployContracts = async (deployer, params, owner) => {
 //    { from: owner },
 //  );
 
-    // use deployed instance
-    mockXBE = await MockToken.at(addressStore.rinkeby.xbe);
-    console.log('mockXBE acquired ', mockXBE.address);
+  // use deployed instance
+  mockXBE = await MockToken.at(addressStore.rinkeby.xbe);
+  console.log('mockXBE acquired ', mockXBE.address);
 
   // get weth ad address
   weth9 = await WETH9.at(addressStore.rinkeby.weth);
@@ -466,7 +466,6 @@ const configureContracts = async (params, owner) => {
           dependentsAddresses.curve.CRV,
           dependentsAddresses.convex.cvx, // ???????
           mockXBE.address
-//          dependentsAddresses.convex.cvxCrv, // ???????
         ],
         'Hive', // _namePostfix
         'HV', // _symbolPostfix
@@ -632,11 +631,11 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-   console.log('Controller configured...');
+  console.log('Controller configured...');
 
-   console.log('Vaults and Strategies configuration...');
+  console.log('Vaults and Strategies configuration...');
   for (const item of strategiesAndVaults) {
-     console.log(`Configuring ${item.name}...`);
+    console.log(`Configuring ${item.name}...`);
 
     await controller.setVault(
       item.token,
@@ -644,7 +643,7 @@ const configureContracts = async (params, owner) => {
       { from: owner },
     );
 
-     console.log('Controller: vault added...');
+    console.log('Controller: vault added...');
 
     await controller.setApprovedStrategy(
       item.token,
@@ -661,14 +660,14 @@ const configureContracts = async (params, owner) => {
       { from: owner },
     );
 
-     console.log('Controller: strategy added...');
+    console.log('Controller: strategy added...');
 
     await item.strategy.configure(
       ...item.strategyConfigArgs,
       { from: owner },
     );
 
-     console.log(`${item.name}Strategy: configured`);
+    console.log(`${item.name}Strategy: configured`);
 
     // eslint-disable-next-line no-await-in-loop
     await item.vault.configure(
@@ -694,28 +693,27 @@ const configureContracts = async (params, owner) => {
   }
 
   xbeInflation.configure(
-      mockXBE.address, // _token
-      params.simpleXBEInflation.targetMinted,
-      params.simpleXBEInflation.periodsCount,
-      params.simpleXBEInflation.periodDuration,
-      { from: owner },
-    );
+    mockXBE.address, // _token
+    params.simpleXBEInflation.targetMinted,
+    params.simpleXBEInflation.periodsCount,
+    params.simpleXBEInflation.periodDuration,
+    { from: owner },
+  );
 
-    await xbeInflation.addXBEReceiver(
-      sushiStrategy.address,
-      new BN('25'),
-      { from: owner },
-    );
+  await xbeInflation.addXBEReceiver(
+    sushiStrategy.address,
+    new BN('25'),
+    { from: owner },
+  );
 
-    // instead of VotingStakingRewards: reward -> treasury -> votingStakingRewards
-    await xbeInflation.addXBEReceiver(
-      treasury.address,
-      new BN('25'),
-      { from: owner },
-    );
+  // instead of VotingStakingRewards: reward -> treasury -> votingStakingRewards
+  await xbeInflation.addXBEReceiver(
+    treasury.address,
+    new BN('25'),
+    { from: owner },
+  );
 
-   console.log('XBEInflation: configured');
-
+  console.log('XBEInflation: configured');
 
 
   await bonusCampaign.configure(

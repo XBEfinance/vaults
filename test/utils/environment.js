@@ -349,6 +349,7 @@ const environment = {
         executorMock.address,
         { from: alice },
       );
+
       return proxiedInstance;
     }),
   MockContract: async (force) => await common.cacheAndReturn('MockContract', force, deployedAndConfiguredContracts,
@@ -375,7 +376,7 @@ const environment = {
         )).address,
         async () => (await common.waitFor(
           'Voting',
-          deployment.deployedContracts,
+          deployedAndConfiguredContracts,
         )).address,
         async () => (await common.waitFor(
           'LockSubscription',

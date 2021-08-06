@@ -17,19 +17,8 @@ const { people, setPeople } = require('./utils/accounts');
 
 const { ZERO, ZERO_ADDRESS } = constants.utils;
 
-const {
-  MockToken,
-  Controller,
-  MockContract,
-  UnwrappedToWrappedTokenConverter,
-  IConverter,
-  IStrategy,
-  IOneSplitAudit,
-  IERC20,
-
-} = require('./utils/artifacts');
-
 contract('Controller', (accounts) => {
+
   setPeople(accounts);
 
   let revenueToken;
@@ -49,8 +38,7 @@ contract('Controller', (accounts) => {
       vault,
       revenueToken,
       controller,
-      treasury,
-
+      treasury
     ] = await environment.getGroup(
       [
         'MockContract',
@@ -67,7 +55,7 @@ contract('Controller', (accounts) => {
         'MockContract',
         'MockToken',
         'Controller',
-        'Treasury',
+        'Treasury'
       ].includes(key),
       true,
       {

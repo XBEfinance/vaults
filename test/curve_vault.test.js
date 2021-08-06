@@ -11,7 +11,8 @@ const { assert, expect } = require('chai');
 
 // contractInstance.functionName.call();
 const { ZERO_ADDRESS } = constants;
-const distro = require('../distro.json');
+
+const testnet_distro = require('../../curve-convex/rinkeby_distro.json');
 
 const XBEInflation = artifacts.require('XBEInflation');
 const VeXBE = artifacts.require('VeXBE');
@@ -103,7 +104,7 @@ contract('Curve LP Testing', (accounts) => {
       slippageTolerance: new BN('9500'),
       swapDeadline: days('1'),
     },
-    dependentsAddresses: { ...distro.rinkeby },
+    dependentsAddresses: { ...testnet_distro.rinkeby },
   };
 
   const deployContracts = async () => {

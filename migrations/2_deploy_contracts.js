@@ -5,7 +5,6 @@ const { BN, constants, time } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
 const fs = require('fs');
-const distro = require('../distro.json');
 const testnet_distro = require('../../curve-convex/rinkeby_distro.json');
 
 const Registrator = artifacts.require('LockSubscription');
@@ -829,7 +828,7 @@ module.exports = function (deployer, network, accounts) {
   };
 
   deployer.then(async () => {
-    let dependentsAddresses = distro.rinkeby;
+    let dependentsAddresses = testnet_distro.rinkeby;
     dependentsAddresses.curve.pools = Object.values(dependentsAddresses
       .curve.pool_data);
     params = {

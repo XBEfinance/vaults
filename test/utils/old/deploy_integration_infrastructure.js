@@ -18,7 +18,7 @@ const {
   processEventArgs,
 } = require('./common');
 
-const distro = require('../../../distro.json');
+const testnet_distro = require('../../../../curve-convex/rinkeby_distro.json');
 
 const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
 const months = (n) => days('30').mul(new BN(n));
@@ -107,7 +107,7 @@ const defaultParams = {
     slippageTolerance: new BN('9500'),
     swapDeadline: days('1'),
   },
-  dependentsAddresses: { ...distro.rinkeby },
+  dependentsAddresses: { ...testnet_distro.rinkeby },
   sushiSwap: {
     sushiswapRouter: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
     sushiswapFactory: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',

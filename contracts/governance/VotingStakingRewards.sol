@@ -66,6 +66,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
     address public rewardsDistribution;
+    uint256 public totalReward;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
@@ -165,8 +166,6 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
-
-    uint256 public totalReward;
 
     function notifyRewardAmount(uint256 reward) external onlyRewardsDistribution updateReward(address(0)) {
         if (block.timestamp >= periodFinish) {

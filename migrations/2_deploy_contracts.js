@@ -597,13 +597,13 @@ const configureContracts = async (params, owner) => {
 
   console.log('Starting configuration...');
 
-  // await referralProgram.configure(
-  //   [mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
-  //   treasury.address,
-  //   { from: owner },
-  // );
+  await referralProgram.configure(
+    [mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
+    treasury.address,
+    { from: owner },
+  );
 
-   // console.log('ReferralProgram configured...');
+   console.log('ReferralProgram configured...');
 
   await registry.configure(
     owner,

@@ -642,6 +642,7 @@ const defaultGroup = [
   'TokenWrapper',
   'Registry',
   'SimpleXBEInflation',
+  'LockSubscription'
 ];
 
 module.exports = {

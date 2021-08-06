@@ -8,7 +8,6 @@ import '../interfaces/IRewards.sol';
 import "../interfaces/vault/IVaultTransfers.sol";
 
 /// @title CvxCrvStrategy
-/// @notice In cvxCRV out CRV TODO: выяснить оборачиваются ли CRV автоматически в cvxCRV
 contract CvxCrvStrategy is WithClaimAmountStrategy {
 
     struct Settings {

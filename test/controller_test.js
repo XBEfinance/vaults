@@ -14,6 +14,14 @@ const common = require('./utils/common');
 const constants = require('./utils/constants');
 const environment = require('./utils/environment');
 const { people, setPeople } = require('./utils/accounts');
+const IStrategy = artifacts.require('IStrategy');
+const Controller = artifacts.require('Controller');
+const MockToken = artifacts.require('MockToken');
+const MockContract = artifacts.require('MockContract');
+const UnwrappedToWrappedTokenConverter =
+  artifacts.require('UnwrappedToWrappedTokenConverter');
+const IERC20 = artifacts.require('IERC20');
+const IConverter = artifacts.require('IConverter');
 
 const { ZERO, ZERO_ADDRESS } = constants.utils;
 

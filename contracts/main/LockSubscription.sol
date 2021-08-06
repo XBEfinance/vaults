@@ -11,6 +11,7 @@ contract LockSubscription is Ownable {
 
     EnumerableSet.AddressSet private subscribers;
     address private eventSource;
+    bool isActive = true;
 
     modifier onlyEventSource() {
         require(msg.sender == eventSource, '!eventSource');
@@ -35,6 +36,10 @@ contract LockSubscription is Ownable {
         subscribers.remove(s);
     }
 
+    function setActive(bool _isActive) external onlyOwner {
+        isActive = _isActive;
+    }
+
     function processLockEvent(
         address account,
         uint256 lockStart,
@@ -44,6 +49,10 @@ contract LockSubscription is Ownable {
       external
       onlyEventSource
     {
+        if (!isActive) {
+            return;
+        }
+
         uint256 count = subscribers.length();
         if (count != 0) {
             for (uint64 i = 0; i < count; i++) {

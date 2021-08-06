@@ -369,6 +369,10 @@ contract VeXBE is Initializable, ReentrancyGuard {
         }
     }
 
+    function _canConvertInt128(uint256 value) internal pure returns (bool) {
+        return value < 2**127;
+    }
+
     // """
     // @notice Deposit and lock tokens for a user
     // @param _addr User's wallet address
@@ -386,9 +390,11 @@ contract VeXBE is Initializable, ReentrancyGuard {
         LockedBalance memory _locked = LockedBalance({amount: lockedBalance.amount, end: lockedBalance.end});
         uint256 supplyBefore = supply;
 
-        supply = supplyBefore + _value;
+        supply = supplyBefore.add(_value);
         LockedBalance memory oldLocked = lockedBalance;
         // # Adding to existing lock, or if a lock is expired - creating a new one
+
+        require(_canConvertInt128(_value), "!convertInt128");
         _locked.amount += int128(_value);
         if (unlockTime != 0) {
             _locked.end = unlockTime;

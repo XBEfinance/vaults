@@ -473,6 +473,8 @@ const environment = {
   BonusCampaign: async (force) => await common.cacheAndReturn('BonusCampaign', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.BonusCampaign();
+      const configureTime = await time.latest();
+      constants.localParams.bonusCampaign.configureTime = configureTime;
       await instance.configure(
         (await common.waitFor(
           'MockXBE',
@@ -482,8 +484,8 @@ const environment = {
           'VeXBE',
           deployment.deployedContracts,
         )).address,
-        constants.localParams.bonusCampaign.startMintTime,
-        (await time.latest()).add(constants.localParams.bonusCampaign.stopRegisterTime),
+        configureTime.add(constants.localParams.bonusCampaign.startMintTime),
+        configureTime.add(constants.localParams.bonusCampaign.stopRegisterTime),
         constants.localParams.bonusCampaign.rewardsDuration,
         constants.localParams.bonusCampaign.emission,
       );
@@ -640,6 +642,7 @@ const defaultGroup = [
   'TokenWrapper',
   'Registry',
   'SimpleXBEInflation',
+  'LockSubscription'
 ];
 
 module.exports = {

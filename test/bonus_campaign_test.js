@@ -19,35 +19,33 @@ let mockXBE;
 let bonusCampaign;
 let veXBE;
 let votingStakingRewards;
+let lockSubscription;
 
 contract('BonusCampaign', (accounts) => {
   setPeople(accounts);
 
   beforeEach(async () => {
-    // constants.localParams.bonusCampaign.startMintTime = await time.latest();
     [
         mockXBE,
         veXBE,
         bonusCampaign,
-        votingStakingRewards
-    ] = await environment.getGroup(
-        [
-          "LockSubscription",
-          ...environment.defaultGroup
-        ],
+        votingStakingRewards,
+        lockSubscription,
+    ] = await environment.getGroup(environment.defaultGroup,
         (key) => {
             return [
                 "MockXBE",
                 "VeXBE",
                 "BonusCampaign",
-                "VotingStakingRewards"
+                "VotingStakingRewards",
+                "LockSubscription",
             ].includes(key);
         },
         true
     );
   });
 
-  xit('should configure properly', async () => {
+  it('should configure properly', async () => {
     expect(await bonusCampaign.rewardsToken()).to.be.equal(
       mockXBE.address,
     );
@@ -68,25 +66,39 @@ contract('BonusCampaign', (accounts) => {
       constants.localParams.bonusCampaign.emission,
     );
 
-    expect(await bonusCampaign.startMintTime()).to.be.bignumber.equal(
-      constants.localParams.bonusCampaign.startMintTime,
+    const startMintTime = constants.localParams.bonusCampaign.configureTime.add(
+      constants.localParams.bonusCampaign.startMintTime
     );
+
+    expect(await bonusCampaign.startMintTime())
+      .to.be.bignumber.equal(startMintTime);
+
+    // check subscription
+    expect((await lockSubscription.subscribersCount()).toString())
+      .to.be.equal('1');
+
+    expect(await lockSubscription.subscriberAt(new BN('0')))
+      .to.be.equal(bonusCampaign.address);
+
+    expect(await lockSubscription.eventSource())
+      .to.be.equal(veXBE.address);
   });
 
-  xit('should revert default stake', async () => {
+  it('should revert default stake', async () => {
     await expectRevert(bonusCampaign.stake(constants.utils.ZERO), '!allowed');
   });
 
-  xit('should revert default withdraw', async () => {
+  it('should revert default withdraw', async () => {
     await expectRevert(bonusCampaign.withdraw(constants.utils.ZERO), '!allowed');
   });
 
-  xit('should revert default notify', async () => {
+  it('should revert default notify', async () => {
     await expectRevert(bonusCampaign.notifyRewardAmount(constants.utils.ZERO, { from: people.owner }), '!allowed');
   });
 
   describe('register', () => {
-    xit('should register correctly', async () => {
+    it('should register correctly', async () => {
+      // console.log('here0');
 
       await bonusCampaign.startMint({ from: people.owner });
 
@@ -96,20 +108,28 @@ contract('BonusCampaign', (accounts) => {
 
       // console.log('lockTime = ', lockTime.toString());
       // console.log('xbeToDeposit = ', xbeToDeposit.toString());
-      await mockXBE.approve(votingStakingRewards.address, xbeToDeposit, { from: people.alice });
+      await mockXBE.approve(
+        votingStakingRewards.address,
+        xbeToDeposit,
+        { from: people.alice },
+      );
       await votingStakingRewards.stake(xbeToDeposit, { from: people.alice });
-      await veXBE.createLock(xbeToDeposit, lockTime, { from: people.alice });
-      // console.log('here2');
-      const result = await bonusCampaign.register({ from: people.alice });
-      // console.log('here3');
 
+      // !registered && can register
+      expect(await bonusCampaign.registered(people.alice)).to.be.false;
+      expect(await bonusCampaign.canRegister(people.alice)).to.be.true;
+
+      const receipt = await veXBE.createLock(xbeToDeposit, lockTime, { from: people.alice });
+      // await expectEvent(
+      //   receipt,
+      //   'Staked'
+      // );
+
+      expect(await bonusCampaign.canRegister(people.alice)).to.be.false;
       expect(await bonusCampaign.registered(people.alice)).to.be.true;
-      expectEvent(result, 'Staked', {
-        user: people.alice,
-      });
     });
 
-    xit('should not register if already registered', async () => {
+    it('should not register if already registered', async () => {
       const xbeToDeposit = ether('1');
       const lockTime = (await time.latest()).add(common.months('24'));
       await mockXBE.approve(votingStakingRewards.address, xbeToDeposit, { from: people.alice });
@@ -120,7 +140,7 @@ contract('BonusCampaign', (accounts) => {
       await expectRevert(bonusCampaign.register({ from: people.alice }), 'alreadyRegistered');
     });
 
-    xit('should not register if locked veXBE for too little time', async () => {
+    it('should not register if locked veXBE for too little time', async () => {
       const xbeToDeposit = ether('1');
       const lockTime = (await time.latest()).add(common.months('22'));
       await mockXBE.approve(votingStakingRewards.address, xbeToDeposit, { from: people.alice });
@@ -129,7 +149,7 @@ contract('BonusCampaign', (accounts) => {
       await expectRevert(bonusCampaign.register({ from: people.alice }), 'stakedForNotEnoughTime');
     });
 
-    xit('should not register if locked none veXBE', async () => {
+    it('should not register if locked none veXBE', async () => {
       await expectRevert(bonusCampaign.register({ from: people.alice }), '!stake0');
     });
   });
@@ -140,32 +160,53 @@ contract('BonusCampaign', (accounts) => {
 
       const xbeToDeposit = ether('1');
       const lockTime = (await time.latest()).add(common.months('24'));
-      await mockXBE.approve(votingStakingRewards.address, xbeToDeposit, { from: people.alice });
+      await mockXBE.approve(
+        votingStakingRewards.address,
+        xbeToDeposit,
+        { from: people.alice },
+      );
       await votingStakingRewards.stake(xbeToDeposit, { from: people.alice });
+
+      expect(await bonusCampaign.canRegister(people.alice))
+        .to.be.true;
+      expect(await bonusCampaign.registered(people.alice))
+        .to.be.false;
+
       await veXBE.createLock(xbeToDeposit, lockTime, { from: people.alice });
-      await bonusCampaign.register({ from: people.alice });
+      expect(await bonusCampaign.registered(people.alice))
+        .to.be.true;
+      expect(await bonusCampaign.canRegister(people.alice))
+        .to.be.false;
 
       console.log((await bonusCampaign.balanceOf(people.alice)).toString());
+      await expectRevert(
+        bonusCampaign.register({ from: people.alice }),
+        'alreadyRegistered',
+      );
 
-      await time.increase((await bonusCampaign.rewardsDuration()).add(common.days('1')));
+      // await time.increase((await bonusCampaign.rewardsDuration()).add(common.days('1')));
+      await time.increase(common.months('1'));
 
       const expectedReward = await bonusCampaign.earned(people.alice);
       console.log(expectedReward.toString());
 
       const result = await bonusCampaign.getReward({ from: people.alice });
-      expectEvent(result, 'RewardPaid', {
+      expectEvent(result, 'RewardPaid',
+        {
         user: people.alice,
         reward: expectedReward,
-      });
+      }
+      );
     });
 
-    xit('should not get reward if not registered', async () => {
+    it('should not get reward if not registered', async () => {
       await bonusCampaign.startMint({ from: people.owner });
 
       const xbeToDeposit = ether('1');
       const lockTime = (await time.latest()).add(common.months('24'));
       await mockXBE.approve(votingStakingRewards.address, xbeToDeposit, { from: people.alice });
       await votingStakingRewards.stake(xbeToDeposit, { from: people.alice });
+      await lockSubscription.setActive(false); // disable auto-registration
       await veXBE.createLock(xbeToDeposit, lockTime, { from: people.alice });
 
       await time.increase((await bonusCampaign.rewardsDuration()).add(common.days('1')));

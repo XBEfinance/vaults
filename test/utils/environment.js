@@ -477,18 +477,24 @@ const environment = {
         'VeXBE',
         deployment.deployedContracts,
       );
+      const registrator = await common.waitFor(
+        'LockSubscription',
+        deployment.deployedContracts
+      );
+      const configureTime = await time.latest();
+      constants.localParams.bonusCampaign.configureTime = configureTime;
       await instance.configure(
         (await common.waitFor(
           'MockXBE',
           deployedAndConfiguredContracts,
         )).address,
         veXBE.address,
-        constants.localParams.bonusCampaign.startMintTime,
-        (await time.latest()).add(constants.localParams.bonusCampaign.stopRegisterTime),
+        configureTime.add(constants.localParams.bonusCampaign.startMintTime),
+        configureTime.add(constants.localParams.bonusCampaign.stopRegisterTime),
         constants.localParams.bonusCampaign.rewardsDuration,
         constants.localParams.bonusCampaign.emission,
       );
-      await instance.setRegistrator(veXBE.address);
+      await instance.setRegistrator(registrator.address);
       return instance;
     }),
   ReferralProgram: {},

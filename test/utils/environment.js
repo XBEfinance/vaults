@@ -473,22 +473,23 @@ const environment = {
   BonusCampaign: async (force) => await common.cacheAndReturn('BonusCampaign', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.BonusCampaign();
-      const veXBE = await common.waitFor(
-        'VeXBE',
-        deployment.deployedContracts,
-      );
       await instance.configure(
         (await common.waitFor(
           'MockXBE',
           deployedAndConfiguredContracts,
         )).address,
-        veXBE.address,
+        (await common.waitFor(
+          'VeXBE',
+          deployment.deployedContracts,
+        )).address,
         constants.localParams.bonusCampaign.startMintTime,
         (await time.latest()).add(constants.localParams.bonusCampaign.stopRegisterTime),
         constants.localParams.bonusCampaign.rewardsDuration,
         constants.localParams.bonusCampaign.emission,
       );
-      await instance.setRegistrator(veXBE.address);
+      await instance.setRegistrator((
+        await common.waitFor("LockSubscription", deployedAndConfiguredContracts)
+      ).address);
       return instance;
     }),
   ReferralProgram: {},
@@ -579,14 +580,14 @@ const environment = {
       await instance.setEventSource(
         (await common.waitFor(
           "VeXBE",
-          deployedAndConfiguredContracts,
+          deployment.deployedContracts,
           "environment - waiting for VeXBE as dep for LockSubscription"
         )).address
       );
       await instance.addSubscriber(
         (await common.waitFor(
           "BonusCampaign",
-          deployedAndConfiguredContracts,
+          deployment.deployedContracts,
           "environment - waiting for BonusCampaign as dep for LockSubscription"
         )).address
       );

@@ -32,8 +32,8 @@ contract('BonusCampaign', (accounts) => {
         votingStakingRewards
     ] = await environment.getGroup(
         [
-          ...environment.defaultGroup,
-          "LockSubscription" 
+          "LockSubscription",
+          ...environment.defaultGroup
         ],
         (key) => {
             return [

@@ -87,7 +87,6 @@ contract('BonusCampaign', (accounts) => {
 
   describe('register', () => {
     xit('should register correctly', async () => {
-      // console.log('here0');
 
       await bonusCampaign.startMint({ from: people.owner });
 

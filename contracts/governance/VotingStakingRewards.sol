@@ -313,7 +313,8 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     function potentialXbeReturns(uint256 duration, address account) external view returns (uint256) {
         uint256 _rewardsAmount = _balances[account]
             .mul(
-                _rewardPerTokenForDuration(duration).sub(userRewardPerTokenPaid[account]))
+                _rewardPerTokenForDuration(duration).sub(userRewardPerTokenPaid[account])
+            )
             .div(1e18)
             .add(rewards[account]);
         return _rewardsAmount;

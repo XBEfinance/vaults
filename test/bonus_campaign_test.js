@@ -33,8 +33,8 @@ contract('BonusCampaign', (accounts) => {
         lockSubscription,
     ] = await environment.getGroup(
         [
-          ...environment.defaultGroup,
-          "LockSubscription" 
+          "LockSubscription",
+          ...environment.defaultGroup
         ],
         (key) => {
             return [

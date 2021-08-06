@@ -473,14 +473,6 @@ const environment = {
   BonusCampaign: async (force) => await common.cacheAndReturn('BonusCampaign', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.BonusCampaign();
-      const veXBE = await common.waitFor(
-        'VeXBE',
-        deployment.deployedContracts,
-      );
-      const registrator = await common.waitFor(
-        'LockSubscription',
-        deployment.deployedContracts
-      );
       const configureTime = await time.latest();
       constants.localParams.bonusCampaign.configureTime = configureTime;
       await instance.configure(
@@ -488,13 +480,18 @@ const environment = {
           'MockXBE',
           deployedAndConfiguredContracts,
         )).address,
-        veXBE.address,
+        (await common.waitFor(
+          'VeXBE',
+          deployment.deployedContracts,
+        )).address,
         configureTime.add(constants.localParams.bonusCampaign.startMintTime),
         configureTime.add(constants.localParams.bonusCampaign.stopRegisterTime),
         constants.localParams.bonusCampaign.rewardsDuration,
         constants.localParams.bonusCampaign.emission,
       );
-      await instance.setRegistrator(registrator.address);
+      await instance.setRegistrator((
+        await common.waitFor("LockSubscription", deployedAndConfiguredContracts)
+      ).address);
       return instance;
     }),
   ReferralProgram: {},
@@ -585,14 +582,14 @@ const environment = {
       await instance.setEventSource(
         (await common.waitFor(
           "VeXBE",
-          deployedAndConfiguredContracts,
+          deployment.deployedContracts,
           "environment - waiting for VeXBE as dep for LockSubscription"
         )).address
       );
       await instance.addSubscriber(
         (await common.waitFor(
           "BonusCampaign",
-          deployedAndConfiguredContracts,
+          deployment.deployedContracts,
           "environment - waiting for BonusCampaign as dep for LockSubscription"
         )).address
       );

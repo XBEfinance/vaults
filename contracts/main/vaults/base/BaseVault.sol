@@ -527,6 +527,9 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         uint256 _bal = stakingToken.balanceOf(address(this));
         stakingToken.safeTransfer(address(_controller), _bal);
         _controller.earn(address(stakingToken), _bal);
+        for (uint256 i = 0; i < _validTokens.length(); i++) {
+            _controller.claim(address(stakingToken), _validTokens.at(i));
+        }
     }
 
     function token() external override view returns(address) {

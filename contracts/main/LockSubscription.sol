@@ -9,13 +9,21 @@ contract LockSubscription is Ownable {
 
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    EnumerableSet.AddressSet private subscribers;
-    address private eventSource;
-    bool isActive = true;
+    EnumerableSet.AddressSet internal subscribers;
+    address public eventSource;
+    bool public isActive = true;
 
     modifier onlyEventSource() {
         require(msg.sender == eventSource, '!eventSource');
         _;
+    }
+
+    function subscribersCount() public view returns (uint256) {
+        return subscribers.length();
+    }
+
+    function subscriberAt(uint256 index) public view returns (address) {
+        return subscribers.at(index);
     }
 
     function _setEventSource(address _eventSource) internal {

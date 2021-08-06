@@ -148,12 +148,12 @@ contract('VotingStakingRewards', (accounts) => {
 
   describe('views', () => {
 
-    // before(async () => {
-    //   await redeploy();
-    // });
+    before(async () => {
+      await redeploy();
+    });
 
     it('should get total supply', async () => {
-
+      
     });
 
     it('should get balance of user', async () => {

@@ -185,16 +185,6 @@ const saveAddresses = () => {
   });
   fs.writeFileSync('addresses.json', jsonAddressData);
 };
-//const readJsonAddresses = () => {
-//    addresses = {};
-//
-//    const data = JSON.parse(fs.readFileSync('addresses.json'));
-//
-//    addrNames.forEach((value, key) => {
-//        data.has(key) {}
-//    });
-//
-//};
 
 const getSavedAddress = (key) => {
   const addressesJson = fs.readFileSync('addresses.json');
@@ -265,14 +255,6 @@ const deployContracts = async (deployer, params, owner) => {
     sushiVault,
   ] = await deployStrategiesAndVaults(strategiesAndVaults);
   // !-----------------------------------
-
-//  mockXBE = await deployer.deploy(
-//    MockToken,
-//    'Mock XBE',
-//    'mXBE',
-//    params.mockTokens.mockedTotalSupplyXBE,
-//    { from: owner },
-//  );
 
   // use deployed instance
   mockXBE = await MockToken.at(addressStore.rinkeby.xbe);

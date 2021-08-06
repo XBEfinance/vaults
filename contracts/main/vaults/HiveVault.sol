@@ -61,9 +61,9 @@ contract HiveVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim, Vault
     )
         internal override
     {
-        if (_claimMask == 2) {
+        if (_claimMask == 0x02) {
             _controller.claim(_stakingToken, _rewardToken);
-        } else if (_claimMask == 3) {
+        } else if (_claimMask == 0x03) {
             _controller.getRewardStrategy(_stakingToken);
             _controller.claim(_stakingToken, _rewardToken);
         }

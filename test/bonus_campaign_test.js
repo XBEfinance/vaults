@@ -31,7 +31,10 @@ contract('BonusCampaign', (accounts) => {
         bonusCampaign,
         votingStakingRewards
     ] = await environment.getGroup(
-        environment.defaultGroup,
+        [
+          ...environment.defaultGroup,
+          "LockSubscription" 
+        ],
         (key) => {
             return [
                 "MockXBE",

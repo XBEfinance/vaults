@@ -186,12 +186,12 @@ const environment = {
         vault.address,
       );
 
-      await instance.setApprovedStrategy(
+      await controller.setApprovedStrategy(
         mockLpSushi.address,
         instance.address,
         true,
       );
-      await instance.setStrategy(
+      await controller.setStrategy(
         mockLpSushi.address,
         instance.address,
       );
@@ -473,20 +473,22 @@ const environment = {
   BonusCampaign: async (force) => await common.cacheAndReturn('BonusCampaign', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.BonusCampaign();
+      const veXBE = await common.waitFor(
+        'VeXBE',
+        deployment.deployedContracts,
+      );
       await instance.configure(
         (await common.waitFor(
           'MockXBE',
           deployedAndConfiguredContracts,
         )).address,
-        (await common.waitFor(
-          'VeXBE',
-          deployment.deployedContracts,
-        )).address,
+        veXBE.address,
         constants.localParams.bonusCampaign.startMintTime,
         (await time.latest()).add(constants.localParams.bonusCampaign.stopRegisterTime),
         constants.localParams.bonusCampaign.rewardsDuration,
         constants.localParams.bonusCampaign.emission,
       );
+      await instance.setRegistrator(veXBE.address);
       return instance;
     }),
   ReferralProgram: {},

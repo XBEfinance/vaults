@@ -5,7 +5,6 @@ const { BN, constants, time } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
 const fs = require('fs');
-const distro = require('../distro.json');
 const testnet_distro = require('../../curve-convex/rinkeby_distro.json');
 
 const Registrator = artifacts.require('LockSubscription');
@@ -186,16 +185,6 @@ const saveAddresses = () => {
   });
   fs.writeFileSync('addresses.json', jsonAddressData);
 };
-//const readJsonAddresses = () => {
-//    addresses = {};
-//
-//    const data = JSON.parse(fs.readFileSync('addresses.json'));
-//
-//    addrNames.forEach((value, key) => {
-//        data.has(key) {}
-//    });
-//
-//};
 
 const getSavedAddress = (key) => {
   const addressesJson = fs.readFileSync('addresses.json');
@@ -266,14 +255,6 @@ const deployContracts = async (deployer, params, owner) => {
     sushiVault,
   ] = await deployStrategiesAndVaults(strategiesAndVaults);
   // !-----------------------------------
-
-//  mockXBE = await deployer.deploy(
-//    MockToken,
-//    'Mock XBE',
-//    'mXBE',
-//    params.mockTokens.mockedTotalSupplyXBE,
-//    { from: owner },
-//  );
 
   // use deployed instance
   mockXBE = await MockToken.at(addressStore.rinkeby.xbe);
@@ -829,7 +810,7 @@ module.exports = function (deployer, network, accounts) {
   };
 
   deployer.then(async () => {
-    let dependentsAddresses = distro.rinkeby;
+    let dependentsAddresses = testnet_distro.rinkeby;
     dependentsAddresses.curve.pools = Object.values(dependentsAddresses
       .curve.pool_data);
     params = {

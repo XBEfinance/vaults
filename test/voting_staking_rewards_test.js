@@ -74,11 +74,11 @@ contract('VotingStakingRewards', (accounts) => {
 
   describe('configuration and setters', () => {
 
-    beforeEach(async () => {
-      await redeploy();
-    });
+    // beforeEach(async () => {
+    //   await redeploy();
+    // });
 
-    it('should configure properly', async () => {
+    xit('should configure properly', async () => {
       expect(await votingStakingRewards.rewardsToken()).to.be.equals(mockXBE.address);
       expect(await votingStakingRewards.stakingToken()).to.be.equals(mockXBE.address);
       expect(await votingStakingRewards.rewardsDistribution()).to.be.equals(treasury.address);
@@ -89,7 +89,7 @@ contract('VotingStakingRewards', (accounts) => {
       expect(await votingStakingRewards.treasury()).to.be.equals(treasury.address);
     });
 
-    it('should set inverse max boost coef', async () => {
+    xit('should set inverse max boost coef', async () => {
       await common.checkSetter(
         'setInverseMaxBoostCoefficient',
         'inverseMaxBoostCoefficient',
@@ -103,7 +103,7 @@ contract('VotingStakingRewards', (accounts) => {
       );
     });
 
-    it('should set penalty pct', async () => {
+    xit('should set penalty pct', async () => {
       await common.checkSetter(
         'setPenaltyPct',
         'penaltyPct',
@@ -117,7 +117,7 @@ contract('VotingStakingRewards', (accounts) => {
       );
     });
 
-    it('should set bonded lock duration', async () => {
+    xit('should set bonded lock duration', async () => {
       await common.checkSetter(
         'setBondedLockDuration',
         'bondedLockDuration',
@@ -131,7 +131,7 @@ contract('VotingStakingRewards', (accounts) => {
       );
     });
 
-    it('should set boosting logic provider', async () => {
+    xit('should set boosting logic provider', async () => {
       await common.checkSetter(
         'setBoostLogicProvider',
         'boostLogicProvider',
@@ -148,82 +148,173 @@ contract('VotingStakingRewards', (accounts) => {
 
   describe('views', () => {
 
-    before(async () => {
+    let owner;
+    const amount = ether('1');
+    const duration = common.days('2');
+
+    beforeEach(async () => {
       await redeploy();
+      owner = await common.waitFor('owner', people);
+      await mockXBE.approve(
+        votingStakingRewards.address,
+        amount,
+        { from: owner }
+      );
+      await votingStakingRewards.stake(
+        amount,
+        { from: owner }
+      );
+      await mockXBE.approve(
+        treasury.address,
+        amount,
+        { from: owner }
+      );
+      await mockXBE.transfer(
+        treasury.address,
+        amount,
+        { from: owner }
+      );
+      await treasury.toVoters();
     });
 
-    it('should get total supply', async () => {
-      
+    xit('should get total supply', async () => {
+      expect(await votingStakingRewards.totalSupply())
+        .to.be.bignumber.equal(amount);
     });
 
-    it('should get balance of user', async () => {
-
+    xit('should get balance of user', async () => {
+      expect(await votingStakingRewards.balanceOf(owner))
+        .to.be.bignumber.equal(amount);
     });
 
-    it('should limit last time reward applicable', async () => {
-
+    xit('should limit last time reward applicable', async () => {
+      const now = await time.latest();
+      const periodFinish = await votingStakingRewards.periodFinish();
+      expect(await votingStakingRewards.lastTimeRewardApplicable())
+        .to.be.bignumber.equal(now);
+      await time.increaseTo(common.days('1').add(periodFinish));
+      expect(await votingStakingRewards.lastTimeRewardApplicable())
+        .to.be.bignumber.equal(periodFinish);
     });
 
-    it('should get reward per token', async () => {
+    xit('should get reward per token', async () => {
+      const rewardPerTokenStored = await votingStakingRewards.rewardPerTokenStored();
+      const lastTimeRewardApplicable = await votingStakingRewards.lastTimeRewardApplicable();
+      const lastUpdateTime = await votingStakingRewards.lastUpdateTime();
+      const rewardRate = await votingStakingRewards.rewardRate();
+      const eth = ether('1');
+      const totalSupply = await votingStakingRewards.totalSupply();
 
+      const expected = rewardPerTokenStored.add(
+        lastTimeRewardApplicable.sub(lastUpdateTime).mul(rewardRate).mul(eth).div(totalSupply)
+      );
+
+      expect(await votingStakingRewards.rewardPerToken()).to.be.bignumber.equal(expected);
     });
 
-    it('should get reward for duration', async () => {
-
+    xit('should get reward for duration', async () => {
+      const rewardRate = await votingStakingRewards.rewardRate();
+      const rewardsDuration = await votingStakingRewards.rewardsDuration();
+      const expected = rewardRate.mul(rewardsDuration);
+      expect(await votingStakingRewards.getRewardForDuration())
+        .to.be.bignumber.equals(expected);
     });
 
-    it('should get potential xbe returns', async () => {
+    xit('should get potential xbe returns', async () => {
+      const eth = ether('1');
 
+      const balance = await votingStakingRewards.balanceOf(owner);
+      const rewardPerTokenStored = await votingStakingRewards.rewardPerTokenStored();
+      const rewardRate = await votingStakingRewards.rewardRate();
+      const totalSupply = await votingStakingRewards.totalSupply();
+      const userRewardPerTokenPaid = await votingStakingRewards.userRewardPerTokenPaid(owner);
+      const rewards = await votingStakingRewards.rewards(owner);
+
+      const rewardPerTokenForDuration = rewardPerTokenStored.add(
+        duration.mul(rewardRate).mul(eth).div(totalSupply)
+      );
+
+      const expected = balance.mul(
+        rewardPerTokenForDuration.sub(userRewardPerTokenPaid)
+      ).div(eth).add(rewards);
+
+      expect(await votingStakingRewards.potentialXbeReturns(duration, owner))
+        .to.be.bignumber.equals(expected);
     });
 
-    it('should calculate boost level', async () => {
+    xit('should calculate boost level', async () => {
+      const inverseMaxBoostCoefficient = await votingStakingRewards.inverseMaxBoostCoefficient();
+      const minBoostLevel = inverseMaxBoostCoefficient.mul(ether('1')).div(new BN('100'));
+      expect(await votingStakingRewards.calculateBoostLevel(owner))
+        .to.be.bignumber.equals(minBoostLevel);
+      await veXBE.createLock(amount, (await time.latest()).add(duration), { from: owner });
+      expect(await votingStakingRewards.calculateBoostLevel(owner))
+        .to.be.bignumber.least(minBoostLevel);
+    });
 
+    it('should calculate max boost level', async () => {
+      const maxBoostLevel = await votingStakingRewards.PCT_BASE();
+      await veXBE.createLock(amount, (await time.latest()).add(common.months('23')), { from: owner });
+      expect(await votingStakingRewards.calculateBoostLevel(owner))
+        .to.be.bignumber.equals(maxBoostLevel);
     });
 
     it('should get earned', async () => {
+      const boostLevel = await votingStakingRewards.calculateBoostLevel(owner);
+      const balance = await votingStakingRewards.balanceOf(owner);
+      const rewardPerToken = await votingStakingRewards.rewardPerToken();
+      const userRewardPerTokenPaid = await votingStakingRewards.userRewardPerTokenPaid(owner);
+      const rewards = await votingStakingRewards.rewards(owner);
 
+      const maxBoostedReward = balance.mul(
+        rewardPerToken.sub(userRewardPerTokenPaid)
+      ).div(ether('1'));
+
+      const expected = maxBoostedReward.mul(boostLevel).div(ether('1')).add(rewards);
+      expect(await votingStakingRewards.earned(owner)).to.be.bignumber.equal(expected);
     });
+
 
   });
 
   describe('transfers', () => {
-    beforeEach(async () => {
-      await redeploy();
-    });
+    // beforeEach(async () => {
+    //   await redeploy();
+    // });
 
-    it('should notify accepted reward amount', async () => {
-
-    });
-
-    it('should stake', async () => {
+    xit('should notify accepted reward amount', async () => {
 
     });
 
-    it('should set allowance of staker', async () => {
+    xit('should stake', async () => {
 
     });
 
-    it('should set strategy who can autostake', async () => {
+    xit('should set allowance of staker', async () => {
 
     });
 
-    it('should stake for', async () => {
+    xit('should set strategy who can autostake', async () => {
 
     });
 
-    it('should request withdraw bonded', async () => {
+    xit('should stake for', async () => {
 
     });
 
-    it('should withdraw bonded or with penalty', async () => {
+    xit('should request withdraw bonded', async () => {
 
     });
 
-    it('should withdraw unbonded', async () => {
+    xit('should withdraw bonded or with penalty', async () => {
 
     });
 
-    it('should get reward', async () => {
+    xit('should withdraw unbonded', async () => {
+
+    });
+
+    xit('should get reward', async () => {
 
     });
   });

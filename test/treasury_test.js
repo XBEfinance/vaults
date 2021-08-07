@@ -41,7 +41,6 @@ contract('Treasury', () => {
   let governanceContract;
   let governanceToken;
   let rewardsToken;
-  let governanceToken;
   let oneSplitMock;
 
   beforeEach(async () => {

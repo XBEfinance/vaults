@@ -137,8 +137,8 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
         return _totalSupply;
     }
 
-    function balanceOf(address account) public override view returns(uint256) {
-        return _balances[account];
+    function balanceOf(address _account) public override view returns(uint256) {
+        return _balances[_account];
     }
 
     function _transfer(
@@ -233,19 +233,19 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
             );
     }
 
-    function earned(address _rewardToken, address account)
+    function earned(address _rewardToken, address _account)
         public
         virtual
         onlyValidToken(_rewardToken)
         view
         returns(uint256)
     {
-        return _balances[account]
+        return _balances[_account]
           .mul(
-            rewardPerToken(_rewardToken).sub(userRewardPerTokenPaid[_rewardToken][account])
+            rewardPerToken(_rewardToken).sub(userRewardPerTokenPaid[_rewardToken][_account])
           )
           .div(1e18)
-        .add(rewards[account][_rewardToken]);
+        .add(rewards[_account][_rewardToken]);
     }
 
     function getRewardForDuration(address _rewardToken)
@@ -582,17 +582,17 @@ abstract contract BaseVault is IVaultCore, IVaultTransfers, IERC20, Ownable, Ree
             );
     }
 
-    function potentialRewardReturns(address _rewardsToken, uint256 _duration)
-        public
+    function potentialRewardReturns(address _rewardsToken, uint256 _duration, address _account)
+        external
         view
         returns(uint256)
     {
-        uint256 _rewardsAmount = _balances[msg.sender]
+        uint256 _rewardsAmount = _balances[_account]
             .mul(
                 _rewardPerTokenForDuration(_rewardsToken, _duration)
                     .sub(userRewardPerTokenPaid[_rewardsToken][msg.sender]))
             .div(1e18)
-            .add(rewards[msg.sender][_rewardsToken]);
+            .add(rewards[_account][_rewardsToken]);
         return _rewardsAmount;
     }
 }

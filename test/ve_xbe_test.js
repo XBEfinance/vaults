@@ -66,13 +66,13 @@ contract('VeXBE', (accounts) => {
       // await veXBE.configure(config.token, config.name, config.symbol, config.version);
 
       const admin = await veXBE.admin();
-      const token = await veXBE.token();
+      // const token = await veXBE.token();
       const name = await veXBE.name();
       const symbol = await veXBE.symbol();
       const version = await veXBE.version();
 
       expect(admin.toString()).to.be.equal(people.owner.toString());
-      expect(token.toString()).to.be.equal(mockXBE.address);
+      // expect(token.toString()).to.be.equal(mockXBE.address);
       expect(name.toString()).to.be.equal('Voting Escrowed XBE');
       expect(symbol.toString()).to.be.equal('veXBE');
       expect(version.toString()).to.be.equal('0.0.1');
@@ -267,7 +267,7 @@ contract('VeXBE', (accounts) => {
   describe('people.ownership', () => {
 
     it('should revert if not admin', async () => {
-      await expectRevert(veXBE.setVotingStakingRewards(people.alice, { from: people.alice }), '!admin');
+      await expectRevert(veXBE.setVoting(people.alice, { from: people.alice }), '!admin');
 
     });
 
@@ -335,17 +335,10 @@ contract('VeXBE', (accounts) => {
       console.log("here2");
 
       for (let i = 0; i < 16; i += 1) {
-        const [
-          { value: latestBlock } = {},
-          // {value: block} = {},
-          { value: balance } = {},
-          { value: totalSupply } = {},
-        ] = await Promise.allSettled([
-          eth.getBlock('latest'),
-          // time.latestBlock(),
-          veXBE.balanceOf(people.owner),
-          veXBE.totalSupply(),
-        ]);
+        const latestBlock = await  eth.getBlock('latest');
+        const balance = await veXBE.balanceOf(people.owner);
+        const totalSupply = await veXBE.totalSupply();
+
         console.log("here3");
         console.log("bias = ", bias.toString());
         console.log("slope = ", slope.toString());

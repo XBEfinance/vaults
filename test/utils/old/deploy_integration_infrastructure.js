@@ -534,11 +534,12 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       contracts.registrator.address,
       { from: owner },
     );
-    // console.log('BonusCampaign: configured');
 
     console.log('registrator address', contracts.registrator.address);
     await contracts.registrator.addSubscriber(contracts.bonusCampaign.address, { from: owner });
     await contracts.registrator.setEventSource(contracts.veXBE.address, { from: owner });
+
+    console.log('BonusCampaign: configured');
 
     await contracts.veXBE.configure(
       contracts.mockXBE.address,

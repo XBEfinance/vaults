@@ -48,7 +48,7 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         uint256 amount
     ) override external onlyRegistrator
     {
-        if (block.timestamp < periodFinish
+        if ((block.timestamp < periodFinish || periodFinish == 0)
             && (lockEnd.sub(lockStart) >= rewardsDuration)
             && _canRegister(account))
         {
@@ -153,7 +153,7 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
 
     function hasMaxBoostLevel(address account) external view returns (bool) {
         return
-            block.timestamp < periodFinish  // is campaign active
+            (block.timestamp < periodFinish || periodFinish == 0)  // is campaign active or mint not started
             && registered[account];         // is user registered
     }
 }

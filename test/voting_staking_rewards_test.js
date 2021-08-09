@@ -23,12 +23,14 @@ let treasury;
 let voting;
 let votingStakingRewards;
 let boostLogicProvider;
+let bonusCampaign;
 
 const redeploy = async () => {
   [
     mockXBE,
     veXBE,
-    boostLogicProvider,
+    bonusCampaign,
+    lockSubscription,
     treasury,
     voting,
     votingStakingRewards
@@ -53,6 +55,7 @@ const redeploy = async () => {
       return [
         "MockXBE",
         "VeXBE",
+        "BonusCampaign",
         "LockSubscription",
         "Treasury",
         "Voting",
@@ -74,9 +77,10 @@ contract('VotingStakingRewards', (accounts) => {
 
   describe('configuration and setters', () => {
 
-    // beforeEach(async () => {
-    //   await redeploy();
-    // });
+    beforeEach(async () => {
+      // await redeploy();
+      boostLogicProvider = bonusCampaign;
+    });
 
     xit('should configure properly', async () => {
       expect(await votingStakingRewards.rewardsToken()).to.be.equals(mockXBE.address);
@@ -175,6 +179,7 @@ contract('VotingStakingRewards', (accounts) => {
         { from: owner }
       );
       await treasury.toVoters();
+      await bonusCampaign.startMint();
     });
 
     xit('should get total supply', async () => {
@@ -254,13 +259,27 @@ contract('VotingStakingRewards', (accounts) => {
 
     it('should calculate max boost level', async () => {
       const maxBoostLevel = await votingStakingRewards.PCT_BASE();
-      await veXBE.createLock(amount, (await time.latest()).add(common.months('23')), { from: owner });
+      console.log('max boost level', maxBoostLevel.toString());
+      const configureTime = utilsConstants.localParams.bonusCampaign.configureTime;
+      console.log('owner can be registered', await bonusCampaign.canRegister(owner));
+      console.log('periodFinish', bonusCampaign.periodFinish() - configureTime);
+      expectEvent(await veXBE.createLock(
+          amount,
+          (configureTime).add(common.months('23')),
+          { from: owner },
+        ),
+        'Staked'
+      );
+
+      // expect(await bonusCampaign.registered(owner)).to.be.true;
+
       expect(await votingStakingRewards.calculateBoostLevel(owner))
         .to.be.bignumber.equals(maxBoostLevel);
     });
 
-    it('should get earned', async () => {
+    xit('should get earned', async () => {
       const boostLevel = await votingStakingRewards.calculateBoostLevel(owner);
+      console.log('boost level', boostLevel.toString());
       const balance = await votingStakingRewards.balanceOf(owner);
       const rewardPerToken = await votingStakingRewards.rewardPerToken();
       const userRewardPerTokenPaid = await votingStakingRewards.userRewardPerTokenPaid(owner);

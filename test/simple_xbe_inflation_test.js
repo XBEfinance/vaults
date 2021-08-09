@@ -50,7 +50,7 @@ let mockXBE;
   let weights = { };
   let sumWeights;
   let mocksLength = 3;
-  const flag = false;
+  let flag = false;
 
 
 contract('SimpleXBEInflation', (accounts) => {
@@ -98,12 +98,7 @@ contract('SimpleXBEInflation', (accounts) => {
 
 
   describe('with default params of deployment', () => {
-
-
-
     it('should configure XBEInflation properly', async () => {
-      
-    
       expect( (await simpleInflation.admin()).toString() ).to.be.equal(people.owner);
       expect( (await simpleInflation.token()).toString() ).to.be.equal(mockXBE.address);
       expect( (await simpleInflation.targetMinted()).toString() ).to.be.equal( constants.localParams.simpleXBEInflation.targetMinted.toString() );
@@ -144,10 +139,18 @@ contract('SimpleXBEInflation', (accounts) => {
       await expectRevert(simpleInflation.mintForContracts(), 'availableSupplyDistributed');
 
       const periodicEmission = await simpleInflation.periodicEmission();
+      // const timeToWait = constants.time.days(7); //periodDuration.mul(new BN('10')).add(constants.time.days('1'));
+      const periodDuration = await simpleInflation.periodDuration();
+      console.log('period duration', periodDuration);
+      console.log('periodic emission', periodicEmission);
+      const periodsPassed = (await time.latest() - await simpleInflation.startInflationTime()).div(periodDuration);
+      const totalMinted = await simpleInflation.totalMinted();
+      const plannedToMint = (periodsPassed + 1) * periodicEmission;
+      console.log('totalMinted', totalMinted);
+      console.log('plannedToMint', plannedToMint);
+      console.log('periodsPassed', periodsPassed);
 
-      const timeToWait = constants.time.days(14); //periodDuration.mul(new BN('10')).add(constants.time.days('1'));
- 
-      await time.increase(timeToWait);
+      await time.increase(delta);
 
       await simpleInflation.mintForContracts();
 

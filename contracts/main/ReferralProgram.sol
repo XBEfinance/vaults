@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "./interfaces/IRegistry.sol";
 
 contract ReferralProgram is Initializable, ReentrancyGuard {
     using SafeMath for uint256;
@@ -25,14 +26,28 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
 
     address public rootAddress;
     address public admin;
+    IRegistry public registry;
 
     modifier onlyAdmin {
       require(msg.sender == admin, "RP!admin");
       _;
     }
 
+    modifier onlyFeeDistributors {
+        address[] memory distributors = getFeeDistributors();
+        bool approved;
+        for(uint256 i = 0; i < distributors.length; i++){
+            if(msg.sender == distributors[i]){
+                approved = true;
+                break;
+            }
+        }
+        require(approved, 'RP!feeDistributor');
+        _;
+    }
+
     event RegisterUser(address user, address referrer);
-    event RewardsReceived(address user, address[] tokens, uint256[] amounts);
+    event RewardReceived(address user, address token, uint256 amount);
     event RewardsClaimed(address user, address[] tokens, uint256[] amounts);
     event TransferOwnership(address admin);
     event NewDistribution(uint256[] distribution);
@@ -40,10 +55,12 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
 
     function configure(
         address[] calldata tokenAddresses,
-        address _rootAddress
+        address _rootAddress,
+        address _registry
     ) external initializer {
         admin = msg.sender;
         require(_rootAddress != address(0), 'RProotIsZero');
+        require(_registry != address(0), 'RPregistryIsZero');
         require(tokenAddresses.length > 0, 'RPtokensNotProvided');
 
         for(uint256 i = 0; i < tokenAddresses.length; i++){
@@ -52,6 +69,8 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
 
         tokens = tokenAddresses;
 
+        registry = IRegistry(_registry);
+
         rootAddress = _rootAddress;
         users[rootAddress] = User({
             exists: true,
@@ -59,11 +78,15 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
         });
     }
 
-    // TODO: restrict usage to onlyVault
+    function getFeeDistributors() public view returns (address[] memory){
+        (address[] memory distributors,,,,,) = registry.getVaultsInfo();
+        return distributors;
+    }
+
     function registerUser(
         address referrer,
         address referral
-    ) public {
+    ) public onlyFeeDistributors {
         _registerUser(referrer, referral);
     }
 
@@ -85,10 +108,9 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
         emit RegisterUser(referral, referrer);
     }
 
-    // TODO: restrict usage by address list
     function feeReceiving(
         address _for, address _token, uint256 _amount
-    ) external {
+    ) external onlyFeeDistributors {
         // If notify reward for unregistered _for -> register with root referrer
         if(!users[_for].exists){
             _registerUser(rootAddress, _for);
@@ -96,8 +118,11 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
 
         address upline = users[_for].referrer;
         for(uint256 i = 0; i < distribution.length; i++){
-            rewards[upline][_token] = rewards[upline][_token]
+            uint256 amount = rewards[upline][_token]
                 .add(_amount.div(100).mul(distribution[i]));
+            rewards[upline][_token] = amount;
+
+            emit RewardReceived(upline, _token, amount);
             upline = users[upline].referrer;
         }
     }
@@ -143,7 +168,7 @@ contract ReferralProgram is Initializable, ReentrancyGuard {
     function changeDistribution(uint256[] calldata newDistribution) external onlyAdmin {
         uint256 sum;
         for(uint256 i = 0; i < newDistribution.length; i++){
-            sum.add(newDistribution[i]);
+            sum = sum.add(newDistribution[i]);
         }
         require(sum == 100, 'RP!fullDistribution');
         distribution = newDistribution;

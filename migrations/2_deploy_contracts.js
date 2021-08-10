@@ -123,40 +123,40 @@ let cvxCrvStrategy;
 let cvxCrvVault;
 
 const saveItem = (item, value, data) => {
-    if (typeof(value) !== 'undefined') {
-        data[item] = value;
-    }
+  if (typeof (value) !== 'undefined') {
+    data[item] = value;
+  }
 };
 
 const readItem = (itemName, data) => {
-    if (data.has(itemName)) {
-        return data[itemName];
-    }
-    return null;
+  if (data.has(itemName)) {
+    return data[itemName];
+  }
+  return null;
 };
 
 // to minimize risk of making mistake in naming
 const addrNames = {
-    mockXBE: 'mockXBE',
-    mockLpSushi: 'mockLpSushi',
-    xbeInflation: 'xbeInflation',
-    registrator: 'registrator',
-    bonusCampaign: 'bonusCampaign',
-    veXBE: 'veXBE',
-    referralProgram: 'referralProgram',
-    registry: 'registry',
-    treasury: 'treasury',
-    controller: 'controller',
-    hiveStrategy: 'hiveStrategy',
-    hiveVault: 'hiveVault',
-    sushiStrategy: 'sushiStrategy',
-    sushiVault: 'sushiVault',
-    cvxStrategy: 'cvxStrategy',
-    cvxVault: 'cvxVault',
-    cvxCrvStrategy: 'cvxCrvStrategy',
-    cvxCrvVault: 'cvxCrvVault',
-    voting: 'voting',
-    votingStakingRewards: 'votingStakingRewards',
+  mockXBE: 'mockXBE',
+  mockLpSushi: 'mockLpSushi',
+  xbeInflation: 'xbeInflation',
+  registrator: 'registrator',
+  bonusCampaign: 'bonusCampaign',
+  veXBE: 'veXBE',
+  referralProgram: 'referralProgram',
+  registry: 'registry',
+  treasury: 'treasury',
+  controller: 'controller',
+  hiveStrategy: 'hiveStrategy',
+  hiveVault: 'hiveVault',
+  sushiStrategy: 'sushiStrategy',
+  sushiVault: 'sushiVault',
+  cvxStrategy: 'cvxStrategy',
+  cvxVault: 'cvxVault',
+  cvxCrvStrategy: 'cvxCrvStrategy',
+  cvxCrvVault: 'cvxCrvVault',
+  voting: 'voting',
+  votingStakingRewards: 'votingStakingRewards',
 };
 
 const saveAddresses = () => {
@@ -288,36 +288,36 @@ const deployContracts = async (deployer, params, owner) => {
   const sushiSwapFactory = await IUniswapV2Factory.at(sushiSwap.sushiswapFactory);
   console.log('sushiSwapFactory address: ', sushiSwapFactory.address);
 
-//  // enough for him
-//  await mockXBE.mintSender(ether('1000'), {from: owner});
+  //  // enough for him
+  //  await mockXBE.mintSender(ether('1000'), {from: owner});
 
-//// not required now
-//  await mockXBE.approve(
-//    sushiSwapRouter.address,
-//    params.sushiswapPair.xbeAmountForPair,
-//    { from: owner },
-//  );
+  /// / not required now
+  //  await mockXBE.approve(
+  //    sushiSwapRouter.address,
+  //    params.sushiswapPair.xbeAmountForPair,
+  //    { from: owner },
+  //  );
 
-//// already enough
-//  await weth9.approve(
-//    sushiSwapRouter.address,
-//    params.sushiswapPair.wethAmountForPair,
-//    { from: owner },
-//  );
+  /// / already enough
+  //  await weth9.approve(
+  //    sushiSwapRouter.address,
+  //    params.sushiswapPair.wethAmountForPair,
+  //    { from: owner },
+  //  );
 
-//  // no need to add liquidity each time
-//  await sushiSwapRouter.addLiquidity(
-//    mockXBE.address,
-//    weth9.address,
-//    params.sushiswapPair.xbeAmountForPair,
-//    params.sushiswapPair.wethAmountForPair,
-//    params.sushiswapPair.xbeAmountForPair,
-//    params.sushiswapPair.wethAmountForPair,
-//    owner,
-//    now.add(new BN('3600')),
-//  );
+  //  // no need to add liquidity each time
+  //  await sushiSwapRouter.addLiquidity(
+  //    mockXBE.address,
+  //    weth9.address,
+  //    params.sushiswapPair.xbeAmountForPair,
+  //    params.sushiswapPair.wethAmountForPair,
+  //    params.sushiswapPair.xbeAmountForPair,
+  //    params.sushiswapPair.wethAmountForPair,
+  //    owner,
+  //    now.add(new BN('3600')),
+  //  );
 
-// it is the same each time, bcause mockXBE & weth9 are fixed
+  // it is the same each time, bcause mockXBE & weth9 are fixed
   mockLpSushi = await IUniswapV2Pair.at(
     await sushiSwapFactory.getPair(
       mockXBE.address,
@@ -325,7 +325,7 @@ const deployContracts = async (deployer, params, owner) => {
     ),
   );
 
-//  mockLpSushi = await IUniswapV2Pair.at(addressStore.rinkeby.mockLpSushi);
+  //  mockLpSushi = await IUniswapV2Pair.at(addressStore.rinkeby.mockLpSushi);
   console.log('mockLpSushi address: ', mockLpSushi.address);
 
   // deploy voting
@@ -446,7 +446,7 @@ const configureContracts = async (params, owner) => {
         [ // _rewardTokens
           dependentsAddresses.curve.CRV,
           dependentsAddresses.convex.cvx, // ???????
-          mockXBE.address
+          mockXBE.address,
         ],
         'Hive', // _namePostfix
         'HV', // _symbolPostfix
@@ -488,7 +488,7 @@ const configureContracts = async (params, owner) => {
         [ // _rewardTokens
           dependentsAddresses.convex.cvxCrv, // ???????
           mockXBE.address,
-//          dependentsAddresses.convex.cvxCrv, // ???????
+          //          dependentsAddresses.convex.cvxCrv, // ???????
         ],
         'cvxCRV', // _namePostfix
         'CR', // _symbolPostfix
@@ -534,7 +534,7 @@ const configureContracts = async (params, owner) => {
         [ // _rewardTokens
           dependentsAddresses.convex.cvxCrv, // ???????
           mockXBE.address,
-//          dependentsAddresses.convex.cvxCrv, // ???????
+          //          dependentsAddresses.convex.cvxCrv, // ???????
         ],
         'XC', // _namePostfix
         'XC', // _symbolPostfix
@@ -552,8 +552,8 @@ const configureContracts = async (params, owner) => {
         // _poolSettings
         [
           mockLpSushi.address,
-//          dependentsAddresses.convex.chef, // convexMasterChef
-//          ZERO,
+          //          dependentsAddresses.convex.chef, // convexMasterChef
+          //          ZERO,
           dependentsAddresses.convex.cvx, // ???
         ],
       ],
@@ -565,7 +565,7 @@ const configureContracts = async (params, owner) => {
         mockXBE.address, // _tokenToAutostake
         votingStakingRewards.address, // _votingStakingRewards
         [ // _rewardTokens
-//          dependentsAddresses.convex.cvx,
+          //          dependentsAddresses.convex.cvx,
           mockXBE.address,
         ],
         'SH', // _namePostfix
@@ -584,14 +584,14 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-   console.log('ReferralProgram configured...');
+  console.log('ReferralProgram configured...');
 
   await registry.configure(
     owner,
     { from: owner },
   );
 
-   console.log('Registry configured...');
+  console.log('Registry configured...');
 
   await treasury.configure(
     voting.address,
@@ -604,7 +604,7 @@ const configureContracts = async (params, owner) => {
     { from: owner },
   );
 
-   console.log('Treasury configured...');
+  console.log('Treasury configured...');
 
   await controller.configure(
     treasury.address,
@@ -634,7 +634,7 @@ const configureContracts = async (params, owner) => {
       { from: owner },
     );
 
-     console.log('Controller: strategy approved...');
+    console.log('Controller: strategy approved...');
 
     await controller.setStrategy(
       item.token,
@@ -658,8 +658,15 @@ const configureContracts = async (params, owner) => {
     );
 
     await item.vault.setRewardsDistribution(
-        item.strategy.address,
-        { from: owner },
+      item.strategy.address,
+      { from: owner },
+    );
+
+    await registry.addVault(
+      item.vault.address,
+      {
+        from: owner,
+      },
     );
 
     console.log(`${item.name}Vault: configured`);
@@ -688,7 +695,6 @@ const configureContracts = async (params, owner) => {
 
   console.log('XBEInflation: configured');
 
-
   await bonusCampaign.configure(
     mockXBE.address,
     veXBE.address,
@@ -703,7 +709,7 @@ const configureContracts = async (params, owner) => {
 
   await bonusCampaign.startMint({ from: owner });
 
-   console.log('BonusCampaign: configured');
+  console.log('BonusCampaign: configured');
 
   await veXBE.configure(
     mockXBE.address,
@@ -744,7 +750,7 @@ const configureContracts = async (params, owner) => {
       sushiVault.address,
       cvxVault.address,
       cvxCrvVault.address,
-      hiveVault.address
+      hiveVault.address,
     ],
   );
 
@@ -943,9 +949,9 @@ module.exports = function (deployer, network, accounts) {
         sushiSwap: sushiSwapAddresses.rinkeby,
         ...params,
       };
-      // await deployContracts(deployer, params, owner);
-      // await distributeTokens(params, alice, bob, owner);
-      // await configureContracts(params, owner);
+      await deployContracts(deployer, params, owner);
+      await distributeTokens(params, alice, bob, owner);
+      await configureContracts(params, owner);
     } else if (network === 'mainnet') {
       // await deployVaultsToMainnet();
     } else {

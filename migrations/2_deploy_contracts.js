@@ -580,6 +580,7 @@ const configureContracts = async (params, owner) => {
   await referralProgram.configure(
     [mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
     treasury.address,
+    registry.address,
     { from: owner },
   );
 

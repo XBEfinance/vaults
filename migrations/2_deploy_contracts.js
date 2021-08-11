@@ -93,47 +93,20 @@ const sushiSwapAddresses = {
   },
 };
 
-let mockXBE;
-let mockLpSushi;
-let mockTokenForSushiPair;
-let weth9;
+// const saveItem = (item, value, data) => {
+//   if (typeof (value) !== 'undefined') {
+//     data[item] = value;
+//   }
+// };
+//
+// const readItem = (itemName, data) => {
+//   if (data.has(itemName)) {
+//     return data[itemName];
+//   }
+//   return null;
+// };
 
-let xbeInflation;
-let registrator;
-let bonusCampaign;
-let veXBE;
-let controller;
-let treasury;
-let referralProgram;
-let registry;
-
-let voting;
-let votingStakingRewards;
-
-let hiveStrategy;
-let hiveVault;
-
-let sushiStrategy;
-let sushiVault;
-
-let cvxStrategy;
-let cvxVault;
-
-let cvxCrvStrategy;
-let cvxCrvVault;
-
-const saveItem = (item, value, data) => {
-  if (typeof (value) !== 'undefined') {
-    data[item] = value;
-  }
-};
-
-const readItem = (itemName, data) => {
-  if (data.has(itemName)) {
-    return data[itemName];
-  }
-  return null;
-};
+let contracts = {};
 
 // to minimize risk of making mistake in naming
 const addrNames = {
@@ -160,28 +133,36 @@ const addrNames = {
 };
 
 const saveAddresses = () => {
-  const jsonAddressData = JSON.stringify({
-    mockXBE: mockXBE.address,
-    mockLpSushi: mockLpSushi.address,
-    xbeInflation: xbeInflation.address,
-    registrator: registrator.address,
-    bonusCampaign: bonusCampaign.address,
-    veXBE: veXBE.address,
-    voting: voting.address,
-    votingStakingRewards: votingStakingRewards.address,
+  const wrapAddress = (value) => {
+    if (typeof value === 'undefined') {
+      return '';
+    }
 
-    referralProgram: referralProgram.address,
-    registry: registry.address,
-    treasury: treasury.address,
-    controller: controller.address,
-    hiveStrategy: hiveStrategy.address,
-    hiveVault: hiveVault.address,
-    sushiStrategy: sushiStrategy.address,
-    sushiVault: sushiVault.address,
-    cvxStrategy: cvxStrategy.address,
-    cvxVault: cvxVault.address,
-    cvxCrvStrategy: cvxCrvStrategy.address,
-    cvxCrvVault: cvxCrvVault.address,
+    return value.address;
+  };
+
+  const jsonAddressData = JSON.stringify({
+    mockXBE: wrapAddress(contracts.mockXBE),
+    mockLpSushi: wrapAddress(contracts.mockLpSushi),
+    xbeInflation: wrapAddress(contracts.xbeInflation),
+    registrator: wrapAddress(contracts.registrator),
+    bonusCampaign: wrapAddress(contracts.bonusCampaign),
+    veXBE: wrapAddress(contracts.veXBE),
+    voting: wrapAddress(contracts.voting),
+    votingStakingRewards: wrapAddress(contracts.votingStakingRewards),
+    referralProgram: wrapAddress(contracts.referralProgram),
+    registry: wrapAddress(contracts.registry),
+    treasury: wrapAddress(contracts.treasury),
+    controller: wrapAddress(contracts.controller),
+
+    hiveStrategy: wrapAddress(contracts.hiveStrategy),
+    hiveVault: wrapAddress(contracts.hiveVault),
+    sushiStrategy: wrapAddress(contracts.sushiStrategy),
+    sushiVault: wrapAddress(contracts.sushiVault),
+    cvxStrategy: wrapAddress(contracts.cvxStrategy),
+    cvxVault: wrapAddress(contracts.cvxVault),
+    cvxCrvStrategy: wrapAddress(contracts.cvxCrvStrategy),
+    cvxCrvVault: wrapAddress(contracts.cvxCrvVault),
   });
   fs.writeFileSync('addresses.json', jsonAddressData);
 };
@@ -199,139 +180,158 @@ const deployContracts = async (deployer, params, owner) => {
   const { sushiSwap } = params;
   const now = getNowBN();
 
-  registry = await deployer.deploy(
-    Registry,
-    { from: owner },
-  );
+  const needToDeployMainContracts =   true;
+  const needToDeployStrategies =      true;
+  const needToAddSushiswapLiquidity = false;  // not required now
+  const needTomintOwnerMockXBE =      true;  // enough for him
 
-  referralProgram = await deployer.deploy(
-    ReferralProgram,
-    { from: owner },
-  );
+  if (needToDeployMainContracts) {
+    contracts.registry = await deployer.deploy(
+      Registry,
+      { from: owner },
+    );
 
-  treasury = await deployer.deploy(
-    Treasury,
-    { from: owner },
-  );
+    contracts.referralProgram = await deployer.deploy(
+      ReferralProgram,
+      { from: owner },
+    );
 
-  controller = await deployer.deploy(
-    Controller,
-    { from: owner },
-  );
+    contracts.treasury = await deployer.deploy(
+      Treasury,
+      { from: owner },
+    );
 
-  const strategiesAndVaults = [
-    HiveStrategy,
-    CVXStrategy,
-    CvxCrvStrategy,
-    SushiStrategy,
-    HiveVault,
-    CVXVault,
-    CvxCrvVault,
-    SushiVault,
-  ];
+    contracts.controller = await deployer.deploy(
+      Controller,
+      { from: owner },
+    );
 
-  const deployStrategiesAndVaults = async (items) => {
-    const result = [];
-    for (let i = 0; i < items.length; i += 1) {
-      result.push(
-        await deployer.deploy(
-          items[i],
-          { from: owner },
-        ),
+    // use deployed instance
+    contracts.mockXBE = await MockToken.at(addressStore.rinkeby.xbe);
+    console.log('mockXBE acquired ', contracts.mockXBE.address);
+
+    // get weth ad address
+    contracts.weth9 = await WETH9.at(addressStore.rinkeby.weth);
+    console.log('WETH acquired');
+    let ownerEthBalance = await contracts.weth9.balanceOf(owner);
+    if ((new BN(ownerEthBalance)).lt(ether('1'))) {
+      await contracts.weth9.deposit({ from: owner, value: ether('1') });
+      ownerEthBalance = await contracts.weth9.balanceOf(owner);
+      console.log('WETH owner balance deposited, new balance: ', new BN(ownerEthBalance).toString());
+    } else {
+      console.log('owner eth balance is enough:', new BN(ownerEthBalance).toString(), 'no deposit required');
+    }
+
+    // deploy bonus campaign xbeinflation
+    contracts.xbeInflation = await deployer.deploy(SimpleXbeInflation, { from: owner });
+
+    contracts.registrator = await deployer.deploy(Registrator, { from: owner });
+
+    // deploy bonus campaign
+    contracts.bonusCampaign = await deployer.deploy(BonusCampaign, { from: owner });
+
+    // deploy voting escrow
+    contracts.veXBE = await deployer.deploy(VeXBE, { from: owner });
+
+    contracts.sushiSwapRouter = await IUniswapV2Router02.at(sushiSwap.sushiswapRouter);
+    console.log('sushiSwapRouter address: ', contracts.sushiSwapRouter.address);
+    contracts.sushiSwapFactory = await IUniswapV2Factory.at(sushiSwap.sushiswapFactory);
+    console.log('sushiSwapFactory address: ', contracts.sushiSwapFactory.address);
+
+    if (needTomintOwnerMockXBE) { // false
+      await contracts.mockXBE.mintSender(ether('1000'), {from: owner});
+    }
+
+    if (needToAddSushiswapLiquidity) {
+      await contracts.mockXBE.approve(
+        contracts.sushiSwapRouter.address,
+        params.sushiswapPair.xbeAmountForPair,
+        { from: owner },
+      );
+      await contracts.weth9.approve(
+        contracts.sushiSwapRouter.address,
+        params.sushiswapPair.wethAmountForPair,
+        { from: owner },
+      );
+      // no need to add liquidity each time
+      await sushiSwapRouter.addLiquidity(
+        contracts.mockXBE.address,
+        contracts.weth9.address,
+        params.sushiswapPair.xbeAmountForPair,
+        params.sushiswapPair.wethAmountForPair,
+        params.sushiswapPair.xbeAmountForPair,
+        params.sushiswapPair.wethAmountForPair,
+        owner,
+        now.add(new BN('3600')),
       );
     }
 
-    return Promise.all(result);
-  };
+    // it is the same each time, bcause mockXBE & weth9 are fixed
+    contracts.mockLpSushi = await IUniswapV2Pair.at(
+      await contracts.sushiSwapFactory.getPair(
+        contracts.mockXBE.address,
+        contracts.weth9.address,
+      ),
+    );
 
-  [
-    hiveStrategy,
-    cvxStrategy,
-    cvxCrvStrategy,
-    sushiStrategy,
-    hiveVault,
-    cvxVault,
-    cvxCrvVault,
-    sushiVault,
-  ] = await deployStrategiesAndVaults(strategiesAndVaults);
-  // !-----------------------------------
+    contracts.mockLpSushi = await IUniswapV2Pair.at(addressStore.rinkeby.mockLpSushi);
+    console.log('mockLpSushi address: ', contracts.mockLpSushi.address);
 
-  // use deployed instance
-  mockXBE = await MockToken.at(addressStore.rinkeby.xbe);
-  console.log('mockXBE acquired ', mockXBE.address);
+    // deploy voting
+    contracts.voting = await deployer.deploy(Voting, { from: owner });
 
-  // get weth ad address
-  weth9 = await WETH9.at(addressStore.rinkeby.weth);
-  console.log('WETH acquired');
-  let ownerEthBalance = await weth9.balanceOf(owner);
-  if ((new BN(ownerEthBalance)).lt(ether('1'))) {
-    await weth9.deposit({ from: owner, value: ether('1') });
-    ownerEthBalance = await weth9.balanceOf(owner);
-    console.log('WETH owner balance deposited, new balance: ', new BN(ownerEthBalance).toString());
-  } else {
-    console.log('owner eth balance is enough:', new BN(ownerEthBalance).toString(), 'no deposit required');
+    // voting will be deployed separately
+    contracts.votingStakingRewards = await deployer.deploy(VotingStakingRewards, { from: owner });
+    console.log('votingStakingRewards address: ', contracts.votingStakingRewards.address);
   }
 
-  // deploy bonus campaign xbeinflation
-  xbeInflation = await deployer.deploy(SimpleXbeInflation, { from: owner });
+  if (needToDeployStrategies) {
+    const strategiesAndVaults = [
+      HiveStrategy,
+      CVXStrategy,
+      CvxCrvStrategy,
+      SushiStrategy,
+      HiveVault,
+      CVXVault,
+      CvxCrvVault,
+      SushiVault,
+    ];
 
-  registrator = await deployer.deploy(Registrator, { from: owner });
+    const deployStrategiesAndVaults = async (items) => {
+      const result = [];
+      for (let i = 0; i < items.length; i += 1) {
+        result.push(
+          await deployer.deploy(
+            items[i],
+            { from: owner },
+          ),
+        );
+      }
 
-  // deploy bonus campaign
-  bonusCampaign = await deployer.deploy(BonusCampaign, { from: owner });
+      return Promise.all(result);
+    };
 
-  // deploy voting escrow
-  veXBE = await deployer.deploy(VeXBE, { from: owner });
+    const [
+      hiveStrategy,
+      cvxStrategy,
+      cvxCrvStrategy,
+      sushiStrategy,
+      hiveVault,
+      cvxVault,
+      cvxCrvVault,
+      sushiVault,
+    ] = await deployStrategiesAndVaults(strategiesAndVaults);
 
-  const sushiSwapRouter = await IUniswapV2Router02.at(sushiSwap.sushiswapRouter);
-  console.log('sushiSwapRouter address: ', sushiSwapRouter.address);
-  const sushiSwapFactory = await IUniswapV2Factory.at(sushiSwap.sushiswapFactory);
-  console.log('sushiSwapFactory address: ', sushiSwapFactory.address);
-
-  //  // enough for him
-  //  await mockXBE.mintSender(ether('1000'), {from: owner});
-
-  /// / not required now
-  //  await mockXBE.approve(
-  //    sushiSwapRouter.address,
-  //    params.sushiswapPair.xbeAmountForPair,
-  //    { from: owner },
-  //  );
-
-  /// / already enough
-  //  await weth9.approve(
-  //    sushiSwapRouter.address,
-  //    params.sushiswapPair.wethAmountForPair,
-  //    { from: owner },
-  //  );
-
-  //  // no need to add liquidity each time
-  //  await sushiSwapRouter.addLiquidity(
-  //    mockXBE.address,
-  //    weth9.address,
-  //    params.sushiswapPair.xbeAmountForPair,
-  //    params.sushiswapPair.wethAmountForPair,
-  //    params.sushiswapPair.xbeAmountForPair,
-  //    params.sushiswapPair.wethAmountForPair,
-  //    owner,
-  //    now.add(new BN('3600')),
-  //  );
-
-  // it is the same each time, bcause mockXBE & weth9 are fixed
-  mockLpSushi = await IUniswapV2Pair.at(
-    await sushiSwapFactory.getPair(
-      mockXBE.address,
-      weth9.address,
-    ),
-  );
-
-  //  mockLpSushi = await IUniswapV2Pair.at(addressStore.rinkeby.mockLpSushi);
-  console.log('mockLpSushi address: ', mockLpSushi.address);
-
-  // deploy voting
-  voting = await deployer.deploy(Voting, { from: owner });
-  // voting will be deployed separately
-  votingStakingRewards = await deployer.deploy(VotingStakingRewards, { from: owner });
+    contracts.hiveStrategy = hiveStrategy;
+    contracts.hiveVault = hiveVault;
+    contracts.cvxStrategy = cvxStrategy;
+    contracts.cvxVault = cvxVault;
+    contracts.cvxCrvStrategy = cvxCrvStrategy;
+    contracts.cvxCrvVault = cvxCrvVault;
+    contracts.sushiStrategy = sushiStrategy;
+    contracts.sushiVault = sushiVault;
+    // !-----------------------------------
+  }
 
   saveAddresses();
 };
@@ -373,54 +373,65 @@ const distributeTokens = async (params, alice, bob, owner) => {
   // });
 };
 
+const loadContracts = async () => {
+  contracts.mockXBE = await MockToken.at(getSavedAddress('mockXBE'));
+
+  contracts.voting = await Voting.at(getSavedAddress('voting'));
+  contracts.votingStakingRewards = await VotingStakingRewards.at(getSavedAddress('votingStakingRewards'));
+
+  contracts.registrator = await Registrator.at(getSavedAddress('registrator'));
+  contracts.xbeInflation = await SimpleXbeInflation.at(getSavedAddress('xbeInflation'));
+
+  contracts.bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
+  contracts.veXBE = await VeXBE.at(getSavedAddress('veXBE'));
+  //
+  contracts.referralProgram = await ReferralProgram.at(getSavedAddress('referralProgram'));
+  contracts.registry = await Registry.at(getSavedAddress('registry'));
+  contracts.treasury = await Treasury.at(getSavedAddress('treasury'));
+  contracts.controller = await Controller.at(getSavedAddress('controller'));
+
+  contracts.hiveVault = await HiveVault.at(getSavedAddress('hiveVault'));
+  contracts.hiveStrategy = await HiveStrategy.at(getSavedAddress('hiveStrategy'));
+
+  contracts.cvxCrvVault = await CvxCrvVault.at(getSavedAddress('cvxCrvVault'));
+  contracts.cvxCrvStrategy = await CvxCrvStrategy.at(getSavedAddress('cvxCrvStrategy'));
+
+  contracts.cvxVault = await CVXVault.at(getSavedAddress('cvxVault'));
+  contracts.cvxStrategy = await CVXStrategy.at(getSavedAddress('cvxStrategy'));
+
+  contracts.sushiVault = await SushiVault.at(getSavedAddress('sushiVault'));
+  contracts.sushiStrategy = await SushiStrategy.at(getSavedAddress('sushiStrategy'));
+
+  contracts.mockLpSushi = await IUniswapV2Pair.at(getSavedAddress('mockLpSushi'));
+};
+
 const configureContracts = async (params, owner) => {
   const { dependentsAddresses, sushiSwap } = params;
   // const now = await time.latest();
   const now = getNowBN();
 
-  mockXBE = await MockToken.at(getSavedAddress('mockXBE'));
+  const needToConfigure = {
+    strategiesAndVaults: false,
+    mainContracts: true,
+  };
 
-  voting = await Voting.at(getSavedAddress('voting'));
-  votingStakingRewards = await VotingStakingRewards.at(getSavedAddress('votingStakingRewards'));
-  // bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
-  registrator = await Registrator.at(getSavedAddress('registrator'));
-  xbeInflation = await SimpleXbeInflation.at(getSavedAddress('xbeInflation'));
+  const needToStart = {
+    bonusCampaign: true,
+    inflation: true,
+  }
 
-  bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
-  veXBE = await VeXBE.at(getSavedAddress('veXBE'));
-  //
-  referralProgram = await ReferralProgram.at(getSavedAddress('referralProgram'));
-  registry = await Registry.at(getSavedAddress('registry'));
-  treasury = await Treasury.at(getSavedAddress('treasury'));
-  controller = await Controller.at(getSavedAddress('controller'));
-
-  hiveVault = await HiveVault.at(getSavedAddress('hiveVault'));
-  hiveStrategy = await HiveStrategy.at(getSavedAddress('hiveStrategy'));
-
-  cvxCrvVault = await CvxCrvVault.at(getSavedAddress('cvxCrvVault'));
-  cvxCrvStrategy = await CvxCrvStrategy.at(getSavedAddress('cvxCrvStrategy'));
-
-  cvxVault = await CVXVault.at(getSavedAddress('cvxVault'));
-  cvxStrategy = await CVXStrategy.at(getSavedAddress('cvxStrategy'));
-
-  sushiVault = await SushiVault.at(getSavedAddress('sushiVault'));
-  sushiStrategy = await SushiStrategy.at(getSavedAddress('sushiStrategy'));
-
-  mockLpSushi = await IUniswapV2Pair.at(getSavedAddress('mockLpSushi'));
+  await loadContracts();
 
   const strategiesAndVaults = [
     {
       name: 'hive',
-      vault: hiveVault,
-      strategy: hiveStrategy,
+      vault: contracts.hiveVault,
+      strategy: contracts.hiveStrategy,
       strategyConfigArgs: [
         dependentsAddresses.convex.pools[0].lptoken, // _wantAddress,
-        controller.address, // _controllerAddress,
-        hiveVault.address, // _vaultAddress,
+        contracts.controller.address, // _controllerAddress,
+        contracts.hiveVault.address, // _vaultAddress,
         owner, // _governance,
-        // mockXBE.address, // _tokenToAutostake,
-        // voting.address,
-        // ZERO_ADDRESS, // _voting,
         // _poolSettings
         [
           dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
@@ -433,108 +444,98 @@ const configureContracts = async (params, owner) => {
         ],
       ],
       vaultConfigArgs: [
-        dependentsAddresses.convex.pools[0].lptoken, // _wantAddress,
-        controller.address, // _initialController
-        owner, // _governance
-        days('7'), // _rewardsDuration // TODO: to reconcile with customer
-        mockXBE.address, // tokenToAutostake,
-        votingStakingRewards.address, // votingStakingRewards,
-        true, // enableFees ? false
-        owner, // teamWallet ? address(0) ?
-        referralProgram.address, // _referralProgram
-        treasury.address, // _treasury
-        [ // _rewardTokens
+        dependentsAddresses.convex.pools[0].lptoken,  // _wantAddress,
+        contracts.controller.address,                 // _initialController
+        owner,                                        // _governance
+        days('7'),                                 // _rewardsDuration
+        contracts.mockXBE.address,                    // tokenToAutostake,
+        contracts.votingStakingRewards.address,       // votingStakingRewards,
+        true,                                         // enableFees ? false
+        owner,                                        // teamWallet ? address(0) ?
+        contracts.referralProgram.address,            // _referralProgram
+        contracts.treasury.address,                   // _treasury
+        [                                             // _rewardTokens
           dependentsAddresses.curve.CRV,
           dependentsAddresses.convex.cvx, // ???????
-          mockXBE.address,
+          contracts.mockXBE.address,
         ],
         'Hive', // _namePostfix
-        'HV', // _symbolPostfix
+        'HV',   // _symbolPostfix
       ],
       token: dependentsAddresses.convex.pools[0].lptoken,
     },
     {
       name: 'cvxCrv',
-      vault: cvxCrvVault,
-      strategy: cvxCrvStrategy,
+      vault: contracts.cvxCrvVault,
+      strategy: contracts.cvxCrvStrategy,
       strategyConfigArgs: [
-        dependentsAddresses.convex.cvxCrv, // _wantAddress,
-        controller.address, // _controllerAddress,
-        cvxCrvVault.address, // _vaultAddress,
-        owner, // _governance,
-        // voting.address,
-        ZERO_ADDRESS, // _voting,
+        dependentsAddresses.convex.cvxCrv,      // _wantAddress,
+        contracts.controller.address,           // _controllerAddress,
+        contracts.cvxCrvVault.address,          // _vaultAddress,
+        owner,                                  // _governance,
+        ZERO_ADDRESS,                           // _voting,
         // _poolSettings
         [
           dependentsAddresses.curve.pool_data.mock_pool.lp_token_address, // lpCurve
-          dependentsAddresses.convex.cvxCrvRewards, // cvxCRVRewards
-          dependentsAddresses.convex.crvDepositor, // crvDepositor
-          dependentsAddresses.convex.booster, // convexBooster
-          dependentsAddresses.convex.cvxCrv, // cvxCrvToken
-          dependentsAddresses.curve.CRV, // crvToken
+          dependentsAddresses.convex.cvxCrvRewards,                       // cvxCRVRewards
+          dependentsAddresses.convex.crvDepositor,                        // crvDepositor
+          dependentsAddresses.convex.booster,                             // convexBooster
+          dependentsAddresses.convex.cvxCrv,                              // cvxCrvToken
+          dependentsAddresses.curve.CRV,                                  // crvToken
         ],
       ],
       vaultConfigArgs: [
-        dependentsAddresses.convex.cvxCrv, // _initialToken
-        controller.address, // _initialController
-        owner, // _governance
-        days('7'), // _rewardsDuration // TODO: to reconcile with customer
-        mockXBE.address, // tokenToAutostake,
-        votingStakingRewards.address, // votingStakingRewards,
-        true, // enableFees ? false
-        owner, // teamWallet ? address(0) ?
-        referralProgram.address, // _referralProgram
-        treasury.address, // _treasury
+        dependentsAddresses.convex.cvxCrv,      // _initialToken
+        contracts.controller.address,           // _initialController
+        owner,                                  // _governance
+        days('7'),                           // _rewardsDuration
+        contracts.mockXBE.address,              // tokenToAutostake,
+        contracts.votingStakingRewards.address, // votingStakingRewards,
+        true,                                   // enableFees ? false
+        owner,                                  // teamWallet ? address(0) ?
+        contracts.referralProgram.address,      // _referralProgram
+        contracts.treasury.address,             // _treasury
         [ // _rewardTokens
-          dependentsAddresses.convex.cvxCrv, // ???????
-          mockXBE.address,
-          //          dependentsAddresses.convex.cvxCrv, // ???????
+          dependentsAddresses.convex.cvxCrv,    // ???????
+          contracts.mockXBE.address,
         ],
         'cvxCRV', // _namePostfix
-        'CR', // _symbolPostfix
+        'CR',     // _symbolPostfix
       ],
       token: dependentsAddresses.convex.cvxCrv,
     },
     {
       name: 'cvx',
-      vault: cvxVault,
-      strategy: cvxStrategy,
+      vault: contracts.cvxVault,
+      strategy: contracts.cvxStrategy,
       strategyConfigArgs: [
-        dependentsAddresses.convex.cvx, // _wantAddress,
-        controller.address, // _controllerAddress,
-        cvxVault.address, // _vaultAddress,
-        owner, // _governance,
-        // voting.address,
-        // ZERO_ADDRESS, // _voting,
+        dependentsAddresses.convex.cvx,         // _wantAddress,
+        contracts.controller.address,           // _controllerAddress,
+        contracts.cvxVault.address,             // _vaultAddress,
+        owner,                                  // _governance,
         // _poolSettings
         [
-          dependentsAddresses.convex.cvxRewards, // cvxRewards
-          dependentsAddresses.convex.cvx, // cvxToken
-          ZERO, // poolIndex
+          dependentsAddresses.convex.cvxRewards,// cvxRewards
+          dependentsAddresses.convex.cvx,       // cvxToken
+          ZERO,                                 // poolIndex
         ],
 
       ],
       token: dependentsAddresses.convex.cvx,
-      //       dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
-      //       controller.address,
-      //       owner,
-      //       referralProgram.address,
-      //       treasury.address,
       vaultConfigArgs: [
-        dependentsAddresses.convex.cvx, // _initialToken
-        controller.address, // _initialController
-        owner, // _governance
-        days('7'),
-        mockXBE.address, // tokenToAutostake,
-        votingStakingRewards.address, // votingStakingRewards,
-        true,
-        owner, // teamWallet ? address(0) ?
-        referralProgram.address, // _referralProgram
-        treasury.address, // _treasury
+        dependentsAddresses.convex.cvx,         // _initialToken
+        contracts.controller.address,           // _initialController
+        owner,                                  // _governance
+        days('7'),                           // _rewardsDuration
+        contracts.mockXBE.address,              // tokenToAutostake,
+        contracts.votingStakingRewards.address, // votingStakingRewards,
+        true,                                   // enableFees ? false
+        owner,                                  // teamWallet ? address(0) ?
+        contracts.referralProgram.address,      // _referralProgram
+        contracts.treasury.address,             // _treasury
         [ // _rewardTokens
           dependentsAddresses.convex.cvxCrv, // ???????
-          mockXBE.address,
-          //          dependentsAddresses.convex.cvxCrv, // ???????
+          contracts.mockXBE.address,
         ],
         'XC', // _namePostfix
         'XC', // _symbolPostfix
@@ -542,219 +543,231 @@ const configureContracts = async (params, owner) => {
     },
     {
       name: 'sushi',
-      vault: sushiVault,
-      strategy: sushiStrategy,
+      vault: contracts.sushiVault,
+      strategy: contracts.sushiStrategy,
       strategyConfigArgs: [
-        mockLpSushi.address, // _wantAddress,
-        controller.address, // _controllerAddress,
-        sushiVault.address, // _vaultAddress,
-        owner, // _governance,
+        contracts.mockLpSushi.address,          // _wantAddress,
+        contracts.controller.address,           // _controllerAddress,
+        contracts.sushiVault.address,           // _vaultAddress,
+        owner,                                  // _governance,
         // _poolSettings
         [
-          mockLpSushi.address,
-          //          dependentsAddresses.convex.chef, // convexMasterChef
-          //          ZERO,
+          contracts.mockLpSushi.address,
           dependentsAddresses.convex.cvx, // ???
         ],
       ],
       vaultConfigArgs: [
-        mockLpSushi.address, // _initialToken
-        controller.address, // _initialController
-        owner, // _governance
-        days('7'), // _rewardsDuration // TODO: to reconcile with customer
-        mockXBE.address, // _tokenToAutostake
-        votingStakingRewards.address, // _votingStakingRewards
+        contracts.mockLpSushi.address,          // _initialToken
+        contracts.controller.address,           // _initialController
+        owner,                                  // _governance
+        days('7'),                           // _rewardsDuration
+        contracts.mockXBE.address,              // _tokenToAutostake
+        contracts.votingStakingRewards.address, // _votingStakingRewards
         [ // _rewardTokens
-          //          dependentsAddresses.convex.cvx,
-          mockXBE.address,
+          contracts.mockXBE.address,
         ],
         'SH', // _namePostfix
         'SH', // _symbolPostfix
       ],
-      token: mockLpSushi.address,
+      token: contracts.mockLpSushi.address,
     },
   ];
 
   console.log('Starting configuration...');
 
-  await referralProgram.configure(
-    [mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
-    treasury.address,
-    registry.address,
-    { from: owner },
-  );
+  if (needToConfigure.strategiesAndVaults) {
+    console.log('Vaults and Strategies configuration...');
+    for (const item of strategiesAndVaults) {
+      console.log(`Configuring ${item.name}...`);
 
-  console.log('ReferralProgram configured...');
+      await contracts.controller.setVault(
+        item.token,
+        item.vault.address,
+        { from: owner },
+      );
 
-  await registry.configure(
-    owner,
-    { from: owner },
-  );
+      console.log('Controller: vault added...');
 
-  console.log('Registry configured...');
+      await contracts.controller.setApprovedStrategy(
+        item.token,
+        item.strategy.address,
+        true,
+        { from: owner },
+      );
 
-  await treasury.configure(
-    voting.address,
-    votingStakingRewards.address,
-    mockXBE.address,
-    dependentsAddresses.uniswap_router_02,
-    dependentsAddresses.uniswap_factory,
-    params.treasury.slippageTolerance,
-    now.add(params.treasury.swapDeadline),
-    { from: owner },
-  );
+      console.log('Controller: strategy approved...');
 
-  console.log('Treasury configured...');
+      await contracts.controller.setStrategy(
+        item.token,
+        item.strategy.address,
+        { from: owner },
+      );
 
-  await controller.configure(
-    treasury.address,
-    owner,
-    owner,
-    { from: owner },
-  );
+      console.log('Controller: strategy added...');
 
-  console.log('Controller configured...');
+      await item.strategy.configure(
+        ...item.strategyConfigArgs,
+        { from: owner },
+      );
 
-  console.log('Vaults and Strategies configuration...');
-  for (const item of strategiesAndVaults) {
-    console.log(`Configuring ${item.name}...`);
+      console.log(`${item.name}Strategy: configured`);
 
-    await controller.setVault(
-      item.token,
-      item.vault.address,
-      { from: owner },
-    );
+      // eslint-disable-next-line no-await-in-loop
+      await item.vault.configure(
+        ...item.vaultConfigArgs,
+        { from: owner },
+      );
 
-    console.log('Controller: vault added...');
+      await item.vault.setRewardsDistribution(
+        item.strategy.address,
+        { from: owner },
+      );
 
-    await controller.setApprovedStrategy(
-      item.token,
-      item.strategy.address,
-      true,
-      { from: owner },
-    );
+      await contracts.registry.addVault(
+        item.vault.address,
+        {
+          from: owner,
+        },
+      );
 
-    console.log('Controller: strategy approved...');
+      console.log(`${item.name}Vault: configured`);
+    }
 
-    await controller.setStrategy(
-      item.token,
-      item.strategy.address,
-      { from: owner },
-    );
-
-    console.log('Controller: strategy added...');
-
-    await item.strategy.configure(
-      ...item.strategyConfigArgs,
-      { from: owner },
-    );
-
-    console.log(`${item.name}Strategy: configured`);
-
-    // eslint-disable-next-line no-await-in-loop
-    await item.vault.configure(
-      ...item.vaultConfigArgs,
-      { from: owner },
-    );
-
-    await item.vault.setRewardsDistribution(
-      item.strategy.address,
-      { from: owner },
-    );
-
-    await registry.addVault(
-      item.vault.address,
-      {
-        from: owner,
-      },
-    );
-
-    console.log(`${item.name}Vault: configured`);
+    console.log('All vaults and strategies have been configured...');
   }
 
-  xbeInflation.configure(
-    mockXBE.address, // _token
-    params.simpleXBEInflation.targetMinted,
-    params.simpleXBEInflation.periodsCount,
-    params.simpleXBEInflation.periodDuration,
-    { from: owner },
-  );
+  if (needToConfigure.mainContracts) {
+    // await contracts.referralProgram.configure(
+    //   [contracts.mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
+    //   contracts.treasury.address,
+    //   contracts.registry.address,
+    //   { from: owner },
+    // );
+    //
+    // console.log('ReferralProgram configured...');
+    //
+    // await contracts.registry.configure(
+    //   owner,
+    //   { from: owner },
+    // );
 
-  await xbeInflation.addXBEReceiver(
-    sushiStrategy.address,
-    new BN('25'),
-    { from: owner },
-  );
+    // console.log('Registry configured...');
 
-  // instead of VotingStakingRewards: reward -> treasury -> votingStakingRewards
-  await xbeInflation.addXBEReceiver(
-    treasury.address,
-    new BN('25'),
-    { from: owner },
-  );
+    // await contracts.treasury.configure(
+    //   contracts.voting.address,
+    //   contracts.votingStakingRewards.address,
+    //   contracts.mockXBE.address,
+    //   dependentsAddresses.uniswap_router_02,
+    //   dependentsAddresses.uniswap_factory,
+    //   params.treasury.slippageTolerance,
+    //   now.add(params.treasury.swapDeadline),
+    //   { from: owner },
+    // );
+    //
+    // console.log('Treasury configured...');
 
-  console.log('XBEInflation: configured');
+    // await contracts.controller.configure(
+    //   contracts.treasury.address,
+    //   owner,
+    //   owner,
+    //   { from: owner },
+    // );
+    //
+    // console.log('Controller configured...');
 
-  await bonusCampaign.configure(
-    mockXBE.address,
-    veXBE.address,
-    now.add(params.bonusCampaign.startMintTime),
-    now.add(params.bonusCampaign.stopRegisterTime),
-    params.bonusCampaign.rewardsDuration,
-    params.bonusCampaign.emission,
-    { from: owner },
-  );
+    // contracts.xbeInflation.configure(
+    //   contracts.mockXBE.address, // _token
+    //   params.simpleXBEInflation.targetMinted,
+    //   params.simpleXBEInflation.periodsCount,
+    //   params.simpleXBEInflation.periodDuration,
+    //   { from: owner },
+    // );
 
-  await bonusCampaign.setRegistrator(registrator.address, { from: owner });
+    await contracts.xbeInflation.addXBEReceiver(
+      contracts.sushiStrategy.address,
+      new BN('25'),
+      { from: owner },
+    );
 
-  await bonusCampaign.startMint({ from: owner });
+    // instead of VotingStakingRewards: reward -> treasury -> votingStakingRewards
+    await contracts.xbeInflation.addXBEReceiver(
+      contracts.treasury.address,
+      new BN('25'),
+      { from: owner },
+    );
 
-  console.log('BonusCampaign: configured');
+    console.log('XBEInflation: configured');
 
-  await veXBE.configure(
-    mockXBE.address,
-    votingStakingRewards.address,
-    registrator.address,
-    'Voting Escrowed XBE',
-    'veXBE',
-    '0.0.1',
-    { from: owner },
-  );
+    await contracts.bonusCampaign.configure(
+      contracts.mockXBE.address,
+      contracts.veXBE.address,
+      now.add(params.bonusCampaign.startMintTime),
+      now.add(params.bonusCampaign.stopRegisterTime),
+      params.bonusCampaign.rewardsDuration,
+      params.bonusCampaign.emission,
+      { from: owner },
+    );
 
-  console.log('registrator address', registrator.address);
-  await registrator.addSubscriber(bonusCampaign.address, { from: owner });
-  await registrator.setEventSource(veXBE.address, { from: owner });
+    await contracts.bonusCampaign.setRegistrator(contracts.registrator.address, { from: owner });
 
-  console.log('VeXBE: configured...');
+    if (needToStart.bonusCampaign) {
+      await contracts.bonusCampaign.startMint({ from: owner });
+    }
 
-  await voting.initialize(
-    veXBE.address,
-    params.voting.supportRequiredPct,
-    params.voting.minAcceptQuorumPct,
-    params.voting.voteTime,
-    { from: owner },
-  );
+    console.log('BonusCampaign: configured');
 
-  console.log('Voting: configured...');
+    await contracts.veXBE.configure(
+      contracts.mockXBE.address,
+      contracts.votingStakingRewards.address,
+      contracts.registrator.address,
+      'Voting Escrowed XBE',
+      'veXBE',
+      '0.0.1',
+      { from: owner },
+    );
 
-  await votingStakingRewards.configure(
-    treasury.address,
-    mockXBE.address,
-    mockXBE.address,
-    months('23'),
-    veXBE.address,
-    voting.address,
-    bonusCampaign.address, // works as a boost logic provider for now
-    treasury.address, // to send remaining shares
-    [
-      sushiVault.address,
-      cvxVault.address,
-      cvxCrvVault.address,
-      hiveVault.address,
-    ],
-  );
+    console.log('registrator address', contracts.registrator.address);
+    await contracts.registrator.addSubscriber(contracts.bonusCampaign.address, { from: owner });
+    await contracts.registrator.setEventSource(contracts.veXBE.address, { from: owner });
 
-  console.log('VotingStakingRewards: configured...');
+    console.log('VeXBE: configured...');
+
+    await contracts.voting.initialize(
+      contracts.veXBE.address,
+      params.voting.supportRequiredPct,
+      params.voting.minAcceptQuorumPct,
+      params.voting.voteTime,
+      { from: owner },
+    );
+
+    console.log('Voting: configured...');
+
+    await contracts.votingStakingRewards.configure(
+      contracts.treasury.address,
+      contracts.mockXBE.address,
+      contracts.mockXBE.address,
+      months('23'),
+      contracts.veXBE.address,
+      contracts.voting.address,
+      contracts.bonusCampaign.address, // works as a boost logic provider for now
+      contracts.treasury.address, // to send remaining shares
+      [
+        contracts.sushiVault.address,
+        contracts.cvxVault.address,
+        contracts.cvxCrvVault.address,
+        contracts.hiveVault.address,
+      ],
+    );
+
+    console.log('VotingStakingRewards: configured...');
+
+    // mint inflation
+    if (needToStart.inflation) {
+      await contracts.xbeInflation.mintForContracts({ from: owner });
+    }
+  }
+
+  console.log('Configuration completed!..');
 };
 
 module.exports = function (deployer, network, accounts) {
@@ -850,7 +863,7 @@ module.exports = function (deployer, network, accounts) {
           ...params,
         };
         // deploy voting
-        voting = await deployer.deploy(Voting, { from: owner });
+        contracts.voting = await deployer.deploy(Voting, { from: owner });
         // ...
       } else if (network === 'rinkeby_tokens') {
         dependentsAddresses = testnet_distro.rinkeby;
@@ -882,14 +895,14 @@ module.exports = function (deployer, network, accounts) {
           ...params,
         };
 
-        voting = await Voting.at(getSavedAddress('voting'));
-        votingStakingRewards = await VotingStakingRewards.at(getSavedAddress('votingStakingRewards'));
-        bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
-        veXBE = await VeXBE.at(getSavedAddress('veXBE'));
-        mockXBE = await MockToken.at(getSavedAddress('mockXBE'));
+        contracts.voting = await Voting.at(getSavedAddress('voting'));
+        contracts.votingStakingRewards = await VotingStakingRewards.at(getSavedAddress('votingStakingRewards'));
+        contracts.bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
+        contracts.veXBE = await VeXBE.at(getSavedAddress('veXBE'));
+        contracts.mockXBE = await MockToken.at(getSavedAddress('mockXBE'));
 
-        await voting.initialize(
-          veXBE.address,
+        await contracts.voting.initialize(
+          contracts.veXBE.address,
           params.voting.supportRequiredPct,
           params.voting.minAcceptQuorumPct,
           params.voting.voteTime,
@@ -897,14 +910,14 @@ module.exports = function (deployer, network, accounts) {
         );
         console.log('Voting: configured...');
 
-        await votingStakingRewards.configure(
+        await contracts.votingStakingRewards.configure(
           owner,
-          mockXBE.address,
-          mockXBE.address,
+          contracts.mockXBE.address,
+          contracts.mockXBE.address,
           months('23'),
-          veXBE.address,
-          voting.address,
-          bonusCampaign.address,
+          contracts.veXBE.address,
+          contracts.voting.address,
+          contracts.bonusCampaign.address,
           [],
         );
         console.log('VotingStakingRewards: configured...');
@@ -927,10 +940,10 @@ module.exports = function (deployer, network, accounts) {
         params = { dependentsAddresses, ...params };
         await configureContracts(params, owner);
       } else if (network === 'rinkeby_config_bonus_campaign') {
-        bonusCampaign = await BonusCampaign.at('0xbce5A336944fa3c270A31bB7D148CbbF01E2C1bc');
-        await bonusCampaign.configure(
-          mockXBE.address,
-          veXBE.address,
+        contracts.bonusCampaign = await BonusCampaign.at('0xbce5A336944fa3c270A31bB7D148CbbF01E2C1bc');
+        await contracts.bonusCampaign.configure(
+          contracts.mockXBE.address,
+          contracts.veXBE.address,
           now.add(params.bonusCampaign.startMintTime),
           now.add(params.bonusCampaign.stopRegisterTime),
           params.bonusCampaign.rewardsDuration,

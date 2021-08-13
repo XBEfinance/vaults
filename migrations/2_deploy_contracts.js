@@ -637,51 +637,51 @@ const configureContracts = async (params, owner) => {
   }
 
   if (needToConfigure.mainContracts) {
-    // await contracts.referralProgram.configure(
-    //   [contracts.mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
-    //   contracts.treasury.address,
-    //   contracts.registry.address,
-    //   { from: owner },
-    // );
-    //
-    // console.log('ReferralProgram configured...');
-    //
-    // await contracts.registry.configure(
-    //   owner,
-    //   { from: owner },
-    // );
+    await contracts.referralProgram.configure(
+      [contracts.mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
+      contracts.treasury.address,
+      contracts.registry.address,
+      { from: owner },
+    );
 
-    // console.log('Registry configured...');
+    console.log('ReferralProgram configured...');
 
-    // await contracts.treasury.configure(
-    //   contracts.voting.address,
-    //   contracts.votingStakingRewards.address,
-    //   contracts.mockXBE.address,
-    //   dependentsAddresses.uniswap_router_02,
-    //   dependentsAddresses.uniswap_factory,
-    //   params.treasury.slippageTolerance,
-    //   now.add(params.treasury.swapDeadline),
-    //   { from: owner },
-    // );
-    //
-    // console.log('Treasury configured...');
+    await contracts.registry.configure(
+      owner,
+      { from: owner },
+    );
 
-    // await contracts.controller.configure(
-    //   contracts.treasury.address,
-    //   owner,
-    //   owner,
-    //   { from: owner },
-    // );
-    //
-    // console.log('Controller configured...');
+    console.log('Registry configured...');
 
-    // contracts.xbeInflation.configure(
-    //   contracts.mockXBE.address, // _token
-    //   params.simpleXBEInflation.targetMinted,
-    //   params.simpleXBEInflation.periodsCount,
-    //   params.simpleXBEInflation.periodDuration,
-    //   { from: owner },
-    // );
+    await contracts.treasury.configure(
+      contracts.voting.address,
+      contracts.votingStakingRewards.address,
+      contracts.mockXBE.address,
+      dependentsAddresses.uniswap_router_02,
+      dependentsAddresses.uniswap_factory,
+      params.treasury.slippageTolerance,
+      now.add(params.treasury.swapDeadline),
+      { from: owner },
+    );
+
+    console.log('Treasury configured...');
+
+    await contracts.controller.configure(
+      contracts.treasury.address,
+      owner,
+      owner,
+      { from: owner },
+    );
+
+    console.log('Controller configured...');
+
+    contracts.xbeInflation.configure(
+      contracts.mockXBE.address, // _token
+      params.simpleXBEInflation.targetMinted,
+      params.simpleXBEInflation.periodsCount,
+      params.simpleXBEInflation.periodDuration,
+      { from: owner },
+    );
 
     await contracts.xbeInflation.addXBEReceiver(
       contracts.sushiStrategy.address,

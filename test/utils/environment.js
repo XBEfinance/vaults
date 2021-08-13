@@ -379,7 +379,7 @@ const environment = {
           deployedAndConfiguredContracts,
         )).address,
         async () => (await common.waitFor(
-          'LockSubscription',
+          'BonusCampaign',
           deployment.deployedContracts,
         )).address,
         async () => treasury.address,
@@ -390,8 +390,8 @@ const environment = {
               deployment.deployedContracts,
             )
           ).address,
-        ]
-      ]
+        ],
+      ];
       await instance.configure(
         ...(await common.overrideConfigureArgsIfNeeded(
           originalConfigureParams,
@@ -399,9 +399,8 @@ const environment = {
           originalConfigureParams.length,
         )),
       );
-        return instance;
-      }
-    ),
+      return instance;
+    }),
 
   UnwrappedToWrappedTokenConverter: {},
   WrappedToUnwrappedTokenConverter: {},
@@ -490,7 +489,7 @@ const environment = {
         constants.localParams.bonusCampaign.emission,
       );
       await instance.setRegistrator((
-        await common.waitFor("LockSubscription", deployedAndConfiguredContracts)
+        await common.waitFor('LockSubscription', deployedAndConfiguredContracts)
       ).address);
       return instance;
     }),
@@ -581,17 +580,17 @@ const environment = {
       const instance = await deployment.LockSubscription();
       await instance.setEventSource(
         (await common.waitFor(
-          "VeXBE",
+          'VeXBE',
           deployment.deployedContracts,
-          "environment - waiting for VeXBE as dep for LockSubscription"
-        )).address
+          'environment - waiting for VeXBE as dep for LockSubscription',
+        )).address,
       );
       await instance.addSubscriber(
         (await common.waitFor(
-          "BonusCampaign",
+          'BonusCampaign',
           deployment.deployedContracts,
-          "environment - waiting for BonusCampaign as dep for LockSubscription"
-        )).address
+          'environment - waiting for BonusCampaign as dep for LockSubscription',
+        )).address,
       );
       return instance;
     }),
@@ -642,7 +641,7 @@ const defaultGroup = [
   'TokenWrapper',
   'Registry',
   'SimpleXBEInflation',
-  'LockSubscription'
+  'LockSubscription',
 ];
 
 module.exports = {

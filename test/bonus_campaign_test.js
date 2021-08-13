@@ -134,9 +134,18 @@ contract('BonusCampaign', (accounts) => {
       const lockTime = (await time.latest()).add(common.months('24'));
       await mockXBE.approve(votingStakingRewards.address, xbeToDeposit, { from: people.alice });
       await votingStakingRewards.stake(xbeToDeposit, { from: people.alice });
+
+      await lockSubscription.setActive(false); // switch off autoregistration
       await veXBE.createLock(xbeToDeposit, lockTime, { from: people.alice });
 
+      expect(await bonusCampaign.registered(people.alice)).to.be.false;
+      expect(await bonusCampaign.canRegister(people.alice)).to.be.true;
+
       await bonusCampaign.register({ from: people.alice });
+
+      expect(await bonusCampaign.registered(people.alice)).to.be.true;
+      expect(await bonusCampaign.canRegister(people.alice)).to.be.false;
+
       await expectRevert(bonusCampaign.register({ from: people.alice }), 'alreadyRegistered');
     });
 
@@ -146,6 +155,7 @@ contract('BonusCampaign', (accounts) => {
       await mockXBE.approve(votingStakingRewards.address, xbeToDeposit, { from: people.alice });
       await votingStakingRewards.stake(xbeToDeposit, { from: people.alice });
       await veXBE.createLock(xbeToDeposit, lockTime, { from: people.alice });
+      expect(await bonusCampaign.registered(people.alice)).to.be.false;
       await expectRevert(bonusCampaign.register({ from: people.alice }), 'stakedForNotEnoughTime');
     });
 

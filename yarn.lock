@@ -3144,6 +3144,11 @@ aproba@^1.0.3:
   resolved "https://registry.yarnpkg.com/aproba/-/aproba-1.2.0.tgz#6802e6264efd18c790a1b0d517f0f2627bf2c94a"
   integrity sha512-Y9J6ZjXtoYh8RnXVCMOU/ttDmk1aBjunq9vO0ta5x85WDQiQfUF9sIPBITdbiiIVcBo03Hi3jMxigBtsddlXRw==
 
+aragon@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/aragon/-/aragon-0.0.1.tgz#0a6d61516434afe4225b87d96a8503c868149e23"
+  integrity sha512-5gViy34HDAn8p5EUhc1oRh+onPdvXVaQttsx0srqRfp+HdiW/bfYuNRX/tCTfyVQDdfhkrAsxx5O1QJcZc7q6A==
+
 are-we-there-yet@~1.1.2:
   version "1.1.5"
   resolved "https://registry.yarnpkg.com/are-we-there-yet/-/are-we-there-yet-1.1.5.tgz#4b35c2944f062a8bfcda66410760350fe9ddfc21"

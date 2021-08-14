@@ -26,7 +26,7 @@ contract SimpleXBEInflation is Initializable {
     mapping(address => uint256) public weights; // in points relative to sumWeight
     uint256 public sumWeight = 0;
 
-    EnumerableSet.AddressSet internal _xbeReceivers;
+    EnumerableSet.AddressSet internal xbeReceivers;
 
     event SetAdmin(address admin);
 
@@ -78,15 +78,25 @@ contract SimpleXBEInflation is Initializable {
         return weights[_xbeReceiver].mul(maxPoints).div(sumWeight);
     }
 
-    function addXBEReceiver(address _xbeReceiver, uint256 _weight) external onlyAdmin {
-        _xbeReceivers.add(_xbeReceiver);
+    function addXBEReceiver(address _xbeReceiver, uint256 _weight)
+        external
+        onlyAdmin
+        returns (bool)
+    {
+        if (xbeReceivers.contains(_xbeReceiver)) {
+            return false;
+        }
+
+        xbeReceivers.add(_xbeReceiver);
         weights[_xbeReceiver] = _weight;
         sumWeight = sumWeight.add(_weight);
+
+        return true;
     }
 
     function removeXBEReceiver(address _xbeReceiver) external onlyAdmin {
         sumWeight = sumWeight.sub(weights[_xbeReceiver]);
-        _xbeReceivers.remove(_xbeReceiver);
+        xbeReceivers.remove(_xbeReceiver);
     }
 
     function setWeight(address _xbeReceiver, uint256 _weight) external onlyAdmin {
@@ -108,8 +118,12 @@ contract SimpleXBEInflation is Initializable {
         external
         returns(bool)
     {
+        if (xbeReceivers.length() == 0) {
+            return false;
+        }
+
         require(totalMinted <= targetMinted, "inflationEnded");
-        if (_xbeReceivers.length() > 0) {
+        if (xbeReceivers.length() > 0) {
             require(sumWeight > 0, "sumWeights=0");
         }
 
@@ -123,8 +137,8 @@ contract SimpleXBEInflation is Initializable {
 
         totalMinted = totalMinted.add(amountToPay);
 
-        for (uint256 i = 0; i < _xbeReceivers.length(); i++) {
-            address _to = _xbeReceivers.at(i);
+        for (uint256 i = 0; i < xbeReceivers.length(); i++) {
+            address _to = xbeReceivers.at(i);
             require(_to != address(0), "!zeroAddress");
 
             uint256 toMint = amountToPay

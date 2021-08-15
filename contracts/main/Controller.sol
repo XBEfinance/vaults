@@ -129,7 +129,7 @@ contract Controller is IController, Ownable, Initializable {
 
     /// @notice Usual setter with additional checks
     /// @param _newTreasury New value
-    function setRewards(address _newTreasury) onlyOwner external {
+    function setTreasury(address _newTreasury) onlyOwner external {
         require(_treasury != _newTreasury, '!old');
         require(_newTreasury != address(0), '!treasury');
         require(_newTreasury.isContract(), '!contract');

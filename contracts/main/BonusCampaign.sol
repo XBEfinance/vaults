@@ -65,7 +65,7 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         revert("!allowed");
     }
 
-    function withdraw(uint256 amount) external override {
+    function withdraw(uint256 amount) public override {
         revert("!allowed");
     }
 

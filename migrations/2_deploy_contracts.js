@@ -411,7 +411,7 @@ const configureContracts = async (params, owner) => {
   const now = getNowBN();
 
   const needToConfigure = {
-    strategiesAndVaults: false,
+    strategiesAndVaults: true,
     mainContracts: true,
   };
 

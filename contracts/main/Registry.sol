@@ -68,25 +68,19 @@ contract Registry is Ownable, Initializable {
 
     /// @notice Adds vault first as ordinary then get unwrapped vault and mark it in wrapped vaults set
     /// @param _vault Deployed wrapped vault address
-    function addWrappedVault(address _vault) public onlyOwner {
+    function addWrappedVault(address _vault) external onlyOwner {
         addVault(_vault);
         address _wrappedVault = IVaultWrapped(_vault).vault();
 
         require(_wrappedVault.isContract(), "!contractWrapped");
         wrappedVaults[_vault] = _wrappedVault;
-
-        // TODO Add and track tokens and strategies? [historical]
-        // (current ones can be obtained via getVaults + getVaultInfo)
     }
 
     /// @notice Adds vaults as ordinary then mark it as delegated vault
     /// @param _vault Deployed delegated vault address
-    function addDelegatedVault(address _vault) public onlyOwner {
+    function addDelegatedVault(address _vault) external onlyOwner {
         addVault(_vault);
         isDelegatedVault[_vault] = true;
-
-        // TODO Add and track tokens and strategies? [historical]
-        // (current ones can be obtained via getVaults + getVaultInfo)
     }
 
     /// @dev Checks if provided address is contract and if it is not added yet, then adding it.
@@ -112,8 +106,8 @@ contract Registry is Ownable, Initializable {
     /// @notice Removes given vault address from the set
     /// @dev IMPORTANT It does not remove the metadata (wrapped or delegated vault marks)!!!
     /// @param _vault Vault address to remove
-    function removeVault(address _vault) public onlyOwner {
-        _vaults.remove(_vault);
+    function removeVault(address _vault) external onlyOwner {
+        require(_vaults.remove(_vault), "!remove");
         emit VaultRemoved(_vault);
     }
 
@@ -150,18 +144,14 @@ contract Registry is Ownable, Initializable {
             token = IVaultCore(vault).token();
         }
 
+        // Check if vault is set on controller for token
+        address controllerVault;
         if (isDelegated) {
             strategy = IController(controller).strategies(vault);
-        } else {
-            strategy = IController(controller).strategies(token);
-        }
-
-        // Check if vault is set on controller for token
-        address controllerVault = address(0);
-        if (isDelegated) {
             controllerVault = IController(controller).vaults(strategy);
         } else {
             controllerVault = IController(controller).vaults(token);
+            strategy = IController(controller).strategies(token);
         }
         require(controllerVault == vault, "!controllerVaultMatch"); // Might happen on Proxy Vaults
 

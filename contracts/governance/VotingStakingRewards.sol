@@ -256,7 +256,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         require(_available.sub(_withdrawAmount) >= escrowed, "escrow amount failure");
     }
 
-    function requestWithdrawBonded() public nonReentrant updateReward(msg.sender) {
+    function requestWithdrawBonded() external nonReentrant updateReward(msg.sender) {
         require(!bondedRewardLocks[msg.sender].requested, "alreadyRegistered");
         uint256 bondedAmount = bondedRewardLocks[msg.sender].amount;
         require(bondedAmount > 0, "notEnoughBondedTokens");

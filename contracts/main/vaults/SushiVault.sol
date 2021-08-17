@@ -8,7 +8,7 @@ import "../mocks/StringsConcatenations.sol";
 
 /// @title SushiVault
 /// @notice Vault for staking LP Sushiswap and receive rewards in CVX
-contract SushiVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim {
+contract SushiVault is BaseVault, VaultWithAutoStake {
 
     constructor() BaseVault("XBE Sushi LP", "xs") public {}
 
@@ -24,7 +24,6 @@ contract SushiVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim {
         string memory __symbolPostfix
     ) public initializer {
         _configureVaultWithAutoStake(_tokenToAutostake, _votingStakingRewards);
-        _configureVaultWithFeesOnClaim(false);
         _configure(
             _initialToken,
             _initialController,
@@ -51,14 +50,9 @@ contract SushiVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim {
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
-            reward = _getAndDistributeFeesOnClaimForToken(_for, _rewardToken, reward);
             _autoStakeForOrSendTo(_rewardToken, reward, _for);
         }
 
         emit RewardPaid(_rewardToken, _for, reward);
-    }
-
-    function _isUserAuthorized(address _user) internal override view returns(bool) {
-        return owner() == _user;
     }
 }

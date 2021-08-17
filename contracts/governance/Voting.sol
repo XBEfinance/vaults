@@ -34,8 +34,6 @@ contract Voting is IForwarder, AragonApp {
     string private constant ERROR_CAN_NOT_FORWARD = "VOTING_CAN_NOT_FORWARD";
     string private constant ERROR_NO_VOTING_POWER = "VOTING_NO_VOTING_POWER";
 
-    uint256 public lock = 17280;
-    mapping(address => uint256) public voteLock;
     uint256 public constant PCT_BASE = 10 ** 18; // 0% = 0; 1% = 10^16; 100% = 10^18
 
     MiniMeToken public token;
@@ -105,10 +103,6 @@ contract Voting is IForwarder, AragonApp {
         supportRequiredPct = _supportRequiredPct;
         minAcceptQuorumPct = _minAcceptQuorumPct;
         voteTime = _voteTime;
-    }
-
-    function setLock(uint256 _lock) external auth(MODIFY_QUORUM_ROLE) {
-        lock = _lock;
     }
 
     /**
@@ -318,8 +312,6 @@ contract Voting is IForwarder, AragonApp {
         vote_.votingPower = votingPower;
         vote_.executionScript = _executionScript;
 
-        voteLock[msg.sender] = lock.add(block.number);
-
         emit StartVote(voteId, msg.sender, _metadata);
 
         if (_castVote && _canVote(voteId, msg.sender)) {
@@ -352,8 +344,6 @@ contract Voting is IForwarder, AragonApp {
         }
 
         vote_.voters[_voter] = _supports ? VoterState.Yea : VoterState.Nay;
-
-        voteLock[_voter] = lock.add(block.number);
 
         emit CastVote(_voteId, _voter, _supports, voterStake);
 

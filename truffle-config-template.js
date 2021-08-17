@@ -21,12 +21,16 @@
 require('dotenv').config();
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 const fs = require('fs');
+const Web3 = require('web3');
 
 const mnemonic = fs.readFileSync('.secret').toString().trim();
 
 // NB: It's important to wrap the provider as a function.
 const rinkebyNetworkConfig = {
-  provider: () => new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/v3/${process.env.INFURA_ID}`),
+  webSocketProvider: new Web3.providers.WebsocketProvider(`wss://rinkeby.infura.io/ws/v3/${process.env.INFURA_ID}`),
+  // provider: () => new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/v3/${process.env.INFURA_ID}`),
+  // provider: () => new HDWalletProvider(mnemonic, new Web3.providers.WebsocketProvider(`wss://rinkeby.infura.io/ws/v3/${process.env.INFURA_ID}`)),
+  provider: () => new HDWalletProvider(mnemonic, rinkebyNetworkConfig.webSocketProvider),
   network_id: 4, // Rinkeby's id
   networkCheckTimeout: 10000000,
   gasLimit: 5000000,

@@ -201,11 +201,11 @@ contract('Controller', (accounts) => {
   });
 
   it('should set treasury address', async () => {
-    await expectRevert(controller.setRewards(ZERO_ADDRESS, { from: people.owner }), '!treasury');
-    await expectRevert(controller.setRewards(people.alice, { from: people.owner }), '!contract');
-    await expectRevert(controller.setRewards(await controller.rewards(), { from: people.owner }), '!old');
+    await expectRevert(controller.setTreasury(ZERO_ADDRESS, { from: people.owner }), '!treasury');
+    await expectRevert(controller.setTreasury(people.alice, { from: people.owner }), '!contract');
+    await expectRevert(controller.setTreasury(await controller.rewards(), { from: people.owner }), '!old');
     const newTreasury = mock.address;
-    await controller.setRewards(newTreasury, { from: people.owner });
+    await controller.setTreasury(newTreasury, { from: people.owner });
     expect(await controller.rewards()).to.be.bignumber.equal(newTreasury);
   });
 

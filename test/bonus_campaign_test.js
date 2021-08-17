@@ -10,10 +10,10 @@ const {
   ether,
   time,
 } = require('@openzeppelin/test-helpers');
-const common = require('./utils/common.js');
-const constants = require('./utils/constants.js');
-const environment = require('./utils/environment.js');
-const { people, setPeople } = require('./utils/accounts.js');
+const common = require('./utils/common');
+const constants = require('./utils/constants');
+const environment = require('./utils/environment');
+const { people, setPeople } = require('./utils/accounts');
 
 let mockXBE;
 let bonusCampaign;
@@ -26,23 +26,20 @@ contract('BonusCampaign', (accounts) => {
 
   beforeEach(async () => {
     [
-        mockXBE,
-        veXBE,
-        bonusCampaign,
-        votingStakingRewards,
-        lockSubscription,
+      mockXBE,
+      veXBE,
+      bonusCampaign,
+      votingStakingRewards,
+      lockSubscription,
     ] = await environment.getGroup(environment.defaultGroup,
-        (key) => {
-            return [
-                "MockXBE",
-                "VeXBE",
-                "BonusCampaign",
-                "VotingStakingRewards",
-                "LockSubscription",
-            ].includes(key);
-        },
-        true
-    );
+      (key) => [
+        'MockXBE',
+        'VeXBE',
+        'BonusCampaign',
+        'VotingStakingRewards',
+        'LockSubscription',
+      ].includes(key),
+      true);
   });
 
   it('should configure properly', async () => {
@@ -67,7 +64,7 @@ contract('BonusCampaign', (accounts) => {
     );
 
     const startMintTime = constants.localParams.bonusCampaign.configureTime.add(
-      constants.localParams.bonusCampaign.startMintTime
+      constants.localParams.bonusCampaign.startMintTime,
     );
 
     expect(await bonusCampaign.startMintTime())
@@ -98,10 +95,7 @@ contract('BonusCampaign', (accounts) => {
 
   describe('register', () => {
     it('should register correctly', async () => {
-      // console.log('here0');
-
       await bonusCampaign.startMint({ from: people.owner });
-
       const xbeToDeposit = ether('1');
       const lockTime = (await time.latest()).add(common.months('24'));
       await mockXBE.approve(veXBE.address, xbeToDeposit, { from: people.alice });
@@ -119,11 +113,12 @@ contract('BonusCampaign', (accounts) => {
       expect(await bonusCampaign.registered(people.alice)).to.be.false;
       expect(await bonusCampaign.canRegister(people.alice)).to.be.true;
 
-      const receipt = await veXBE.createLock(xbeToDeposit, lockTime, { from: people.alice });
-      // await expectEvent(
-      //   receipt,
-      //   'Staked'
-      // );
+      const receipt = await veXBE.createLock(
+        xbeToDeposit,
+        lockTime,
+        { from: people.alice },
+      );
+      // await expectEvent(receipt, 'Staked');
 
       expect(await bonusCampaign.canRegister(people.alice)).to.be.false;
       expect(await bonusCampaign.registered(people.alice)).to.be.true;
@@ -156,7 +151,10 @@ contract('BonusCampaign', (accounts) => {
       await votingStakingRewards.stake(xbeToDeposit, { from: people.alice });
       await veXBE.createLock(xbeToDeposit, lockTime, { from: people.alice });
       expect(await bonusCampaign.registered(people.alice)).to.be.false;
-      await expectRevert(bonusCampaign.register({ from: people.alice }), 'stakedForNotEnoughTime');
+      await expectRevert(
+        bonusCampaign.register({ from: people.alice }),
+        'stakedForNotEnoughTime',
+      );
     });
 
     it('should not register if locked none veXBE', async () => {
@@ -203,10 +201,9 @@ contract('BonusCampaign', (accounts) => {
       const result = await bonusCampaign.getReward({ from: people.alice });
       expectEvent(result, 'RewardPaid',
         {
-        user: people.alice,
-        reward: expectedReward,
-      }
-      );
+          user: people.alice,
+          reward: expectedReward,
+        });
     });
 
     it('should not get reward if not registered', async () => {
@@ -226,7 +223,6 @@ contract('BonusCampaign', (accounts) => {
       const result = await bonusCampaign.getReward({ from: people.alice });
       expectEvent.notEmitted(result, 'RewardPaid');
     });
-
   });
 
   describe('startMint', () => {
@@ -246,6 +242,5 @@ contract('BonusCampaign', (accounts) => {
     it('should not start a minting campaign if called by not by reward distribution', async () => {
       await expectRevert(bonusCampaign.startMint({ from: people.alice }), 'Caller is not RewardsDistribution contract');
     });
-
   });
 });

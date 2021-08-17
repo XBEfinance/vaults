@@ -34,8 +34,8 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     event Recovered(address token, uint256 amount);
 
     uint256 public constant PCT_BASE = 10 ** 18; // 0% = 0; 1% = 10^16; 100% = 10^18
-    uint256 internal constant maxBoostLevel = PCT_BASE;
-    uint256 internal constant baseBoostLevel = PCT_BASE
+    uint256 internal constant MAX_BOOST_LEVEL = PCT_BASE;
+    uint256 internal constant BASE_BOOST_LEVEL = PCT_BASE
         .mul(inverseMaxBoostCoefficient)
         .div(100);
 
@@ -60,8 +60,8 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
 
     address public rewardsToken;
     address public stakingToken;
-    uint256 public periodFinish = 0;
-    uint256 public rewardRate = 0;
+    uint256 public periodFinish;
+    uint256 public rewardRate;
     uint256 public rewardsDuration;
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
@@ -200,7 +200,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = lastTimeRewardApplicable();
         if (account != address(0)) {
-            uint256 boostLevel = calculateBoostLevel(account);
+            uint256 boostLevel = _calculateBoostLevel(account);
             var (userEarned, toTreasury) = _earned(account, boostLevel);
             rewards[account] = userEarned;
             userRewardPerTokenPaid[account] = rewardPerTokenStored;
@@ -289,7 +289,11 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         assertEscrow(msg.sender, _balances[msg.sender], amount);
 
         if (bondedRewardLocks[msg.sender].amount > 0) {
-            require(amount <= _balances[msg.sender].sub(bondedRewardLocks[msg.sender].amount), "cannotWithdrawBondedTokens");
+            require(amount <=
+                _balances[msg.sender]
+                .sub(bondedRewardLocks[msg.sender].amount),
+                "cannotWithdrawBondedTokens"
+            );
         }
 
         _totalSupply = _totalSupply.sub(amount);
@@ -306,7 +310,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         }
         return
             rewardPerTokenStored.add(
-                duration.mul(rewardRate).mul(1e18).div(_totalSupply)
+                duration.mul(rewardRate).mul(PCT_BASE).div(_totalSupply)
             );
     }
 
@@ -315,7 +319,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
             .mul(
                 _rewardPerTokenForDuration(duration).sub(userRewardPerTokenPaid[account])
             )
-            .div(1e18)
+            .div(PCT_BASE)
             .add(rewards[account]);
         return _rewardsAmount;
     }
@@ -326,9 +330,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         uint256 votingTotal = veXBE.totalSupply();
         uint256 userLock = veXBE.lockedAmount(account);
         if (votingTotal == 0 || votingBalance == 0) {
-            return PCT_BASE
-                .mul(inverseMaxBoostCoefficient)
-                .div(100);
+            return BASE_BOOST_LEVEL;
         }
 
         uint256 res = PCT_BASE.mul(
@@ -341,7 +343,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
             )
         ).div(100);
 
-        return res < PCT_BASE ? res : PCT_BASE;
+        return res < MAX_BOOST_LEVEL ? res : MAX_BOOST_LEVEL;
     }
 
     function _calculateBoostLevel(address account) internal view returns (uint256) {
@@ -350,15 +352,15 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
 
         uint256 userStake = _balances[account];
         if (userStake == 0 || userLock == 0) {
-            return baseBoostLevel;
+            return BASE_BOOST_LEVEL;
         }
 
         uint256 lockedBoost = IBoostLogicProvider(boostLogicProvider).hasMaxBoostLevel(account) ?
-            maxBoostLevel : _lockedBoostLevel(account);
+        MAX_BOOST_LEVEL : _lockedBoostLevel(account);
 
         return lockedBoost.mul(userLock)
             .add(
-                baseBoostLevel.mul(userStake.sub(userLock))
+                BASE_BOOST_LEVEL.mul(userStake.sub(userLock))
             )
             .div(userStake);
     }
@@ -371,14 +373,14 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         internal view
         returns (uint256, uint256) // userEarned, toTreasury
     {
-        require(boostLevel <= maxBoostLevel, 'badBoostLevel');
+        require(boostLevel <= MAX_BOOST_LEVEL, 'badBoostLevel');
 
         uint256 maxBoostedReward = _balances[account]
             .mul(
                 rewardPerToken().sub(userRewardPerTokenPaid[account])
             ).div(1e18);
 
-        uint256 toUser = maxBoostedReward.mul(boostLevel).div(1e18);
+        uint256 toUser = maxBoostedReward.mul(boostLevel).div(PCT_BASE);
         uint256 toTreasury = maxBoostedReward.sub(toUser);
 
         return (toUser.add(rewards[account]), toTreasury);

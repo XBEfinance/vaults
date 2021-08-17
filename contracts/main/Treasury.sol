@@ -72,11 +72,11 @@ contract Treasury is Initializable, Ownable, ITreasury {
     }
 
     function addTokenToConvert(address _token) external onlyOwner {
-        _tokensToConvert.add(_token);
+        require(_tokensToConvert.add(_token), "alreadyExists");
     }
 
     function removeTokenToConvert(address _token) external onlyOwner {
-        _tokensToConvert.remove(_token);
+        require(_tokensToConvert.remove(_token), "doesntExist");
     }
 
     function feeReceiving(address _for, address _token, uint256 _amount) override external {

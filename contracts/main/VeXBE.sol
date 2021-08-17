@@ -466,7 +466,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
         _depositFor(_for, _value, unlockTime, _locked, CREATE_LOCK_TYPE);
     }
 
-    function createLockFor(address _for, uint256 _value, uint256 _unlockTime) public nonReentrant {
+    function createLockFor(address _for, uint256 _value, uint256 _unlockTime) external nonReentrant {
         if (msg.sender != votingStakingRewards) {
             require(createLockAllowance[msg.sender][_for], "!allowed");
         }

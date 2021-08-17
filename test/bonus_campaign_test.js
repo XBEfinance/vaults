@@ -42,7 +42,7 @@ contract('BonusCampaign', (accounts) => {
       true);
   });
 
-  xit('should configure properly', async () => {
+  it('should configure properly', async () => {
     expect(await bonusCampaign.rewardsToken()).to.be.equal(
       mockXBE.address,
     );
@@ -81,15 +81,15 @@ contract('BonusCampaign', (accounts) => {
       .to.be.equal(veXBE.address);
   });
 
-  xit('should revert default stake', async () => {
+  it('should revert default stake', async () => {
     await expectRevert(bonusCampaign.stake(constants.utils.ZERO), '!allowed');
   });
 
-  xit('should revert default withdraw', async () => {
+  it('should revert default withdraw', async () => {
     await expectRevert(bonusCampaign.withdraw(constants.utils.ZERO), '!allowed');
   });
 
-  xit('should revert default notify', async () => {
+  it('should revert default notify', async () => {
     await expectRevert(bonusCampaign.notifyRewardAmount(constants.utils.ZERO, { from: people.owner }), '!allowed');
   });
 
@@ -124,7 +124,7 @@ contract('BonusCampaign', (accounts) => {
       expect(await bonusCampaign.registered(people.alice)).to.be.true;
     });
 
-    xit('should not register if already registered', async () => {
+    it('should not register if already registered', async () => {
       const xbeToDeposit = ether('1');
       const lockTime = (await time.latest()).add(common.months('24'));
       await mockXBE.approve(votingStakingRewards.address, xbeToDeposit, { from: people.alice });
@@ -144,7 +144,7 @@ contract('BonusCampaign', (accounts) => {
       await expectRevert(bonusCampaign.register({ from: people.alice }), 'alreadyRegistered');
     });
 
-    xit('should not register if locked veXBE for too little time', async () => {
+    it('should not register if locked veXBE for too little time', async () => {
       const xbeToDeposit = ether('1');
       const lockTime = (await time.latest()).add(common.months('22'));
       await mockXBE.approve(votingStakingRewards.address, xbeToDeposit, { from: people.alice });
@@ -157,13 +157,13 @@ contract('BonusCampaign', (accounts) => {
       );
     });
 
-    xit('should not register if locked none veXBE', async () => {
+    it('should not register if locked none veXBE', async () => {
       await expectRevert(bonusCampaign.register({ from: people.alice }), '!stake0');
     });
   });
 
   describe('getReward', () => {
-    xit('should get reward properly', async () => {
+    it('should get reward properly', async () => {
       await bonusCampaign.startMint({ from: people.owner });
 
       const xbeToDeposit = ether('1');
@@ -206,7 +206,7 @@ contract('BonusCampaign', (accounts) => {
         });
     });
 
-    xit('should not get reward if not registered', async () => {
+    it('should not get reward if not registered', async () => {
       await bonusCampaign.startMint({ from: people.owner });
 
       const xbeToDeposit = ether('1');
@@ -226,7 +226,7 @@ contract('BonusCampaign', (accounts) => {
   });
 
   describe('startMint', () => {
-    xit('should start a minting campaign', async () => {
+    it('should start a minting campaign', async () => {
       const result = await bonusCampaign.startMint({ from: people.owner });
       const rewardsDuration = await bonusCampaign.rewardsDuration();
       // const blockTimestamp = new BN(
@@ -239,7 +239,7 @@ contract('BonusCampaign', (accounts) => {
       // expect(await bonusCampaign.periodFinish()).to.be.bignumber.equal(blockTimestamp.add(rewardsDuration));
     });
 
-    xit('should not start a minting campaign if called by not by reward distribution', async () => {
+    it('should not start a minting campaign if called by not by reward distribution', async () => {
       await expectRevert(bonusCampaign.startMint({ from: people.alice }), 'Caller is not RewardsDistribution contract');
     });
   });

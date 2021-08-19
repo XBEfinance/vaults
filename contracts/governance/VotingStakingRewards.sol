@@ -54,7 +54,6 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     mapping(address => BondedReward) public bondedRewardLocks;
 
     uint256 public penaltyPct = 1 ether / 2; // PCT_BASE is 10^18
-    uint256 public bondedLockDuration = 5 days;
 
     uint256 public inverseMaxBoostCoefficient = 40; // 1 / inverseMaxBoostCoefficient = max boost coef. (ex. if 40 then 1 / (40 / 100) = 2.5)
 
@@ -67,6 +66,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     uint256 public rewardPerTokenStored;
     address public rewardsDistribution;
     uint256 public totalReward;
+    uint256 public bondedLockDuration;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
@@ -86,6 +86,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         address _voting,
         address _boostLogicProvider,
         address _treasury,
+        uint256 _bondedLockDuration,
         address[] memory __vaultsWhoCanAutostake
     ) public initializer {
         rewardsToken = _rewardsToken;
@@ -96,6 +97,8 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         voting = IVoting(_voting);
         boostLogicProvider = IBoostLogicProvider(_boostLogicProvider);
         treasury = _treasury;
+        require(_bondedLockDuration > 0, "badBondDuration");
+        bondedLockDuration = _bondedLockDuration;
         for (uint256 i = 0; i < __vaultsWhoCanAutostake.length; i++) {
             _vaultsWhoCanAutoStake[__vaultsWhoCanAutostake[i]] = true;
         }

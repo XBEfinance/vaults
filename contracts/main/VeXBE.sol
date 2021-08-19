@@ -120,6 +120,8 @@ contract VeXBE is Initializable, ReentrancyGuard {
     address public admin;
     address public futureAdmin;
 
+    uint256 minLockDuration;
+
     mapping(address => mapping(address => bool)) public createLockAllowance;
 
     modifier onlyAdmin {
@@ -138,6 +140,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
         address tokenAddr,
         address _votingStakingRewards,
         address _registrationMediator,
+        uint256 _minLockDuration,
         string calldata _name,
         string calldata _symbol,
         string calldata _version
@@ -154,6 +157,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
         version = _version;
         votingStakingRewards = _votingStakingRewards;
         registrationMediator = ILockSubscription(_registrationMediator);
+        minLockDuration = _minLockDuration;
     }
 
     function setVoting(address _votingStakingRewards) external onlyAdmin {

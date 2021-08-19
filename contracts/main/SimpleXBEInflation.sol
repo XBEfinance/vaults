@@ -99,7 +99,12 @@ contract SimpleXBEInflation is Initializable {
         xbeReceivers.remove(_xbeReceiver);
     }
 
+    function receiversCount() public view returns(uint256) {
+        return xbeReceivers.length();
+    }
+
     function setWeight(address _xbeReceiver, uint256 _weight) external onlyAdmin {
+        require(xbeReceivers.contains(_xbeReceiver), "rcvr!inList");
         uint256 oldWeight = weights[_xbeReceiver];
         sumWeight = sumWeight.add(_weight).sub(oldWeight);
         weights[_xbeReceiver] = _weight;
@@ -114,12 +119,9 @@ contract SimpleXBEInflation is Initializable {
     // @dev Emits a Transfer event originating from 0x00
     // @return bool success
     // """u
-    function mintForContracts()
-        external
-        returns(bool)
-    {
+    function mintForContracts() external {
         if (xbeReceivers.length() == 0) {
-            return false;
+            return;
         }
 
         require(totalMinted <= targetMinted, "inflationEnded");
@@ -147,7 +149,5 @@ contract SimpleXBEInflation is Initializable {
 
             IMint(token).mint(_to, toMint);
         }
-
-        return true;
     }
 }

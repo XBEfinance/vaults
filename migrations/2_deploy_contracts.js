@@ -5,7 +5,7 @@ const { BN, constants, time } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
 const fs = require('fs');
-const testnet_distro = require('../../curve-convex/rinkeby_distro.json');
+const testnet_distro = require('../../curve-convex/distro.json');
 
 const Registrator = artifacts.require('LockSubscription');
 const SimpleXbeInflation = artifacts.require('SimpleXBEInflation');
@@ -422,6 +422,16 @@ const configureContracts = async (params, owner) => {
 
   await loadContracts();
 
+  const addXBEMinter = async (minter) => {
+    if (!await contracts.mockXBE.getMinters(minter)) {
+      await contracts.mockXBE.addMinter(minter);
+    }
+  };
+
+  // add XBE minters! in mainnet
+  // await addXBEMinter(contracts.bonusCampaign.address);
+  // await addXBEMinter(contracts.xbeInflation.address);
+
   const strategiesAndVaults = [
     {
       name: 'hive',
@@ -720,6 +730,7 @@ const configureContracts = async (params, owner) => {
       contracts.mockXBE.address,
       contracts.votingStakingRewards.address,
       contracts.registrator.address,
+      params.veXBE.minLockDuration,
       'Voting Escrowed XBE',
       'veXBE',
       '0.0.1',
@@ -746,11 +757,12 @@ const configureContracts = async (params, owner) => {
       contracts.treasury.address,
       contracts.mockXBE.address,
       contracts.mockXBE.address,
-      months('23'),
+      params.votingStakingRewards.rewardsDuration,
       contracts.veXBE.address,
       contracts.voting.address,
       contracts.bonusCampaign.address, // works as a boost logic provider for now
       contracts.treasury.address, // to send remaining shares
+      params.votingStakingRewards.bondedLockDuration,
       [
         contracts.sushiVault.address,
         contracts.cvxVault.address,
@@ -782,7 +794,7 @@ module.exports = function (deployer, network, accounts) {
     },
     treasury: {
       slippageTolerance: new BN('3'),
-      swapDeadline: new BN('300'),
+      swapDeadline: new BN('9700'),
     },
     bonusCampaign: {
       rewardsDuration: months('23'),
@@ -796,14 +808,14 @@ module.exports = function (deployer, network, accounts) {
       mockedAmountXBE: ether('100'),
       mockedAmountOtherToken: ether('100'),
     },
-    xbeinflation: {
-      initialSupply: new BN('5000'),
-      initialRate: new BN('274815283').mul(MULTIPLIER).div(YEAR), // new BN('10000').mul(MULTIPLIER).div(YEAR)
-      rateReductionTime: YEAR,
-      rateReductionCoefficient: new BN('1189207115002721024'), // new BN('10').mul(MULTIPLIER)
-      rateDenominator: MULTIPLIER,
-      inflationDelay: new BN('86400'),
-    },
+    // xbeinflation: {
+    //   initialSupply: new BN('5000'),
+    //   initialRate: new BN('274815283').mul(MULTIPLIER).div(YEAR), // new BN('10000').mul(MULTIPLIER).div(YEAR)
+    //   rateReductionTime: YEAR,
+    //   rateReductionCoefficient: new BN('1189207115002721024'), // new BN('10').mul(MULTIPLIER)
+    //   rateDenominator: MULTIPLIER,
+    //   inflationDelay: new BN('86400'),
+    // },
     simpleXBEInflation: {
       targetMinted: ether('5000'),
       periodsCount: new BN('52'),
@@ -814,16 +826,20 @@ module.exports = function (deployer, network, accounts) {
       minAcceptQuorumPct: new BN('3000'),
       voteTime: new BN('1000000'),
     },
-    treasury: {
-      slippageTolerance: new BN('9500'),
-      swapDeadline: days('1'),
+    votingStakingRewards: {
+      rewardsDuration: months('23'),
+      bondedLockDuration: new BN('3600'), // 3600 seconds = 1 hour for testing
+    },
+    veXBE: {
+      minLockDuration: new BN('3600'), // 3600 seconds = 1 hour for testing
     },
   };
 
   deployer.then(async () => {
     let dependentsAddresses = testnet_distro.rinkeby;
-    dependentsAddresses.curve.pools = Object.values(dependentsAddresses
-      .curve.pool_data);
+    dependentsAddresses.curve.pools =
+      Object.values(dependentsAddresses.curve.pool_data);
+
     params = {
       dependentsAddresses,
       sushiSwap: sushiSwapAddresses.rinkeby,
@@ -885,43 +901,8 @@ module.exports = function (deployer, network, accounts) {
           ...params,
         };
         await configureContracts(params, owner);
-      } else if (network === 'rinkeby_configure_voting') {
-        dependentsAddresses = testnet_distro.rinkeby;
-        dependentsAddresses.curve.pools = Object.values(dependentsAddresses
-          .curve.pool_data);
-        params = {
-          dependentsAddresses,
-          sushiSwap: sushiSwapAddresses.rinkeby,
-          ...params,
-        };
-
-        contracts.voting = await Voting.at(getSavedAddress('voting'));
-        contracts.votingStakingRewards = await VotingStakingRewards.at(getSavedAddress('votingStakingRewards'));
-        contracts.bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
-        contracts.veXBE = await VeXBE.at(getSavedAddress('veXBE'));
-        contracts.mockXBE = await MockToken.at(getSavedAddress('mockXBE'));
-
-        await contracts.voting.initialize(
-          contracts.veXBE.address,
-          params.voting.supportRequiredPct,
-          params.voting.minAcceptQuorumPct,
-          params.voting.voteTime,
-          { from: owner },
-        );
-        console.log('Voting: configured...');
-
-        await contracts.votingStakingRewards.configure(
-          owner,
-          contracts.mockXBE.address,
-          contracts.mockXBE.address,
-          months('23'),
-          contracts.veXBE.address,
-          contracts.voting.address,
-          contracts.bonusCampaign.address,
-          [],
-        );
-        console.log('VotingStakingRewards: configured...');
-      } else if (network === 'rinkeby_all_with_save') {
+      }
+      else if (network === 'rinkeby_all_with_save') {
         dependentsAddresses = testnet_distro.rinkeby;
         dependentsAddresses.curve.pools = Object.values(dependentsAddresses
           .curve.pool_data);

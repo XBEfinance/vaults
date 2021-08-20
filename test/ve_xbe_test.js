@@ -27,9 +27,14 @@ let vaultWithXBExCXStrategy;
 let mockedStrategy;
 let deployment;
 
+const WEEK = 7*86400;
+
+const roundToWeek = (tm) => {
+  return (Math.floor(tm/WEEK) * WEEK);
+}
+
 contract('VeXBE', (accounts) => {
   setPeople(accounts);
-
 
   beforeEach(async () => {
     [
@@ -50,21 +55,11 @@ contract('VeXBE', (accounts) => {
           ].includes(key);
         }
       );
-
   });
 
   describe('Configuration', () => {
 
-
-    it('should be correct configured', async () => {
-      // const config = {
-      //   token: mockXBE.address,
-      //   name: 'Voting Escrowed XBE',
-      //   symbol: 'veXBE',
-      //   version: '0.0.1',
-      // };
-      // await veXBE.configure(config.token, config.name, config.symbol, config.version);
-
+    it('should be correctly configured', async () => {
       const admin = await veXBE.admin();
       // const token = await veXBE.token();
       const name = await veXBE.name();
@@ -81,12 +76,12 @@ contract('VeXBE', (accounts) => {
         mockXBE.address,
         voting.address,
         bonusCampaign.address,
+        new BN('86400'),
         'Voting Escrowed XBE',
         'veXBE',
         '0.0.1',
         {from: people.owner}
         ), 'Initializable: contract is already initialized');
-
     });
   });
 
@@ -105,7 +100,10 @@ contract('VeXBE', (accounts) => {
       const xbeToDeposit = ether('1');
       await mockXBE.approve(votingStakingRewards.address, xbeToDeposit, { from: people.alice });
       await votingStakingRewards.stake(xbeToDeposit, { from: people.alice });
-      await expectRevert(veXBE.createLock(xbeToDeposit, timeInPast), 'lockOnlyToFutureTime');
+      await expectRevert(
+        veXBE.createLock(xbeToDeposit, timeInPast),
+        '!futureTime',
+        );
     });
     it('should revert if locktime greater then maxtime', async () => {
       const MAXTIME = await veXBE.MAXTIME();
@@ -113,7 +111,10 @@ contract('VeXBE', (accounts) => {
       const xbeToDeposit = ether('1');
       await mockXBE.approve(votingStakingRewards.address, xbeToDeposit, { from: people.alice });
       await votingStakingRewards.stake(xbeToDeposit, { from: people.alice });
-      await expectRevert(veXBE.createLock(xbeToDeposit, unlockTime), 'lockOnlyToValidFutureTime');
+      await expectRevert(
+        veXBE.createLock(xbeToDeposit, unlockTime),
+        'invalidFutureTime',
+      );
     });
 
     it('should correct createLock', async () => {
@@ -122,27 +123,14 @@ contract('VeXBE', (accounts) => {
 
       const xbeToDeposit = ether('1');
 
-      const lockTime = (await time.latest()).add(constants.time.months('1'));
+      const lockUntilDate = (await time.latest()).add(constants.time.months('1'));
       // await mockXBE.approve(veXBE.address, xbeToDeposit, { from: people.alice });
       await mockXBE.approve(votingStakingRewards.address, xbeToDeposit, { from: people.alice });
       const stakeReceipt = await votingStakingRewards.stake(xbeToDeposit, { from: people.alice });
       const votingBalance = await votingStakingRewards.balanceOf(people.alice);
-      // console.log("votingBalance = ", votingBalance.toString());
 
-      const createLock = await veXBE.createLock(xbeToDeposit, lockTime, { from: people.alice });
-      // const blockTimestamp = await getTxBlockTimestamp(createLock);
 
-      // expectEvent(createLock, 'Deposit', {
-      //   provider: people.alice,
-      //   xbeToDeposit,
-      //   locktime,
-      //   _type: depositType.CREATE_LOCK_TYPE,
-      //   ts: blockTimestamp,
-      // });
-      // expectEvent(createLock, 'Supply', {
-      //   prevSupply: new BN(0),
-      //   supply: xbeToDeposit,
-      // });
+      await veXBE.createLock(xbeToDeposit, lockUntilDate, { from: people.alice });
 
       const XBEBalanceAfter = await mockXBE.balanceOf(people.alice);
       expect(XBEBalanceAfter.toString()).to.be.equal(XBEBalanceBefore.sub(xbeToDeposit).toString());
@@ -150,16 +138,29 @@ contract('VeXBE', (accounts) => {
       const lockStarts = await veXBE.lockStarts(people.alice);
       const lockedEnd = await veXBE.lockedEnd(people.alice);
 
-      // expect(lockStarts).to.be.bignumber.equal(blockTimestamp);
-      // expect(lockedEnd.toString()).to.be.equal(lockTime.toString());
+      expect(lockStarts.toString())
+        .to.be.equal(
+          (await time.latest()).toString()
+      );
+
+      expect(lockedEnd.toString())
+        .to.be.equal(
+          roundToWeek(lockUntilDate).toString()
+      );
     });
 
     it('should correct withdraw after unlock time', async () => {
+      const {amount, end} = await veXBE.locked(people.alice);
+      console.log(`amount=${amount}, end=${end}`);
+      
       await time.increase(constants.time.months('1'));
       const supplyBefore = await veXBE.supply();
       const withdraw = await veXBE.withdraw({from: people.alice});
       const supplyAfter = await veXBE.supply();
-      expect(supplyAfter.toString()).to.be.equal((supplyBefore.sub(ether('1')).toString() ));
+      expect(supplyAfter.toString())
+        .to.be.equal(
+          supplyBefore.sub(ether('1')).toString()
+      );
       // console.log(withdraw);
       // const timestamp = web3.eth.getBlock(withdraw.receipt.blockNumber).timestamp;
       // expectEvent(withdraw, 'Withdraw', {

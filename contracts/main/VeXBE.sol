@@ -120,7 +120,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     address public admin;
     address public futureAdmin;
 
-    uint256 minLockDuration;
+    uint256 public minLockDuration;
 
     mapping(address => mapping(address => bool)) public createLockAllowance;
 
@@ -157,7 +157,17 @@ contract VeXBE is Initializable, ReentrancyGuard {
         version = _version;
         votingStakingRewards = _votingStakingRewards;
         registrationMediator = ILockSubscription(_registrationMediator);
+
+        _setMinLockDuration(_minLockDuration);
+    }
+
+    function _setMinLockDuration(uint256 _minLockDuration) private {
+        require(_minLockDuration < MAXTIME, "!badMinLockDuration");
         minLockDuration = _minLockDuration;
+    }
+
+    function setMinLockDuration(uint256 _minLockDuration) external onlyAdmin {
+        _setMinLockDuration(_minLockDuration);
     }
 
     function setVoting(address _votingStakingRewards) external onlyAdmin {
@@ -462,8 +472,10 @@ contract VeXBE is Initializable, ReentrancyGuard {
 
         require(_value > 0, "!zeroValue");
         require(_locked.amount == 0, "!withdrawOldTokensFirst");
-        require(unlockTime > block.timestamp, "lockOnlyToFutureTime");
-        require(unlockTime <= block.timestamp + MAXTIME, "lockOnlyToValidFutureTime");
+        require(unlockTime > block.timestamp, "!futureTime");
+        require(unlockTime >= minLockDuration + block.timestamp, "!minLockDuration");
+        require(unlockTime <= block.timestamp.add(MAXTIME), "invalidFutureTime");
+
 
         _lockStarts[_for] = block.timestamp;
 

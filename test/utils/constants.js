@@ -69,6 +69,13 @@ const getParams = (distro) => {
       minAcceptQuorumPct: new BN('3000'),
       voteTime: new BN('1000000'),
     },
+    veXBE: {
+      minLockDuration: new BN('3600'),
+    },
+    votingStakingRewards: {
+      rewardsDuration: days('7'),
+      bondedLockDuration: new BN('3600'),
+    },
   };
   developmentParams = {
     dependentsAddresses,

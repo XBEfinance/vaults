@@ -107,6 +107,13 @@ const defaultParams = {
     slippageTolerance: new BN('9500'),
     swapDeadline: days('1'),
   },
+  veXBE: {
+    minLockDuration: new BN('3600'),
+  },
+  votingStakingRewards: {
+    rewardsDuration: days('7'),
+    bondedLockDuration: new BN('3600'),
+  },
   dependentsAddresses: { ...testnet_distro.rinkeby },
   sushiSwap: {
     sushiswapRouter: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
@@ -545,6 +552,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       contracts.mockXBE.address,
       contracts.votingStakingRewards.address,
       contracts.registrator.address,
+      params.veXBE.minLockDuration,
       'Voting Escrowed XBE',
       'veXBE',
       '0.0.1',
@@ -565,11 +573,12 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       contracts.treasury.address,
       contracts.mockXBE.address,
       contracts.mockXBE.address,
-      days('7'),
+      params.votingStakingRewards.rewardsDuration,
       contracts.veXBE.address,
       contracts.voting.address,
       contracts.bonusCampaign.address,
       contracts.treasury.address,
+      params.votingStakingRewards.bondedLockDuration,
       [
         contracts.sushiVault.address,
       ],

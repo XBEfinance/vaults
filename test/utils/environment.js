@@ -1,13 +1,13 @@
 const { ether, BN, time } = require('@openzeppelin/test-helpers');
 const { hash } = require('eth-ens-namehash');
 const { getEventArgument } = require('@aragon/contract-helpers-test/src/events');
-const deployment = require('./deployment');
-const constants = require('./constants');
-const accounts = require('./accounts');
-const artifacts = require('./artifacts');
-const common = require('./common');
+const deployment = require('./deployment.js');
+const constants = require('./constants.js');
+const accounts = require('./accounts.js');
+const artifacts = require('./artifacts.js');
+const common = require('./common.js');
 
-const { localParams } = require('./constants');
+const { localParams } = require('./constants.js');
 
 let deployedAndConfiguredContracts = {};
 
@@ -383,6 +383,7 @@ const environment = {
           deployment.deployedContracts,
         )).address,
         async () => treasury.address,
+        async () => constants.localParams.votingStakingRewards.bondedLockDuration,
         async () => [
           (
             await common.waitFor(
@@ -440,6 +441,7 @@ const environment = {
           'LockSubscription',
           deployment.deployedContracts,
         )).address,
+        constants.localParams.veXBE.minLockDuration,
         'Voting Escrowed XBE',
         'veXBE',
         '0.0.1',
@@ -622,7 +624,7 @@ const defaultGroup = [
   'MockContract',
   'MockXBE',
   'MockToken',
-  'XBEInflation',
+  'SimpleXBEInflation',
   'VeXBE',
   'Controller',
   'Treasury',
@@ -640,7 +642,6 @@ const defaultGroup = [
   'SushiStrategy',
   'TokenWrapper',
   'Registry',
-  'SimpleXBEInflation',
   'LockSubscription',
 ];
 

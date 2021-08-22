@@ -1,6 +1,6 @@
 const { BN } = require('@openzeppelin/test-helpers');
-const constants = require('./constants');
-const artifacts = require('./artifacts');
+const constants = require('./constants.js');
+const artifacts = require('./artifacts.js');
 
 const revertToSnapShot = (id) => new Promise((resolve, reject) => {
   web3.currentProvider.send({

@@ -83,9 +83,7 @@ contract SimpleXBEInflation is Initializable {
         onlyAdmin
         returns (bool)
     {
-        if (xbeReceivers.contains(_xbeReceiver)) {
-            return false;
-        }
+        require (!xbeReceivers.contains(_xbeReceiver), "rcvrExists");
 
         xbeReceivers.add(_xbeReceiver);
         weights[_xbeReceiver] = _weight;
@@ -105,6 +103,7 @@ contract SimpleXBEInflation is Initializable {
 
     function setWeight(address _xbeReceiver, uint256 _weight) external onlyAdmin {
         require(xbeReceivers.contains(_xbeReceiver), "rcvr!inList");
+
         uint256 oldWeight = weights[_xbeReceiver];
         sumWeight = sumWeight.add(_weight).sub(oldWeight);
         weights[_xbeReceiver] = _weight;
@@ -120,10 +119,6 @@ contract SimpleXBEInflation is Initializable {
     // @return bool success
     // """u
     function mintForContracts() external {
-        if (xbeReceivers.length() == 0) {
-            return;
-        }
-
         require(totalMinted <= targetMinted, "inflationEnded");
         if (xbeReceivers.length() > 0) {
             require(sumWeight > 0, "sumWeights=0");

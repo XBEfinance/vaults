@@ -11,10 +11,10 @@ const {
   time,
 } = require('@openzeppelin/test-helpers');
 // const { contract } = require('@openzeppelin/test-environment');
-const { people, setPeople } = require('./utils/accounts.js');
-const common = require('./utils/common.js');
-const constants = require('./utils/constants.js');
-const environment = require('./utils/environment.js');
+const { people, setPeople } = require('./utils/accounts');
+const common = require('./utils/common');
+const constants = require('./utils/constants');
+const environment = require('./utils/environment');
 var Eth = require('web3-eth');
 
 
@@ -39,30 +39,30 @@ const {
 var eth = new Eth(Eth.givenProvider || 'ws://127.0.0.1:8545');
 
 let mockXBE;
-  let mockCX;
-  let xbeInflation;
-  let simpleInflation;
-  let mock1;
-  let mock2;
-  let mock3;
-  let deployment;
-  let mocks = { };
-  let weights = { };
-  let sumWeights;
-  let mocksLength = 3;
-  let flag = false;
+let mockCX;
+let simpleInflation;
+let mock1;
+let mock2;
+let mock3;
+let deployment;
+let mocks = {};
+let weights = {};
+let sumWeights;
+let mocksLength = 3;
+let flag = true;
+let treasury;
+let sushiStrategy;
 
 
-contract('SimpleXBEInflation', (accounts) => {
+contract('SimpleXBEInflationTest', (accounts) => {
   setPeople(accounts);
 
   beforeEach(async () => {
-    // constants.localParams.bonusCampaign.startMintTime = await time.latest();
     [
         mockXBE,
         simpleInflation
     ] = await environment.getGroup(
-        environment.defaultGroup,
+      environment.defaultGroup,
         (key) => {
             return [
                 "MockXBE",
@@ -74,39 +74,40 @@ contract('SimpleXBEInflation', (accounts) => {
 
     sumWeights = 0;
     if (flag) {
+      console.log('Prepare mocks, count=', mocksLength);
       let Mock = artifacts.require('MockContract');
-      for (let i = 0; i < mocksLength; i++ ) {
+      for (let i = 0; i < mocksLength; i++) {
         let mock = await Mock.new();
-        mocks[mock.address] = mocks;
-        weights[mock.address] = new BN( (i + 1) * 1000 );
-        sumWeights += weights[mock.address];
-        console.log("mock: ", mock.address.toString());
+        mocks[mock.address] = mocks;                      // set mocks
+        weights[mock.address] = new BN( (i + 1) * 1000 ); // set weights for mocks
+        sumWeights += weights[mock.address];              // take sumWeights into account
+        console.log("mock: ", mock.address.toString(), 'weight', weights[mock.address]);
       }
       flag = true;
     }
 
-    // for (let i = 0; i < mocksLength; i++ ) {
-    //   console.log("cycle: ", mocksArray[i].address.toString());
-    //   mocks[mocksArray[i].address] = mocksArray[i];
-    //   weights[mocksArray[i].address] = new BN( (i + 1) * 1000 );
-    //   sumWeights += weights[mocksArray[i].address];
-    // }
-    
-   
-  
+    for (let i = 0; i < mocksLength; i++ ) {
+      console.log("cycle: ", mocksArray[i].address.toString());
+      mocks[mocksArray[i].address] = mocksArray[i];
+      weights[mocksArray[i].address] = new BN( (i + 1) * 1000 );
+      sumWeights += weights[mocksArray[i].address];
+    }
   });
-
 
   describe('with default params of deployment', () => {
     it('should configure XBEInflation properly', async () => {
       expect( (await simpleInflation.admin()).toString() ).to.be.equal(people.owner);
       expect( (await simpleInflation.token()).toString() ).to.be.equal(mockXBE.address);
       expect( (await simpleInflation.targetMinted()).toString() ).to.be.equal( constants.localParams.simpleXBEInflation.targetMinted.toString() );
-      expect( (await simpleInflation.periodicEmission()).toString() ).to.be.equal(
-        constants.localParams.simpleXBEInflation.targetMinted.div(constants.localParams.simpleXBEInflation.periodsCount).toString());
-      expect( (await simpleInflation.periodDuration()).toString() ).to.be.equal(constants.localParams.simpleXBEInflation.periodDuration.toString());
-      
-      
+      expect( (await simpleInflation.periodicEmission()).toString() )
+        .to.be.equal(
+          constants.localParams.simpleXBEInflation.targetMinted
+            .div(constants.localParams.simpleXBEInflation.periodsCount).toString()
+      );
+      expect( (await simpleInflation.periodDuration()).toString() )
+        .to.be.equal(
+          constants.localParams.simpleXBEInflation.periodDuration.toString()
+      );
     });
 
     it('should add receivers', async () => {
@@ -123,6 +124,10 @@ contract('SimpleXBEInflation', (accounts) => {
     });
 
     it('should mint for receivers', async () => {
+      console.log('receivers count',
+        (await simpleInflation.receiversCount({ from: people.owner })).toString()
+      );
+
       await simpleInflation.mintForContracts();
       for (mock in mocks) {
         console.log( (await mockXBE.balanceOf(mock.address)).toString());
@@ -136,7 +141,19 @@ contract('SimpleXBEInflation', (accounts) => {
     });
 
     it('should mint only in the next period', async () => {
-      await expectRevert(simpleInflation.mintForContracts(), 'availableSupplyDistributed');
+      // configure receivers
+      await simpleInflation.addXBEReceiver(treasury.address, new BN('75'), { from: people.owner });
+      await simpleInflation.addXBEReceiver(sushiStrategy.address, new BN('25'), { from: people.owner });
+
+      expect(
+        (await simpleInflation.receiversCount({ from: people.owner })).toString()
+      ).to.be.equal('2');
+
+      await simpleInflation.mintForContracts();
+      await expectRevert(
+        simpleInflation.mintForContracts(),
+        'availableSupplyDistributed',
+      );
 
       const periodicEmission = await simpleInflation.periodicEmission();
       // const timeToWait = constants.time.days(7); //periodDuration.mul(new BN('10')).add(constants.time.days('1'));
@@ -158,62 +175,11 @@ contract('SimpleXBEInflation', (accounts) => {
         console.log( (await mockXBE.balanceOf(mock.address)).toString());
       }
       for (mock in mocks) {
-        expect( (await mockXBE.balanceOf(mock.address)).toString() ).to.be.equal( 
+        expect( (await mockXBE.balanceOf(mock.address)).toString() ).to.be.equal(
           (periodicEmission.mul( new BN(weights[mock.address]) ).div(new BN( sumWeight )).mul(new BN(2)) ).toString() );
       }
 
     });
-
-  //   xit('should update minting parameters', async () => {
-  //     console.log('should update minting parameters0');
-
-  //     await expectRevert(xbeInflation.updateMiningParameters(), 'tooSoon');
-  //     console.log('should update minting parameters1');
-  //     await time.increase(
-  //       (await xbeInflation.rateReductionTime()).add(constants.time.days('1')),
-  //     );
-  //     console.log('should update minting parameters2');
-
-  //     let expectedStartEpochSupply = await xbeInflation.startEpochSupply();
-  //     let expectedRate = await xbeInflation.initialRate();
-  //     let result = await xbeInflation.updateMiningParameters();
-  //     let blockTimestamp = new BN(
-  //       (await eth.getBlock(result.receipt.blockNumber)).timestamp.toString(),
-  //     );
-
-  //     processEventArgs(result, 'UpdateMiningParameters', (args) => {
-  //       expect(args.time.toString()).to.be.equal(blockTimestamp.toString());
-  //       expect(args.rate.toString()).to.be.equal(expectedRate.toString());
-  //       expect(args.supply.toString()).to.be.equal(expectedStartEpochSupply.toString());
-  //     });
-
-  //     await time.increase(
-  //       await xbeInflation.rateReductionTime(),
-  //     );
-
-  //     const oldRate = await xbeInflation.rate();
-  //     const rateReductionTime = await xbeInflation.rateReductionTime();
-
-  //     expectedStartEpochSupply = expectedStartEpochSupply.add(
-  //       oldRate.mul(rateReductionTime),
-  //     );
-
-  //     expectedRate = oldRate
-  //       .mul(await xbeInflation.rateDenominator())
-  //       .div(await xbeInflation.rateReductionCoefficient());
-
-  //     result = await xbeInflation.updateMiningParameters();
-
-  //     blockTimestamp = new BN(
-  //       (await web3.eth.getBlock(result.receipt.blockNumber)).timestamp.toString(),
-  //     );
-
-  //     processEventArgs(result, 'UpdateMiningParameters', (args) => {
-  //       expect(args.time.toString()).to.be.equal(blockTimestamp.toString());
-  //       expect(args.rate.toString()).to.be.equal(expectedRate.toString());
-  //       expect(args.supply.toString()).to.be.equal(expectedStartEpochSupply.toString());
-  //     });
-  //   });
 
 
   //   xit('should set admin role', async () => {

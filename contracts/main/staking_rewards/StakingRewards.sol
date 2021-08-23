@@ -139,22 +139,10 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         emit RewardAdded(reward);
     }
 
-    // End rewards emission earlier
-    function updatePeriodFinish(uint256 timestamp) external onlyOwner updateReward(address(0)) {
-        periodFinish = timestamp;
-    }
-
-    // Added to support recovering LP Rewards from other systems such as BAL to be distributed to holders
-    function recoverERC20(address tokenAddress, uint256 tokenAmount) external onlyOwner {
-        require(tokenAddress != stakingToken, "Cannot withdraw the staking token");
-        IERC20(tokenAddress).safeTransfer(owner(), tokenAmount);
-        emit Recovered(tokenAddress, tokenAmount);
-    }
-
     function setRewardsDuration(uint256 _rewardsDuration) external onlyOwner {
         require(
             block.timestamp > periodFinish,
-            "Previous rewards period must be complete before changing the duration for the new period"
+            "block.timestamp > periodFinish"
         );
         rewardsDuration = _rewardsDuration;
         emit RewardsDurationUpdated(rewardsDuration);
@@ -179,5 +167,4 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
     event RewardsDurationUpdated(uint256 newDuration);
-    event Recovered(address token, uint256 amount);
 }

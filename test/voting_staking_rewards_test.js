@@ -43,6 +43,7 @@ const redeploy = async () => {
       'LockSubscription',
       'Treasury',
       'Voting',
+      'SushiVault',
       'Kernel',
       'ACL',
       'BaseKernel',

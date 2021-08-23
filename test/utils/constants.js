@@ -74,7 +74,7 @@ const getParams = (distro) => {
     },
     votingStakingRewards: {
       rewardsDuration: days('7'),
-      bondedLockDuration: new BN('3600'),
+      bondedLockDuration: (new BN('3600')).mul(new BN('24')),
     },
   };
   developmentParams = {

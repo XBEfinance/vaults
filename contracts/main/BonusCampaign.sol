@@ -6,7 +6,6 @@ import "./interfaces/ILockSubscriber.sol";
 import "./staking_rewards/StakingRewards.sol";
 
 contract BonusCampaign is StakingRewards, ILockSubscriber {
-
     uint256 public bonusEmission;
     uint256 public startMintTime;
     uint256 public stopRegisterTime;
@@ -73,11 +72,6 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         revert("!allowed");
     }
 
-    function _toUint64(uint256 a) internal pure returns(uint64) {
-        require(a <= uint256(uint64(-1)), "numberIsTooBig");
-        return uint64(a);
-    }
-
     function _canRegister(address account) internal view returns(bool) {
         return block.timestamp <= stopRegisterTime && !registered[account];
     }
@@ -95,7 +89,7 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         require(!registered[user], "alreadyRegistered");
         // avoid double staking in this very block by subtracting one from block.number
         IVotingEscrow veToken = IVotingEscrow(stakingToken);
-        uint256 amount = veToken.balanceOfAt(user, _toUint64(block.number));
+        uint256 amount = veToken.balanceOfAt(user, block.number);
         require(amount > 0, "!stake0");
         require(veToken.lockedEnd(user).sub(veToken.lockStarts(user)) >= rewardsDuration, "stakedForNotEnoughTime");
         _totalSupply = _totalSupply.add(amount);
@@ -121,19 +115,9 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         }
     }
 
-    function evacuate(uint256 amount) external onlyOwner {
-        IERC20(rewardsToken).safeTransfer(owner(), amount);
-    }
-
     function startMint() external onlyRewardsDistribution updateReward(address(0)) {
         require(!_mintStarted, "mintAlreadyHappened");
-        if (block.timestamp >= periodFinish) {
-            rewardRate = bonusEmission.div(rewardsDuration);
-        } else {
-            uint256 remaining = periodFinish.sub(block.timestamp);
-            uint256 leftover = remaining.mul(rewardRate);
-            rewardRate = bonusEmission.add(leftover).div(rewardsDuration);
-        }
+        rewardRate = bonusEmission.div(rewardsDuration);
 
         // Ensure the provided bonusEmission amount is not more than the balance in the contract.
         // This keeps the bonusEmission rate in the right range, preventing overflows due to
@@ -141,9 +125,6 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
 
         IMint(rewardsToken).mint(address(this), bonusEmission);
-
-        uint256 balance = IERC20(rewardsToken).balanceOf(address(this));
-        require(rewardRate <= balance.div(rewardsDuration), "Provided balance is too high");
 
         lastUpdateTime = startMintTime;
         periodFinish = startMintTime.add(rewardsDuration);

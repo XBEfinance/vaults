@@ -1,7 +1,3 @@
-/*
- * SPDX-License-Identitifer:    GPL-3.0-or-later
- */
-
 pragma solidity ^0.4.24;
 
 import "@aragon/os/contracts/apps/AragonApp.sol";
@@ -10,10 +6,10 @@ import "@aragon/os/contracts/common/IForwarder.sol";
 import "@aragon/os/contracts/lib/math/SafeMath.sol";
 import "@aragon/os/contracts/lib/math/SafeMath64.sol";
 
-import "@aragon/minime/contracts/MiniMeToken.sol";
-
 import "@aragon/os/contracts/common/UnstructuredStorage.sol";
 import "@aragon/os/contracts/lib/math/Math.sol";
+
+import "./interfaces/IVeXBE.sol";
 
 contract Voting is IForwarder, AragonApp {
     using SafeMath for uint256;
@@ -36,7 +32,7 @@ contract Voting is IForwarder, AragonApp {
 
     uint256 public constant PCT_BASE = 10 ** 18; // 0% = 0; 1% = 10^16; 100% = 10^18
 
-    MiniMeToken public token;
+    IVeXBE public token;
 
     enum VoterState { Absent, Yea, Nay }
 
@@ -74,7 +70,7 @@ contract Voting is IForwarder, AragonApp {
 
     /**
     * @notice Initialize Voting app with `_token.symbol(): string` for governance, minimum support of `@formatPct(_supportRequiredPct)`%, minimum acceptance quorum of `@formatPct(_minAcceptQuorumPct)`%, and a voting duration of `@transformTime(_voteTime)`
-    * @param _token MiniMeToken Address that will be used as governance token
+    * @param _token VeXBE Address that will be used as governance token
     * @param _supportRequiredPct Percentage of yeas in casted votes for a vote to succeed (expressed as a percentage of 10^18; eg. 10^16 = 1%, 10^18 = 100%)
     * @param _minAcceptQuorumPct Percentage of yeas in total possible votes for a vote to succeed (expressed as a percentage of 10^18; eg. 10^16 = 1%, 10^18 = 100%)
     * @param _voteTime Seconds that a vote will be open for token holders to vote (unless enough yeas or nays have been cast to make an early decision)
@@ -91,7 +87,7 @@ contract Voting is IForwarder, AragonApp {
 
     // function Voting() payable {}
 
-    function initialize(MiniMeToken _token, uint64 _supportRequiredPct, uint64 _minAcceptQuorumPct, uint64 _voteTime) external _onlyInit {
+    function initialize(IVeXBE _token, uint64 _supportRequiredPct, uint64 _minAcceptQuorumPct, uint64 _voteTime) external _onlyInit {
         // initialized();
         INITIALIZATION_BLOCK_POSITION.setStorageUint256(getBlockNumber());
         _initialized = true;

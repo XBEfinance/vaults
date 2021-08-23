@@ -13,4 +13,5 @@ interface IVeXBE {
     function totalSupply() external view returns(uint256);
     function lockedSupply() external view returns(uint256);
     function lockStarts(address addr) external view returns(uint256);
+    function totalSupplyAt(uint256 _block) external view returns(uint256);
 }

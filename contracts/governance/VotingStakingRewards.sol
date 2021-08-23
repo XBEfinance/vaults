@@ -145,7 +145,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         boostLogicProvider = IBoostLogicProvider(_boostLogicProvider);
     }
 
-    function setStrategyWhoCanAutoStake(address _addr, bool _flag)
+    function setAddressWhoCanAutoStake(address _addr, bool _flag)
         external
         onlyOwner
     {
@@ -204,7 +204,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         totalSupply = totalSupply.add(_amount);
         _balances[_from] = _balances[_from].add(_amount);
 
-        require(stakingToken.transferFrom(msg.sender, address(this), _amount), "!t");
+        require(stakingToken.transferFrom(_from, address(this), _amount), "!t");
         emit Staked(_from, _amount);
     }
 

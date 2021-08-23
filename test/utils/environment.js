@@ -393,11 +393,7 @@ const environment = {
           ).address,
         ],
       ];
-      console.log((await common.overrideConfigureArgsIfNeeded(
-        originalConfigureParams,
-        overridenConfigureParams,
-        originalConfigureParams.length,
-      ))[8].toString());
+
       await instance.configure(
         ...(await common.overrideConfigureArgsIfNeeded(
           originalConfigureParams,

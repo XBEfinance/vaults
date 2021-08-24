@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/minting/IMint.sol";
 
 contract MockToken is ERC20, IMint {
-
     bool public blockTransfers;
     bool public blockTransfersFrom;
 
@@ -34,10 +33,11 @@ contract MockToken is ERC20, IMint {
         }
     }
 
-    function _transfer(address sender, address recipient, uint256 amount)
-        internal
-        override
-    {
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal override {
         require(!blockTransfers, "blocked");
         super._transfer(sender, recipient, amount);
     }
@@ -46,9 +46,9 @@ contract MockToken is ERC20, IMint {
         address sender,
         address recipient,
         uint256 amount
-    ) public override returns(bool) {
+    ) public override returns (bool) {
         if (blockTransfersFrom) {
-          return false;
+            return false;
         }
         return super.transferFrom(sender, recipient, amount);
     }
@@ -57,7 +57,7 @@ contract MockToken is ERC20, IMint {
         _mint(msg.sender, _amount);
     }
 
-    function mint(address account, uint256 amount) override external {
+    function mint(address account, uint256 amount) external override {
         _mint(account, amount);
     }
 }

@@ -10,9 +10,7 @@ import "../interfaces/IStrategy.sol";
 
 import "../TokenWrapper.sol";
 
-
 contract UnwrappedToWrappedTokenConverter is IConverter, Initializable {
-
     using SafeERC20 for TokenWrapper;
 
     address public token;
@@ -21,7 +19,7 @@ contract UnwrappedToWrappedTokenConverter is IConverter, Initializable {
         token = _token;
     }
 
-    function convert(address _strategy) override external returns(uint256) {
+    function convert(address _strategy) external override returns (uint256) {
         uint256 tokenBalance = IERC20(token).balanceOf(address(this));
         TokenWrapper wrapper = TokenWrapper(IStrategy(_strategy).want());
         IERC20(token).approve(address(wrapper), tokenBalance);

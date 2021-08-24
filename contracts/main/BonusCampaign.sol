@@ -45,12 +45,12 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         uint256 lockStart,
         uint256 lockEnd,
         uint256 amount
-    ) override external onlyRegistrator
-    {
-        if ((block.timestamp < periodFinish || periodFinish == 0)
-            && (lockEnd.sub(lockStart) >= rewardsDuration)
-            && _canRegister(account))
-        {
+    ) external override onlyRegistrator {
+        if (
+            (block.timestamp < periodFinish || periodFinish == 0) &&
+            (lockEnd.sub(lockStart) >= rewardsDuration) &&
+            _canRegister(account)
+        ) {
             _registerFor(account);
         }
     }
@@ -72,17 +72,18 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         revert("!allowed");
     }
 
-    function _canRegister(address account) internal view returns(bool) {
+    function _canRegister(address account) internal view returns (bool) {
         return block.timestamp <= stopRegisterTime && !registered[account];
     }
 
-    function canRegister(address account) external view returns(bool) {
+    function canRegister(address account) external view returns (bool) {
         return _canRegister(account);
     }
 
     function _registerFor(address user)
         internal
-        nonReentrant whenNotPaused
+        nonReentrant
+        whenNotPaused
         updateReward(user)
     {
         require(block.timestamp <= stopRegisterTime, "registerNowIsBlocked");
@@ -91,7 +92,11 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         IVotingEscrow veToken = IVotingEscrow(stakingToken);
         uint256 amount = veToken.balanceOfAt(user, block.number);
         require(amount > 0, "!stake0");
-        require(veToken.lockedEnd(user).sub(veToken.lockStarts(user)) >= rewardsDuration, "stakedForNotEnoughTime");
+        require(
+            veToken.lockedEnd(user).sub(veToken.lockStarts(user)) >=
+                rewardsDuration,
+            "stakedForNotEnoughTime"
+        );
         _totalSupply = _totalSupply.add(amount);
         _balances[user] = _balances[user].add(amount);
         registered[user] = true;
@@ -102,7 +107,13 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         _registerFor(msg.sender);
     }
 
-    function lastTimeRewardApplicable() public virtual override view returns (uint256) {
+    function lastTimeRewardApplicable()
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
         return Math.max(startMintTime, Math.min(block.timestamp, periodFinish));
     }
 
@@ -115,7 +126,11 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         }
     }
 
-    function startMint() external onlyRewardsDistribution updateReward(address(0)) {
+    function startMint()
+        external
+        onlyRewardsDistribution
+        updateReward(address(0))
+    {
         require(!_mintStarted, "mintAlreadyHappened");
         rewardRate = bonusEmission.div(rewardsDuration);
 
@@ -134,7 +149,7 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
 
     function hasMaxBoostLevel(address account) external view returns (bool) {
         return
-            (block.timestamp < periodFinish || periodFinish == 0)  // is campaign active or mint not started
-            && registered[account];         // is user registered
+            (block.timestamp < periodFinish || periodFinish == 0) && // is campaign active or mint not started
+            registered[account]; // is user registered
     }
 }

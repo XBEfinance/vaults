@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "./interfaces/ILockSubscriber.sol";
 
 contract LockSubscription is Ownable {
-
     using EnumerableSet for EnumerableSet.AddressSet;
 
     EnumerableSet.AddressSet internal subscribers;
@@ -14,7 +13,7 @@ contract LockSubscription is Ownable {
     bool public isActive = true;
 
     modifier onlyEventSource() {
-        require(msg.sender == eventSource, '!eventSource');
+        require(msg.sender == eventSource, "!eventSource");
         _;
     }
 
@@ -27,7 +26,7 @@ contract LockSubscription is Ownable {
     }
 
     function _setEventSource(address _eventSource) internal {
-        require(_eventSource != address(0), 'zeroAddress');
+        require(_eventSource != address(0), "zeroAddress");
         eventSource = _eventSource;
     }
 
@@ -36,7 +35,7 @@ contract LockSubscription is Ownable {
     }
 
     function addSubscriber(address s) external onlyOwner {
-        require(s != address(0), 'zeroAddress');
+        require(s != address(0), "zeroAddress");
         subscribers.add(s);
     }
 
@@ -53,10 +52,7 @@ contract LockSubscription is Ownable {
         uint256 lockStart,
         uint256 lockEnd,
         uint256 amount
-    )
-      external
-      onlyEventSource
-    {
+    ) external onlyEventSource {
         if (!isActive) {
             return;
         }
@@ -64,8 +60,12 @@ contract LockSubscription is Ownable {
         uint256 count = subscribers.length();
         if (count != 0) {
             for (uint64 i = 0; i < count; i++) {
-                ILockSubscriber(subscribers.at(i))
-                    .processLockEvent(account, lockStart, lockEnd, amount);
+                ILockSubscriber(subscribers.at(i)).processLockEvent(
+                    account,
+                    lockStart,
+                    lockEnd,
+                    amount
+                );
             }
         }
     }

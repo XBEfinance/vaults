@@ -12,35 +12,39 @@ import "../../TokenWrapper.sol";
 /// @title ConsumerEURxbStrategy
 /// @notice This is contract for yield farming strategy with EURxb token for consumers
 contract ConsumerEURxbStrategy is BaseStrategy {
+    function deposit() external override {}
 
-    function deposit() override external {
-
-    }
-
-    function _withdrawSome(uint256 _amount) internal override returns(uint) {
+    function _withdrawSome(uint256 _amount)
+        internal
+        override
+        returns (uint256)
+    {
         return _amount;
     }
 
-    function canClaimAmount(address _rewardToken) external view override returns(uint256) {
+    function canClaimAmount(address _rewardToken)
+        external
+        view
+        override
+        returns (uint256)
+    {
         return 0;
     }
 
-    function claim(address) external override returns(bool) {
+    function claim(address) external override returns (bool) {
         return false;
     }
 
-    function convertTokens(uint256) external override {
+    function convertTokens(uint256) external override {}
 
-    }
+    function earned(address[] calldata)
+        external
+        view
+        override
+        returns (uint256[] memory)
+    {}
 
-    function earned(address[] calldata) external override view returns(uint256[] memory) {
+    function getRewards() external override {}
 
-    }
-
-    function getRewards() external override {
-
-    }
-
-    function convertAndStakeTokens(uint256 _amount) override external {}
-
+    function convertAndStakeTokens(uint256 _amount) external override {}
 }

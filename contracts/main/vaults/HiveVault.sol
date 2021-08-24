@@ -8,9 +8,14 @@ import "./base/VaultWithReferralProgram.sol";
 
 /// @title SushiVault
 /// @notice Vault for staking LP Sushiswap and receive rewards in CVX
-contract HiveVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim, VaultWithFeesOnDeposit, VaultWithReferralProgram {
-
-    constructor() BaseVault("XBE Hive Curve LP", "xh") public {}
+contract HiveVault is
+    BaseVault,
+    VaultWithAutoStake,
+    VaultWithFeesOnClaim,
+    VaultWithFeesOnDeposit,
+    VaultWithReferralProgram
+{
+    constructor() public BaseVault("XBE Hive Curve LP", "xh") {}
 
     function configure(
         address _initialToken,
@@ -42,7 +47,11 @@ contract HiveVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim, Vault
         );
     }
 
-    function _deposit(address _from, uint256 _amount) internal override returns(uint256) {
+    function _deposit(address _from, uint256 _amount)
+        internal
+        override
+        returns (uint256)
+    {
         require(_amount > 0, "Cannot stake 0");
         _amount = _getFeeForDepositAndSendIt(stakingToken, _amount);
         _totalSupply = _totalSupply.add(_amount);
@@ -58,9 +67,7 @@ contract HiveVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim, Vault
         address _for,
         address _rewardToken,
         address _stakingToken
-    )
-        internal override
-    {
+    ) internal override {
         if (_claimMask == 0x02) {
             _controller.claim(_stakingToken, _rewardToken);
         } else if (_claimMask == 0x03) {
@@ -70,13 +77,22 @@ contract HiveVault is BaseVault, VaultWithAutoStake, VaultWithFeesOnClaim, Vault
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
-            reward = _getAndDistributeFeesOnClaimForToken(_for, _rewardToken, reward);
+            reward = _getAndDistributeFeesOnClaimForToken(
+                _for,
+                _rewardToken,
+                reward
+            );
             _autoStakeForOrSendTo(_rewardToken, reward, _for);
         }
         emit RewardPaid(_rewardToken, _for, reward);
     }
 
-    function _isUserAuthorized(address _user) internal override view returns(bool) {
+    function _isUserAuthorized(address _user)
+        internal
+        view
+        override
+        returns (bool)
+    {
         return owner() == _user;
     }
 }

@@ -10,15 +10,10 @@ import "./interfaces/minting/IMint.sol";
 import "./interfaces/IXBEInflation.sol";
 
 contract XBEInflation is Initializable, IXBEInflation {
-
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    event Transfer(
-        address indexed _from,
-        address indexed _to,
-        uint256 _value
-    );
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);
 
     event Approval(
         address indexed _owner,
@@ -26,11 +21,7 @@ contract XBEInflation is Initializable, IXBEInflation {
         uint256 _value
     );
 
-    event UpdateMiningParameters(
-        uint256 time,
-        uint256 rate,
-        uint256 supply
-    );
+    event UpdateMiningParameters(uint256 time, uint256 rate, uint256 supply);
     event SetAdmin(address admin);
 
     event CalculatedEpochTimeWritten(uint256 epochTime);
@@ -65,9 +56,9 @@ contract XBEInflation is Initializable, IXBEInflation {
 
     EnumerableSet.AddressSet internal _xbeReceivers;
 
-    modifier onlyAdmin {
-      require(msg.sender == admin, "!admin");
-      _;
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "!admin");
+        _;
     }
 
     // """
@@ -91,10 +82,14 @@ contract XBEInflation is Initializable, IXBEInflation {
         rateReductionTime = _rateReductionTime;
         rateReductionCoefficient = _rateReductionCoefficient;
         rateDenominator = _rateDenominator;
-        startEpochTime = block.timestamp.add(_inflationDelay).sub(rateReductionTime);
+        startEpochTime = block.timestamp.add(_inflationDelay).sub(
+            rateReductionTime
+        );
         miningEpoch = -1;
         rate = 0;
-        uint256 initSupply = _initialSupply.mul(uint256(10) ** ERC20(_token).decimals());
+        uint256 initSupply = _initialSupply.mul(
+            uint256(10)**ERC20(_token).decimals()
+        );
         startEpochSupply = initSupply;
         totalMinted = initSupply;
     }
@@ -112,7 +107,9 @@ contract XBEInflation is Initializable, IXBEInflation {
         if (_rate == 0) {
             _rate = initialRate;
         } else {
-            _startEpochSupply = _startEpochSupply.add(_rate.mul(rateReductionTime));
+            _startEpochSupply = _startEpochSupply.add(
+                _rate.mul(rateReductionTime)
+            );
             startEpochSupply = _startEpochSupply;
             _rate = _rate.mul(rateDenominator).div(rateReductionCoefficient);
         }
@@ -122,14 +119,16 @@ contract XBEInflation is Initializable, IXBEInflation {
         emit UpdateMiningParameters(block.timestamp, _rate, _startEpochSupply);
     }
 
-
     // """
     // @notice Update mining rate and supply at the start of the epoch
     // @dev Callable by any address, but only once per epoch
     //      Total supply becomes slightly larger if this function is called late
     // """
     function updateMiningParameters() external {
-        require(block.timestamp >= startEpochTime.add(rateReductionTime), "tooSoon");
+        require(
+            block.timestamp >= startEpochTime.add(rateReductionTime),
+            "tooSoon"
+        );
         _updateMiningParameters();
     }
 
@@ -138,7 +137,7 @@ contract XBEInflation is Initializable, IXBEInflation {
     //         while simultaneously updating mining parameters
     // @return Timestamp of the epoch
     // """
-    function startEpochTimeWrite() external returns(uint256) {
+    function startEpochTimeWrite() external returns (uint256) {
         uint256 _startEpochTime = startEpochTime;
         if (block.timestamp >= _startEpochTime.add(rateReductionTime)) {
             _updateMiningParameters();
@@ -154,7 +153,7 @@ contract XBEInflation is Initializable, IXBEInflation {
     //         while simultaneously updating mining parameters
     // @return Timestamp of the next epoch
     // """
-    function futureEpochTimeWrite() external override returns(uint256) {
+    function futureEpochTimeWrite() external override returns (uint256) {
         uint256 _startEpochTime = startEpochTime;
         if (block.timestamp >= _startEpochTime.add(rateReductionTime)) {
             _updateMiningParameters();
@@ -164,14 +163,15 @@ contract XBEInflation is Initializable, IXBEInflation {
         return _startEpochTime;
     }
 
-    function _availableSupply() internal view returns(uint256) {
-        return startEpochSupply.add(block.timestamp.sub(startEpochTime).mul(rate));
+    function _availableSupply() internal view returns (uint256) {
+        return
+            startEpochSupply.add(block.timestamp.sub(startEpochTime).mul(rate));
     }
 
     // """
     // @notice Current number of tokens in existence (claimed or unclaimed)
     // """
-    function availableSupply() external view returns(uint256) {
+    function availableSupply() external view returns (uint256) {
         return _availableSupply();
     }
 
@@ -181,7 +181,11 @@ contract XBEInflation is Initializable, IXBEInflation {
     // @param end End of the time interval (timestamp)
     // @return Tokens mintable from `start` till `end`
     // """
-    function mintableInTimeframe(uint256 start, uint256 end) external view returns(uint256) {
+    function mintableInTimeframe(uint256 start, uint256 end)
+        external
+        view
+        returns (uint256)
+    {
         require(start <= end, "startGtEnd");
         uint256 toMint = 0;
         uint256 currentEpochTime = startEpochTime;
@@ -190,14 +194,18 @@ contract XBEInflation is Initializable, IXBEInflation {
         // Special case if end is in future (not yet minted) epoch
         if (end > currentEpochTime.add(rateReductionTime)) {
             currentEpochTime = currentEpochTime.add(rateReductionTime);
-            currentRate = currentRate.mul(rateDenominator).div(rateReductionCoefficient);
+            currentRate = currentRate.mul(rateDenominator).div(
+                rateReductionCoefficient
+            );
         }
 
-        require(end <= currentEpochTime.add(rateReductionTime), "tooFarInFuture");
+        require(
+            end <= currentEpochTime.add(rateReductionTime),
+            "tooFarInFuture"
+        );
 
         for (uint256 i = 0; i < 999; i++) {
             if (end >= currentEpochTime) {
-
                 uint256 currentEnd = end;
 
                 if (currentEnd > currentEpochTime.add(rateReductionTime)) {
@@ -212,7 +220,9 @@ contract XBEInflation is Initializable, IXBEInflation {
                     currentStart = currentEpochTime;
                 }
 
-                toMint = toMint.add(currentRate.mul(currentEnd.sub(currentStart)));
+                toMint = toMint.add(
+                    currentRate.mul(currentEnd.sub(currentStart))
+                );
 
                 if (start >= currentEpochTime) {
                     break;
@@ -220,7 +230,9 @@ contract XBEInflation is Initializable, IXBEInflation {
             }
             currentEpochTime = currentEpochTime.sub(rateReductionTime);
             // double-division with rounding made rate a bit less => good
-            currentRate = currentRate.mul(rateReductionCoefficient).div(rateDenominator);
+            currentRate = currentRate.mul(rateReductionCoefficient).div(
+                rateDenominator
+            );
             // This should never happen
             require(currentRate <= initialRate, "currentRateGtInitialRate");
         }
@@ -237,11 +249,18 @@ contract XBEInflation is Initializable, IXBEInflation {
         emit SetAdmin(_admin);
     }
 
-    function getWeightInPoints(address _xbeReceiver, uint256 maxPoints) external view returns(uint256) {
+    function getWeightInPoints(address _xbeReceiver, uint256 maxPoints)
+        external
+        view
+        returns (uint256)
+    {
         return weights[_xbeReceiver].mul(maxPoints).div(sumWeight);
     }
 
-    function addXBEReceiver(address _xbeReceiver, uint256 _weight) external onlyAdmin {
+    function addXBEReceiver(address _xbeReceiver, uint256 _weight)
+        external
+        onlyAdmin
+    {
         _xbeReceivers.add(_xbeReceiver);
         weights[_xbeReceiver] = _weight;
         sumWeight = sumWeight.add(_weight);
@@ -252,7 +271,10 @@ contract XBEInflation is Initializable, IXBEInflation {
         _xbeReceivers.remove(_xbeReceiver);
     }
 
-    function setWeight(address _xbeReceiver, uint256 _weight) external onlyAdmin {
+    function setWeight(address _xbeReceiver, uint256 _weight)
+        external
+        onlyAdmin
+    {
         uint256 oldWeight = weights[_xbeReceiver];
         if (oldWeight > _weight) {
             sumWeight = sumWeight.sub(oldWeight.sub(_weight));
@@ -262,29 +284,24 @@ contract XBEInflation is Initializable, IXBEInflation {
         weights[_xbeReceiver] = _weight;
     }
 
-
     // """
     // @notice Mint part of available supply of tokens and assign them to approved contracts
     // @dev Emits a Transfer event originating from 0x00
     // @return bool success
     // """
-    function mintForContracts()
-        external
-        returns(bool)
-    {
+    function mintForContracts() external returns (bool) {
         uint256 __availableSupply = _availableSupply();
-        require(totalMinted <= __availableSupply, "availableSupply(Gt|Eq)TotalMinted");
+        require(
+            totalMinted <= __availableSupply,
+            "availableSupply(Gt|Eq)TotalMinted"
+        );
         if (block.timestamp >= startEpochTime.add(rateReductionTime)) {
             _updateMiningParameters();
         }
         for (uint256 i = 0; i < _xbeReceivers.length(); i++) {
             address _to = _xbeReceivers.at(i);
             require(_to != address(0), "!zeroAddress");
-            uint256 toMint = __availableSupply
-              .mul(
-                weights[_to]
-              )
-              .div(sumWeight);
+            uint256 toMint = __availableSupply.mul(weights[_to]).div(sumWeight);
             IMint(token).mint(_to, toMint);
             totalMinted = totalMinted + toMint;
         }

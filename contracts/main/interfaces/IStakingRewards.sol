@@ -1,6 +1,5 @@
 pragma solidity ^0.6.0;
 
-
 // https://docs.synthetix.io/contracts/source/interfaces/istakingrewards
 interface IStakingRewards {
     // Views

@@ -4,12 +4,11 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./base/WithClaimAmountStrategy.sol";
-import '../interfaces/IConvexMasterChef.sol';
+import "../interfaces/IConvexMasterChef.sol";
 
 /// @title SushiStrategy
 /// @notice This is contract
 contract SushiStrategy is WithClaimAmountStrategy {
-
     struct Settings {
         address lpSushi;
         address xbeToken;
@@ -31,31 +30,34 @@ contract SushiStrategy is WithClaimAmountStrategy {
             _governance
         );
         poolSettings = _poolSettings;
-        rewardTokensToRewardSources[_poolSettings.xbeToken] = _poolSettings.xbeToken;
+        rewardTokensToRewardSources[_poolSettings.xbeToken] = _poolSettings
+            .xbeToken;
     }
 
     /// @dev Function that controller calls
-    function deposit() override external onlyController {
+    function deposit() external override onlyController {
         uint256 _amount = IERC20(_want).balanceOf(address(this));
         _totalDeposited += _amount;
     }
 
-    function getRewards() override external {}
+    function getRewards() external override {}
 
-    function _withdrawSome(uint256 _amount) override internal returns(uint256) {
+    function _withdrawSome(uint256 _amount)
+        internal
+        override
+        returns (uint256)
+    {
         IERC20(poolSettings.lpSushi).safeTransfer(msg.sender, _amount);
         return _amount;
     }
 
-    function _getAmountOfPendingRewardEarnedFrom(address _rewardSourceContractAddress)
-        override
-        view
-        internal
-        returns(uint256)
-    {
+    function _getAmountOfPendingRewardEarnedFrom(
+        address _rewardSourceContractAddress
+    ) internal view override returns (uint256) {
         return IERC20(_rewardSourceContractAddress).balanceOf(address(this));
     }
 
-    function convertTokens(uint256 _amount) override external {}
-    function convertAndStakeTokens(uint256 _amount) override external {}
+    function convertTokens(uint256 _amount) external override {}
+
+    function convertAndStakeTokens(uint256 _amount) external override {}
 }

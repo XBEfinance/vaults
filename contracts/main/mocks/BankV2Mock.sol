@@ -27,5 +27,4 @@ contract BankV2Mock is Initializable, ERC20 {
         something = _something;
         newInitialized = true;
     }
-
 }

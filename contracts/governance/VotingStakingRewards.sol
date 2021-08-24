@@ -14,7 +14,12 @@ import "./utils/VotingNonReentrant.sol";
 import "./utils/VotingOwnable.sol";
 import "./utils/VotingInitializable.sol";
 
-contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnable, VotingInitializable {
+contract VotingStakingRewards is
+    VotingPausable,
+    VotingNonReentrant,
+    VotingOwnable,
+    VotingInitializable
+{
     using SafeMath for uint256;
 
     /* ========== EVENTS ========== */
@@ -24,7 +29,7 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
 
-    uint256 public constant PCT_BASE = 10 ** 18; // 0% = 0; 1% = 10^16; 100% = 10^18
+    uint256 public constant PCT_BASE = 10**18; // 0% = 0; 1% = 10^16; 100% = 10^18
     uint256 internal constant MAX_BOOST_LEVEL = PCT_BASE;
 
     address public treasury;
@@ -92,10 +97,15 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
 
     modifier updateReward(address account) {
         uint256 _lastTimeReward = lastTimeRewardApplicable();
-        rewardPerTokenStored = _rewardPerToken(_lastTimeReward.sub(lastUpdateTime));
+        rewardPerTokenStored = _rewardPerToken(
+            _lastTimeReward.sub(lastUpdateTime)
+        );
         lastUpdateTime = _lastTimeReward;
         if (account != address(0)) {
-            (uint256 userEarned, uint256 toTreasury) = potentialXbeReturns(_lastTimeReward.sub(lastUpdateTime), account);
+            (uint256 userEarned, uint256 toTreasury) = potentialXbeReturns(
+                _lastTimeReward.sub(lastUpdateTime),
+                account
+            );
             rewards[account] = userEarned;
             userRewardPerTokenPaid[account] = rewardPerTokenStored;
             // transfer remaining reward share to treasury
@@ -104,14 +114,20 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         _;
     }
 
-    modifier onlyRewardsDistribution {
-        require(msg.sender == rewardsDistribution, "Caller is not RewardsDistribution contract");
+    modifier onlyRewardsDistribution() {
+        require(
+            msg.sender == rewardsDistribution,
+            "Caller is not RewardsDistribution contract"
+        );
         _;
     }
 
     /* ========== OWNERS FUNCTIONS ========== */
 
-    function setRewardsDistribution(address _rewardsDistribution) external onlyOwner {
+    function setRewardsDistribution(address _rewardsDistribution)
+        external
+        onlyOwner
+    {
         rewardsDistribution = _rewardsDistribution;
     }
 
@@ -120,13 +136,14 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         onlyOwner
     {
         inverseMaxBoostCoefficient = _inverseMaxBoostCoefficient;
-        require(_inverseMaxBoostCoefficient > 0 && _inverseMaxBoostCoefficient < 100, "invalidInverseMaxBoostCoefficient");
+        require(
+            _inverseMaxBoostCoefficient > 0 &&
+                _inverseMaxBoostCoefficient < 100,
+            "invalidInverseMaxBoostCoefficient"
+        );
     }
 
-    function setPenaltyPct(uint256 _penaltyPct)
-        external
-        onlyOwner
-    {
+    function setPenaltyPct(uint256 _penaltyPct) external onlyOwner {
         penaltyPct = _penaltyPct;
         require(_penaltyPct < PCT_BASE, "tooHighPct");
     }
@@ -178,7 +195,11 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
 
     /* ========== RESTRICTED FUNCTIONS ========== */
 
-    function notifyRewardAmount(uint256 reward) external onlyRewardsDistribution updateReward(address(0)) {
+    function notifyRewardAmount(uint256 reward)
+        external
+        onlyRewardsDistribution
+        updateReward(address(0))
+    {
         if (block.timestamp >= periodFinish) {
             rewardRate = reward.div(rewardsDuration);
         } else {
@@ -192,25 +213,32 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         // very high values of rewardRate in the earned and rewardsPerToken functions;
         // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
         uint256 balance = rewardsToken.balanceOf(address(this));
-        require(rewardRate <= balance.div(rewardsDuration), "Provided reward too high");
+        require(
+            rewardRate <= balance.div(rewardsDuration),
+            "Provided reward too high"
+        );
 
         lastUpdateTime = block.timestamp;
         periodFinish = block.timestamp.add(rewardsDuration);
         emit RewardAdded(reward);
     }
 
-    function _stake(address _from, uint256 _amount) internal {
+    function _stake(address _for, uint256 _amount) internal {
         require(_amount > 0, "Cannot stake 0");
         totalSupply = totalSupply.add(_amount);
-        _balances[_from] = _balances[_from].add(_amount);
+        _balances[_for] = _balances[_for].add(_amount);
 
-        require(stakingToken.transferFrom(_from, address(this), _amount), "!t");
-        emit Staked(_from, _amount);
+        require(
+            stakingToken.transferFrom(msg.sender, address(this), _amount),
+            "!t"
+        );
+        emit Staked(_for, _amount);
     }
 
     function stakeFor(address _for, uint256 amount)
         external
-        nonReentrant whenNotPaused
+        nonReentrant
+        whenNotPaused
         updateReward(_for)
     {
         require(allowance[msg.sender], "stakeNotApproved");
@@ -223,14 +251,25 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         } else {
             bondedRewardLocks[_for].amount = rewardLock.amount.add(amount);
         }
-        bondedRewardLocks[_for].unlockTime = block.timestamp.add(bondedLockDuration);
+        bondedRewardLocks[_for].unlockTime = block.timestamp.add(
+            bondedLockDuration
+        );
     }
 
-    function stake(uint256 amount) external nonReentrant whenNotPaused updateReward(msg.sender) {
+    function stake(uint256 amount)
+        external
+        nonReentrant
+        whenNotPaused
+        updateReward(msg.sender)
+    {
         _stake(msg.sender, amount);
     }
 
-    function withdrawBondedOrWithPenalty() external nonReentrant updateReward(msg.sender) {
+    function withdrawBondedOrWithPenalty()
+        external
+        nonReentrant
+        updateReward(msg.sender)
+    {
         uint256 amount = bondedRewardLocks[msg.sender].amount;
         uint256 escrowed = token.lockedAmount(msg.sender);
         amount = Math.min256(amount, _balances[msg.sender].sub(escrowed));
@@ -242,21 +281,32 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         } else {
             uint256 toTransfer = amount.mul(penaltyPct).div(PCT_BASE);
             uint256 penalty = amount.sub(toTransfer);
-            require(stakingToken.transfer(msg.sender, toTransfer), "!tBondedWithPenalty");
+            require(
+                stakingToken.transfer(msg.sender, toTransfer),
+                "!tBondedWithPenalty"
+            );
             require(stakingToken.transfer(treasury, penalty), "!tPenalty");
         }
         delete bondedRewardLocks[msg.sender];
         emit Withdrawn(msg.sender, amount);
     }
 
-    function withdrawUnbonded(uint256 amount) external nonReentrant updateReward(msg.sender) {
+    function withdrawUnbonded(uint256 amount)
+        external
+        nonReentrant
+        updateReward(msg.sender)
+    {
         require(amount > 0, "Cannot withdraw 0");
 
         uint256 escrowed = token.lockedAmount(msg.sender);
-        require(_balances[msg.sender].sub(amount) >= escrowed, "escrow amount failure");
+        require(
+            _balances[msg.sender].sub(amount) >= escrowed,
+            "escrow amount failure"
+        );
 
         require(
-            _balances[msg.sender].sub(bondedRewardLocks[msg.sender].amount) >= amount,
+            _balances[msg.sender].sub(bondedRewardLocks[msg.sender].amount) >=
+                amount,
             "cannotWithdrawBondedTokens"
         );
 
@@ -268,11 +318,15 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
         emit Withdrawn(msg.sender, amount);
     }
 
-    function _BaseBoostLevel() internal view returns(uint256) {
+    function _BaseBoostLevel() internal view returns (uint256) {
         return PCT_BASE.mul(inverseMaxBoostCoefficient).div(100);
     }
 
-    function _lockedBoostLevel(address account) internal view returns(uint256) {
+    function _lockedBoostLevel(address account)
+        internal
+        view
+        returns (uint256)
+    {
         IVeXBE veXBE = token;
         uint256 votingBalance = veXBE.balanceOf(account);
         uint256 votingTotal = veXBE.totalSupply();
@@ -281,20 +335,27 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
             return _BaseBoostLevel();
         }
 
-        uint256 res = PCT_BASE.mul(
-            inverseMaxBoostCoefficient.add(
-                uint256(100).sub(inverseMaxBoostCoefficient)
-                .mul(veXBE.lockedSupply())
-                .mul(votingBalance)
-                .div(votingTotal)
-                .div(lockedAmount)
+        uint256 res = PCT_BASE
+            .mul(
+                inverseMaxBoostCoefficient.add(
+                    uint256(100)
+                        .sub(inverseMaxBoostCoefficient)
+                        .mul(veXBE.lockedSupply())
+                        .mul(votingBalance)
+                        .div(votingTotal)
+                        .div(lockedAmount)
+                )
             )
-        ).div(100);
+            .div(100);
 
         return res < MAX_BOOST_LEVEL ? res : MAX_BOOST_LEVEL;
     }
 
-    function calculateBoostLevel(address account) public view returns (uint256) {
+    function calculateBoostLevel(address account)
+        public
+        view
+        returns (uint256)
+    {
         IVeXBE veXBE = token;
         uint256 lockedAmount = veXBE.lockedAmount(account);
 
@@ -303,20 +364,23 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
             return _BaseBoostLevel();
         }
 
-        uint256 lockedBoost = boostLogicProvider.hasMaxBoostLevel(account) ?
-        MAX_BOOST_LEVEL : _lockedBoostLevel(account);
+        uint256 lockedBoost = boostLogicProvider.hasMaxBoostLevel(account)
+            ? MAX_BOOST_LEVEL
+            : _lockedBoostLevel(account);
 
-        return lockedBoost.mul(lockedAmount)
-            .add(
-                _BaseBoostLevel().mul(stakedAmount.sub(lockedAmount))
-            )
-            .div(stakedAmount);
+        return
+            lockedBoost
+                .mul(lockedAmount)
+                .add(_BaseBoostLevel().mul(stakedAmount.sub(lockedAmount)))
+                .div(stakedAmount);
     }
 
-
     function earned(address account)
-        external view
-        returns (uint256) // userEarned
+        external
+        view
+        returns (
+            uint256 // userEarned
+        )
     {
         uint256 duration = lastTimeRewardApplicable().sub(lastUpdateTime);
         (uint256 userEarned, ) = potentialXbeReturns(duration, account);
@@ -324,16 +388,19 @@ contract VotingStakingRewards is VotingPausable, VotingNonReentrant, VotingOwnab
     }
 
     function potentialXbeReturns(uint256 duration, address account)
-        public view
-        returns (uint256, uint256) // userEarned, toTreasury
+        public
+        view
+        returns (
+            uint256,
+            uint256 // userEarned, toTreasury
+        )
     {
         uint256 boostLevel = calculateBoostLevel(account);
-        require(boostLevel <= MAX_BOOST_LEVEL, 'badBoostLevel');
+        require(boostLevel <= MAX_BOOST_LEVEL, "badBoostLevel");
 
         uint256 maxBoostedReward = _balances[account]
-            .mul(
-                _rewardPerToken(duration).sub(userRewardPerTokenPaid[account])
-            ).div(PCT_BASE);
+            .mul(_rewardPerToken(duration).sub(userRewardPerTokenPaid[account]))
+            .div(PCT_BASE);
 
         uint256 toUser = maxBoostedReward.mul(boostLevel).div(PCT_BASE);
         uint256 toTreasury = maxBoostedReward.sub(toUser);

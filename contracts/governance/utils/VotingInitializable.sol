@@ -1,6 +1,5 @@
 pragma solidity ^0.4.24;
 
-
 contract VotingInitializable {
     /**
      * @dev Indicates that the contract has been initialized.

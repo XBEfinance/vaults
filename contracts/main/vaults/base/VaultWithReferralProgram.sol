@@ -5,7 +5,6 @@ import "../../interfaces/IReferralProgram.sol";
 /// @title WithReferalProgramVault
 /// @notice Vault for consumers of the system
 abstract contract VaultWithReferralProgram {
-
     /// @notice The referral program
     IReferralProgram public referralProgram;
     address public treasury;
@@ -19,8 +18,8 @@ abstract contract VaultWithReferralProgram {
     }
 
     function _registerUserInReferralProgramIfNeeded(address _user) internal {
-        (bool _userExists,) = referralProgram.users(_user);
-        if(!_userExists){
+        (bool _userExists, ) = referralProgram.users(_user);
+        if (!_userExists) {
             referralProgram.registerUser(treasury, _user);
         }
     }

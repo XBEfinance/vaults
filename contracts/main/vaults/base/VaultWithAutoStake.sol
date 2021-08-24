@@ -8,7 +8,6 @@ import "../../interfaces/IVoting.sol";
 /// @title WithReferalProgramVault
 /// @notice Vault for consumers of the system
 abstract contract VaultWithAutoStake {
-
     using SafeERC20 for IERC20;
 
     address public votingStakingRewards;

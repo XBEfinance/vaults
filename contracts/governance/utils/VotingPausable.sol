@@ -1,8 +1,6 @@
 pragma solidity ^0.4.24;
 
-
 contract VotingPausable {
-
     bool public paused;
     address private pauser;
 
@@ -10,7 +8,7 @@ contract VotingPausable {
         pauser = msg.sender;
     }
 
-    modifier whenNotPaused {
+    modifier whenNotPaused() {
         require(!paused, "paused");
         _;
     }
@@ -19,5 +17,4 @@ contract VotingPausable {
         require(msg.sender == pauser, "!pauser");
         paused = _paused;
     }
-
 }

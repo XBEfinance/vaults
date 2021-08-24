@@ -10,18 +10,21 @@ import "@openzeppelin/contracts/GSN/Context.sol";
 
 import "../../interfaces/IConverter.sol";
 import "../../interfaces/vault/IVaultCore.sol";
-import '../../interfaces/IStrategy.sol';
-import '../../interfaces/IController.sol';
+import "../../interfaces/IStrategy.sol";
+import "../../interfaces/IController.sol";
 
 /// @title EURxbStrategy
 /// @notice This is base contract for yield farming strategy with EURxb token
 abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
-
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    event Withdrawn(address indexed _token, uint256 indexed _amount, address indexed _to);
+    event Withdrawn(
+        address indexed _token,
+        uint256 indexed _amount,
+        address indexed _to
+    );
 
     /// @notice EURxb instance address or wrapper of EURxb instance
     address internal _want;
@@ -35,14 +38,17 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     uint256 internal _totalDeposited;
 
     /// @dev Prevents other msg.sender than controller address
-    modifier onlyController {
+    modifier onlyController() {
         require(_msgSender() == controller, "!controller");
         _;
     }
 
     /// @dev Prevents other msg.sender than controller or vault addresses
-    modifier onlyControllerOrVault {
-        require(_msgSender() == controller || _msgSender() == vault, "!controller|vault");
+    modifier onlyControllerOrVault() {
+        require(
+            _msgSender() == controller || _msgSender() == vault,
+            "!controller|vault"
+        );
         _;
     }
 
@@ -65,34 +71,34 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
 
     /// @notice Usual setter with check if param is new
     /// @param _newVault New value
-    function setVault(address _newVault) override onlyOwner external {
+    function setVault(address _newVault) external override onlyOwner {
         require(vault != _newVault, "!old");
         vault = _newVault;
     }
 
     /// @notice Usual setter with check if param is new
     /// @param _newController New value
-    function setController(address _newController) override onlyOwner external {
+    function setController(address _newController) external override onlyOwner {
         require(controller != _newController, "!old");
         controller = _newController;
     }
 
     /// @notice Usual setter with check if param is new
     /// @param _newWant New value
-    function setWant(address _newWant) override onlyOwner external {
+    function setWant(address _newWant) external override onlyOwner {
         require(_want != _newWant, "!old");
         _want = _newWant;
     }
 
     /// @notice Usual getter (inherited from IStrategy)
     /// @return 'want' token (In this case EURxb)
-    function want() override external view returns(address) {
+    function want() external view override returns (address) {
         return _want;
     }
 
     /// @notice must exclude any tokens used in the yield
     /// @dev Controller role - withdraw should return to Controller
-    function withdraw(address _token) override onlyController external {
+    function withdraw(address _token) external override onlyController {
         require(address(_token) != address(_want), "!want");
         uint256 balance = IERC20(_token).balanceOf(address(this));
         IERC20(_token).safeTransfer(controller, balance);
@@ -101,7 +107,7 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
 
     /// @notice Withdraw partial funds, normally used with a vault withdrawal
     /// @dev Controller | Vault role - withdraw should always return to Vault
-    function withdraw(uint256 _amount) override onlyControllerOrVault public {
+    function withdraw(uint256 _amount) public override onlyControllerOrVault {
         uint256 _balance = IERC20(_want).balanceOf(address(this));
         if (_balance < _amount) {
             _amount = _withdrawSome(_amount.sub(_balance));
@@ -110,10 +116,12 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
         address _vault = IController(controller).vaults(_want);
         require(_vault != address(0), "!vault 0"); // additional protection so we don't burn the funds
 
-
         address vaultToken = IVaultCore(_vault).token();
         if (vaultToken != _want) {
-            address converter = IController(controller).converters(vaultToken, _want);
+            address converter = IController(controller).converters(
+                vaultToken,
+                _want
+            );
             require(converter != address(0), "!converter");
             IERC20(vaultToken).safeTransfer(converter, _amount);
             _amount = IConverter(converter).convert(address(this));
@@ -124,17 +132,22 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     }
 
     /// @dev Controller | Vault role - withdraw should always return to Vault
-    function withdrawAll() override virtual onlyControllerOrVault external returns(uint256) {
+    function withdrawAll()
+        external
+        virtual
+        override
+        onlyControllerOrVault
+        returns (uint256)
+    {
         uint256 _balance = IERC20(_want).balanceOf(address(this));
         withdraw(_balance);
         return _balance;
     }
 
     /// @notice balance of this address in "want" tokens
-    function balanceOf() override virtual public view returns(uint256) {
+    function balanceOf() public view virtual override returns (uint256) {
         return _totalDeposited;
     }
 
-    function _withdrawSome(uint256 _amount) virtual internal returns(uint);
-
+    function _withdrawSome(uint256 _amount) internal virtual returns (uint256);
 }

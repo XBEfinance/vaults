@@ -11,7 +11,6 @@ import "../../interfaces/IConverter.sol";
 /// @title InstitutionalEURxbVault
 /// @notice Vault for investors of the system
 contract InstitutionalEURxbVault is BaseVault, AccessControl {
-
     using SafeERC20 for IERC20;
 
     bytes32 public constant INVESTOR = keccak256("INVESTOR");
@@ -19,11 +18,11 @@ contract InstitutionalEURxbVault is BaseVault, AccessControl {
     address public tokenUnwrapped;
 
     /// @notice Constructor that creates a vault for investors
-    constructor() BaseVault("Institutional", "in") public {
-       _setupRole(DEFAULT_ADMIN_ROLE, owner());
+    constructor() public BaseVault("Institutional", "in") {
+        _setupRole(DEFAULT_ADMIN_ROLE, owner());
     }
 
-    modifier onlyInvestor {
+    modifier onlyInvestor() {
         require(hasRole(INVESTOR, _msgSender()), "!investor");
         _;
     }
@@ -66,7 +65,11 @@ contract InstitutionalEURxbVault is BaseVault, AccessControl {
         renounceRole(INVESTOR, _msgSender());
     }
 
-    function _convert(address _from, address _to, uint256 _amount) internal returns(uint256) {
+    function _convert(
+        address _from,
+        address _to,
+        uint256 _amount
+    ) internal returns (uint256) {
         IController currentController = _controller;
         address converterAddress = currentController.converters(_from, _to);
         require(converterAddress != address(0), "!converter");
@@ -75,50 +78,57 @@ contract InstitutionalEURxbVault is BaseVault, AccessControl {
         return converter.convert(currentController.strategies(_to));
     }
 
-    function depositUnwrapped(uint256 _amount) onlyInvestor public {
-        IERC20(tokenUnwrapped).safeTransferFrom(_msgSender(), address(this), _amount);
+    function depositUnwrapped(uint256 _amount) public onlyInvestor {
+        IERC20(tokenUnwrapped).safeTransferFrom(
+            _msgSender(),
+            address(this),
+            _amount
+        );
         uint256 shares = _deposit(
-          address(this),
-          _convert(tokenUnwrapped, address(stakingToken), _amount)
+            address(this),
+            _convert(tokenUnwrapped, address(stakingToken), _amount)
         );
         _transfer(address(this), _msgSender(), shares);
     }
 
-    function depositAllUnwrapped() onlyInvestor public {
+    function depositAllUnwrapped() public onlyInvestor {
         depositUnwrapped(IERC20(tokenUnwrapped).balanceOf(_msgSender()));
     }
 
-    function withdrawUnwrapped(uint256 _amount) onlyInvestor public {
+    function withdrawUnwrapped(uint256 _amount) public onlyInvestor {
         _transfer(_msgSender(), address(this), _amount);
         uint256 withdrawn = _withdrawFrom(address(this), _amount);
-        uint256 unwrappedAmount = _convert(address(stakingToken), tokenUnwrapped, withdrawn);
+        uint256 unwrappedAmount = _convert(
+            address(stakingToken),
+            tokenUnwrapped,
+            withdrawn
+        );
         IERC20(tokenUnwrapped).safeTransfer(_msgSender(), unwrappedAmount);
     }
 
-    function withdrawAllUnwrapped() onlyInvestor public {
+    function withdrawAllUnwrapped() public onlyInvestor {
         withdrawUnwrapped(balanceOf(_msgSender()));
     }
 
     /// @notice Allows to deposit business logic tokens and reveive vault tokens
     /// @param _amount Amount to deposit business logic tokens
-    function deposit(uint256 _amount) override onlyInvestor public {
+    function deposit(uint256 _amount) public override onlyInvestor {
         super.deposit(_amount);
     }
 
     /// @notice Allows to deposit full balance of the business logic token and reveice vault tokens
-    function depositAll() override onlyInvestor public {
+    function depositAll() public override onlyInvestor {
         super.depositAll();
     }
 
     /// @notice Allows exchange vault tokens to business logic tokens
     /// @param _shares Business logic tokens to withdraw
-    function withdraw(uint256 _shares) override onlyInvestor public {
+    function withdraw(uint256 _shares) public override onlyInvestor {
         super.withdraw(_shares);
     }
 
     /// @notice Same as withdraw only with full balance of vault tokens
-    function withdrawAll() override onlyInvestor public {
+    function withdrawAll() public override onlyInvestor {
         super.withdrawAll();
     }
-
 }

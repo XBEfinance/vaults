@@ -180,8 +180,8 @@ abstract contract BaseVault is
             senderBalance >= amount,
             "BaseVault: transfer amount exceeds balance"
         );
-        _balances[sender] = senderBalance - amount;
-        _balances[recipient] += amount;
+        _balances[sender] = senderBalance.sub(amount);
+        _balances[recipient] = _balances[recipient].add(amount);
 
         emit Transfer(sender, recipient, amount);
     }
@@ -254,7 +254,7 @@ abstract contract BaseVault is
             currentAllowance >= subtractedValue,
             "BaseVault: decreased allowance below zero"
         );
-        _approve(msg.sender, spender, currentAllowance - subtractedValue);
+        _approve(msg.sender, spender, currentAllowance.sub(subtractedValue));
 
         return true;
     }
@@ -271,7 +271,7 @@ abstract contract BaseVault is
             currentAllowance >= amount,
             "BaseVault: transfer amount exceeds allowance"
         );
-        _approve(sender, msg.sender, currentAllowance - amount);
+        _approve(sender, msg.sender, currentAllowance.sub(amount));
 
         return true;
     }

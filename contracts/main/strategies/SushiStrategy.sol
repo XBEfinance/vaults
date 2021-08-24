@@ -37,7 +37,7 @@ contract SushiStrategy is WithClaimAmountStrategy {
     /// @dev Function that controller calls
     function deposit() external override onlyController {
         uint256 _amount = IERC20(_want).balanceOf(address(this));
-        _totalDeposited += _amount;
+        _totalDeposited = _totalDeposited.add(_amount);
     }
 
     function getRewards() external override {}

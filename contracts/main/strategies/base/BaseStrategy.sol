@@ -127,7 +127,7 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
             _amount = IConverter(converter).convert(address(this));
         }
         IERC20(_want).safeTransfer(_vault, _amount);
-        _totalDeposited -= _amount;
+        _totalDeposited = _totalDeposited.sub(_amount);
         emit Withdrawn(_want, _amount, _vault);
     }
 

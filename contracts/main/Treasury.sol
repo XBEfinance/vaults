@@ -11,7 +11,6 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IRewardsDistributionRecipient.sol";
 import "./interfaces/IVoting.sol";
-import "./templates/OverrideUniswapV2Library.sol";
 
 /// @title Treasury
 /// @notice Realisation of ITreasury for channeling managing fees from strategies to gov and governance address
@@ -20,7 +19,6 @@ contract Treasury is Initializable, Ownable, ITreasury {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     IUniswapV2Router02 public uniswapRouter;
-    address public uniswapFactory;
 
     address public rewardsDistributionRecipientContract;
     address public rewardsToken;
@@ -43,7 +41,6 @@ contract Treasury is Initializable, Ownable, ITreasury {
         address _rewardsDistributionRecipientContract,
         address _rewardsToken,
         address _uniswapRouter,
-        address _uniswapFactory,
         uint256 _slippageTolerance,
         uint256 _swapDeadline
     ) external initializer {
@@ -52,7 +49,6 @@ contract Treasury is Initializable, Ownable, ITreasury {
         setAuthorized(_governance, true);
         setAuthorized(address(this), true);
         uniswapRouter = IUniswapV2Router02(_uniswapRouter);
-        uniswapFactory = _uniswapFactory;
         slippageTolerance = _slippageTolerance;
         swapDeadline = _swapDeadline;
         transferOwnership(_governance);
@@ -60,6 +56,11 @@ contract Treasury is Initializable, Ownable, ITreasury {
 
     function setRewardsToken(address _rewardsToken) external onlyOwner {
         rewardsToken = _rewardsToken;
+    }
+
+    function setSlippageTolerance(address _slippageTolerance) external onlyOwner {
+        require(_slippageTolerance <= 10000, "slippageTolerance too large");
+        slippageTolerance = _slippageTolerance;
     }
 
     function setRewardsDistributionRecipientContract(
@@ -90,26 +91,28 @@ contract Treasury is Initializable, Ownable, ITreasury {
         }
     }
 
-    function convertToRewardsToken(address _token, uint256 amount)
+    function convertToRewardsToken(address _tokenAddress, uint256 amount)
         public
         override
         authorizedOnly
     {
-        require(_tokensToConvert.contains(_token), "tokenIsNotAllowed");
+        require(_tokensToConvert.contains(_tokenAddress), "tokenIsNotAllowed");
 
         address[] memory path = new address[](3);
-        path[0] = _token;
+        path[0] = _tokenAddress;
         path[1] = uniswapRouter.WETH();
         path[2] = rewardsToken;
 
-        uint256 amountOutMin = OverrideUniswapV2Library.getAmountsOut(
-            uniswapFactory,
+        uint256 amountOutMin = uniswapRouter.getAmountsOut(
             amount,
             path
         )[0];
         amountOutMin = (amountOutMin * slippageTolerance) / MAX_BPS;
 
-        IERC20(_token).safeTransfer(address(uniswapRouter), amount);
+        IERC20 token = IERC20(_tokenAddress);
+        if (token.allowance(address(this), address(uniswapRouter)) == 0) {
+            token.safeApprove(address(uniswapRouter), uint256(-1));
+        }
         uniswapRouter.swapExactTokensForTokens(
             amount,
             amountOutMin,

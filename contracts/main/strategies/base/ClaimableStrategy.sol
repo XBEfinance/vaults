@@ -7,11 +7,9 @@ import "../../interfaces/ITreasury.sol";
 import "../../interfaces/IRewards.sol";
 import "../../interfaces/IVoting.sol";
 
-/// @title ClaimableStrategy
-/// @notice This is contract for yield farming strategy with EURxb token for investors
 abstract contract ClaimableStrategy is BaseStrategy {
-    function earned(address[] memory _tokens)
-        public
+    function earned(address[] calldata _tokens)
+        external
         view
         override
         returns (uint256[] memory _amounts)
@@ -23,7 +21,7 @@ abstract contract ClaimableStrategy is BaseStrategy {
     }
 
     function claim(address _rewardToken)
-        public
+        external
         override
         onlyControllerOrVault
         returns (bool)

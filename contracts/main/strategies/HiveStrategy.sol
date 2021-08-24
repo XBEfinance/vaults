@@ -64,7 +64,6 @@ contract HiveStrategy is WithClaimAmountStrategy {
     function deposit() external override onlyController {
         if (!checkIfPoolIndexNeedsToBeUpdated()) {
             uint256 _amount = IERC20(_want).balanceOf(address(this));
-            _totalDeposited = _totalDeposited.add(_amount);
             IERC20(_want).approve(poolSettings.convexBooster, _amount);
             //true means that the received lp tokens will immediately be stakes
             IBooster(poolSettings.convexBooster).depositAll(

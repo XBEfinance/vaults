@@ -303,7 +303,7 @@ contract XBEInflation is Initializable, IXBEInflation {
             require(_to != address(0), "!zeroAddress");
             uint256 toMint = __availableSupply.mul(weights[_to]).div(sumWeight);
             IMint(token).mint(_to, toMint);
-            totalMinted = totalMinted + toMint;
+            totalMinted = totalMinted.add(toMint);
         }
         return true;
     }

@@ -13,8 +13,6 @@ import "../../interfaces/vault/IVaultCore.sol";
 import "../../interfaces/IStrategy.sol";
 import "../../interfaces/IController.sol";
 
-/// @title EURxbStrategy
-/// @notice This is base contract for yield farming strategy with EURxb token
 abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -26,7 +24,7 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
         address indexed _to
     );
 
-    /// @notice EURxb instance address or wrapper of EURxb instance
+    /// @notice reward token address
     address internal _want;
 
     /// @notice Controller instance getter, used to simplify controller-related actions
@@ -34,8 +32,6 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
 
     /// @notice Vault instance getter, used to simplify vault-related actions
     address public vault;
-
-    uint256 internal _totalDeposited;
 
     /// @dev Prevents other msg.sender than controller address
     modifier onlyController() {
@@ -127,7 +123,6 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
             _amount = IConverter(converter).convert(address(this));
         }
         IERC20(_want).safeTransfer(_vault, _amount);
-        _totalDeposited = _totalDeposited.sub(_amount);
         emit Withdrawn(_want, _amount, _vault);
     }
 
@@ -146,7 +141,7 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
 
     /// @notice balance of this address in "want" tokens
     function balanceOf() public view virtual override returns (uint256) {
-        return _totalDeposited;
+        return IERC20(_want).balanceOf(address(this));
     }
 
     function _withdrawSome(uint256 _amount) internal virtual returns (uint256);

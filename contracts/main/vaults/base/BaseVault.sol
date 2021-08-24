@@ -239,7 +239,7 @@ abstract contract BaseVault is
         _approve(
             msg.sender,
             spender,
-            _allowances[msg.sender][spender] + addedValue
+            _allowances[msg.sender][spender].add(addedValue)
         );
         return true;
     }

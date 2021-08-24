@@ -7,7 +7,6 @@ import "./base/WithClaimAmountStrategy.sol";
 import "../interfaces/IConvexMasterChef.sol";
 
 /// @title SushiStrategy
-/// @notice This is contract
 contract SushiStrategy is WithClaimAmountStrategy {
     struct Settings {
         address lpSushi;
@@ -37,7 +36,6 @@ contract SushiStrategy is WithClaimAmountStrategy {
     /// @dev Function that controller calls
     function deposit() external override onlyController {
         uint256 _amount = IERC20(_want).balanceOf(address(this));
-        _totalDeposited = _totalDeposited.add(_amount);
     }
 
     function getRewards() external override {}

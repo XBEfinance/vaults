@@ -174,7 +174,7 @@ contract HiveStrategy is BaseStrategy {
         _amount = IRewards(poolSettings.crvRewards).earned(address(this));
     }
 
-   function earned(address[] memory _tokens) public override returns(uint256[] memory _amounts) {
+   function earned(address[] memory _tokens) external override returns(uint256[] memory _amounts) {
         for(uint256 i = 0; i < _tokens.length; i++){
             _amounts[i] = IERC20(_tokens[i]).balanceOf(address(this));
         }

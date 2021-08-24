@@ -1,7 +1,14 @@
 /* eslint no-unused-vars: 0 */
 /* eslint eqeqeq: 0 */
 const { fromAscii, asciiToHex, keccak256 } = require("web3-utils");
-const { expect, assert } = require("chai");
+const { contract } = require('@openzeppelin/test-environment');
+
+const Voting = contract.fromArtifact("Voting");
+const EVMScriptExecutorMock = contract.fromArtifact("EVMScriptExecutorMock");
+
+const { newApp, newDao, ANY_ADDRESS, APP_ID } = require("./utils/old/dao");
+
+const { expect, assert } = require('chai');
 const {
   BN,
   constants,
@@ -9,42 +16,26 @@ const {
   expectRevert,
   ether,
   time,
-} = require("@openzeppelin/test-helpers");
-const { accounts, contract } = require('@openzeppelin/test-environment');
-
-const Voting = contract.fromArtifact("Voting");
-const EVMScriptExecutorMock = contract.fromArtifact("EVMScriptExecutorMock");
-
-const { newApp, newDao, ANY_ADDRESS, APP_ID } = require("./utils/old/dao");
-
+} = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
-const {
-  ZERO,
-  ONE,
-  getMockTokenPrepared,
-  processEventArgs,
-} = require("./utils/old/common");
-const {
-  deployInfrastructure,
-  YEAR,
-  MULTIPLIER,
-  days,
-  defaultParams,
-} = require("./utils/old/deploy_infrastructure");
+
+const common = require('./utils/common.js');
+const utilsConstants = require('./utils/constants.js');
+const environment = require('./utils/environment.js');
+const { people } = require('./utils/accounts.js');
+
 
 describe("Voting", () => {
-  const owner = accounts[0];
-  const alice = accounts[1];
-  const bob = accounts[2];
-  const tod = accounts[3];
+  const owner = people.owner;
+  const alice = people.alice;
+  const bob = people.bob;
+  const tod = people.tod;
 
   let mockXBE;
-  let mockCX;
   let xbeInflation;
   let bonusCampaign;
   let veXBE;
   let voting;
-  let vaultWithXBExCXStrategy;
   let executorMock;
   let votingApp;
   let abi;
@@ -55,15 +46,44 @@ describe("Voting", () => {
 
   let deployment;
   async function configuration() {
-    deployment = deployInfrastructure(owner, alice, bob, defaultParams);
     [
       mockXBE,
-      mockCX,
       xbeInflation,
       bonusCampaign,
       veXBE,
       voting
-    ] = await deployment.proceed();
+    ] = await environment.getGroup(
+      [
+        'MockXBE',
+        'BaseKernel',
+        'BaseACL',
+        'Kernel',
+        'ACL',
+        'EVMScriptRegistryFactory',
+        'DAOFactory',
+        'Controller',
+        'BonusCampaign',
+        'LockSubscription',
+        'Treasury',
+        'Voting',
+        'MockLPSushi',
+        'SushiVault',
+        'VotingStakingRewards',
+        'VeXBE',
+      ],
+      (key) => {
+        return [
+          'MockXBE',
+          'SimpleXBEInflation',
+          'BonusCampaign',
+          'VeXBE',
+          'Voting',
+        ].includes(key);
+      },
+      true,
+      {});
+
+      // = await deployment.proceed();
   }
 
   async function setOpenPermission(

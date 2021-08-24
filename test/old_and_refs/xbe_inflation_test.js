@@ -11,10 +11,10 @@ const {
   time,
 } = require('@openzeppelin/test-helpers');
 // const { contract } = require('@openzeppelin/test-environment');
-const { people, setPeople } = require('./utils/accounts');
-const common = require('./utils/common');
-const constants = require('./utils/constants');
-const environment = require('./utils/environment');
+const { people, setPeople } = require('../utils/accounts');
+const common = require('../utils/common');
+const constants = require('../utils/constants');
+const environment = require('../utils/environment');
 var Eth = require('web3-eth');
 
 
@@ -26,7 +26,7 @@ const {
   getMockTokenPrepared,
   processEventArgs,
   processAllEvents,
-} = require('./utils/old/common');
+} = require('../utils/old/common');
 
 const {
   deployInfrastructure,
@@ -35,7 +35,7 @@ const {
   days,
   defaultParams,
   beforeEachWithSpecificDeploymentParams,
-} = require('./utils/old/deploy_strategy_infrastructure.js');
+} = require('../utils/old/deploy_strategy_infrastructure.js');
 // const { contract } = require('@openzeppelin/test-environment');
 var eth = new Eth(Eth.givenProvider || 'ws://127.0.0.1:8545');
 

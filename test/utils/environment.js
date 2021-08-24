@@ -513,7 +513,6 @@ const environment = {
           deployedAndConfiguredContracts,
         )).address,
         async () => constants.localParams.dependentsAddresses.uniswap_router_02,
-        async () => constants.localParams.dependentsAddresses.uniswap_factory,
         async () => constants.localParams.treasury.slippageTolerance,
         async () => constants.localParams.treasury.swapDeadline,
       ];

@@ -49,7 +49,6 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     /// @dev Called once only by deployer
     /// @param _wantAddress address of eurxb instance or address of TokenWrapper(EURxb) instance
     /// @param _controllerAddress address of controller instance
-    /// @param _vaultAddress address of vault related to this strategy (Link type 1:1)
     function _configure(
         address _wantAddress,
         address _controllerAddress,

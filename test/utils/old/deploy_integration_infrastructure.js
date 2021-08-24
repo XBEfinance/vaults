@@ -407,7 +407,6 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       contracts.votingStakingRewards.address,
       contracts.mockXBE.address,
       dependentsAddresses.uniswap_router_02,
-      dependentsAddresses.uniswap_factory,
       params.treasury.slippageTolerance,
       now.add(params.treasury.swapDeadline),
       { from: owner },

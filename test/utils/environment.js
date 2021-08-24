@@ -135,6 +135,7 @@ const environment = {
         async () => (await common.waitFor(
           'VotingStakingRewards',
           deployment.deployedContracts,
+          'environment - waiting for VotingStakingRewards as dep for SushiVault',
         )).address,
         async () => [mockXBE.address],
         async () => 'Sushi Vault',
@@ -195,6 +196,8 @@ const environment = {
         mockLpSushi.address,
         instance.address,
       );
+
+      console.log('SushiStrategy configured');
 
       return instance;
     }),

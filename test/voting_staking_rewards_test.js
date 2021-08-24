@@ -434,7 +434,19 @@ contract('VotingStakingRewards', (accounts) => {
       await mockXBE.setBlockTransfers(true, { from: owner });
 
       expectRevert(
-        votingStakingRewards.withdrawBondedOrWithPenalty(amount, { from: alice }),
+        votingStakingRewards.withdrawBondedOrWithPenalty({ from: alice }),
+        '!boostDelta'
+      );
+
+      await mockXBE.setTransfersAllowed(
+        votingStakingRewards.address,
+        treasury.address,
+        true,
+        { from: owner }
+      );
+
+      expectRevert(
+        votingStakingRewards.withdrawBondedOrWithPenalty({ from: alice }),
         '!tBondedWithPenalty'
       );
 
@@ -443,11 +455,6 @@ contract('VotingStakingRewards', (accounts) => {
         alice,
         true,
         { from: owner }
-      );
-
-      expectRevert(
-        votingStakingRewards.withdrawBondedOrWithPenalty(amount, { from: alice }),
-        '!tPenalty'
       );
 
       await time.increase(bondedLockDuration);
@@ -460,13 +467,13 @@ contract('VotingStakingRewards', (accounts) => {
       );
 
       expectRevert(
-        votingStakingRewards.withdrawBondedOrWithPenalty(amount, { from: alice }),
+        votingStakingRewards.withdrawBondedOrWithPenalty({ from: alice }),
         '!tBonded'
       );
 
       await mockXBE.setBlockTransfers(false, { from: owner });
 
-      const receipt = await votingStakingRewards.withdrawBondedOrWithPenalty(amount, { from: alice });
+      const receipt = await votingStakingRewards.withdrawBondedOrWithPenalty({ from: alice });
       expectEvent(receipt, 'Withdrawn', {
         'user': alice,
         'amount': amount

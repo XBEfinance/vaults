@@ -435,6 +435,7 @@ const environment = {
 
       return instance;
     }),
+    
   StakingRewards: async (force) => await common.cacheAndReturn('StakingRewards', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.StakingRewards();

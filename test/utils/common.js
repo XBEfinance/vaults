@@ -89,6 +89,8 @@ const waitFor = (key, container, logMetadata) => new Promise((resolve) => {
      } else {
       if (logMetadata) {
         console.log(`Waiting for ${key}... - ${logMetadata}`);
+      } else {
+        console.log(`Waiting for ${key}...`);
       }
     }
   }, constants.waitingForPollingInterval);

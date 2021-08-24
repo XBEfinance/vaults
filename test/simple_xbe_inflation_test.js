@@ -70,8 +70,8 @@ contract('SimpleXBEInflationTest', (accounts) => {
         'SimpleXBEInflation',
         'Treasury',
         'MockLPSushi',
-        'SushiVault',
         'Controller',
+        'SushiVault',
         'SushiStrategy',
       ],
         (key) => {
@@ -83,7 +83,15 @@ contract('SimpleXBEInflationTest', (accounts) => {
                 'SushiStrategy',
             ].includes(key);
         },
-        false
+        false,
+        {
+          "SushiVault": {
+            5: ZERO_ADDRESS
+          },
+          "Treasury": {
+            1: ZERO_ADDRESS
+          }
+        }
     );
 
     sumWeights = 0;
@@ -143,7 +151,7 @@ contract('SimpleXBEInflationTest', (accounts) => {
       }
       const periodicEmission = await simpleInflation.periodicEmission();
       for (mock in mocks) {
-        expect( (await mockXBE.balanceOf(mock.address)).toString() ).to.be.equal( 
+        expect( (await mockXBE.balanceOf(mock.address)).toString() ).to.be.equal(
           periodicEmission.mul( new BN(weights[mock.address]) ).div(new BN( sumWeight ) ).toString() );
       }
 
@@ -261,7 +269,7 @@ contract('SimpleXBEInflationTest', (accounts) => {
   //       ),
   //     );
 
-  //     console.log("time increase on: ", 
+  //     console.log("time increase on: ",
   //       (await xbeInflation.startEpochTime()).add(
   //       await xbeInflation.rateReductionTime(),
   //     ).toString())
@@ -293,7 +301,7 @@ contract('SimpleXBEInflationTest', (accounts) => {
   });
 
   // describe('with specific deployment params', () => {
-   
+
   //   xit('should reject getting amount of how much can be minted during the interval if requires are failed', async () => {
   //     await expectRevert(
   //       xbeInflation.mintableInTimeframe(constants.utils.ONE, constants.utils.ZERO),

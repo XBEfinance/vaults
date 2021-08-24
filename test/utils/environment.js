@@ -171,7 +171,6 @@ const environment = {
       await instance.configure(
         mockLpSushi.address,
         controller.address,
-        vault.address,
         owner,
         [
           mockLpSushi.address,

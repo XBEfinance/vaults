@@ -440,7 +440,6 @@ const configureContracts = async (params, owner) => {
       strategyConfigArgs: [
         dependentsAddresses.convex.pools[0].lptoken, // _wantAddress,
         contracts.controller.address, // _controllerAddress,
-        contracts.hiveVault.address, // _vaultAddress,
         owner, // _governance,
         // _poolSettings
         [
@@ -481,7 +480,6 @@ const configureContracts = async (params, owner) => {
       strategyConfigArgs: [
         dependentsAddresses.convex.cvxCrv,      // _wantAddress,
         contracts.controller.address,           // _controllerAddress,
-        contracts.cvxCrvVault.address,          // _vaultAddress,
         owner,                                  // _governance,
         ZERO_ADDRESS,                           // _voting,
         // _poolSettings
@@ -521,7 +519,6 @@ const configureContracts = async (params, owner) => {
       strategyConfigArgs: [
         dependentsAddresses.convex.cvx,         // _wantAddress,
         contracts.controller.address,           // _controllerAddress,
-        contracts.cvxVault.address,             // _vaultAddress,
         owner,                                  // _governance,
         // _poolSettings
         [
@@ -558,7 +555,6 @@ const configureContracts = async (params, owner) => {
       strategyConfigArgs: [
         contracts.mockLpSushi.address,          // _wantAddress,
         contracts.controller.address,           // _controllerAddress,
-        contracts.sushiVault.address,           // _vaultAddress,
         owner,                                  // _governance,
         // _poolSettings
         [

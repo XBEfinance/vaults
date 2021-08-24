@@ -69,10 +69,6 @@ const defaultParams = {
     xbeAmountForPair: ether('2'),
     wethAmountForPair: ether('1'),
   },
-  // treasury: {
-  //   slippageTolerance: new BN('3'),
-  //   swapDeadline: new BN('300'),
-  // },
   bonusCampaign: {
     rewardsDuration: months('6'),
     emission: ether('5000'),
@@ -281,7 +277,6 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       //   strategyConfigArgs: [
       //     dependentsAddresses.convex.pools[0].lptoken, // _wantAddress,
       //     controller.address, // _controllerAddress,
-      //     hiveVault.address, // _vaultAddress,
       //     owner, // _governance,
       //     mockXBE.address, // _tokenToAutostake,
       //     // voting.address,
@@ -306,7 +301,6 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       //   strategyConfigArgs: [
       //     dependentsAddresses.convex.cvxCrv, // _wantAddress,
       //     contracts.controller.address, // _controllerAddress,
-      //     contracts.cvxCrvVault.address, // _vaultAddress,
       //     owner, // _governance,
       //     // voting.address,
       //     ZERO_ADDRESS, // _voting,
@@ -343,7 +337,6 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       //   strategyConfigArgs: [
       //     dependentsAddresses.convex.cvx, // _wantAddress,
       //     controller.address, // _controllerAddress,
-      //     cvxVault.address, // _vaultAddress,
       //     owner, // _governance,
       //     // voting.address,
       //     ZERO_ADDRESS, // _voting,
@@ -364,7 +357,6 @@ const deployInfrastructure = (owner, alice, bob, params) => {
         strategyConfigArgs: [
           contracts.sushiLP.address, // _wantAddress,
           contracts.controller.address, // _controllerAddress,
-          contracts.sushiVault.address, // _vaultAddress,
           owner, // _governance,
           // _poolSettings
           [

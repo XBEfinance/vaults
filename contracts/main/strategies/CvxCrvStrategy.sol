@@ -23,7 +23,6 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
     function configure(
         address _wantAddress,
         address _controllerAddress,
-        address _vaultAddress,
         address _governance,
         address _voting,
         Settings memory _poolSettings
@@ -31,7 +30,6 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
         _configure(
             _wantAddress,
             _controllerAddress,
-            _vaultAddress,
             _governance
         );
         poolSettings = _poolSettings;
@@ -42,7 +40,6 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
     /// @dev Function that controller calls
     function deposit() external override onlyController {
         uint256 _amount = IERC20(_want).balanceOf(address(this));
-        _totalDeposited = _totalDeposited.add(_amount);
         IERC20(_want).approve(poolSettings.crvDepositor, _amount);
         IRewards(poolSettings.crvDepositor).depositAll(
             true,

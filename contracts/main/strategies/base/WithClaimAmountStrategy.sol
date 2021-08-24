@@ -3,8 +3,6 @@ pragma experimental ABIEncoderV2;
 
 import "./ClaimableStrategy.sol";
 
-/// @title ClaimableStrategy
-/// @notice This is contract for yield farming strategy with EURxb token for investors
 abstract contract WithClaimAmountStrategy is ClaimableStrategy {
     // reward token => IRewards of convex
     mapping(address => address) public rewardTokensToRewardSources;

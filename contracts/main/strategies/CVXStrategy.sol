@@ -3,12 +3,12 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./base/WithClaimAmountStrategy.sol";
+import "./base/ClaimableStrategy.sol";
 import "../interfaces/IRewards.sol";
 
 /// @title CVXStrategy
 /// @notice CVXVault strategy: in CVX out cvxCRV
-contract CVXStrategy is WithClaimAmountStrategy {
+contract CVXStrategy is ClaimableStrategy {
     struct Settings {
         address cvxRewards;
         address cvxToken;
@@ -25,8 +25,6 @@ contract CVXStrategy is WithClaimAmountStrategy {
     ) public initializer {
         _configure(_wantAddress, _controllerAddress, _governance);
         poolSettings = _poolSettings;
-        rewardTokensToRewardSources[_poolSettings.cvxToken] = _poolSettings
-            .cvxRewards;
     }
 
     function setPoolIndex(uint256 _newPoolIndex) external onlyOwner {

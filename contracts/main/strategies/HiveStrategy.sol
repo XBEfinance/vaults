@@ -3,13 +3,13 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./base/WithClaimAmountStrategy.sol";
+import "./base/ClaimableStrategy.sol";
 import "../interfaces/IBooster.sol";
 import "../interfaces/IRewards.sol";
 
 /// @title HiveStrategy
 /// @notice This is contract for yield farming strategy with EURxb token for investors
-contract HiveStrategy is WithClaimAmountStrategy {
+contract HiveStrategy is ClaimableStrategy {
     struct Settings {
         address lpCurve;
         address crvRewards;
@@ -30,10 +30,6 @@ contract HiveStrategy is WithClaimAmountStrategy {
     ) public initializer {
         _configure(_wantAddress, _controllerAddress, _governance);
         poolSettings = _poolSettings;
-        rewardTokensToRewardSources[_poolSettings.crvToken] = _poolSettings
-            .crvRewards;
-        rewardTokensToRewardSources[_poolSettings.cvxToken] = _poolSettings
-            .cvxRewards;
     }
 
     function setPoolIndex(uint256 _newPoolIndex) external onlyOwner {

@@ -20,15 +20,5 @@ interface IStrategy {
 
     function getRewards() external;
 
-    function earned(address[] calldata)
-        external
-        view
-        returns (uint256[] memory);
-
-    function canClaimAmount(address _rewardToken)
-        external
-        view
-        returns (uint256);
-
     function claim(address) external returns (bool);
 }

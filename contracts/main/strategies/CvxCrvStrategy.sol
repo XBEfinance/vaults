@@ -43,12 +43,6 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
         );
     }
 
-    function _getAmountOfPendingRewardEarnedFrom(
-        address _rewardSourceContractAddress
-    ) internal view override returns (uint256) {
-        return IRewards(_rewardSourceContractAddress).earned(address(this));
-    }
-
     function getRewards() external override {
         require(
             IRewards(poolSettings.cvxCRVRewards).getReward(),

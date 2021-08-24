@@ -92,10 +92,4 @@ contract HiveStrategy is WithClaimAmountStrategy {
         );
         return _amount;
     }
-
-    function _getAmountOfPendingRewardEarnedFrom(
-        address _rewardSourceContractAddress
-    ) internal view override returns (uint256) {
-        return IRewards(_rewardSourceContractAddress).earned(address(this));
-    }
 }

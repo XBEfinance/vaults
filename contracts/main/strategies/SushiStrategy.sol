@@ -7,7 +7,7 @@ import "./base/WithClaimAmountStrategy.sol";
 import "../interfaces/IConvexMasterChef.sol";
 
 /// @title SushiStrategy
-contract SushiStrategy is WithClaimAmountStrategy {
+contract SushiStrategy is ClaimableStrategy {
     struct Settings {
         address lpSushi;
         address xbeToken;
@@ -23,8 +23,6 @@ contract SushiStrategy is WithClaimAmountStrategy {
     ) public initializer {
         _configure(_wantAddress, _controllerAddress, _governance);
         poolSettings = _poolSettings;
-        rewardTokensToRewardSources[_poolSettings.xbeToken] = _poolSettings
-            .xbeToken;
     }
 
     /// @dev Function that controller calls
@@ -33,6 +31,18 @@ contract SushiStrategy is WithClaimAmountStrategy {
     }
 
     function getRewards() external override {}
+
+    function earned(address[] calldata _tokens)
+        external
+        view
+        override
+        returns (uint256[] memory _amounts)
+    {
+        _amounts = new uint256[](_tokens.length);
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            _amounts[i] = IERC20(_tokens[i]).balanceOf(address(this));
+        }
+    }
 
     function _withdrawSome(uint256 _amount)
         internal
@@ -43,9 +53,16 @@ contract SushiStrategy is WithClaimAmountStrategy {
         return _amount;
     }
 
-    function _getAmountOfPendingRewardEarnedFrom(
-        address _rewardSourceContractAddress
-    ) internal view override returns (uint256) {
-        return IERC20(_rewardSourceContractAddress).balanceOf(address(this));
+    function canClaimAmount(address _rewardToken)
+        external
+        view
+        override
+        returns (uint256 _amount)
+    {
+        if (_rewardToken == poolSettings.xbeToken) {
+            _amount = IERC20(poolSettings.xbeToken).balanceOf(address(this));
+        } else {
+            _amount = 0;
+        }
     }
 }

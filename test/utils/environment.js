@@ -161,12 +161,13 @@ const environment = {
 
       const mockLpSushi = await common.waitFor('MockLPSushi', deployedAndConfiguredContracts,
         'environment - waiting for MockLPSushi deployed');
-      const controller = await common.waitFor('Controller', deployedAndConfiguredContracts,
-        'environment - waiting for Controller for SushiStrategy');
       const vault = await common.waitFor('SushiVault', deployedAndConfiguredContracts,
         'environment - waiting for SushiVault for SushiStrategy');
 
       const instance = await deployment.SushiStrategy();
+
+      const controller = await common.waitFor('Controller', deployedAndConfiguredContracts,
+        'environment - waiting for Controller for SushiStrategy');
 
       await instance.configure(
         mockLpSushi.address,

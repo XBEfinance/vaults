@@ -35,7 +35,7 @@ const {
   defaultParams,
   beforeEachWithSpecificDeploymentParams,
 } = require('./utils/old/deploy_strategy_infrastructure.js');
-// const { contract } = require('@openzeppelin/test-environment');
+
 var eth = new Eth(Eth.givenProvider || 'ws://127.0.0.1:8545');
 
 let mockXBE;
@@ -52,7 +52,7 @@ let mocksLength = 3;
 let flag = true;
 let treasury;
 let sushiStrategy;
-
+let sushiVault;
 
 contract('SimpleXBEInflationTest', (accounts) => {
   setPeople(accounts);
@@ -62,6 +62,7 @@ contract('SimpleXBEInflationTest', (accounts) => {
         mockXBE,
         simpleInflation,
         treasury,
+        sushiVault,
         sushiStrategy,
     ] = await environment.getGroup(
       [
@@ -70,14 +71,15 @@ contract('SimpleXBEInflationTest', (accounts) => {
         'Treasury',
         'MockLPSushi',
         'SushiVault',
-        'SushiStrategy',
         'Controller',
+        'SushiStrategy',
       ],
         (key) => {
             return [
                 'MockXBE',
                 'SimpleXBEInflation',
                 'Treasury',
+                'SushiVault',
                 'SushiStrategy',
             ].includes(key);
         },

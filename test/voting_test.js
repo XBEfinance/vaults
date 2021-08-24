@@ -55,12 +55,12 @@ describe("Voting", () => {
     ] = await environment.getGroup(
       [
         'MockXBE',
+        'DAOFactory',
         'BaseKernel',
         'BaseACL',
         'Kernel',
         'ACL',
         'EVMScriptRegistryFactory',
-        'DAOFactory',
         'Controller',
         'BonusCampaign',
         'LockSubscription',

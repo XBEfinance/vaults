@@ -60,13 +60,25 @@ contract('SimpleXBEInflationTest', (accounts) => {
   beforeEach(async () => {
     [
         mockXBE,
-        simpleInflation
+        simpleInflation,
+        treasury,
+        sushiStrategy,
     ] = await environment.getGroup(
-      environment.defaultGroup,
+      [
+        'MockXBE',
+        'SimpleXBEInflation',
+        'Treasury',
+        'MockLPSushi',
+        'SushiVault',
+        'SushiStrategy',
+        'Controller',
+      ],
         (key) => {
             return [
-                "MockXBE",
-                "SimpleXBEInflation"
+                'MockXBE',
+                'SimpleXBEInflation',
+                'Treasury',
+                'SushiStrategy',
             ].includes(key);
         },
         false
@@ -76,21 +88,16 @@ contract('SimpleXBEInflationTest', (accounts) => {
     if (flag) {
       console.log('Prepare mocks, count=', mocksLength);
       let Mock = artifacts.require('MockContract');
+      mocks = {};
+      weights = {};
       for (let i = 0; i < mocksLength; i++) {
         let mock = await Mock.new();
-        mocks[mock.address] = mocks;                      // set mocks
+        mocks[mock.address] = mock;                      // set mocks
         weights[mock.address] = new BN( (i + 1) * 1000 ); // set weights for mocks
         sumWeights += weights[mock.address];              // take sumWeights into account
         console.log("mock: ", mock.address.toString(), 'weight', weights[mock.address]);
       }
       flag = true;
-    }
-
-    for (let i = 0; i < mocksLength; i++ ) {
-      console.log("cycle: ", mocksArray[i].address.toString());
-      mocks[mocksArray[i].address] = mocksArray[i];
-      weights[mocksArray[i].address] = new BN( (i + 1) * 1000 );
-      sumWeights += weights[mocksArray[i].address];
     }
   });
 

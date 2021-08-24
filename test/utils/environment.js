@@ -405,23 +405,7 @@ const environment = {
 
   UnwrappedToWrappedTokenConverter: {},
   WrappedToUnwrappedTokenConverter: {},
-  XBEInflation: async (force) => await common.cacheAndReturn('XBEInflation', force, deployedAndConfiguredContracts,
-    async () => {
-      const instance = await deployment.XBEInflation();
-      await instance.configure(
-        (await common.waitFor(
-          'MockXBE',
-          deployedAndConfiguredContracts,
-        )).address,
-        constants.localParams.xbeinflation.initialSupply,
-        constants.localParams.xbeinflation.initialRate,
-        constants.localParams.xbeinflation.rateReductionTime,
-        constants.localParams.xbeinflation.rateReductionCoefficient,
-        constants.localParams.xbeinflation.rateDenominator,
-        constants.localParams.xbeinflation.inflationDelay,
-      );
-      return instance;
-    }),
+
   VeXBE: async (force) => await common.cacheAndReturn('VeXBE', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.VeXBE();

@@ -25,7 +25,6 @@ const months = (n) => days('30').mul(new BN(n));
 const YEAR = new BN('86400').mul(new BN('365'));
 const MULTIPLIER = new BN('10').pow(new BN('18'));
 
-const XBEInflation = artifacts.require('XBEInflation');
 const SimpleXBEInflation = artifacts.require('SimpleXBEInflation');
 const VeXBE = artifacts.require('VeXBE');
 const Voting = artifacts.require('Voting');
@@ -81,14 +80,14 @@ const defaultParams = {
     mockedAmountXBE: ether('100'),
     mockedAmountOtherToken: ether('100'),
   },
-  xbeinflation: {
-    initialSupply: new BN('5000'),
-    initialRate: new BN('50').mul(MULTIPLIER).div(YEAR), // new BN('10000').mul(MULTIPLIER).div(YEAR)
-    rateReductionTime: days('7'),
-    rateReductionCoefficient: new BN('100').mul(MULTIPLIER), // new BN('10').mul(MULTIPLIER)
-    rateDenominator: MULTIPLIER,
-    inflationDelay: days('7'),
-  },
+  // xbeinflation: {
+  //   initialSupply: new BN('5000'),
+  //   initialRate: new BN('50').mul(MULTIPLIER).div(YEAR), // new BN('10000').mul(MULTIPLIER).div(YEAR)
+  //   rateReductionTime: days('7'),
+  //   rateReductionCoefficient: new BN('100').mul(MULTIPLIER), // new BN('10').mul(MULTIPLIER)
+  //   rateDenominator: MULTIPLIER,
+  //   inflationDelay: days('7'),
+  // },
   simpleXBEInflation: {
     targetMinted: ether('5000'),
     periodsCount: new BN('52'),
@@ -198,7 +197,6 @@ const deployInfrastructure = (owner, alice, bob, params) => {
     ] = await deployStrategiesAndVaults(strategiesAndVaults);
 
     contracts.mockXBE = await MockToken.new('Mock XBE', 'mXBE', params.mockTokens.mockedTotalSupplyXBE, { from: owner });
-    contracts.xbeInflation = await XBEInflation.new({ from: owner });
     contracts.simpleXBEInflation = await SimpleXBEInflation.new({ from: owner });
 
     // Deposit weth
@@ -467,7 +465,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
         item.strategy.address,
         { from: owner },
       );
-
+      // don't remove, required for
       //      await item.vault.addFeeReceiver(
       //        contracts.treasury.address,
       //        new BN('10'),
@@ -479,23 +477,6 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       //      );
       // console.log(`${item.name}Vault: configured`);
     }
-
-    await contracts.xbeInflation.configure(
-      contracts.mockXBE.address,
-      params.xbeinflation.initialSupply,
-      params.xbeinflation.initialRate,
-      params.xbeinflation.rateReductionTime,
-      params.xbeinflation.rateReductionCoefficient,
-      params.xbeinflation.rateDenominator,
-      params.xbeinflation.inflationDelay,
-      { from: owner },
-    );
-
-    await contracts.xbeInflation.addXBEReceiver(
-      contracts.sushiStrategy.address,
-      new BN('100'),
-      { from: owner },
-    );
 
     contracts.simpleXBEInflation.configure(
       contracts.mockXBE.address, // _token
@@ -516,7 +497,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       new BN('25'),
       { from: owner },
     );
-    // console.log('XBEInflation: configured');
+    console.log('SimpleXBEInflation: configured');
 
     await contracts.bonusCampaign.configure(
       contracts.mockXBE.address,

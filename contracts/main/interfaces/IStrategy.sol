@@ -12,12 +12,7 @@ interface IStrategy {
     /// Controller | Vault role - withdraw should always return to Vault
     function withdraw(uint256) external;
 
-    ///Controller | Vault role - withdraw should always return to Vault
-    function withdrawAll() external returns (uint256);
-
     function balanceOf() external view returns (uint256);
-
-    function setVault(address) external;
 
     function setController(address) external;
 
@@ -25,19 +20,5 @@ interface IStrategy {
 
     function getRewards() external;
 
-    function earned(address[] calldata)
-        external
-        view
-        returns (uint256[] memory);
-
-    function canClaimAmount(address _rewardToken)
-        external
-        view
-        returns (uint256);
-
     function claim(address) external returns (bool);
-
-    function convertTokens(uint256) external;
-
-    function convertAndStakeTokens(uint256) external;
 }

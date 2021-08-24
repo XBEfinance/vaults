@@ -3,13 +3,13 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./base/WithClaimAmountStrategy.sol";
+import "./base/ClaimableStrategy.sol";
 import "../interfaces/IBooster.sol";
 import "../interfaces/IRewards.sol";
 
 /// @title HiveStrategy
 /// @notice This is contract for yield farming strategy with EURxb token for investors
-contract HiveStrategy is WithClaimAmountStrategy {
+contract HiveStrategy is ClaimableStrategy {
     struct Settings {
         address lpCurve;
         address crvRewards;
@@ -25,21 +25,11 @@ contract HiveStrategy is WithClaimAmountStrategy {
     function configure(
         address _wantAddress,
         address _controllerAddress,
-        address _vaultAddress,
         address _governance,
         Settings memory _poolSettings
     ) public initializer {
-        _configure(
-            _wantAddress,
-            _controllerAddress,
-            _vaultAddress,
-            _governance
-        );
+        _configure(_wantAddress, _controllerAddress, _governance);
         poolSettings = _poolSettings;
-        rewardTokensToRewardSources[_poolSettings.crvToken] = _poolSettings
-            .crvRewards;
-        rewardTokensToRewardSources[_poolSettings.cvxToken] = _poolSettings
-            .cvxRewards;
     }
 
     function setPoolIndex(uint256 _newPoolIndex) external onlyOwner {
@@ -98,14 +88,4 @@ contract HiveStrategy is WithClaimAmountStrategy {
         );
         return _amount;
     }
-
-    function _getAmountOfPendingRewardEarnedFrom(
-        address _rewardSourceContractAddress
-    ) internal view override returns (uint256) {
-        return IRewards(_rewardSourceContractAddress).earned(address(this));
-    }
-
-    function convertTokens(uint256 _amount) external override {}
-
-    function convertAndStakeTokens(uint256 _amount) external override {}
 }

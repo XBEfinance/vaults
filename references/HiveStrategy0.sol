@@ -60,12 +60,11 @@ contract HiveStrategy is BaseStrategy {
         address _addressProvider,
         address _wantAddress, //in this case it's lP curve
         address _controllerAddress,
-        address _vaultAddress,
         address _governance,
         address _xbe,
         Settings memory _poolSettings
     ) public initializer {
-        _configure(_wantAddress, _controllerAddress, _vaultAddress, _governance);
+        _configure(_wantAddress, _controllerAddress, _governance);
         addressProvider = IAddressProvider(_addressProvider);
         poolSettings = _poolSettings;
         xbe = _xbe;

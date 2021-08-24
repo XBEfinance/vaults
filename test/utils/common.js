@@ -83,6 +83,8 @@ const waitFor = (key, container, logMetadata) => new Promise((resolve) => {
       clearInterval(timeId);
       if (logMetadata) {
         console.log(`Found ${key}! - ${logMetadata}`);
+      } else {
+        console.log(`Found ${key}!`);
       }
      } else {
       if (logMetadata) {

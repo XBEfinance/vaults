@@ -3,12 +3,12 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./base/WithClaimAmountStrategy.sol";
+import "./base/ClaimableStrategy.sol";
 import "../interfaces/IRewards.sol";
 import "../interfaces/vault/IVaultTransfers.sol";
 
 /// @title CvxCrvStrategy
-contract CvxCrvStrategy is WithClaimAmountStrategy {
+contract CvxCrvStrategy is ClaimableStrategy {
     struct Settings {
         address lpCurve;
         address cvxCRVRewards;
@@ -23,20 +23,12 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
     function configure(
         address _wantAddress,
         address _controllerAddress,
-        address _vaultAddress,
         address _governance,
         address _voting,
         Settings memory _poolSettings
     ) public initializer {
-        _configure(
-            _wantAddress,
-            _controllerAddress,
-            _vaultAddress,
-            _governance
-        );
+        _configure(_wantAddress, _controllerAddress, _governance);
         poolSettings = _poolSettings;
-        rewardTokensToRewardSources[_poolSettings.cvxCrvToken] = _poolSettings
-            .cvxCRVRewards;
     }
 
     /// @dev Function that controller calls
@@ -47,12 +39,6 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
             true,
             poolSettings.cvxCRVRewards
         );
-    }
-
-    function _getAmountOfPendingRewardEarnedFrom(
-        address _rewardSourceContractAddress
-    ) internal view override returns (uint256) {
-        return IRewards(_rewardSourceContractAddress).earned(address(this));
     }
 
     function getRewards() external override {
@@ -92,12 +78,12 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
         return _stakingToken;
     }
 
-    function convertTokens(uint256 _amount) external override {
+    function convertTokens(uint256 _amount) external {
         address _stakingToken = _convertTokens(_amount);
         IERC20(_stakingToken).safeTransfer(msg.sender, _amount);
     }
 
-    function convertAndStakeTokens(uint256 _amount) external override {
+    function convertAndStakeTokens(uint256 _amount) external {
         address _stakingToken = _convertTokens(_amount);
         address vault = IController(controller).vaults(_want);
         IERC20(_stakingToken).approve(vault, _amount);

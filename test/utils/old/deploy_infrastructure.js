@@ -19,7 +19,6 @@ const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
 const months = (n) => days('30').mul(new BN(n));
 
 // const Minter = artifacts.require("Minter");
-const XBEInflation = artifacts.require('XBEInflation');
 const VeXBE = artifacts.require('VeXBE');
 // const LiquidityGaugeReward = artifacts.require("LiquidityGaugeReward");
 const Voting = artifacts.require('Voting');
@@ -50,13 +49,18 @@ const defaultParams = {
     mockedAmountCRV: ether('100'),
     mockedAmountCVX: ether('100'),
   },
-  xbeinflation: {
-    initialSupply: new BN('5000'),
-    initialRate: new BN('274815283').mul(MULTIPLIER).div(YEAR), // new BN('10000').mul(MULTIPLIER).div(YEAR)
-    rateReductionTime: YEAR,
-    rateReductionCoefficient: new BN('1189207115002721024'), // new BN('10').mul(MULTIPLIER)
-    rateDenominator: MULTIPLIER,
-    inflationDelay: new BN('86400'),
+  // xbeinflation: {
+  //   initialSupply: new BN('5000'),
+  //   initialRate: new BN('274815283').mul(MULTIPLIER).div(YEAR), // new BN('10000').mul(MULTIPLIER).div(YEAR)
+  //   rateReductionTime: YEAR,
+  //   rateReductionCoefficient: new BN('1189207115002721024'), // new BN('10').mul(MULTIPLIER)
+  //   rateDenominator: MULTIPLIER,
+  //   inflationDelay: new BN('86400'),
+  // },
+  simpleXBEInflation: {
+    targetMinted: ether('5000'),
+    periodsCount: new BN('52'),
+    periodDuration: new BN('604800'),
   },
   voting: {
     supportRequiredPct: new BN('5100'),
@@ -120,7 +124,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       from: owner,
     });
 
-    xbeInflation = await XBEInflation.new();
+    // xbeInflation = await XBEInflation.new();
 
     // deploy bonus campaign
     bonusCampaign = await BonusCampaign.new();
@@ -153,14 +157,11 @@ const deployInfrastructure = (owner, alice, bob, params) => {
   };
 
   const configure = async () => {
-    await xbeInflation.configure(
+    await simpleXbeInflation.configure(
       mockXBE.address,
-      params.xbeinflation.initialSupply,
-      params.xbeinflation.initialRate,
-      params.xbeinflation.rateReductionTime,
-      params.xbeinflation.rateReductionCoefficient,
-      params.xbeinflation.rateDenominator,
-      params.xbeinflation.inflationDelay,
+      params.simpleXBEInflation.targetMinted,
+      params.simpleXBEInflation.periodDuration,
+      params.simpleXBEInflation.periodsCount,
     );
 
     // await bonusCampaign.methods[

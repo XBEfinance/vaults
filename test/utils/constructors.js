@@ -32,7 +32,6 @@ module.exports = {
   WrappedToUnwrappedTokenConverter: async () => [await getDefaultTxParams()],
   MockContract: async () => [await getDefaultTxParams()],
   MockToken: (name = 'Mock Token', symbol = 'MT', totalSupply = ether('1000'), from) => [name, symbol, totalSupply, { from }],
-  // XBEInflation: async () => [await getDefaultTxParams()],
   VeXBE: async () => [await getDefaultTxParams()],
   StakingRewards: async () => [await getDefaultTxParams()],
   BonusCampaign: async () => [await getDefaultTxParams()],

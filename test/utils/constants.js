@@ -114,5 +114,5 @@ module.exports = {
   },
   localParams: getParams(localDistro),
   testnetParams: getParams(testnetDistro),
-  waitingForPollingInterval: 500,
+  waitingForPollingInterval: 150,
 };

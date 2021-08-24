@@ -161,17 +161,17 @@ const environment = {
 
       const mockLpSushi = await common.waitFor('MockLPSushi', deployedAndConfiguredContracts,
         'environment - waiting for MockLPSushi deployed');
-      const controller = await common.waitFor('Controller', deployedAndConfiguredContracts,
-        'environment - waiting for Controller for SushiStrategy');
       const vault = await common.waitFor('SushiVault', deployedAndConfiguredContracts,
         'environment - waiting for SushiVault for SushiStrategy');
 
       const instance = await deployment.SushiStrategy();
 
+      const controller = await common.waitFor('Controller', deployedAndConfiguredContracts,
+        'environment - waiting for Controller for SushiStrategy');
+
       await instance.configure(
         mockLpSushi.address,
         controller.address,
-        vault.address,
         owner,
         [
           mockLpSushi.address,
@@ -406,23 +406,7 @@ const environment = {
 
   UnwrappedToWrappedTokenConverter: {},
   WrappedToUnwrappedTokenConverter: {},
-  // XBEInflation: async (force) => await common.cacheAndReturn('XBEInflation', force, deployedAndConfiguredContracts,
-  //   async () => {
-  //     const instance = await deployment.XBEInflation();
-  //     await instance.configure(
-  //       (await common.waitFor(
-  //         'MockXBE',
-  //         deployedAndConfiguredContracts,
-  //       )).address,
-  //       constants.localParams.xbeinflation.initialSupply,
-  //       constants.localParams.xbeinflation.initialRate,
-  //       constants.localParams.xbeinflation.rateReductionTime,
-  //       constants.localParams.xbeinflation.rateReductionCoefficient,
-  //       constants.localParams.xbeinflation.rateDenominator,
-  //       constants.localParams.xbeinflation.inflationDelay,
-  //     );
-  //     return instance;
-  //   }),
+
   VeXBE: async (force) => await common.cacheAndReturn('VeXBE', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.VeXBE();

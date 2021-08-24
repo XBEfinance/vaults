@@ -61,7 +61,10 @@ contract Treasury is Initializable, Ownable, ITreasury {
         rewardsToken = _rewardsToken;
     }
 
-    function setSlippageTolerance(uint256 _slippageTolerance) external onlyOwner {
+    function setSlippageTolerance(uint256 _slippageTolerance)
+        external
+        onlyOwner
+    {
         require(_slippageTolerance <= 10000, "slippageTolerance too large");
         slippageTolerance = _slippageTolerance;
     }

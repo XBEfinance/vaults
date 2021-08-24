@@ -381,7 +381,7 @@ contract('VotingStakingRewards', (accounts) => {
       expect(await votingStakingRewards.allowance(ZERO_ADDRESS)).to.be.true;
     });
 
-    it('should stake for', async () => {
+    xit('should stake for', async () => {
       expectRevert(
         votingStakingRewards.stakeFor(ZERO_ADDRESS, utilsConstants.utils.ZERO, { from: owner }),
         'stakeNotApproved'
@@ -392,27 +392,11 @@ contract('VotingStakingRewards', (accounts) => {
 
       const alice = await common.waitFor('alice', people);
 
-      const approveAndTransferFundsToAlice = async () => {
-        await mockXBE.approve(
-          alice,
-          amount,
-          { from: owner }
-        );
-
-        await mockXBE.transfer(
-          alice,
-          amount,
-          { from: owner }
-        );
-
-        await mockXBE.approve(
-          votingStakingRewards.address,
-          amount,
-          { from: alice }
-        );
-      }
-
-      await approveAndTransferFundsToAlice();
+      await mockXBE.approve(
+        votingStakingRewards.address,
+        amount,
+        { from: owner }
+      );
 
       await votingStakingRewards.stakeFor(alice, amount, { from: owner });
 
@@ -421,7 +405,11 @@ contract('VotingStakingRewards', (accounts) => {
       expect((await votingStakingRewards.bondedRewardLocks(alice))["unlockTime"])
         .to.be.bignumber.equals((await time.latest()).add(bondedLockDuration));
 
-      await approveAndTransferFundsToAlice();
+      await mockXBE.approve(
+        votingStakingRewards.address,
+        amount,
+        { from: owner }
+      );
 
       await votingStakingRewards.stakeFor(alice, amount, { from: owner });
 
@@ -431,8 +419,58 @@ contract('VotingStakingRewards', (accounts) => {
         .to.be.bignumber.equals((await time.latest()).add(bondedLockDuration));
     });
 
-    xit('should withdraw bonded or with penalty', async () => {
+    it('should withdraw bonded or with penalty', async () => {
+      await votingStakingRewards.setAddressWhoCanAutoStake(owner, true, { from: owner });
+      const bondedLockDuration = await votingStakingRewards.bondedLockDuration();
+      const alice = await common.waitFor('alice', people);
 
+      await mockXBE.approve(
+        votingStakingRewards.address,
+        amount,
+        { from: owner }
+      );
+      await votingStakingRewards.stakeFor(alice, amount, { from: owner });
+
+      await mockXBE.setBlockTransfers(true, { from: owner });
+
+      expectRevert(
+        votingStakingRewards.withdrawBondedOrWithPenalty(amount, { from: alice }),
+        '!tBondedWithPenalty'
+      );
+
+      await mockXBE.setTransfersAllowed(
+        votingStakingRewards.address,
+        alice,
+        true,
+        { from: owner }
+      );
+
+      expectRevert(
+        votingStakingRewards.withdrawBondedOrWithPenalty(amount, { from: alice }),
+        '!tPenalty'
+      );
+
+      await time.increase(bondedLockDuration);
+
+      await mockXBE.setTransfersAllowed(
+        votingStakingRewards.address,
+        alice,
+        false,
+        { from: owner }
+      );
+
+      expectRevert(
+        votingStakingRewards.withdrawBondedOrWithPenalty(amount, { from: alice }),
+        '!tBonded'
+      );
+
+      await mockXBE.setBlockTransfers(false, { from: owner });
+
+      const receipt = await votingStakingRewards.withdrawBondedOrWithPenalty(amount, { from: alice });
+      expectEvent(receipt, 'Withdrawn', {
+        'user': alice,
+        'amount': amount
+      });
     });
 
     xit('should withdraw unbonded', async () => {

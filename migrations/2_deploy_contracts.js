@@ -529,7 +529,6 @@ const configureContracts = async (params, owner) => {
           dependentsAddresses.convex.cvx,       // cvxToken
           ZERO,                                 // poolIndex
         ],
-
       ],
       token: dependentsAddresses.convex.cvx,
       vaultConfigArgs: [
@@ -668,9 +667,8 @@ const configureContracts = async (params, owner) => {
       contracts.votingStakingRewards.address,
       contracts.mockXBE.address,
       dependentsAddresses.uniswap_router_02,
-      dependentsAddresses.uniswap_factory,
       params.treasury.slippageTolerance,
-      now.add(params.treasury.swapDeadline),
+      params.treasury.swapDeadline,
       { from: owner },
     );
 

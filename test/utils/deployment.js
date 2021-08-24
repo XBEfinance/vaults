@@ -61,7 +61,7 @@ module.exports = {
   WrappedToUnwrappedTokenConverter: getDeployerFuncWithDefaultConstructor('WrappedToUnwrappedTokenConverter'),
   MockContract: getDeployerFuncWithDefaultConstructor('MockContract'),
   MockToken: getDeployerFuncWithDefaultConstructor('MockToken'),
-  XBEInflation: getDeployerFuncWithDefaultConstructor('XBEInflation'),
+  // XBEInflation: getDeployerFuncWithDefaultConstructor('XBEInflation'),
   VeXBE: getDeployerFuncWithDefaultConstructor('VeXBE'),
   StakingRewards: getDeployerFuncWithDefaultConstructor('StakingRewards'),
   BonusCampaign: getDeployerFuncWithDefaultConstructor('BonusCampaign'),

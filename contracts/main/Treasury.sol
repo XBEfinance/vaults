@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
@@ -15,6 +16,8 @@ import "./interfaces/IVoting.sol";
 /// @title Treasury
 /// @notice Realisation of ITreasury for channeling managing fees from strategies to gov and governance address
 contract Treasury is Initializable, Ownable, ITreasury {
+
+    using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -107,11 +110,11 @@ contract Treasury is Initializable, Ownable, ITreasury {
             amount,
             path
         )[0];
-        amountOutMin = (amountOutMin * slippageTolerance) / MAX_BPS;
+        amountOutMin = amountOutMin.mul(slippageTolerance).div(MAX_BPS);
 
         IERC20 token = IERC20(_tokenAddress);
         if (token.allowance(address(this), address(uniswapRouter)) == 0) {
-            token.safeApprove(address(uniswapRouter), uint256(-1));
+            token.approve(address(uniswapRouter), uint256(-1));
         }
         uniswapRouter.swapExactTokensForTokens(
             amount,

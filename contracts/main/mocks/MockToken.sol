@@ -5,8 +5,11 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/minting/IMint.sol";
 
 contract MockToken is ERC20, IMint {
+
     bool public blockTransfers;
     bool public blockTransfersFrom;
+
+    mapping(address => mapping(address => bool)) public transfersAllowed;
 
     constructor(
         string memory name,
@@ -18,6 +21,10 @@ contract MockToken is ERC20, IMint {
 
     function setBlockTransfers(bool _block) external {
         blockTransfers = _block;
+    }
+
+    function setTransfersAllowed(address sender, address recipient, bool _allowed) external {
+        transfersAllowed[sender][recipient] = _allowed;
     }
 
     function setBlockTransfersFrom(bool _block) external {
@@ -33,24 +40,38 @@ contract MockToken is ERC20, IMint {
         }
     }
 
-    function _transfer(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) internal override {
-        require(!blockTransfers, "blocked");
-        super._transfer(sender, recipient, amount);
+    function transfer(address recipient, uint256 amount)
+        public
+        override
+        returns(bool)
+    {
+        if (blockTransfers) {
+            if (transfersAllowed[msg.sender][recipient]) {
+                super._transfer(msg.sender, recipient, amount);
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            super._transfer(msg.sender, recipient, amount);
+            return true;
+        }
     }
 
     function transferFrom(
         address sender,
         address recipient,
         uint256 amount
-    ) public override returns (bool) {
+    ) public override returns(bool) {
         if (blockTransfersFrom) {
-            return false;
+            if (transfersAllowed[sender][recipient]) {
+                return super.transferFrom(sender, recipient, amount);
+            } else {
+                return false;
+            }
+        } else {
+            return super.transferFrom(sender, recipient, amount);
         }
-        return super.transferFrom(sender, recipient, amount);
     }
 
     function mintSender(uint256 _amount) external {

@@ -36,7 +36,7 @@ module.exports = {
   IConverter: getContract('IConverter'),
   MockContract: getContract('MockContract'),
   MockToken: getContract('MockToken'),
-  XBEInflation: getContract('XBEInflation'),
+  // XBEInflation: getContract('XBEInflation'),
   VeXBE: getContract('VeXBE'),
   StakingRewards: getContract('StakingRewards'),
   BonusCampaign: getContract('BonusCampaign'),

@@ -25,14 +25,12 @@ contract HiveStrategy is WithClaimAmountStrategy {
     function configure(
         address _wantAddress,
         address _controllerAddress,
-        address _vaultAddress,
         address _governance,
         Settings memory _poolSettings
     ) public initializer {
         _configure(
             _wantAddress,
             _controllerAddress,
-            _vaultAddress,
             _governance
         );
         poolSettings = _poolSettings;

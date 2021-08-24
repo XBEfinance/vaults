@@ -23,7 +23,6 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
     function configure(
         address _wantAddress,
         address _controllerAddress,
-        address _vaultAddress,
         address _governance,
         address _voting,
         Settings memory _poolSettings
@@ -31,7 +30,6 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
         _configure(
             _wantAddress,
             _controllerAddress,
-            _vaultAddress,
             _governance
         );
         poolSettings = _poolSettings;

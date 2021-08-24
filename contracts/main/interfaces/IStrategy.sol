@@ -17,8 +17,6 @@ interface IStrategy {
 
     function balanceOf() external view returns (uint256);
 
-    function setVault(address) external;
-
     function setController(address) external;
 
     function setWant(address) external;

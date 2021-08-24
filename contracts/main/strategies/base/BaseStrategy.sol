@@ -30,9 +30,6 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     /// @notice Controller instance getter, used to simplify controller-related actions
     address public controller;
 
-    /// @notice Vault instance getter, used to simplify vault-related actions
-    address public vault;
-
     /// @dev Prevents other msg.sender than controller address
     modifier onlyController() {
         require(_msgSender() == controller, "!controller");
@@ -42,7 +39,7 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     /// @dev Prevents other msg.sender than controller or vault addresses
     modifier onlyControllerOrVault() {
         require(
-            _msgSender() == controller || _msgSender() == vault,
+            _msgSender() == controller || _msgSender() == IController(controller).vaults(_want),
             "!controller|vault"
         );
         _;
@@ -56,20 +53,11 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     function _configure(
         address _wantAddress,
         address _controllerAddress,
-        address _vaultAddress,
         address _governance
     ) internal {
         _want = _wantAddress;
         controller = _controllerAddress;
-        vault = _vaultAddress;
         transferOwnership(_governance);
-    }
-
-    /// @notice Usual setter with check if param is new
-    /// @param _newVault New value
-    function setVault(address _newVault) external override onlyOwner {
-        require(vault != _newVault, "!old");
-        vault = _newVault;
     }
 
     /// @notice Usual setter with check if param is new

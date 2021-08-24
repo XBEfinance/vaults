@@ -28,11 +28,7 @@ contract HiveStrategy is WithClaimAmountStrategy {
         address _governance,
         Settings memory _poolSettings
     ) public initializer {
-        _configure(
-            _wantAddress,
-            _controllerAddress,
-            _governance
-        );
+        _configure(_wantAddress, _controllerAddress, _governance);
         poolSettings = _poolSettings;
         rewardTokensToRewardSources[_poolSettings.crvToken] = _poolSettings
             .crvRewards;
@@ -102,8 +98,4 @@ contract HiveStrategy is WithClaimAmountStrategy {
     ) internal view override returns (uint256) {
         return IRewards(_rewardSourceContractAddress).earned(address(this));
     }
-
-    function convertTokens(uint256 _amount) external override {}
-
-    function convertAndStakeTokens(uint256 _amount) external override {}
 }

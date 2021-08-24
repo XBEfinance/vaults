@@ -201,7 +201,10 @@ contract Controller is IController, Ownable, Initializable {
         require(approvedStrategies[_token][_strategy], "!approved");
         address _current = strategies[_token];
         if (_current != address(0)) {
-            IStrategy(_current).withdrawAll();
+            uint256 amount = IERC20(IStrategy(_current).want()).balanceOf(
+                address(this)
+            );
+            IStrategy(_current).withdraw(amount);
             emit WithdrawToVaultAll(_token);
         }
         strategies[_token] = _strategy;

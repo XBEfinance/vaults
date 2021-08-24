@@ -8,8 +8,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 
-import "../../interfaces/IConverter.sol";
-import "../../interfaces/vault/IVaultCore.sol";
 import "../../interfaces/IStrategy.sol";
 import "../../interfaces/IController.sol";
 
@@ -39,7 +37,8 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
     /// @dev Prevents other msg.sender than controller or vault addresses
     modifier onlyControllerOrVault() {
         require(
-            _msgSender() == controller || _msgSender() == IController(controller).vaults(_want),
+            _msgSender() == controller ||
+                _msgSender() == IController(controller).vaults(_want),
             "!controller|vault"
         );
         _;
@@ -81,7 +80,7 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
 
     /// @notice must exclude any tokens used in the yield
     /// @dev Controller role - withdraw should return to Controller
-    function withdraw(address _token) external override onlyController {
+    function withdraw(address _token) external virtual override onlyController {
         require(address(_token) != address(_want), "!want");
         uint256 balance = IERC20(_token).balanceOf(address(this));
         IERC20(_token).safeTransfer(controller, balance);
@@ -90,7 +89,12 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
 
     /// @notice Withdraw partial funds, normally used with a vault withdrawal
     /// @dev Controller | Vault role - withdraw should always return to Vault
-    function withdraw(uint256 _amount) public override onlyControllerOrVault {
+    function withdraw(uint256 _amount)
+        public
+        virtual
+        override
+        onlyControllerOrVault
+    {
         uint256 _balance = IERC20(_want).balanceOf(address(this));
         if (_balance < _amount) {
             _amount = _withdrawSome(_amount.sub(_balance));
@@ -99,31 +103,8 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
         address _vault = IController(controller).vaults(_want);
         require(_vault != address(0), "!vault 0"); // additional protection so we don't burn the funds
 
-        address vaultToken = IVaultCore(_vault).token();
-        if (vaultToken != _want) {
-            address converter = IController(controller).converters(
-                vaultToken,
-                _want
-            );
-            require(converter != address(0), "!converter");
-            IERC20(vaultToken).safeTransfer(converter, _amount);
-            _amount = IConverter(converter).convert(address(this));
-        }
         IERC20(_want).safeTransfer(_vault, _amount);
         emit Withdrawn(_want, _amount, _vault);
-    }
-
-    /// @dev Controller | Vault role - withdraw should always return to Vault
-    function withdrawAll()
-        external
-        virtual
-        override
-        onlyControllerOrVault
-        returns (uint256)
-    {
-        uint256 _balance = IERC20(_want).balanceOf(address(this));
-        withdraw(_balance);
-        return _balance;
     }
 
     /// @notice balance of this address in "want" tokens

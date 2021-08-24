@@ -36,8 +36,6 @@ contract InstitutionalEURxbStrategy is BaseStrategy {
         return false;
     }
 
-    function convertTokens(uint256) external override {}
-
     function earned(address[] calldata)
         external
         view
@@ -46,6 +44,4 @@ contract InstitutionalEURxbStrategy is BaseStrategy {
     {}
 
     function getRewards() external override {}
-
-    function convertAndStakeTokens(uint256 _amount) external override {}
 }

@@ -58,7 +58,10 @@ contract Treasury is Initializable, Ownable, ITreasury {
         rewardsToken = _rewardsToken;
     }
 
-    function setSlippageTolerance(uint256 _slippageTolerance) external onlyOwner {
+    function setSlippageTolerance(uint256 _slippageTolerance)
+        external
+        onlyOwner
+    {
         require(_slippageTolerance <= 10000, "slippageTolerance too large");
         slippageTolerance = _slippageTolerance;
     }
@@ -103,10 +106,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
         path[1] = uniswapRouter.WETH();
         path[2] = rewardsToken;
 
-        uint256 amountOutMin = uniswapRouter.getAmountsOut(
-            amount,
-            path
-        )[0];
+        uint256 amountOutMin = uniswapRouter.getAmountsOut(amount, path)[0];
         amountOutMin = (amountOutMin * slippageTolerance) / MAX_BPS;
 
         IERC20 token = IERC20(_tokenAddress);

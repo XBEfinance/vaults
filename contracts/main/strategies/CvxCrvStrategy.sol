@@ -27,11 +27,7 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
         address _voting,
         Settings memory _poolSettings
     ) public initializer {
-        _configure(
-            _wantAddress,
-            _controllerAddress,
-            _governance
-        );
+        _configure(_wantAddress, _controllerAddress, _governance);
         poolSettings = _poolSettings;
         rewardTokensToRewardSources[_poolSettings.cvxCrvToken] = _poolSettings
             .cvxCRVRewards;
@@ -90,12 +86,12 @@ contract CvxCrvStrategy is WithClaimAmountStrategy {
         return _stakingToken;
     }
 
-    function convertTokens(uint256 _amount) external override {
+    function convertTokens(uint256 _amount) external {
         address _stakingToken = _convertTokens(_amount);
         IERC20(_stakingToken).safeTransfer(msg.sender, _amount);
     }
 
-    function convertAndStakeTokens(uint256 _amount) external override {
+    function convertAndStakeTokens(uint256 _amount) external {
         address _stakingToken = _convertTokens(_amount);
         address vault = IController(controller).vaults(_want);
         IERC20(_stakingToken).approve(vault, _amount);

@@ -9,10 +9,19 @@ interface IConvexMasterChef {
         uint256 accCvxPerShare; // Accumulated CVXs per share, times 1e12. See below.
         address rewarder;
     }
+
     function deposit(uint256 _pid, uint256 _amount) external;
+
     function withdraw(uint256 _pid, uint256 _amount) external;
+
     function claim(uint256 _pid, address _account) external;
-    function poolInfo(uint256 _index) external view returns(PoolInfo memory);
-    function pendingCvx(uint256 _pid, address _user) external view returns(uint256);
-    function poolLength() external view returns(uint256);
+
+    function poolInfo(uint256 _index) external view returns (PoolInfo memory);
+
+    function pendingCvx(uint256 _pid, address _user)
+        external
+        view
+        returns (uint256);
+
+    function poolLength() external view returns (uint256);
 }

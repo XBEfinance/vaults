@@ -393,6 +393,7 @@ const environment = {
           ).address,
         ],
       ];
+
       await instance.configure(
         ...(await common.overrideConfigureArgsIfNeeded(
           originalConfigureParams,

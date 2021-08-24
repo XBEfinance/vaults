@@ -6,7 +6,7 @@ import "../base/BaseVault.sol";
 /// @notice Vault for consumers of the system
 contract ConsumerEURxbVault is BaseVault {
     /// @notice Constructor that creates a consumer vault
-    constructor() BaseVault("Consumer", "co") public {}
+    constructor() public BaseVault("Consumer", "co") {}
 
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
@@ -31,5 +31,4 @@ contract ConsumerEURxbVault is BaseVault {
             _symbolPostfix
         );
     }
-
 }

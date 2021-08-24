@@ -1,8 +1,7 @@
 pragma solidity ^0.6.0;
 
-
 interface IStrategy {
-    function want() external view returns(address);
+    function want() external view returns (address);
 
     function deposit() external;
 
@@ -14,9 +13,9 @@ interface IStrategy {
     function withdraw(uint256) external;
 
     ///Controller | Vault role - withdraw should always return to Vault
-    function withdrawAll() external returns(uint256);
+    function withdrawAll() external returns (uint256);
 
-    function balanceOf() external view returns(uint256);
+    function balanceOf() external view returns (uint256);
 
     function setVault(address) external;
 
@@ -26,11 +25,17 @@ interface IStrategy {
 
     function getRewards() external;
 
-    function earned(address[] calldata) external view returns(uint256[] memory);
+    function earned(address[] calldata)
+        external
+        view
+        returns (uint256[] memory);
 
-    function canClaimAmount(address _rewardToken) external view returns(uint256);
+    function canClaimAmount(address _rewardToken)
+        external
+        view
+        returns (uint256);
 
-    function claim(address) external returns(bool);
+    function claim(address) external returns (bool);
 
     function convertTokens(uint256) external;
 

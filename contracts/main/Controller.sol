@@ -13,7 +13,6 @@ import "./interfaces/IStrategy.sol";
 import "./interfaces/IConverter.sol";
 import "./interfaces/IOneSplitAudit.sol";
 
-
 /// @title Controller
 /// @notice The contract is the middleman between vault and strategy, it balances and trigger earn processes
 contract Controller is IController, Ownable, Initializable {
@@ -38,7 +37,9 @@ contract Controller is IController, Ownable, Initializable {
     mapping(address => mapping(address => address)) public override converters;
 
     /// @dev token => strategy => is strategy approved
-    mapping(address => mapping(address => bool)) public override approvedStrategies;
+    mapping(address => mapping(address => bool))
+        public
+        override approvedStrategies;
 
     /// @notice Strategist is an actor who created the strategies and he is receiving fees from strategies execution
     address public strategist;
@@ -59,9 +60,12 @@ contract Controller is IController, Ownable, Initializable {
     uint256 public parts = 100;
 
     /// @dev Prevents other msg.sender than either governance or strategist addresses
-    modifier onlyOwnerOrStrategist {
-      require(_msgSender() == strategist || _msgSender() == owner(), "!governance|strategist");
-      _;
+    modifier onlyOwnerOrStrategist() {
+        require(
+            _msgSender() == strategist || _msgSender() == owner(),
+            "!governance|strategist"
+        );
+        _;
     }
 
     /// @notice Default initialize method for solving migration linearization problem
@@ -69,9 +73,9 @@ contract Controller is IController, Ownable, Initializable {
     /// @param _initialTreasury treasury contract address
     /// @param _initialStrategist strategist address
     function configure(
-          address _initialTreasury,
-          address _initialStrategist,
-          address _governance
+        address _initialTreasury,
+        address _initialStrategist,
+        address _governance
     ) external initializer {
         _treasury = _initialTreasury;
         strategist = _initialStrategist;
@@ -81,28 +85,34 @@ contract Controller is IController, Ownable, Initializable {
     /// @notice Used only to rescue stuck funds from controller to msg.sender
     /// @param _token Token to rescue
     /// @param _amount Amount tokens to rescue
-    function inCaseTokensGetStuck(address _token, uint256 _amount) onlyOwnerOrStrategist external {
+    function inCaseTokensGetStuck(address _token, uint256 _amount)
+        external
+        onlyOwnerOrStrategist
+    {
         IERC20(_token).transfer(_msgSender(), _amount);
     }
 
     /// @notice Used only to rescue stuck or unrelated funds from strategy to vault
     /// @param _strategy Strategy address
     /// @param _token Unrelated token address
-    function inCaseStrategyTokenGetStuck(address _strategy, address _token) onlyOwnerOrStrategist external {
+    function inCaseStrategyTokenGetStuck(address _strategy, address _token)
+        external
+        onlyOwnerOrStrategist
+    {
         IStrategy(_strategy).withdraw(_token);
     }
 
     /// @notice Withdraws funds from strategy to related vault
     /// @param _token Token address to withdraw
     /// @param _amount Amount tokens
-    function withdraw(address _token, uint256 _amount) override external {
+    function withdraw(address _token, uint256 _amount) external override {
         IStrategy(strategies[_token]).withdraw(_amount);
     }
 
-    function claim(
-        address _wantToken,
-        address _tokenToClaim
-    ) override external {
+    function claim(address _wantToken, address _tokenToClaim)
+        external
+        override
+    {
         IStrategy(strategies[_wantToken]).claim(_tokenToClaim);
     }
 
@@ -115,44 +125,44 @@ contract Controller is IController, Ownable, Initializable {
 
     /// @notice Usual setter with check if param is new
     /// @param _newParts New value
-    function setParts(uint256 _newParts) onlyOwner external {
+    function setParts(uint256 _newParts) external onlyOwner {
         require(parts != _newParts, "!old");
         parts = _newParts;
     }
 
     /// @notice Usual setter with check if param is new
     /// @param _newSplit New value
-    function setSplit(uint256 _newSplit) onlyOwner external {
+    function setSplit(uint256 _newSplit) external onlyOwner {
         require(split != _newSplit && _newSplit < max, "!old|>max");
         split = _newSplit;
     }
 
     /// @notice Usual setter with additional checks
     /// @param _newTreasury New value
-    function setTreasury(address _newTreasury) onlyOwner external {
-        require(_treasury != _newTreasury, '!old');
-        require(_newTreasury != address(0), '!treasury');
-        require(_newTreasury.isContract(), '!contract');
+    function setTreasury(address _newTreasury) external onlyOwner {
+        require(_treasury != _newTreasury, "!old");
+        require(_newTreasury != address(0), "!treasury");
+        require(_newTreasury.isContract(), "!contract");
         _treasury = _newTreasury;
     }
 
     /// @notice Usual setter with check if param is new
     /// @param _newOneSplit New value
-    function setOneSplit(address _newOneSplit) onlyOwner external {
-        require(oneSplit != _newOneSplit, '!old');
+    function setOneSplit(address _newOneSplit) external onlyOwner {
+        require(oneSplit != _newOneSplit, "!old");
         oneSplit = _newOneSplit;
     }
 
     /// @notice Usual setter with check if param is new
     /// @param _newStrategist New value
-    function setStrategist(address _newStrategist) onlyOwner external {
-        require(strategist != _newStrategist, '!old');
+    function setStrategist(address _newStrategist) external onlyOwner {
+        require(strategist != _newStrategist, "!old");
         strategist = _newStrategist;
     }
 
     /// @notice Used to obtain fees receivers address
     /// @return Treasury contract address
-    function rewards() override external view returns(address) {
+    function rewards() external view override returns (address) {
         return _treasury;
     }
 
@@ -160,9 +170,9 @@ contract Controller is IController, Ownable, Initializable {
     /// @param _token Business logic token of the vault
     /// @param _vault Vault address
     function setVault(address _token, address _vault)
+        external
         override
         onlyOwnerOrStrategist
-        external
     {
         require(vaults[_token] == address(0), "!vault 0");
         vaults[_token] = _vault;
@@ -176,14 +186,18 @@ contract Controller is IController, Ownable, Initializable {
         address _input,
         address _output,
         address _converter
-    ) onlyOwnerOrStrategist external {
+    ) external onlyOwnerOrStrategist {
         converters[_input][_output] = _converter;
     }
 
     /// @notice Sets new link between business logic token and strategy, and if strategy is already used, withdraws all funds from it to the vault
     /// @param _token Business logic token address
     /// @param _strategy Corresponded strategy contract address
-    function setStrategy(address _token, address _strategy) override onlyOwnerOrStrategist external {
+    function setStrategy(address _token, address _strategy)
+        external
+        override
+        onlyOwnerOrStrategist
+    {
         require(approvedStrategies[_token][_strategy], "!approved");
         address _current = strategies[_token];
         if (_current != address(0)) {
@@ -193,12 +207,15 @@ contract Controller is IController, Ownable, Initializable {
         strategies[_token] = _strategy;
     }
 
-
     /// @notice Approves strategy to be added to mapping, needs to be done before setting strategy
     /// @param _token Business logic token address
     /// @param _strategy Strategy contract address
     /// @param _status Approved or not (bool)?
-    function setApprovedStrategy(address _token, address _strategy, bool _status) onlyOwner external {
+    function setApprovedStrategy(
+        address _token,
+        address _strategy,
+        bool _status
+    ) external onlyOwner {
         approvedStrategies[_token][_strategy] = _status;
     }
 
@@ -206,17 +223,26 @@ contract Controller is IController, Ownable, Initializable {
     /// transfers converted tokens to strategy, and executes the business logic
     /// @param _token Given token address (wERC20)
     /// @param _amount Amount of given token address
-    function earn(address _token, uint256 _amount) override public {
+    function earn(address _token, uint256 _amount) public override {
         address _strategy = strategies[_token];
         address _want = IStrategy(_strategy).want();
         if (_want != _token) {
             address converter = converters[_token][_want];
-            require(converter != address(0), '!converter');
-            require(IERC20(_token).transfer(converter, _amount), "!transferConverterToken");
+            require(converter != address(0), "!converter");
+            require(
+                IERC20(_token).transfer(converter, _amount),
+                "!transferConverterToken"
+            );
             _amount = IConverter(converter).convert(_strategy);
-            require(IERC20(_want).transfer(_strategy, _amount), "!transferStrategyWant");
+            require(
+                IERC20(_want).transfer(_strategy, _amount),
+                "!transferStrategyWant"
+            );
         } else {
-            require(IERC20(_token).transfer(_strategy, _amount), "!transferStrategyToken");
+            require(
+                IERC20(_token).transfer(_strategy, _amount),
+                "!transferStrategyToken"
+            );
         }
         IStrategy(_strategy).deposit();
         emit Earn(_token, _amount);

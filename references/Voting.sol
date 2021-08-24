@@ -1,7 +1,3 @@
-/*
- * SPDX-License-Identitifer:    GPL-3.0-or-later
- */
-
 pragma solidity ^0.4.24;
 
 import "@aragon/os/contracts/apps/AragonApp.sol";
@@ -16,7 +12,7 @@ import "./BasicMetaTransaction.sol";
 import "./IFreeFromUpTo.sol";
 
 contract Voting is IForwarder, AragonApp, BasicMetaTransaction {
-  
+
     using SafeMath for uint256;
     using SafeMath64 for uint64;
 

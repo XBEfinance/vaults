@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >= 0.6.0 < 0.7.0;
-
+pragma solidity >=0.6.0 <0.7.0;
 
 contract Migrations {
     address public owner = msg.sender;
-    uint public lastCompletedMigration;
+    uint256 public lastCompletedMigration;
 
     modifier restricted() {
         require(
@@ -14,7 +13,7 @@ contract Migrations {
         _;
     }
 
-    function setCompleted(uint completed) public restricted {
+    function setCompleted(uint256 completed) public restricted {
         lastCompletedMigration = completed;
     }
 }

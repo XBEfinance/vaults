@@ -6,20 +6,23 @@ import "./ClaimableStrategy.sol";
 /// @title ClaimableStrategy
 /// @notice This is contract for yield farming strategy with EURxb token for investors
 abstract contract WithClaimAmountStrategy is ClaimableStrategy {
-
     // reward token => IRewards of convex
-    mapping (address => address) public rewardTokensToRewardSources;
+    mapping(address => address) public rewardTokensToRewardSources;
 
     function canClaimAmount(address _rewardToken)
-        override
-        virtual
-        view
         external
-        returns(uint256 _amount)
+        view
+        virtual
+        override
+        returns (uint256 _amount)
     {
-        address rewardSourceContractAddress = rewardTokensToRewardSources[_rewardToken];
+        address rewardSourceContractAddress = rewardTokensToRewardSources[
+            _rewardToken
+        ];
         if (rewardSourceContractAddress != address(0)) {
-            _amount = _getAmountOfPendingRewardEarnedFrom(rewardSourceContractAddress);
+            _amount = _getAmountOfPendingRewardEarnedFrom(
+                rewardSourceContractAddress
+            );
         } else {
             _amount = 0;
         }
@@ -29,5 +32,5 @@ abstract contract WithClaimAmountStrategy is ClaimableStrategy {
         internal
         view
         virtual
-        returns(uint256);
+        returns (uint256);
 }

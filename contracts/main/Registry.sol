@@ -12,7 +12,6 @@ import "./interfaces/vault/IVaultCore.sol";
 import "./interfaces/vault/IVaultDelegated.sol";
 import "./interfaces/vault/IVaultWrapped.sol";
 
-
 /// @title Registry
 /// @notice The contract is the middleman actor through which the Keeper
 /// bot queries the vaults and strategies addresses to call harvest method.
@@ -27,7 +26,6 @@ contract Registry is Ownable, Initializable {
 
     event VaultAdded(address _newVault);
     event VaultRemoved(address _Vault);
-
 
     /// @notice The structure to keep controller addresses
     /// It's important to memorize that controller can be updated or replaced as
@@ -46,17 +44,15 @@ contract Registry is Ownable, Initializable {
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
     /// @param _governance governance Voting address
-    function configure(
-          address _governance
-    ) external initializer {
+    function configure(address _governance) external initializer {
         transferOwnership(_governance);
     }
 
     /// @notice Just name
     /// @return String representation of name
-//    function getName() external pure returns(string memory) {
-//      return "Registry";
-//    }
+    //    function getName() external pure returns(string memory) {
+    //      return "Registry";
+    //    }
 
     /// @notice Adds vault to address set containing ordinary vault
     /// @param _vault Deployed ordinary vault address
@@ -169,31 +165,31 @@ contract Registry is Ownable, Initializable {
 
     /// @notice Obtain vault by it's index in EnumerableSet
     /// @return Requested vault address
-    function getVault(uint256 index) external view returns(address) {
+    function getVault(uint256 index) external view returns (address) {
         return _vaults.at(index);
     }
 
     /// @notice Obtain controller by it's index in EnumerableSet
     /// @return Requested controller address
-    function getController(uint256 index) external view returns(address) {
+    function getController(uint256 index) external view returns (address) {
         return _controllers.at(index);
     }
 
     /// @notice Calculates and returns current size of the vaults address set
     /// @return Vaults set size
-    function getVaultsLength() external view returns(uint256) {
+    function getVaultsLength() external view returns (uint256) {
         return _vaults.length();
     }
 
     /// @notice Calculates and returns current size of the controllers address set
     /// @return Controllers set size
-    function getControllersLength() external view returns(uint256) {
+    function getControllersLength() external view returns (uint256) {
         return _controllers.length();
     }
 
     /// @notice Used to return all addresses in order to iterate over them
     /// @return memory All vaults that are registered now
-    function getVaults() external view returns(address[] memory) {
+    function getVaults() external view returns (address[] memory) {
         address[] memory vaultsArray = new address[](_vaults.length());
         for (uint256 i = 0; i < _vaults.length(); i++) {
             vaultsArray[i] = _vaults.at(i);
@@ -219,7 +215,9 @@ contract Registry is Ownable, Initializable {
             bool isDelegated
         )
     {
-        (controller, token, strategy, isWrapped, isDelegated) = _getVaultData(_vault);
+        (controller, token, strategy, isWrapped, isDelegated) = _getVaultData(
+            _vault
+        );
         return (controller, token, strategy, isWrapped, isDelegated);
     }
 
@@ -252,7 +250,13 @@ contract Registry is Ownable, Initializable {
 
         for (uint256 i = 0; i < _vaults.length(); i++) {
             vaultsAddresses[i] = _vaults.at(i);
-            (address _controller, address _token, address _strategy, bool _isWrapped, bool _isDelegated) = _getVaultData(_vaults.at(i));
+            (
+                address _controller,
+                address _token,
+                address _strategy,
+                bool _isWrapped,
+                bool _isDelegated
+            ) = _getVaultData(_vaults.at(i));
             controllerArray[i] = _controller;
             tokenArray[i] = _token;
             strategyArray[i] = _strategy;

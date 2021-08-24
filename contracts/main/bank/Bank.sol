@@ -15,7 +15,7 @@ contract Bank is Initializable, ERC20 {
     IEURxb public eurxb;
 
     /// @dev address => deposits
-    mapping (address => uint256) private deposits;
+    mapping(address => uint256) private deposits;
 
     /// @dev address => expIndex
     mapping(address => uint256) private holderIndex;
@@ -36,13 +36,13 @@ contract Bank is Initializable, ERC20 {
 
     /// @notice Used to receive user deposits
     /// @return User deposits
-    function getDeposit(address user) external view returns(uint256) {
+    function getDeposit(address user) external view returns (uint256) {
         return deposits[user];
     }
 
     /// @notice Used to get the user's index
     /// @return User index
-    function getIndex(address user) external view returns(uint256) {
+    function getIndex(address user) external view returns (uint256) {
         return holderIndex[user];
     }
 
@@ -58,7 +58,9 @@ contract Bank is Initializable, ERC20 {
         uint256 expIndex = eurxb.expIndex();
 
         if (amountDeposit != 0) {
-            uint256 newAmountDeposit = amountDeposit.mul(expIndex).div(holderIndex[msgSender]);
+            uint256 newAmountDeposit = amountDeposit.mul(expIndex).div(
+                holderIndex[msgSender]
+            );
             uint256 interest = newAmountDeposit.sub(amountDeposit);
             _amount = _amount.add(interest);
         }
@@ -115,13 +117,18 @@ contract Bank is Initializable, ERC20 {
         emit WithdrawInterestBank(msgSender, interest);
     }
 
-    function _accrueInterest(address _user) internal returns (uint256 expIndex, uint256 interest) {
+    function _accrueInterest(address _user)
+        internal
+        returns (uint256 expIndex, uint256 interest)
+    {
         uint256 amountDeposit = deposits[_user];
 
         eurxb.accrueInterest();
         expIndex = eurxb.expIndex();
 
-        uint256 newAmountDeposit = amountDeposit.mul(expIndex).div(holderIndex[_user]);
+        uint256 newAmountDeposit = amountDeposit.mul(expIndex).div(
+            holderIndex[_user]
+        );
         interest = newAmountDeposit.sub(amountDeposit);
     }
 }

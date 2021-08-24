@@ -15,7 +15,7 @@ contract EURxbMock is OverrideERC20, IEURxb {
     using Address for address;
 
     uint256 private constant UNIT = 10**18;
-    uint256 private constant PER_YEAR = 31536000 * 10 ** 18; // UNIT.mul(365).mul(86400);
+    uint256 private constant PER_YEAR = 31536000 * 10**18; // UNIT.mul(365).mul(86400);
 
     uint256 private _countMaturity;
     uint256 private _totalActiveValue;
@@ -104,13 +104,19 @@ contract EURxbMock is OverrideERC20, IEURxb {
         super._burn(account, amount);
     }
 
-    function addNewMaturity(uint256 amount, uint256 maturityEnd) external override {
+    function addNewMaturity(uint256 amount, uint256 maturityEnd)
+        external
+        override
+    {
         require(amount > 0, "The amount must be greater than zero");
         _totalActiveValue = _totalActiveValue.add(amount);
         emit AddNewMaturityInvoked(amount, maturityEnd);
     }
 
-    function removeMaturity(uint256 amount, uint256 maturityEnd) external override {
+    function removeMaturity(uint256 amount, uint256 maturityEnd)
+        external
+        override
+    {
         require(amount > 0, "The amount must be greater than zero");
         _totalActiveValue = _totalActiveValue.sub(amount);
         emit RemoveMaturityInvoked(amount, maturityEnd);
@@ -120,7 +126,12 @@ contract EURxbMock is OverrideERC20, IEURxb {
      * @dev Return user balance
      * @param account user address
      */
-    function balanceOf(address account) public override(IERC20, OverrideERC20) view returns (uint256) {
+    function balanceOf(address account)
+        public
+        view
+        override(IERC20, OverrideERC20)
+        returns (uint256)
+    {
         return balanceByTime(account, block.timestamp);
     }
 
@@ -145,7 +156,10 @@ contract EURxbMock is OverrideERC20, IEURxb {
                 currentExpIndex,
                 currentAccrualTimestamp
             );
-            return super.balanceOf(account).mul(currentExpIndex).div(_holderIndex[account]);
+            return
+                super.balanceOf(account).mul(currentExpIndex).div(
+                    _holderIndex[account]
+                );
         }
         return super.balanceOf(account);
     }
@@ -174,11 +188,7 @@ contract EURxbMock is OverrideERC20, IEURxb {
         uint256 interest,
         uint256 prevIndex,
         uint256 lastAccrualTimestamp
-    )
-        internal
-        view
-        returns (uint256)
-    {
+    ) internal view returns (uint256) {
         if (totalSupply() == 0) {
             return prevIndex;
         }
@@ -189,8 +199,9 @@ contract EURxbMock is OverrideERC20, IEURxb {
         }
 
         uint256 interestFactor = interest.mul(period);
-        uint256 newExpIndex = (interestFactor.mul(prevIndex).div(PER_YEAR).div(totalSupply()))
-            .add(prevIndex);
+        uint256 newExpIndex = (
+            interestFactor.mul(prevIndex).div(PER_YEAR).div(totalSupply())
+        ).add(prevIndex);
         return newExpIndex;
     }
 
@@ -219,7 +230,11 @@ contract EURxbMock is OverrideERC20, IEURxb {
      * @param recipient user address
      * @param amount number of tokens
      */
-    function _transfer(address sender, address recipient, uint256 amount) internal override {
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal override {
         accrueInterest();
         if (sender != address(0)) {
             _updateBalance(sender);

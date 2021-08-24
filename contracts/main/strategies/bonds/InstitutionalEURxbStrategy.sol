@@ -11,37 +11,41 @@ import "../base/BaseStrategy.sol";
 /// @title InstitutionalEURxbStrategy
 /// @notice This is contract for yield farming strategy with EURxb token for investors
 contract InstitutionalEURxbStrategy is BaseStrategy {
-
     /// @dev To be realised
-    function deposit() override external {
+    function deposit() external override {}
 
-    }
-
-    function _withdrawSome(uint256 _amount) override internal returns(uint) {
+    function _withdrawSome(uint256 _amount)
+        internal
+        override
+        returns (uint256)
+    {
         // withdraw from business
         return _amount;
     }
 
-    function canClaimAmount(address _rewardToken) external view override returns(uint256) {
+    function canClaimAmount(address _rewardToken)
+        external
+        view
+        override
+        returns (uint256)
+    {
         return 0;
     }
 
-    function claim(address) external override returns(bool) {
+    function claim(address) external override returns (bool) {
         return false;
     }
 
-    function convertTokens(uint256) external override {
+    function convertTokens(uint256) external override {}
 
-    }
+    function earned(address[] calldata)
+        external
+        view
+        override
+        returns (uint256[] memory)
+    {}
 
-    function earned(address[] calldata) external view override returns(uint256[] memory) {
+    function getRewards() external override {}
 
-    }
-
-    function getRewards() external override {
-
-    }
-
-    function convertAndStakeTokens(uint256 _amount) override external {}
-
+    function convertAndStakeTokens(uint256 _amount) external override {}
 }

@@ -9,8 +9,7 @@ import "../mocks/StringsConcatenations.sol";
 /// @title SushiVault
 /// @notice Vault for staking LP Sushiswap and receive rewards in CVX
 contract SushiVault is BaseVault, VaultWithAutoStake {
-
-    constructor() BaseVault("XBE Sushi LP", "xs") public {}
+    constructor() public BaseVault("XBE Sushi LP", "xs") {}
 
     function configure(
         address _initialToken,
@@ -44,9 +43,7 @@ contract SushiVault is BaseVault, VaultWithAutoStake {
         address _for,
         address _rewardToken,
         address _stakingToken
-    )
-        internal override
-    {
+    ) internal override {
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;

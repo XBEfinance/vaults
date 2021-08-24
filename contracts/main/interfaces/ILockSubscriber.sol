@@ -5,5 +5,6 @@ interface ILockSubscriber {
         address account,
         uint256 lockStart,
         uint256 lockEnd,
-        uint256 amount) external;
+        uint256 amount
+    ) external;
 }

@@ -16,7 +16,6 @@ import "./templates/OverrideUniswapV2Library.sol";
 /// @title Treasury
 /// @notice Realisation of ITreasury for channeling managing fees from strategies to gov and governance address
 contract Treasury is Initializable, Ownable, ITreasury {
-
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -34,9 +33,9 @@ contract Treasury is Initializable, Ownable, ITreasury {
 
     mapping(address => bool) public authorized;
 
-    modifier authorizedOnly {
-      require(authorized[_msgSender()], "!authorized");
-      _;
+    modifier authorizedOnly() {
+        require(authorized[_msgSender()], "!authorized");
+        _;
     }
 
     function configure(
@@ -63,7 +62,9 @@ contract Treasury is Initializable, Ownable, ITreasury {
         rewardsToken = _rewardsToken;
     }
 
-    function setRewardsDistributionRecipientContract(address _rewardsDistributionRecipientContract) external onlyOwner {
+    function setRewardsDistributionRecipientContract(
+        address _rewardsDistributionRecipientContract
+    ) external onlyOwner {
         rewardsDistributionRecipientContract = _rewardsDistributionRecipientContract;
     }
 
@@ -79,13 +80,21 @@ contract Treasury is Initializable, Ownable, ITreasury {
         require(_tokensToConvert.remove(_token), "doesntExist");
     }
 
-    function feeReceiving(address _for, address _token, uint256 _amount) override external {
-        if(_token != rewardsToken){
+    function feeReceiving(
+        address _for,
+        address _token,
+        uint256 _amount
+    ) external override {
+        if (_token != rewardsToken) {
             convertToRewardsToken(_token, _amount);
         }
     }
 
-    function convertToRewardsToken(address _token, uint256 amount) public override authorizedOnly {
+    function convertToRewardsToken(address _token, uint256 amount)
+        public
+        override
+        authorizedOnly
+    {
         require(_tokensToConvert.contains(_token), "tokenIsNotAllowed");
 
         address[] memory path = new address[](3);
@@ -93,27 +102,38 @@ contract Treasury is Initializable, Ownable, ITreasury {
         path[1] = uniswapRouter.WETH();
         path[2] = rewardsToken;
 
-        uint256 amountOutMin = OverrideUniswapV2Library.getAmountsOut(uniswapFactory, amount, path)[0];
+        uint256 amountOutMin = OverrideUniswapV2Library.getAmountsOut(
+            uniswapFactory,
+            amount,
+            path
+        )[0];
         amountOutMin = (amountOutMin * slippageTolerance) / MAX_BPS;
 
         IERC20(_token).safeTransfer(address(uniswapRouter), amount);
         uniswapRouter.swapExactTokensForTokens(
-          amount,
-          amountOutMin,
-          path,
-          address(this),
-          block.timestamp + swapDeadline
+            amount,
+            amountOutMin,
+            path,
+            address(this),
+            block.timestamp + swapDeadline
         );
     }
 
-    function toGovernance(address _token, uint256 _amount) override external onlyOwner {
+    function toGovernance(address _token, uint256 _amount)
+        external
+        override
+        onlyOwner
+    {
         IERC20(_token).safeTransfer(owner(), _amount);
     }
 
-    function toVoters() override external {
+    function toVoters() external override {
         uint256 _balance = IERC20(rewardsToken).balanceOf(address(this));
-        IERC20(rewardsToken).safeTransfer(rewardsDistributionRecipientContract, _balance);
-        IRewardsDistributionRecipient(rewardsDistributionRecipientContract).notifyRewardAmount(_balance);
+        IERC20(rewardsToken).safeTransfer(
+            rewardsDistributionRecipientContract,
+            _balance
+        );
+        IRewardsDistributionRecipient(rewardsDistributionRecipientContract)
+            .notifyRewardAmount(_balance);
     }
-
 }

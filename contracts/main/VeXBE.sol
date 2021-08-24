@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "./interfaces/ILockSubscription.sol";
 import "./interfaces/IVotingStakingRewards.sol";
 
-
 // @title Voting Escrow XBE
 // @author Curve Finance | Translation to Solidity - Integral Team O
 // @license MIT
@@ -17,7 +16,6 @@ import "./interfaces/IVotingStakingRewards.sol";
 // @dev Vote weight decays linearly over time. Lock time cannot be
 //     more than `MAXTIME` (4 years).
 contract VeXBE is Initializable, ReentrancyGuard {
-
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -55,15 +53,8 @@ contract VeXBE is Initializable, ReentrancyGuard {
         int128 _type,
         uint256 ts
     );
-    event Withdraw(
-        address indexed provider,
-        uint256 value,
-        uint256 ts
-    );
-    event Supply(
-        uint256 prevSupply,
-        uint256 supply
-    );
+    event Withdraw(address indexed provider, uint256 value, uint256 ts);
+    event Supply(uint256 prevSupply, uint256 supply);
 
     int128 public constant DEPOSIT_FOR_TYPE = 0;
     int128 public constant CREATE_LOCK_TYPE = 1;
@@ -72,9 +63,9 @@ contract VeXBE is Initializable, ReentrancyGuard {
 
     // General constants
     uint256 public constant YEAR = 86400 * 365;
-    uint256 public constant WEEK = 7 * 86400;  // all future times are rounded by week
-    uint256 public constant MAXTIME = 2 * YEAR;  // 4 years
-    uint256 public constant MULTIPLIER = 10 ** 18;
+    uint256 public constant WEEK = 7 * 86400; // all future times are rounded by week
+    uint256 public constant MAXTIME = 2 * YEAR; // 4 years
+    uint256 public constant MULTIPLIER = 10**18;
 
     // # Allocation:
     // # =========
@@ -124,9 +115,9 @@ contract VeXBE is Initializable, ReentrancyGuard {
 
     mapping(address => mapping(address => bool)) public createLockAllowance;
 
-    modifier onlyAdmin {
-      require(msg.sender == admin, "!admin");
-      _;
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "!admin");
+        _;
     }
 
     // """
@@ -171,9 +162,10 @@ contract VeXBE is Initializable, ReentrancyGuard {
     }
 
     function setVoting(address _votingStakingRewards) external onlyAdmin {
-        require(_votingStakingRewards != address(0), 'addressIsZero');
+        require(_votingStakingRewards != address(0), "addressIsZero");
         votingStakingRewards = _votingStakingRewards;
     }
+
     // """
     // @notice Transfer ownership of VotingEscrow contract to `addr`
     // @param addr Address to have ownership transferred to
@@ -198,7 +190,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // @param addr Address of the user wallet
     // @return Value of the slope
     // """
-    function getLastUserSlope(address addr) external view returns(int128) {
+    function getLastUserSlope(address addr) external view returns (int128) {
         uint256 uepoch = userPointEpoch[addr];
         return userPointHistory[addr][uepoch].slope;
     }
@@ -209,7 +201,11 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // @param _idx User epoch number
     // @return Epoch time of the checkpoint
     // """
-    function userPointHistoryTs(address addr, uint256 idx) external view returns(uint256) {
+    function userPointHistoryTs(address addr, uint256 idx)
+        external
+        view
+        returns (uint256)
+    {
         return userPointHistory[addr][idx].ts;
     }
 
@@ -218,15 +214,15 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // @param _addr User wallet
     // @return Epoch time of the lock end
     // """
-    function lockedEnd(address addr) external view returns(uint256) {
+    function lockedEnd(address addr) external view returns (uint256) {
         return locked[addr].end;
     }
 
-    function lockStarts(address addr) external view returns(uint256) {
+    function lockStarts(address addr) external view returns (uint256) {
         return _lockStarts[addr];
     }
 
-    function lockedAmount(address addr) external view returns(uint256) {
+    function lockedAmount(address addr) external view returns (uint256) {
         return uint256(locked[addr].amount);
     }
 
@@ -251,12 +247,16 @@ contract VeXBE is Initializable, ReentrancyGuard {
             // # Calculate slopes and biases
             // # Kept at zero when they have to
             if (oldLocked.end > block.timestamp && oldLocked.amount > 0) {
-              uOld.slope = int128(uint256(oldLocked.amount) / MAXTIME);
-              uOld.bias = uOld.slope * int128(oldLocked.end - block.timestamp);
+                uOld.slope = int128(uint256(oldLocked.amount) / MAXTIME);
+                uOld.bias =
+                    uOld.slope *
+                    int128(oldLocked.end - block.timestamp);
             }
             if (newLocked.end > block.timestamp && newLocked.amount > 0) {
-              uNew.slope = int128(uint256(newLocked.amount) / MAXTIME);
-              uNew.bias = uNew.slope * int128(newLocked.end - block.timestamp);
+                uNew.slope = int128(uint256(newLocked.amount) / MAXTIME);
+                uNew.bias =
+                    uNew.slope *
+                    int128(newLocked.end - block.timestamp);
             }
 
             // # Read values of scheduled changes in the slope
@@ -277,8 +277,12 @@ contract VeXBE is Initializable, ReentrancyGuard {
             ts: block.timestamp,
             blk: block.number
         });
-        if (epoch/*_epoch*/ > 0) {
-            lastPoint = pointHistory[epoch/*_epoch*/];
+        if (
+            epoch > 0 /*_epoch*/
+        ) {
+            lastPoint = pointHistory[
+                epoch /*_epoch*/
+            ];
         }
         // uint256 lastCheckpoint = lastPoint.ts;
 
@@ -289,14 +293,16 @@ contract VeXBE is Initializable, ReentrancyGuard {
         Point memory initialLastPoint = lastPoint;
         uint256 blockSlope = 0;
         if (block.timestamp > lastPoint.ts) {
-            blockSlope = MULTIPLIER * (block.number - lastPoint.blk) / (block.timestamp - lastPoint.ts);
+            blockSlope =
+                (MULTIPLIER * (block.number - lastPoint.blk)) /
+                (block.timestamp - lastPoint.ts);
         }
 
         // # If last point is already recorded in this block, slope=0
         // # But that's ok b/c we know the block in such case
         //
         // # Go over weeks to fill history and calculate what the current point is
-        uint256 tI = (lastPoint.ts/*lastCheckpoint*/ / WEEK) * WEEK;
+        uint256 tI = (lastPoint.ts / WEEK) * WEEK; /*lastCheckpoint*/
 
         for (uint256 i = 0; i < 255; i++) {
             // # Hopefully it won't happen that this won't get used in 5 years!
@@ -310,27 +316,38 @@ contract VeXBE is Initializable, ReentrancyGuard {
                 dSlope = slopeChanges[tI];
             }
 
-            lastPoint.bias -= lastPoint.slope * int128(tI - lastPoint.ts/*lastCheckpoint*/);
+            lastPoint.bias -=
+                lastPoint.slope *
+                int128(
+                    tI - lastPoint.ts /*lastCheckpoint*/
+                );
             lastPoint.slope += dSlope;
 
-            if (lastPoint.bias < 0) { // # This can happen
+            if (lastPoint.bias < 0) {
+                // # This can happen
                 lastPoint.bias = 0;
             }
 
-            if (lastPoint.slope < 0) { // # This cannot happen - just in case
+            if (lastPoint.slope < 0) {
+                // # This cannot happen - just in case
                 lastPoint.slope = 0;
             }
 
             // lastCheckpoint = tI;
             lastPoint.ts = tI;
-            lastPoint.blk = initialLastPoint.blk + blockSlope * (tI - initialLastPoint.ts) / MULTIPLIER;
-            epoch/*_epoch*/ += 1;
+            lastPoint.blk =
+                initialLastPoint.blk +
+                (blockSlope * (tI - initialLastPoint.ts)) /
+                MULTIPLIER;
+            epoch += 1; /*_epoch*/
 
             if (tI == block.timestamp) {
                 lastPoint.blk = block.number;
                 break;
             } else {
-                pointHistory[epoch/*_epoch*/] = lastPoint;
+                pointHistory[
+                    epoch /*_epoch*/
+                ] = lastPoint;
             }
         }
 
@@ -351,7 +368,9 @@ contract VeXBE is Initializable, ReentrancyGuard {
         }
 
         // # Record the changed point into history
-        pointHistory[epoch/*_epoch*/] = lastPoint;
+        pointHistory[
+            epoch /*_epoch*/
+        ] = lastPoint;
 
         if (addr != address(0)) {
             // # Schedule the slope changes (slope is going down)
@@ -379,7 +398,9 @@ contract VeXBE is Initializable, ReentrancyGuard {
             userPointEpoch[addr] += 1; //= userPointEpoch[addr] + 1/*userEpoch*/;
             uNew.ts = block.timestamp;
             uNew.blk = block.number;
-            userPointHistory[addr][userPointEpoch[addr]/*userEpoch*/] = uNew;
+            userPointHistory[addr][
+                userPointEpoch[addr] /*userEpoch*/
+            ] = uNew;
         }
     }
 
@@ -401,7 +422,10 @@ contract VeXBE is Initializable, ReentrancyGuard {
         LockedBalance memory lockedBalance,
         int128 _type
     ) internal {
-        LockedBalance memory _locked = LockedBalance({amount: lockedBalance.amount, end: lockedBalance.end});
+        LockedBalance memory _locked = LockedBalance({
+            amount: lockedBalance.amount,
+            end: lockedBalance.end
+        });
         uint256 supplyBefore = supply;
 
         supply = supplyBefore.add(_value);
@@ -421,9 +445,18 @@ contract VeXBE is Initializable, ReentrancyGuard {
         // # _locked.end > block.timestamp (always)
         _checkpoint(_addr, oldLocked, _locked);
 
-        require(IERC20(votingStakingRewards).balanceOf(_addr) >= uint256(_locked.amount), "notEnoughStake");
+        require(
+            IERC20(votingStakingRewards).balanceOf(_addr) >=
+                uint256(_locked.amount),
+            "notEnoughStake"
+        );
 
-        registrationMediator.processLockEvent(_addr, _lockStarts[_addr], _locked.end, uint256(_locked.amount));
+        registrationMediator.processLockEvent(
+            _addr,
+            _lockStarts[_addr],
+            _locked.end,
+            uint256(_locked.amount)
+        );
 
         emit Deposit(_addr, _value, _locked.end, _type, block.timestamp);
         emit Supply(supplyBefore, supplyBefore + _value);
@@ -457,7 +490,10 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // @param _value Amount to deposit
     // @param _unlock_time Epoch time when tokens unlock, rounded down to whole weeks
     // """
-    function createLock(uint256 _value, uint256 _unlockTime) external nonReentrant {
+    function createLock(uint256 _value, uint256 _unlockTime)
+        external
+        nonReentrant
+    {
         // assertNotContract(msg.sender);
         _createLockFor(msg.sender, _value, _unlockTime);
     }
@@ -466,23 +502,36 @@ contract VeXBE is Initializable, ReentrancyGuard {
         createLockAllowance[_sender][msg.sender] = _status;
     }
 
-    function _createLockFor(address _for, uint256 _value, uint256 _unlockTime) internal {
+    function _createLockFor(
+        address _for,
+        uint256 _value,
+        uint256 _unlockTime
+    ) internal {
         uint256 unlockTime = (_unlockTime / WEEK) * WEEK; // # Locktime is rounded down to weeks
         LockedBalance memory _locked = locked[_for];
 
         require(_value > 0, "!zeroValue");
         require(_locked.amount == 0, "!withdrawOldTokensFirst");
         require(unlockTime > block.timestamp, "!futureTime");
-        require(unlockTime >= minLockDuration + block.timestamp, "!minLockDuration");
-        require(unlockTime <= block.timestamp.add(MAXTIME), "invalidFutureTime");
-
+        require(
+            unlockTime >= minLockDuration + block.timestamp,
+            "!minLockDuration"
+        );
+        require(
+            unlockTime <= block.timestamp.add(MAXTIME),
+            "invalidFutureTime"
+        );
 
         _lockStarts[_for] = block.timestamp;
 
         _depositFor(_for, _value, unlockTime, _locked, CREATE_LOCK_TYPE);
     }
 
-    function createLockFor(address _for, uint256 _value, uint256 _unlockTime) external nonReentrant {
+    function createLockFor(
+        address _for,
+        uint256 _value,
+        uint256 _unlockTime
+    ) external nonReentrant {
         if (msg.sender != votingStakingRewards) {
             require(createLockAllowance[msg.sender][_for], "!allowed");
         }
@@ -515,7 +564,10 @@ contract VeXBE is Initializable, ReentrancyGuard {
         require(_locked.end > block.timestamp, "lockExpired");
         require(_locked.amount > 0, "!zeroLockedAmount");
         require(unlockTime > _locked.end, "canOnlyIncreaseLockDuration");
-        require(unlockTime <= block.timestamp + MAXTIME, "lockOnlyToValidFutureTime");
+        require(
+            unlockTime <= block.timestamp + MAXTIME,
+            "lockOnlyToValidFutureTime"
+        );
 
         _depositFor(msg.sender, 0, unlockTime, _locked, INCREASE_UNLOCK_TIME);
     }
@@ -551,7 +603,11 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // @param max_epoch Don't go beyond this epoch
     // @return Approximate timestamp for block
     // """
-    function findBlockEpoch(uint256 _block, uint256 maxEpoch) internal view returns(uint256) {
+    function findBlockEpoch(uint256 _block, uint256 maxEpoch)
+        internal
+        view
+        returns (uint256)
+    {
         uint256 _min = 0;
         uint256 _max = maxEpoch;
         for (uint256 i = 0; i < 128; i++) {
@@ -575,11 +631,11 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // @param _t Epoch time to return voting power at
     // @return User voting power
     // """
-    function balanceOf(address addr) public view returns(uint256) {
+    function balanceOf(address addr) public view returns (uint256) {
         return balanceOf(addr, block.timestamp);
     }
 
-    function balanceOf(address addr, uint256 _t) public view returns(uint256) {
+    function balanceOf(address addr, uint256 _t) public view returns (uint256) {
         uint256 _epoch = userPointEpoch[addr];
         if (_epoch == 0) {
             return 0;
@@ -600,7 +656,11 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // @param _block Block to calculate the voting power at
     // @return Voting power
     // """
-    function balanceOfAt(address addr, uint256 _block) external view returns(uint256) {
+    function balanceOfAt(address addr, uint256 _block)
+        external
+        view
+        returns (uint256)
+    {
         // # Copying and pasting totalSupply code because Vyper cannot pass by
         // # reference yet
         require(_block <= block.number, "onlyPast");
@@ -637,7 +697,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
         }
         uint256 blockTime = point0.ts;
         if (dBlock != 0) {
-            blockTime += dT * (_block - point0.blk) / dBlock;
+            blockTime += (dT * (_block - point0.blk)) / dBlock;
         }
 
         upoint.bias -= upoint.slope * int128(blockTime - upoint.ts);
@@ -646,7 +706,6 @@ contract VeXBE is Initializable, ReentrancyGuard {
         } else {
             return 0;
         }
-
     }
 
     // """
@@ -655,7 +714,11 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // @param t Time to calculate the total voting power at
     // @return Total voting power at that time
     // """
-    function supplyAt(Point memory point, uint256 t) internal view returns(uint256) {
+    function supplyAt(Point memory point, uint256 t)
+        internal
+        view
+        returns (uint256)
+    {
         Point memory lastPoint = point;
         uint256 tI = (lastPoint.ts / WEEK) * WEEK;
         for (uint256 i = 0; i < 255; i++) {
@@ -685,16 +748,16 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // @dev Adheres to the ERC20 `totalSupply` interface for Aragon compatibility
     // @return Total voting power
     // """
-    function totalSupply() external view returns(uint256) {
-      return totalSupply(block.timestamp);
+    function totalSupply() external view returns (uint256) {
+        return totalSupply(block.timestamp);
     }
 
     // returns supply of locked tokens
-    function lockedSupply() external view returns(uint256) {
+    function lockedSupply() external view returns (uint256) {
         return supply;
     }
 
-    function totalSupply(uint256 t) public view returns(uint256) {
+    function totalSupply(uint256 t) public view returns (uint256) {
         uint256 _epoch = epoch;
         Point memory lastPoint = pointHistory[_epoch];
         return supplyAt(lastPoint, t);
@@ -705,7 +768,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // @param _block Block to calculate the total voting power at
     // @return Total voting power at `_block`
     // """
-    function totalSupplyAt(uint256 _block) external view returns(uint256) {
+    function totalSupplyAt(uint256 _block) external view returns (uint256) {
         require(_block <= block.number, "onlyPastAllowed");
         uint256 _epoch = epoch;
         uint256 targetEpoch = findBlockEpoch(_block, _epoch);
@@ -716,11 +779,15 @@ contract VeXBE is Initializable, ReentrancyGuard {
         if (targetEpoch < _epoch) {
             Point memory pointNext = pointHistory[targetEpoch + 1];
             if (point.blk != pointNext.blk) {
-                dt = (_block - point.blk) * (pointNext.ts - point.ts) / (pointNext.blk - point.blk);
+                dt =
+                    ((_block - point.blk) * (pointNext.ts - point.ts)) /
+                    (pointNext.blk - point.blk);
             }
         } else {
             if (point.blk != block.number) {
-                dt = (_block - point.blk) * (block.timestamp - point.ts) / (block.number - point.blk);
+                dt =
+                    ((_block - point.blk) * (block.timestamp - point.ts)) /
+                    (block.number - point.blk);
             }
         }
 
@@ -735,5 +802,4 @@ contract VeXBE is Initializable, ReentrancyGuard {
         require(msg.sender == controller, "!controller");
         controller = _newController;
     }
-
 }

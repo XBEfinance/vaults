@@ -43,6 +43,8 @@ const redeploy = async () => {
       'LockSubscription',
       'Treasury',
       'Voting',
+      'MockLPSushi',
+      'SushiVault',
       'Kernel',
       'ACL',
       'BaseKernel',
@@ -65,10 +67,35 @@ const redeploy = async () => {
     true,
     {
       "VotingStakingRewards": {
-        8: [ ZERO_ADDRESS ]
+        9: [ ZERO_ADDRESS ]
       }
     }
   );
+}
+
+const provideRewardsAndStakeAndReturnOwner = async (_amount) => {
+  const _owner = await common.waitFor('owner', people);
+  await mockXBE.approve(
+    votingStakingRewards.address,
+    _amount,
+    { from: _owner }
+  );
+  await votingStakingRewards.stake(
+    _amount,
+    { from: _owner }
+  );
+  await mockXBE.approve(
+    treasury.address,
+    _amount,
+    { from: _owner }
+  );
+  await mockXBE.transfer(
+    treasury.address,
+    _amount,
+    { from: _owner }
+  );
+  await treasury.toVoters();
+  return _owner;
 }
 
 contract('VotingStakingRewards', (accounts) => {
@@ -78,7 +105,7 @@ contract('VotingStakingRewards', (accounts) => {
   describe('configuration and setters', () => {
 
     beforeEach(async () => {
-      // await redeploy();
+      await redeploy();
       boostLogicProvider = bonusCampaign;
     });
 
@@ -158,27 +185,7 @@ contract('VotingStakingRewards', (accounts) => {
 
     beforeEach(async () => {
       await redeploy();
-      owner = await common.waitFor('owner', people);
-      await mockXBE.approve(
-        votingStakingRewards.address,
-        amount,
-        { from: owner }
-      );
-      await votingStakingRewards.stake(
-        amount,
-        { from: owner }
-      );
-      await mockXBE.approve(
-        treasury.address,
-        amount,
-        { from: owner }
-      );
-      await mockXBE.transfer(
-        treasury.address,
-        amount,
-        { from: owner }
-      );
-      await treasury.toVoters();
+      owner = await provideRewardsAndStakeAndReturnOwner(amount);
       await bonusCampaign.startMint();
     });
 
@@ -257,7 +264,7 @@ contract('VotingStakingRewards', (accounts) => {
         .to.be.bignumber.least(minBoostLevel);
     });
 
-    it('should calculate max boost level', async () => {
+    xit('should calculate max boost level', async () => {
       const maxBoostLevel = await votingStakingRewards.PCT_BASE();
       console.log('max boost level', maxBoostLevel.toString());
       const configureTime = utilsConstants.localParams.bonusCampaign.configureTime;
@@ -268,11 +275,8 @@ contract('VotingStakingRewards', (accounts) => {
           (configureTime).add(common.months('23')),
           { from: owner },
         ),
-        'Staked'
+        'Deposit'
       );
-
-      // expect(await bonusCampaign.registered(owner)).to.be.true;
-
       expect(await votingStakingRewards.calculateBoostLevel(owner))
         .to.be.bignumber.equals(maxBoostLevel);
     });
@@ -297,32 +301,134 @@ contract('VotingStakingRewards', (accounts) => {
   });
 
   describe('transfers', () => {
-    // beforeEach(async () => {
-    //   await redeploy();
-    // });
+
+    let owner;
+    const amount = ether('0.01');
+
+    beforeEach(async () => {
+      await redeploy();
+      owner = await provideRewardsAndStakeAndReturnOwner(amount);
+    });
 
     xit('should notify accepted reward amount', async () => {
+      const rewardsDuration = await votingStakingRewards.rewardsDuration();
+      const lastUpdateTime = await time.latest();
+      const periodFinish = lastUpdateTime.add(rewardsDuration);
 
+      let expectedRate = amount.div(rewardsDuration);
+
+      expect(await votingStakingRewards.rewardRate()).to.be.bignumber.equal(expectedRate);
+
+      expect(await votingStakingRewards.lastUpdateTime()).to.be.bignumber.equal(lastUpdateTime);
+      expect(await votingStakingRewards.periodFinish()).to.be.bignumber.equal(periodFinish);
+
+      await time.increase(common.days('2'));
+      await mockXBE.approve(
+        treasury.address,
+        amount,
+        { from: owner }
+      );
+      await mockXBE.transfer(
+        treasury.address,
+        amount,
+        { from: owner }
+      );
+
+      const oldBalance = await mockXBE.balanceOf(votingStakingRewards.address);
+      await mockXBE.setBalanceOf(votingStakingRewards.address, utilsConstants.utils.ZERO);
+      expectRevert(treasury.toVoters(), 'Provided reward too high');
+      await mockXBE.setBalanceOf(votingStakingRewards.address, oldBalance);
+
+      await treasury.toVoters();
+
+      const remaining = periodFinish.sub(await time.latest());
+      const leftover = remaining.mul(expectedRate);
+
+      expectedRate = amount.add(leftover).div(rewardsDuration);
+      expect(await votingStakingRewards.rewardRate()).to.be.bignumber.equal(expectedRate);
     });
 
     xit('should stake', async () => {
+      expect(await votingStakingRewards.balanceOf(owner)).to.be.bignumber.equals(amount);
+      expectRevert(votingStakingRewards.stake(utilsConstants.utils.ZERO, { from: owner }), "Cannot stake 0");
+      const totalSupply = await votingStakingRewards.totalSupply();
+      await mockXBE.approve(
+        votingStakingRewards.address,
+        amount,
+        { from: owner }
+      );
 
-    });
+      await mockXBE.setBlockTransfersFrom(true);
+      expectRevert(votingStakingRewards.stake(
+        amount,
+        { from: owner }
+      ), '!t');
+      await mockXBE.setBlockTransfersFrom(false);
 
-    xit('should set allowance of staker', async () => {
-
+      const receipt = await votingStakingRewards.stake(
+        amount,
+        { from: owner }
+      );
+      expectEvent(receipt, "Staked", {
+        "user": owner,
+        "amount": amount
+      })
+      expect(await votingStakingRewards.totalSupply()).to.be.bignumber.equals(totalSupply.add(amount));
     });
 
     xit('should set strategy who can autostake', async () => {
-
+      await votingStakingRewards.setAddressWhoCanAutoStake(ZERO_ADDRESS, true, { from: owner });
+      expect(await votingStakingRewards.allowance(ZERO_ADDRESS)).to.be.true;
     });
 
-    xit('should stake for', async () => {
+    it('should stake for', async () => {
+      expectRevert(
+        votingStakingRewards.stakeFor(ZERO_ADDRESS, utilsConstants.utils.ZERO, { from: owner }),
+        'stakeNotApproved'
+      );
+      await votingStakingRewards.setAddressWhoCanAutoStake(owner, true, { from: owner });
 
-    });
+      const bondedLockDuration = await votingStakingRewards.bondedLockDuration();
 
-    xit('should request withdraw bonded', async () => {
+      const alice = await common.waitFor('alice', people);
 
+      const approveAndTransferFundsToAlice = async () => {
+        await mockXBE.approve(
+          alice,
+          amount,
+          { from: owner }
+        );
+
+        await mockXBE.transfer(
+          alice,
+          amount,
+          { from: owner }
+        );
+
+        await mockXBE.approve(
+          votingStakingRewards.address,
+          amount,
+          { from: alice }
+        );
+      }
+
+      await approveAndTransferFundsToAlice();
+
+      await votingStakingRewards.stakeFor(alice, amount, { from: owner });
+
+      expect((await votingStakingRewards.bondedRewardLocks(alice))["amount"])
+        .to.be.bignumber.equals(amount);
+      expect((await votingStakingRewards.bondedRewardLocks(alice))["unlockTime"])
+        .to.be.bignumber.equals((await time.latest()).add(bondedLockDuration));
+
+      await approveAndTransferFundsToAlice();
+
+      await votingStakingRewards.stakeFor(alice, amount, { from: owner });
+
+      expect((await votingStakingRewards.bondedRewardLocks(alice))["amount"])
+        .to.be.bignumber.equals(amount.mul(new BN('2')));
+      expect((await votingStakingRewards.bondedRewardLocks(alice))["unlockTime"])
+        .to.be.bignumber.equals((await time.latest()).add(bondedLockDuration));
     });
 
     xit('should withdraw bonded or with penalty', async () => {

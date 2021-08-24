@@ -4,12 +4,11 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./base/WithClaimAmountStrategy.sol";
-import '../interfaces/IRewards.sol';
+import "../interfaces/IRewards.sol";
 
 /// @title CVXStrategy
 /// @notice CVXVault strategy: in CVX out cvxCRV
 contract CVXStrategy is WithClaimAmountStrategy {
-
     struct Settings {
         address cvxRewards;
         address cvxToken;
@@ -32,15 +31,16 @@ contract CVXStrategy is WithClaimAmountStrategy {
             _governance
         );
         poolSettings = _poolSettings;
-        rewardTokensToRewardSources[_poolSettings.cvxToken] = _poolSettings.cvxRewards;
+        rewardTokensToRewardSources[_poolSettings.cvxToken] = _poolSettings
+            .cvxRewards;
     }
 
     function setPoolIndex(uint256 _newPoolIndex) external onlyOwner {
         poolSettings.poolIndex = _newPoolIndex;
     }
 
-     /// @dev Function that controller calls
-    function deposit() override external onlyController {
+    /// @dev Function that controller calls
+    function deposit() external override onlyController {
         uint256 _amount = IERC20(_want).balanceOf(address(this));
         _totalDeposited += _amount;
 
@@ -48,25 +48,29 @@ contract CVXStrategy is WithClaimAmountStrategy {
         IRewards(poolSettings.cvxRewards).stake(_amount);
     }
 
-    function getRewards() override external {
-        require(IRewards(poolSettings.cvxRewards).getReward(), '!getRewards');
+    function getRewards() external override {
+        require(IRewards(poolSettings.cvxRewards).getReward(), "!getRewards");
     }
 
-    function _withdrawSome(uint256 _amount) override internal returns(uint) {
-        require(IRewards(poolSettings.cvxRewards).withdrawAndUnwrap(_amount, true),
-            '!withdrawSome');
+    function _withdrawSome(uint256 _amount)
+        internal
+        override
+        returns (uint256)
+    {
+        require(
+            IRewards(poolSettings.cvxRewards).withdrawAndUnwrap(_amount, true),
+            "!withdrawSome"
+        );
         return _amount;
     }
 
-    function _getAmountOfPendingRewardEarnedFrom(address _rewardSourceContractAddress)
-        override
-        view
-        internal
-        returns(uint256)
-    {
+    function _getAmountOfPendingRewardEarnedFrom(
+        address _rewardSourceContractAddress
+    ) internal view override returns (uint256) {
         return IRewards(_rewardSourceContractAddress).earned(address(this));
     }
 
-    function convertTokens(uint256 _amount) override external {}
-    function convertAndStakeTokens(uint256 _amount) override external {}
+    function convertTokens(uint256 _amount) external override {}
+
+    function convertAndStakeTokens(uint256 _amount) external override {}
 }

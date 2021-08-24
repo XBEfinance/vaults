@@ -1,13 +1,12 @@
-/*
- * SPDX-License-Identitifer:    GPL-3.0-or-later
- */
 pragma solidity ^0.4.24;
-
 
 contract VotingOwnable {
     address private _owner;
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
@@ -19,7 +18,7 @@ contract VotingOwnable {
     /**
      * @dev Returns the address of the current owner.
      */
-    function owner() public view returns(address) {
+    function owner() public view returns (address) {
         return _owner;
     }
 

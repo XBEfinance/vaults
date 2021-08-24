@@ -365,7 +365,7 @@ contract Voting is IForwarder, AragonApp {
         bool _castVote,
         bool _executesIfDecided
     ) internal returns (uint256 voteId) {
-        uint64 snapshotBlock = getBlockNumber64() - 1; // avoid double voting in this very block
+        uint64 snapshotBlock = getBlockNumber64().sub(1); // avoid double voting in this very block
         uint256 votingPower = token.totalSupplyAt(snapshotBlock);
         require(votingPower > 0, ERROR_NO_VOTING_POWER);
 

@@ -157,7 +157,7 @@ contract HiveStrategy is BaseStrategy {
             uint256 value = _amounts[i];
             for(uint256 j = 0; j < hiveWeights.length; j++){
                 uint256 _fee = mulDiv(hiveWeights[j].weight, _amounts[i], PCT_BASE);
-                value -= _fee;
+                value = value.sub(_fee);
             }
             _amounts[i] = value;
         }

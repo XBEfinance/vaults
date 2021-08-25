@@ -2,7 +2,7 @@ const {
   BN,
   ether,
   expectRevert,
-  constants,
+  constants, time,
 } = require('@openzeppelin/test-helpers');
 
 const { ZERO_ADDRESS } = constants;
@@ -18,20 +18,19 @@ const MULTIPLIER = new BN('10').pow(new BN('18'));
 const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
 const months = (n) => days('30').mul(new BN(n));
 
-const { accounts, contract } = require('@openzeppelin/test-environment');
-
-const VeXBE = contract.fromArtifact('VeXBE');
-const Voting = contract.fromArtifact('Voting');
-const StakingRewards = contract.fromArtifact('StakingRewards');
-const BonusCampaign = contract.fromArtifact('BonusCampaign');
-const MockToken = contract.fromArtifact('MockToken');
-const SimpleXBEInflation = contract.fromArtifact('SimpleXBEInflation');
+const VeXBE = artifacts.require('VeXBE');
+const Voting = artifacts.require('Voting');
+const StakingRewards = artifacts.require('StakingRewards');
+const BonusCampaign = artifacts.require('BonusCampaign');
+const MockToken = artifacts.require('MockToken');
+const SimpleXBEInflation = artifacts.require('SimpleXBEInflation');
 
 const defaultParams = {
   bonusCampaign: {
     rewardsDuration: months('23'),
     emission: ether('5000'),
     mintTime: ZERO,
+    stopRegisterTime: months('1'),
   },
   mockTokens: {
     mockedTotalSupplyXBE: ether('1000'),
@@ -39,14 +38,6 @@ const defaultParams = {
     mockedAmountXBE: ether('100'),
     mockedAmountCX: ether('100'),
   },
-  // xbeinflation: {
-  //   initialSupply: new BN('5000'),
-  //   initialRate: new BN('274815283').mul(MULTIPLIER).div(YEAR), // new BN('10000').mul(MULTIPLIER).div(YEAR)
-  //   rateReductionTime: YEAR,
-  //   rateReductionCoefficient: new BN('1189207115002721024'), // new BN('10').mul(MULTIPLIER)
-  //   rateDenominator: MULTIPLIER,
-  //   inflationDelay: new BN('86400'),
-  // },
   simpleXBEInflation: {
     targetMinted: ether('5000'),
     periodsCount: new BN('52'),
@@ -74,6 +65,7 @@ const deployStrategyInfrastructure = (
   let voting;
 
   const proceed = async () => {
+    console.log('owner', owner);
     xbeInflation = await SimpleXBEInflation.new({ from: owner });
 
     // deploy bonus campaign
@@ -102,12 +94,12 @@ const deployStrategyInfrastructure = (
       { from: owner },
     );
 
-    await bonusCampaign.methods[
-      'configure(address,address,uint256,uint256,uint256)'
-    ](
+    const configureTime = await time.latest();
+    await bonusCampaign.configure(
       mockXBE.address,
       veXBE.address,
-      params.bonusCampaign.mintTime,
+      configureTime.add(params.bonusCampaign.mintTime),
+      configureTime.add(params.bonusCampaign.stopRegisterTime),
       params.bonusCampaign.rewardsDuration,
       params.bonusCampaign.emission,
       { from: owner },
@@ -190,7 +182,7 @@ const beforeEachWithSpecificDeploymentParams = async (
     await middleware();
   }
 
-  deployment = deployStrategyInfrastructure(
+  let deployment = deployStrategyInfrastructure(
     owner,
     alice,
     bob,

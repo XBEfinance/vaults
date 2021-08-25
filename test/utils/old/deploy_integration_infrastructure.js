@@ -80,14 +80,6 @@ const defaultParams = {
     mockedAmountXBE: ether('100'),
     mockedAmountOtherToken: ether('100'),
   },
-  // xbeinflation: {
-  //   initialSupply: new BN('5000'),
-  //   initialRate: new BN('50').mul(MULTIPLIER).div(YEAR), // new BN('10000').mul(MULTIPLIER).div(YEAR)
-  //   rateReductionTime: days('7'),
-  //   rateReductionCoefficient: new BN('100').mul(MULTIPLIER), // new BN('10').mul(MULTIPLIER)
-  //   rateDenominator: MULTIPLIER,
-  //   inflationDelay: days('7'),
-  // },
   simpleXBEInflation: {
     targetMinted: ether('5000'),
     periodsCount: new BN('52'),
@@ -356,11 +348,7 @@ const deployInfrastructure = (owner, alice, bob, params) => {
           contracts.sushiLP.address, // _wantAddress,
           contracts.controller.address, // _controllerAddress,
           owner, // _governance,
-          // _poolSettings
-          [
-            contracts.sushiLP.address,
-            contracts.mockXBE.address,
-          ],
+          contracts.mockXBE.address,
         ],
         vaultConfigArgs: [
           contracts.sushiLP.address, // _initialToken
@@ -369,7 +357,6 @@ const deployInfrastructure = (owner, alice, bob, params) => {
           days('7'), // _rewardsDuration
           contracts.mockXBE.address, // _tokenToAutostake,
           contracts.votingStakingRewards.address, // _votingStakingRewards
-          //          true, // _enableFees
           [ // _rewardTokens
             contracts.mockXBE.address,
           ],
@@ -486,13 +473,13 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       { from: owner },
     );
 
-    await contracts.simpleXBEInflation.addXBEReceiver(
+    await contracts.simpleXBEInflation.setXBEReceiver(
       contracts.sushiStrategy.address,
       new BN('25'),
       { from: owner },
     );
 
-    await contracts.simpleXBEInflation.addXBEReceiver(
+    await contracts.simpleXBEInflation.setXBEReceiver(
       contracts.treasury.address,
       new BN('25'),
       { from: owner },

@@ -133,7 +133,7 @@ contract('SimpleXBEInflationTest', (accounts) => {
       for (mock in mocks) {
         console.log('mock.address = ', mock.address);
         console.log('weights[mock.address] = ', weights[mock.address]);
-        await simpleInflation.addXBEReceiver( mock.address, weights[mock.address]);
+        await simpleInflation.setXBEReceiver( mock.address, weights[mock.address]);
       }
       for (mock in mocks) {
         expect( (await simpleInflation.weights(mock.address)).toString() ).to.be.equal(weights[mock.address].toString());
@@ -160,8 +160,8 @@ contract('SimpleXBEInflationTest', (accounts) => {
 
     it('should mint only in the next period', async () => {
       // configure receivers
-      await simpleInflation.addXBEReceiver(treasury.address, new BN('75'), { from: people.owner });
-      await simpleInflation.addXBEReceiver(sushiStrategy.address, new BN('25'), { from: people.owner });
+      await simpleInflation.setXBEReceiver(treasury.address, new BN('75'), { from: people.owner });
+      await simpleInflation.setXBEReceiver(sushiStrategy.address, new BN('25'), { from: people.owner });
 
       expect(
         (await simpleInflation.receiversCount({ from: people.owner })).toString()

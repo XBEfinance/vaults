@@ -688,18 +688,22 @@ const configureContracts = async (params, owner) => {
       { from: owner },
     );
 
-    await contracts.xbeInflation.addXBEReceiver(
+    await contracts.xbeInflation.setXBEReceiver(
       contracts.sushiStrategy.address,
-      new BN('25'),
+      new BN('75'),
       { from: owner },
     );
 
     // instead of VotingStakingRewards: reward -> treasury -> votingStakingRewards
-    await contracts.xbeInflation.addXBEReceiver(
+    await contracts.xbeInflation.setXBEReceiver(
       contracts.treasury.address,
       new BN('25'),
       { from: owner },
     );
+
+    console.log('weight sushi', await contracts.xbeInflation.weights(contracts.sushiStrategy.address));
+    console.log('weight treasury', await contracts.xbeInflation.weights(contracts.treasury.address));
+    console.log('sumWeights', await contracts.xbeInflation.sumWeight());
 
     console.log('XBEInflation: configured');
 
@@ -930,17 +934,21 @@ module.exports = function (deployer, network, accounts) {
         console.error(`Unsupported network: ${network}`);
       }
     } else if (network === 'development' || network === 'mainnet_fork') {
-      // dependentsAddresses = testnet_distro.rinkeby;
-      // dependentsAddresses.curve.pools = Object.values(dependentsAddresses
-      //   .curve.pool_data);
-      // params = {
-      //   dependentsAddresses,
-      //   sushiSwap: sushiSwapAddresses.rinkeby,
-      //   ...params,
-      // };
-      // await deployContracts(deployer, params, owner);
-      // await distributeTokens(params, alice, bob, owner);
-      // await configureContracts(params, owner);
+      // disable for unit tests, but enable for integration tests
+      const disableDeployment = false;
+      if (!disableDeployment) {
+        dependentsAddresses = testnet_distro.rinkeby;
+        dependentsAddresses.curve.pools = Object.values(dependentsAddresses
+          .curve.pool_data);
+        params = {
+          dependentsAddresses,
+          sushiSwap: sushiSwapAddresses.rinkeby,
+          ...params,
+        };
+        await deployContracts(deployer, params, owner);
+        await distributeTokens(params, alice, bob, owner);
+        await configureContracts(params, owner);
+      }
     } else if (network === 'mainnet') {
       // await deployVaultsToMainnet();
     } else {

@@ -232,7 +232,7 @@ contract('Curve LP Testing', (accounts) => {
       params.simpleXBEInflation.periodsCount,
       params.simpleXBEInflation.periodDuration,
     );
-    await xbeInflation.addXBEReceiver(
+    await xbeInflation.setXBEReceiver(
       hiveStrategy.address,
       100000,
     );

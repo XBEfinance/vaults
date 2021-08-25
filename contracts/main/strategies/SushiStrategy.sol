@@ -26,8 +26,7 @@ contract SushiStrategy is ClaimableStrategy {
     }
 
     /// @dev Function that controller calls
-    function deposit() external override onlyController {
-    }
+    function deposit() external override onlyController {}
 
     function getRewards() external override {}
 

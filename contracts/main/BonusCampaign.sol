@@ -6,6 +6,8 @@ import "./interfaces/ILockSubscriber.sol";
 import "./staking_rewards/StakingRewards.sol";
 
 contract BonusCampaign is StakingRewards, ILockSubscriber {
+    using SafeMath for uint256;
+
     uint256 public bonusEmission;
     uint256 public startMintTime;
     uint256 public stopRegisterTime;
@@ -17,27 +19,49 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
     address public registrator;
 
     function configure(
-        address _rewardsToken,
-        address _votingEscrowedToken,
+        IERC20 _rewardsToken,
+        IERC20 _votingEscrowedToken,
         uint256 _startMintTime,
         uint256 _stopRegisterTime,
         uint256 _rewardsDuration,
         uint256 _bonusEmission
     ) external initializer {
         _configure(
-            owner(),
+            address(0),
             _rewardsToken,
             _votingEscrowedToken,
             _rewardsDuration
         );
-        bonusEmission = _bonusEmission;
         startMintTime = _startMintTime;
         stopRegisterTime = _stopRegisterTime;
+        bonusEmission = _bonusEmission;
     }
 
     modifier onlyRegistrator() {
         require(msg.sender == registrator, "!registrator");
         _;
+    }
+
+    function setRegistrator(address _registrator) external onlyOwner {
+        require(_registrator != address(0), "zeroAddress");
+        registrator = _registrator;
+    }
+
+    function startMint() external onlyOwner updateReward(address(0)) {
+        require(!_mintStarted, "mintAlreadyHappened");
+        rewardRate = bonusEmission.div(rewardsDuration);
+
+        // Ensure the provided bonusEmission amount is not more than the balance in the contract.
+        // This keeps the bonusEmission rate in the right range, preventing overflows due to
+        // very high values of rewardRate in the earned and rewardsPerToken functions;
+        // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
+
+        IMint(address(rewardsToken)).mint(address(this), bonusEmission);
+
+        lastUpdateTime = startMintTime;
+        periodFinish = startMintTime.add(rewardsDuration);
+        _mintStarted = true;
+        emit RewardAdded(bonusEmission);
     }
 
     function processLockEvent(
@@ -47,29 +71,16 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         uint256 amount
     ) external override onlyRegistrator {
         if (
-            (block.timestamp < periodFinish || periodFinish == 0) &&
-            (lockEnd.sub(lockStart) >= rewardsDuration) &&
-            _canRegister(account)
+            lockEnd.sub(lockStart) >= rewardsDuration && _canRegister(account)
         ) {
             _registerFor(account);
         }
     }
 
-    function setRegistrator(address _registrator) external onlyOwner {
-        require(_registrator != address(0), "zeroAddress");
-        registrator = _registrator;
-    }
-
-    function stake(uint256 amount) external override {
-        revert("!allowed");
-    }
-
-    function withdraw(uint256 amount) public override {
-        revert("!allowed");
-    }
-
-    function notifyRewardAmount(uint256 reward) external override {
-        revert("!allowed");
+    function register() external {
+        require(block.timestamp <= stopRegisterTime, "registerNowIsBlocked");
+        require(!registered[msg.sender], "alreadyRegistered");
+        _registerFor(msg.sender);
     }
 
     function _canRegister(address account) internal view returns (bool) {
@@ -80,31 +91,25 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         return _canRegister(account);
     }
 
-    function _registerFor(address user)
+    function _registerFor(address account)
         internal
         nonReentrant
         whenNotPaused
-        updateReward(user)
+        updateReward(account)
     {
-        require(block.timestamp <= stopRegisterTime, "registerNowIsBlocked");
-        require(!registered[user], "alreadyRegistered");
         // avoid double staking in this very block by subtracting one from block.number
-        IVotingEscrow veToken = IVotingEscrow(stakingToken);
-        uint256 amount = veToken.balanceOfAt(user, block.number);
+        IVotingEscrow veToken = IVotingEscrow(address(stakingToken));
+        uint256 amount = veToken.balanceOfAt(account, block.number);
         require(amount > 0, "!stake0");
         require(
-            veToken.lockedEnd(user).sub(veToken.lockStarts(user)) >=
+            veToken.lockedEnd(account).sub(veToken.lockStarts(account)) >=
                 rewardsDuration,
             "stakedForNotEnoughTime"
         );
         _totalSupply = _totalSupply.add(amount);
-        _balances[user] = _balances[user].add(amount);
-        registered[user] = true;
-        emit Staked(user, amount);
-    }
-
-    function register() external {
-        _registerFor(msg.sender);
+        _balances[account] = _balances[account].add(amount);
+        registered[account] = true;
+        emit Staked(account, amount);
     }
 
     function lastTimeRewardApplicable()
@@ -117,39 +122,21 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         return Math.max(startMintTime, Math.min(block.timestamp, periodFinish));
     }
 
-    function getReward() public override nonReentrant updateReward(msg.sender) {
-        uint256 reward = rewards[msg.sender];
-        if (reward > 0) {
-            rewards[msg.sender] = 0;
-            IERC20(rewardsToken).safeTransfer(msg.sender, reward);
-            emit RewardPaid(msg.sender, reward);
-        }
-    }
-
-    function startMint()
-        external
-        onlyRewardsDistribution
-        updateReward(address(0))
-    {
-        require(!_mintStarted, "mintAlreadyHappened");
-        rewardRate = bonusEmission.div(rewardsDuration);
-
-        // Ensure the provided bonusEmission amount is not more than the balance in the contract.
-        // This keeps the bonusEmission rate in the right range, preventing overflows due to
-        // very high values of rewardRate in the earned and rewardsPerToken functions;
-        // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
-
-        IMint(rewardsToken).mint(address(this), bonusEmission);
-
-        lastUpdateTime = startMintTime;
-        periodFinish = startMintTime.add(rewardsDuration);
-        _mintStarted = true;
-        emit RewardAdded(bonusEmission);
-    }
-
     function hasMaxBoostLevel(address account) external view returns (bool) {
         return
             (block.timestamp < periodFinish || periodFinish == 0) && // is campaign active or mint not started
             registered[account]; // is user registered
+    }
+
+    function stake(uint256 amount) external override {
+        revert("!allowed");
+    }
+
+    function withdraw(uint256 amount) public override {
+        revert("!allowed");
+    }
+
+    function notifyRewardAmount(uint256 reward) external override {
+        revert("!allowed");
     }
 }

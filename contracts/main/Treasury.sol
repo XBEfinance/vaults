@@ -16,7 +16,6 @@ import "./interfaces/IVoting.sol";
 /// @title Treasury
 /// @notice Realisation of ITreasury for channeling managing fees from strategies to gov and governance address
 contract Treasury is Initializable, Ownable, ITreasury {
-
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -75,25 +74,32 @@ contract Treasury is Initializable, Ownable, ITreasury {
         rewardsDistributionRecipientContract = _rewardsDistributionRecipientContract;
     }
 
-    function setAuthorized(address _authorized, bool status) public onlyOwner {
-        authorized[_authorized] = status;
+    function setAuthorized(address _authorized, bool _status) public onlyOwner {
+        authorized[_authorized] = _status;
     }
 
-    function addTokenToConvert(address _token) external onlyOwner {
-        require(_tokensToConvert.add(_token), "alreadyExists");
+    function addTokenToConvert(address _tokenAddress) external onlyOwner {
+        require(_tokensToConvert.add(_tokenAddress), "alreadyExists");
     }
 
-    function removeTokenToConvert(address _token) external onlyOwner {
-        require(_tokensToConvert.remove(_token), "doesntExist");
+    function removeTokenToConvert(address _tokenAddress) external onlyOwner {
+        require(_tokensToConvert.remove(_tokenAddress), "doesntExist");
     }
 
-    function feeReceiving(
-        address _for,
-        address _token,
-        uint256 _amount
-    ) external override {
-        if (_token != rewardsToken) {
-            convertToRewardsToken(_token, _amount);
+    function isAllowTokenToConvert(address _tokenAddress)
+        external
+        view
+        returns (bool)
+    {
+        return _tokensToConvert.contains(_tokenAddress);
+    }
+
+    function feeReceiving(address _tokenAddress, uint256 _amount)
+        external
+        override
+    {
+        if (_tokenAddress != rewardsToken) {
+            convertToRewardsToken(_tokenAddress, _amount);
         }
     }
 
@@ -109,10 +115,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
         path[1] = uniswapRouter.WETH();
         path[2] = rewardsToken;
 
-        uint256 amountOutMin = uniswapRouter.getAmountsOut(
-            amount,
-            path
-        )[0];
+        uint256 amountOutMin = uniswapRouter.getAmountsOut(amount, path)[0];
         amountOutMin = amountOutMin.mul(slippageTolerance).div(MAX_BPS);
 
         IERC20 token = IERC20(_tokenAddress);
@@ -128,12 +131,12 @@ contract Treasury is Initializable, Ownable, ITreasury {
         );
     }
 
-    function toGovernance(address _token, uint256 _amount)
+    function toGovernance(address _tokenAddress, uint256 _amount)
         external
         override
         onlyOwner
     {
-        IERC20(_token).safeTransfer(owner(), _amount);
+        IERC20(_tokenAddress).safeTransfer(owner(), _amount);
     }
 
     function toVoters() external override {

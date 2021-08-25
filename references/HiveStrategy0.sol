@@ -145,7 +145,7 @@ contract HiveStrategy is BaseStrategy {
             }
             if(hiveWeights[j].callFunc){
                 //TO-DO to create specific interface
-                ITreasury(hiveWeights[j].to).feeReceiving(_for, _tokens, _fees);
+                ITreasury(hiveWeights[j].to).feeReceiving(_tokens, _fees);
             }
         }
         return _amounts;

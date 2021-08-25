@@ -136,6 +136,14 @@ abstract contract BaseVault is
         rewardsDistribution = _rewardsDistribution;
     }
 
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
     function name() public view virtual returns (string memory) {
         return string(abi.encodePacked(_name, _namePostfix));
     }

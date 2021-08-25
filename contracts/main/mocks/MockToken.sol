@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/minting/IMint.sol";
 
 contract MockToken is ERC20, IMint {
-
     bool public blockTransfers;
     bool public blockTransfersFrom;
 
@@ -23,7 +22,11 @@ contract MockToken is ERC20, IMint {
         blockTransfers = _block;
     }
 
-    function setTransfersAllowed(address sender, address recipient, bool _allowed) external {
+    function setTransfersAllowed(
+        address sender,
+        address recipient,
+        bool _allowed
+    ) external {
         transfersAllowed[sender][recipient] = _allowed;
     }
 
@@ -43,7 +46,7 @@ contract MockToken is ERC20, IMint {
     function transfer(address recipient, uint256 amount)
         public
         override
-        returns(bool)
+        returns (bool)
     {
         if (blockTransfers) {
             if (transfersAllowed[msg.sender][recipient]) {
@@ -62,7 +65,7 @@ contract MockToken is ERC20, IMint {
         address sender,
         address recipient,
         uint256 amount
-    ) public override returns(bool) {
+    ) public override returns (bool) {
         if (blockTransfersFrom) {
             if (transfersAllowed[sender][recipient]) {
                 return super.transferFrom(sender, recipient, amount);

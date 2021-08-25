@@ -5,8 +5,6 @@ interface IVaultCore {
 
     function controller() external view returns (address);
 
-    function getPricePerFullShare() external view returns (uint256);
-
     function balance() external view returns (uint256);
 
     function earn() external;

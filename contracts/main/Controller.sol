@@ -6,12 +6,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
-import "@openzeppelin/contracts/GSN/Context.sol";
 
 import "./interfaces/IController.sol";
 import "./interfaces/IStrategy.sol";
 import "./interfaces/IConverter.sol";
-import "./interfaces/IOneSplitAudit.sol";
 
 /// @title Controller
 /// @notice The contract is the middleman between vault and strategy, it balances and trigger earn processes
@@ -23,9 +21,7 @@ contract Controller is IController, Ownable, Initializable {
     /// @notice Emits when funds are withdrawn fully from related to vault strategy
     /// @param _token Token address to be withdrawn
     event WithdrawToVaultAll(address _token);
-
     event Earn(address _token, uint256 _amount);
-    event Harvest(address _strategy, address _token);
 
     /// @dev token => vault
     mapping(address => address) public override vaults;
@@ -44,20 +40,8 @@ contract Controller is IController, Ownable, Initializable {
     /// @notice Strategist is an actor who created the strategies and he is receiving fees from strategies execution
     address public strategist;
 
-    /// @notice 1Inch aggregator address that used in conversion of the profit from strategies
-    address public oneSplit;
-
     /// @notice Treasury contract address (used to channel fees to governance and rewards for voting process and investors)
     address private _treasury;
-
-    /// @notice procents (in base points) to send to treasury
-    uint256 public split = 0;
-
-    /// @notice Utility constant, 100% (in base points)
-    uint256 public constant max = 10000;
-
-    /// @notice 1Inch parts parameter for swaps
-    uint256 public parts = 100;
 
     /// @dev Prevents other msg.sender than either governance or strategist addresses
     modifier onlyOwnerOrStrategist() {
@@ -87,7 +71,7 @@ contract Controller is IController, Ownable, Initializable {
     /// @param _amount Amount tokens to rescue
     function inCaseTokensGetStuck(address _token, uint256 _amount)
         external
-        onlyOwnerOrStrategist
+        onlyOwner
     {
         IERC20(_token).transfer(_msgSender(), _amount);
     }
@@ -123,20 +107,6 @@ contract Controller is IController, Ownable, Initializable {
         IStrategy(strategies[_token]).getRewards();
     }
 
-    /// @notice Usual setter with check if param is new
-    /// @param _newParts New value
-    function setParts(uint256 _newParts) external onlyOwner {
-        require(parts != _newParts, "!old");
-        parts = _newParts;
-    }
-
-    /// @notice Usual setter with check if param is new
-    /// @param _newSplit New value
-    function setSplit(uint256 _newSplit) external onlyOwner {
-        require(split != _newSplit && _newSplit < max, "!old|>max");
-        split = _newSplit;
-    }
-
     /// @notice Usual setter with additional checks
     /// @param _newTreasury New value
     function setTreasury(address _newTreasury) external onlyOwner {
@@ -144,13 +114,6 @@ contract Controller is IController, Ownable, Initializable {
         require(_newTreasury != address(0), "!treasury");
         require(_newTreasury.isContract(), "!contract");
         _treasury = _newTreasury;
-    }
-
-    /// @notice Usual setter with check if param is new
-    /// @param _newOneSplit New value
-    function setOneSplit(address _newOneSplit) external onlyOwner {
-        require(oneSplit != _newOneSplit, "!old");
-        oneSplit = _newOneSplit;
     }
 
     /// @notice Usual setter with check if param is new
@@ -237,16 +200,11 @@ contract Controller is IController, Ownable, Initializable {
                 "!transferConverterToken"
             );
             _amount = IConverter(converter).convert(_strategy);
-            require(
-                IERC20(_want).transfer(_strategy, _amount),
-                "!transferStrategyWant"
-            );
-        } else {
-            require(
-                IERC20(_token).transfer(_strategy, _amount),
-                "!transferStrategyToken"
-            );
         }
+        require(
+            IERC20(_want).transfer(_strategy, _amount),
+            "!transferStrategyWant"
+        );
         IStrategy(_strategy).deposit();
         emit Earn(_token, _amount);
     }

@@ -6,7 +6,6 @@ import "@aragon/os/contracts/lib/math/Math.sol";
 
 import "./interfaces/IVeXBE.sol";
 import "./interfaces/IERC20.sol";
-import "./interfaces/IVoting.sol";
 import "./interfaces/IBoostLogicProvider.sol";
 
 import "./utils/VotingPausable.sol";
@@ -33,7 +32,7 @@ contract VotingStakingRewards is
     uint256 internal constant MAX_BOOST_LEVEL = PCT_BASE;
 
     address public treasury;
-    IVoting public voting;
+    address public voting;
 
     struct BondedReward {
         uint256 amount;
@@ -72,7 +71,7 @@ contract VotingStakingRewards is
         IERC20 _stakingToken,
         uint256 _rewardsDuration,
         IVeXBE _token,
-        IVoting _voting,
+        address _voting,
         IBoostLogicProvider _boostLogicProvider,
         address _treasury,
         uint256 _bondedLockDuration,

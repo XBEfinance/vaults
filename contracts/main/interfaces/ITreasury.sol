@@ -12,9 +12,5 @@ interface ITreasury {
 
     function convertToRewardsToken(address _token, uint256 amount) external;
 
-    function feeReceiving(
-        address,
-        address,
-        uint256
-    ) external;
+    function feeReceiving(address, uint256) external;
 }

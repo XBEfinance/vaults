@@ -3,7 +3,7 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "../../interfaces/IVoting.sol";
+import "../../interfaces/IAutoStakeFor.sol";
 
 /// @title WithReferalProgramVault
 /// @notice Vault for consumers of the system
@@ -28,7 +28,7 @@ abstract contract VaultWithAutoStake {
     ) internal {
         if (_token == tokenToAutostake) {
             IERC20(_token).approve(votingStakingRewards, _amount);
-            IVoting(votingStakingRewards).stakeFor(_receiver, _amount);
+            IAutoStakeFor(votingStakingRewards).stakeFor(_receiver, _amount);
         } else {
             IERC20(_token).safeTransfer(_receiver, _amount);
         }

@@ -1,16 +1,19 @@
 pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
+import "./interfaces/ILockSubscription.sol";
 import "./interfaces/ILockSubscriber.sol";
 
-contract LockSubscription is Ownable {
+contract LockSubscription is Ownable, Pausable, ILockSubscription {
+    using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     EnumerableSet.AddressSet internal subscribers;
     address public eventSource;
-    bool public isActive = true;
 
     modifier onlyEventSource() {
         require(msg.sender == eventSource, "!eventSource");
@@ -25,13 +28,9 @@ contract LockSubscription is Ownable {
         return subscribers.at(index);
     }
 
-    function _setEventSource(address _eventSource) internal {
+    function setEventSource(address _eventSource) public onlyOwner {
         require(_eventSource != address(0), "zeroAddress");
         eventSource = _eventSource;
-    }
-
-    function setEventSource(address _eventSource) public onlyOwner {
-        _setEventSource(_eventSource);
     }
 
     function addSubscriber(address s) external onlyOwner {
@@ -43,8 +42,12 @@ contract LockSubscription is Ownable {
         subscribers.remove(s);
     }
 
-    function setActive(bool _isActive) external onlyOwner {
-        isActive = _isActive;
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     function processLockEvent(
@@ -52,11 +55,7 @@ contract LockSubscription is Ownable {
         uint256 lockStart,
         uint256 lockEnd,
         uint256 amount
-    ) external onlyEventSource {
-        if (!isActive) {
-            return;
-        }
-
+    ) external override onlyEventSource whenNotPaused {
         uint256 count = subscribers.length();
         if (count != 0) {
             for (uint64 i = 0; i < count; i++) {

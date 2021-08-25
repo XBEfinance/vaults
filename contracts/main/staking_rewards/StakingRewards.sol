@@ -25,8 +25,8 @@ contract StakingRewards is
 
     /* ========== STATE VARIABLES ========== */
 
-    address public rewardsToken;
-    address public stakingToken;
+    IERC20 public rewardsToken;
+    IERC20 public stakingToken;
     uint256 public periodFinish = 0;
     uint256 public rewardRate = 0;
     uint256 public rewardsDuration; //= 7 days;
@@ -43,8 +43,8 @@ contract StakingRewards is
 
     function _configure(
         address _rewardsDistribution,
-        address _rewardsToken,
-        address _stakingToken,
+        IERC20 _rewardsToken,
+        IERC20 _stakingToken,
         uint256 _rewardsDuration
     ) internal {
         rewardsToken = _rewardsToken;
@@ -106,7 +106,7 @@ contract StakingRewards is
                 .add(rewards[account]);
     }
 
-    function getRewardForDuration() external view override returns (uint256) {
+    function getRewardForDuration() external view returns (uint256) {
         return rewardRate.mul(rewardsDuration);
     }
 
@@ -123,11 +123,7 @@ contract StakingRewards is
         require(amount > 0, "Cannot stake 0");
         _totalSupply = _totalSupply.add(amount);
         _balances[msg.sender] = _balances[msg.sender].add(amount);
-        IERC20(stakingToken).safeTransferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
+        stakingToken.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
     }
 
@@ -141,7 +137,7 @@ contract StakingRewards is
         require(amount > 0, "Cannot withdraw 0");
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
-        IERC20(stakingToken).safeTransfer(msg.sender, amount);
+        stakingToken.safeTransfer(msg.sender, amount);
         emit Withdrawn(msg.sender, amount);
     }
 
@@ -155,7 +151,7 @@ contract StakingRewards is
         uint256 reward = rewards[msg.sender];
         if (reward > 0) {
             rewards[msg.sender] = 0;
-            IERC20(rewardsToken).safeTransfer(msg.sender, reward);
+            rewardsToken.safeTransfer(msg.sender, reward);
             emit RewardPaid(msg.sender, reward);
         }
     }
@@ -163,6 +159,14 @@ contract StakingRewards is
     function exit() external virtual override {
         withdraw(_balances[msg.sender]);
         getReward();
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
@@ -186,7 +190,7 @@ contract StakingRewards is
         // This keeps the reward rate in the right range, preventing overflows due to
         // very high values of rewardRate in the earned and rewardsPerToken functions;
         // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
-        uint256 balance = IERC20(rewardsToken).balanceOf(address(this));
+        uint256 balance = rewardsToken.balanceOf(address(this));
         require(
             rewardRate <= balance.div(rewardsDuration),
             "Provided reward too high"
@@ -195,15 +199,6 @@ contract StakingRewards is
         lastUpdateTime = block.timestamp;
         periodFinish = block.timestamp.add(rewardsDuration);
         emit RewardAdded(reward);
-    }
-
-    function setRewardsDuration(uint256 _rewardsDuration) external onlyOwner {
-        require(
-            block.timestamp > periodFinish,
-            "block.timestamp > periodFinish"
-        );
-        rewardsDuration = _rewardsDuration;
-        emit RewardsDurationUpdated(rewardsDuration);
     }
 
     /* ========== MODIFIERS ========== */
@@ -224,5 +219,4 @@ contract StakingRewards is
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
-    event RewardsDurationUpdated(uint256 newDuration);
 }

@@ -1,10 +1,8 @@
 pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./base/ClaimableStrategy.sol";
-import "../interfaces/IConvexMasterChef.sol";
 
 /// @title SushiStrategy
 contract SushiStrategy is ClaimableStrategy {
@@ -19,15 +17,16 @@ contract SushiStrategy is ClaimableStrategy {
         address _wantAddress,
         address _controllerAddress,
         address _governance,
-        Settings memory _poolSettings
+        address _lpSushi,
+        address _xbeToken
     ) public initializer {
         _configure(_wantAddress, _controllerAddress, _governance);
-        poolSettings = _poolSettings;
+        poolSettings.lpSushi = _lpSushi;
+        poolSettings.xbeToken = _xbeToken;
     }
 
     /// @dev Function that controller calls
-    function deposit() external override onlyController {
-    }
+    function deposit() external override onlyController {}
 
     function getRewards() external override {}
 

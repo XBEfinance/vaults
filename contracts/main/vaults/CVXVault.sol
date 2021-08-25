@@ -63,25 +63,19 @@ contract CVXVault is
     }
 
     function _getReward(
-        uint8 _claimMask,
+        bool _claimUnderlying,
         address _for,
         address _rewardToken,
         address _stakingToken
     ) internal override {
-        if (_claimMask == 0x02) {
-            _controller.claim(_stakingToken, _rewardToken);
-        } else if (_claimMask == 0x03) {
+        if (_claimUnderlying) {
             _controller.getRewardStrategy(_stakingToken);
-            _controller.claim(_stakingToken, _rewardToken);
         }
+        _controller.claim(_stakingToken, _rewardToken);
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
-            reward = _getAndDistributeFeesOnClaimForToken(
-                _for,
-                _rewardToken,
-                reward
-            );
+            reward = _getAndDistributeFeesOnClaimForToken(_rewardToken, reward);
             _autoStakeForOrSendTo(_rewardToken, reward, _for);
         }
         emit RewardPaid(_rewardToken, _for, reward);

@@ -1,34 +1,28 @@
 pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "./utils/ERC20Vault.sol";
+
 import "../../interfaces/vault/IVaultCore.sol";
 import "../../interfaces/vault/IVaultTransfers.sol";
-import "../../interfaces/vault/IVaultDelegated.sol";
 import "../../interfaces/IController.sol";
 import "../../interfaces/IStrategy.sol";
-
-import "../../mocks/StringsConcatenations.sol";
-
-import "./VaultWithFeesOnClaim.sol";
 
 /// @title EURxbVault
 /// @notice Base vault contract, used to manage funds of the clients
 abstract contract BaseVault is
     IVaultCore,
     IVaultTransfers,
-    IERC20,
+    ERC20Vault,
     Ownable,
     ReentrancyGuard,
     Pausable,
@@ -36,7 +30,6 @@ abstract contract BaseVault is
 {
     using EnumerableSet for EnumerableSet.AddressSet;
     using SafeERC20 for IERC20;
-    using Address for address;
     using SafeMath for uint256;
 
     /// @notice Controller instance, to simplify controller-related actions
@@ -48,11 +41,6 @@ abstract contract BaseVault is
     uint256 public lastUpdateTime;
 
     address public rewardsDistribution;
-
-    /// @dev _tokenThatComesPassively is XBE or any token that transfers passively
-    /// to the strategy without third party contracts or explicit request from
-    /// either vault, or strategy, or user. This parameter used in earnedVirtual() function below.
-    address internal _tokenThatComesPassively;
 
     // token => reward per token stored
     mapping(address => uint256) public rewardsPerTokensStored;
@@ -67,16 +55,7 @@ abstract contract BaseVault is
     // user => valid token => amount
     mapping(address => mapping(address => uint256)) public rewards;
 
-    uint256 internal _totalSupply;
-    mapping(address => uint256) internal _balances;
-    mapping(address => mapping(address => uint256)) internal _allowances;
-
     EnumerableSet.AddressSet internal _validTokens;
-
-    string private _name;
-    string private _symbol;
-    string private _namePostfix;
-    string private _symbolPostfix;
 
     /* ========== EVENTS ========== */
 
@@ -85,18 +64,11 @@ abstract contract BaseVault is
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address what, address indexed user, uint256 reward);
     event RewardsDurationUpdated(uint256 newDuration);
-    event Recovered(address token, uint256 amount);
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
 
-    constructor(string memory __name, string memory __symbol) public {
-        _name = __name;
-        _symbol = __symbol;
-    }
+    constructor(string memory _name, string memory _symbol)
+        public
+        ERC20Vault(_name, _symbol)
+    {}
 
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
@@ -108,15 +80,15 @@ abstract contract BaseVault is
         address _governance,
         uint256 _rewardsDuration,
         address[] memory _rewardsTokens,
-        string memory __namePostfix,
-        string memory __symbolPostfix
+        string memory _namePostfix,
+        string memory _symbolPostfix
     ) internal {
         setController(_initialController);
         transferOwnership(_governance);
         stakingToken = IERC20(_initialToken);
         rewardsDuration = _rewardsDuration;
-        _namePostfix = __namePostfix;
-        _symbolPostfix = __symbolPostfix;
+        _name = string(abi.encodePacked(_name, _namePostfix));
+        _symbol = string(abi.encodePacked(_symbol, _symbolPostfix));
         for (uint256 i = 0; i < _rewardsTokens.length; i++) {
             _validTokens.add(_rewardsTokens[i]);
         }
@@ -136,144 +108,38 @@ abstract contract BaseVault is
         rewardsDistribution = _rewardsDistribution;
     }
 
-    function name() public view virtual returns (string memory) {
-        return string(abi.encodePacked(_name, _namePostfix));
+    function pause() external onlyOwner {
+        _pause();
     }
 
-    function symbol() public view virtual returns (string memory) {
-        return string(abi.encodePacked(_symbol, _symbolPostfix));
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
-    function decimals() public view virtual returns (uint8) {
-        return 18;
+    function setRewardsDuration(uint256 _rewardsDuration) external onlyOwner {
+        require(block.timestamp > periodFinish, "!periodFinish");
+        rewardsDuration = _rewardsDuration;
+        emit RewardsDurationUpdated(rewardsDuration);
     }
 
-    function totalSupply() public view override returns (uint256) {
-        return _totalSupply;
+    function addRewardToken(address _rewardToken) external onlyOwner {
+        require(_validTokens.add(_rewardToken), "!add");
     }
 
-    function balanceOf(address _account)
-        public
-        view
-        override
-        returns (uint256)
-    {
-        return _balances[_account];
+    function removeRewardToken(address _rewardToken) external onlyOwner {
+        require(_validTokens.remove(_rewardToken), "!remove");
     }
 
-    function _transfer(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) internal virtual {
-        require(
-            sender != address(0),
-            "BaseVault: transfer from the zero address"
-        );
-        require(
-            recipient != address(0),
-            "BaseVault: transfer to the zero address"
-        );
-
-        uint256 senderBalance = _balances[sender];
-        require(
-            senderBalance >= amount,
-            "BaseVault: transfer amount exceeds balance"
-        );
-        _balances[sender] = senderBalance.sub(amount);
-        _balances[recipient] = _balances[recipient].add(amount);
-
-        emit Transfer(sender, recipient, amount);
+    function isTokenValid(address _rewardToken) external view returns (bool) {
+        return _validTokens.contains(_rewardToken);
     }
 
-    function transfer(address recipient, uint256 amount)
-        external
-        override
-        returns (bool)
-    {
-        _transfer(msg.sender, recipient, amount);
-        return true;
+    function getRewardToken(uint256 _index) external view returns (address) {
+        return _validTokens.at(_index);
     }
 
-    function allowance(address owner, address spender)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return _allowances[owner][spender];
-    }
-
-    function _approve(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal virtual {
-        require(
-            owner != address(0),
-            "BaseVault: approve from the zero address"
-        );
-        require(
-            spender != address(0),
-            "BaseVault: approve to the zero address"
-        );
-
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
-    }
-
-    function approve(address spender, uint256 amount)
-        external
-        override
-        returns (bool)
-    {
-        _approve(msg.sender, spender, amount);
-        return true;
-    }
-
-    function increaseAllowance(address spender, uint256 addedValue)
-        public
-        virtual
-        returns (bool)
-    {
-        _approve(
-            msg.sender,
-            spender,
-            _allowances[msg.sender][spender].add(addedValue)
-        );
-        return true;
-    }
-
-    function decreaseAllowance(address spender, uint256 subtractedValue)
-        public
-        virtual
-        returns (bool)
-    {
-        uint256 currentAllowance = _allowances[msg.sender][spender];
-        require(
-            currentAllowance >= subtractedValue,
-            "BaseVault: decreased allowance below zero"
-        );
-        _approve(msg.sender, spender, currentAllowance.sub(subtractedValue));
-
-        return true;
-    }
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external override returns (bool) {
-        _transfer(sender, recipient, amount);
-
-        uint256 currentAllowance = _allowances[sender][msg.sender];
-        require(
-            currentAllowance >= amount,
-            "BaseVault: transfer amount exceeds allowance"
-        );
-        _approve(sender, msg.sender, currentAllowance.sub(amount));
-
-        return true;
+    function getRewardTokensCount() external view returns (uint256) {
+        return _validTokens.length();
     }
 
     function lastTimeRewardApplicable() public view returns (uint256) {
@@ -317,40 +183,7 @@ abstract contract BaseVault is
                 .add(rewards[_account][_rewardToken]);
     }
 
-    function getRewardForDuration(address _rewardToken)
-        external
-        view
-        onlyValidToken(_rewardToken)
-        returns (uint256)
-    {
-        return rewardRates[_rewardToken].mul(rewardsDuration);
-    }
-
     /* ========== MUTATIVE FUNCTIONS ========== */
-
-    function _withdrawFrom(address _from, uint256 _amount)
-        internal
-        virtual
-        returns (uint256)
-    {
-        require(_amount > 0, "Cannot withdraw 0");
-        _totalSupply = _totalSupply.sub(_amount);
-        _balances[_from] = _balances[_from].sub(_amount);
-        address strategyAddress = IController(_controller).strategies(
-            address(stakingToken)
-        );
-        uint256 amountOnVault = stakingToken.balanceOf(address(this));
-        if (amountOnVault < _amount) {
-            IStrategy(strategyAddress).withdraw(_amount.sub(amountOnVault));
-        }
-        stakingToken.safeTransfer(_from, _amount);
-        emit Withdrawn(_from, _amount);
-        return _amount;
-    }
-
-    function _withdraw(uint256 _amount) internal returns (uint256) {
-        return _withdrawFrom(msg.sender, _amount);
-    }
 
     function _deposit(address _from, uint256 _amount)
         internal
@@ -358,9 +191,8 @@ abstract contract BaseVault is
         returns (uint256)
     {
         require(_amount > 0, "Cannot stake 0");
-        _totalSupply = _totalSupply.add(_amount);
-        _balances[_from] = _balances[_from].add(_amount);
-        stakingToken.safeTransferFrom(_from, address(this), _amount);
+        stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
+        _mint(_from, _amount);
         emit Staked(_from, _amount);
         return _amount;
     }
@@ -400,48 +232,58 @@ abstract contract BaseVault is
         _deposit(msg.sender, _balance);
     }
 
-    function withdraw(uint256 _amount) public virtual override {
-        withdraw(_amount, 0x03);
+    function _withdrawFrom(address _from, uint256 _amount)
+        internal
+        virtual
+        returns (uint256)
+    {
+        require(_amount > 0, "Cannot withdraw 0");
+        _burn(msg.sender, _amount);
+        address strategyAddress = IController(_controller).strategies(
+            address(stakingToken)
+        );
+        uint256 amountOnVault = stakingToken.balanceOf(address(this));
+        if (amountOnVault < _amount) {
+            IStrategy(strategyAddress).withdraw(_amount.sub(amountOnVault));
+        }
+        stakingToken.safeTransfer(_from, _amount);
+        emit Withdrawn(_from, _amount);
+        return _amount;
     }
 
-    /// @dev What is claimMask parameter?
-    /// 0b000000AB - bitwise representation of claimMask parameter.
-    /// A bit - if 1 autoclaim else do not attempt to claim
-    /// B bit - if 1 claim from business logic in strategy else do not claim
-    ///
-    /// Invalid values:
-    ///  0x01 = 0b00000001 - you cannot (withdraw without claim) and (claim from business logic)
-    ///  0x00 = 0b00000000 - you cannot just withdraw because
-    ///                         you'd have to redeposit your previous share to claim it
-    /// Valid values:
-    ///  0x02 = 0b00000010 - withdraw with claim without claim from business logic
-    ///  0x03 = 0b00000011 - withdraw with claim and with claim from business logic
-    function withdraw(uint256 _amount, uint8 _claimMask)
+    function _withdraw(uint256 _amount) internal returns (uint256) {
+        return _withdrawFrom(msg.sender, _amount);
+    }
+
+    function withdraw(uint256 _amount) public virtual override {
+        withdraw(_amount, true);
+    }
+
+    function withdraw(uint256 _amount, bool _claimUnderlying)
         public
         virtual
         nonReentrant
-        validClaimMask(_claimMask)
+        updateReward(msg.sender)
     {
-        __getReward(_claimMask);
+        _getRewardAll(_claimUnderlying);
         _withdraw(_amount);
     }
 
     function withdrawAll() public virtual override {
-        withdraw(_balances[msg.sender], 0x03);
+        withdraw(_balances[msg.sender], true);
     }
 
     function _getReward(
-        uint8 _claimMask,
+        bool _claimUnderlying,
         address _for,
         address _rewardToken,
         address _stakingToken
     ) internal virtual {
-        if (_claimMask == 2) {
-            _controller.claim(_stakingToken, _rewardToken);
-        } else if (_claimMask == 3) {
+        if (_claimUnderlying) {
             _controller.getRewardStrategy(_stakingToken);
-            _controller.claim(_stakingToken, _rewardToken);
         }
+        _controller.claim(_stakingToken, _rewardToken);
+
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
@@ -450,27 +292,24 @@ abstract contract BaseVault is
         emit RewardPaid(_rewardToken, _for, reward);
     }
 
-    function __getReward(uint8 _claimMask) internal virtual {
-        address _stakingToken = address(stakingToken);
-        __updateReward(msg.sender);
+    function _getRewardAll(bool _claimUnderlying) internal virtual {
         for (uint256 i = 0; i < _validTokens.length(); i++) {
             _getReward(
-                _claimMask,
+                _claimUnderlying,
                 msg.sender,
                 _validTokens.at(i),
-                _stakingToken
+                address(stakingToken)
             );
         }
     }
 
-    function getReward(uint8 _claimMask)
+    function getReward(bool _claimUnderlying)
         public
         virtual
         nonReentrant
-        validClaimMask(_claimMask)
         updateReward(msg.sender)
     {
-        __getReward(_claimMask);
+        _getRewardAll(_claimUnderlying);
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
@@ -507,54 +346,6 @@ abstract contract BaseVault is
         emit RewardAdded(_rewardToken, _reward);
     }
 
-    // End rewards emission earlier
-    function updatePeriodFinish(uint256 timestamp)
-        external
-        onlyOwner
-        updateReward(address(0))
-    {
-        periodFinish = timestamp;
-    }
-
-    // Added to support recovering LP Rewards from other systems such as BAL to be distributed to holders
-    function recoverERC20(address tokenAddress, uint256 tokenAmount)
-        external
-        onlyOwner
-    {
-        require(
-            tokenAddress != address(stakingToken),
-            "Cannot withdraw the staking token"
-        );
-        IERC20(tokenAddress).safeTransfer(owner(), tokenAmount);
-        emit Recovered(tokenAddress, tokenAmount);
-    }
-
-    function setRewardsDuration(uint256 _rewardsDuration) external onlyOwner {
-        require(block.timestamp > periodFinish, "!periodFinish");
-        rewardsDuration = _rewardsDuration;
-        emit RewardsDurationUpdated(rewardsDuration);
-    }
-
-    function addRewardToken(address _rewardToken) external onlyOwner {
-        require(_validTokens.add(_rewardToken), "!add");
-    }
-
-    function removeRewardToken(address _rewardToken) external onlyOwner {
-        require(_validTokens.remove(_rewardToken), "!remove");
-    }
-
-    function isTokenValid(address _rewardToken) external view returns (bool) {
-        return _validTokens.contains(_rewardToken);
-    }
-
-    function getRewardToken(uint256 _index) external view returns (address) {
-        return _validTokens.at(_index);
-    }
-
-    function getRewardTokensCount() external view returns (uint256) {
-        return _validTokens.length();
-    }
-
     /* ========== MODIFIERS ========== */
 
     modifier onlyValidToken(address _rewardToken) {
@@ -582,19 +373,10 @@ abstract contract BaseVault is
         }
     }
 
-    function __updateReward(address _account) internal {
+    modifier updateReward(address _account) {
         for (uint256 i = 0; i < _validTokens.length(); i++) {
             _updateReward(_validTokens.at(i), _account);
         }
-    }
-
-    modifier updateReward(address _account) {
-        __updateReward(_account);
-        _;
-    }
-
-    modifier validClaimMask(uint8 _mask) {
-        require(_mask != 1 && _mask < 4 && _mask > 0, "invalidClaimMask");
         _;
     }
 
@@ -624,34 +406,11 @@ abstract contract BaseVault is
         return address(_controller);
     }
 
-    /// @notice Exist to calculate price per full share
-    /// @return Price of the staking token per share
-    function getPricePerFullShare() external view override returns (uint256) {
-        return balance().mul(1e18).div(totalSupply());
-    }
-
     function balance() public view override returns (uint256) {
         IStrategy strategy = IStrategy(
             _controller.strategies(address(stakingToken))
         );
         return stakingToken.balanceOf(address(this)).add(strategy.balanceOf());
-    }
-
-    function getPoolRewardForDuration(address _rewardToken, uint256 _duration)
-        public
-        view
-        returns (uint256)
-    {
-        uint256 poolTokenBalance = stakingToken.balanceOf(address(this));
-        if (poolTokenBalance == 0) {
-            return rewardsPerTokensStored[_rewardToken];
-        }
-        return
-            rewardsPerTokensStored[_rewardToken].add(
-                _duration.mul(rewardRates[_rewardToken]).mul(1e18).div(
-                    poolTokenBalance
-                )
-            );
     }
 
     function _rewardPerTokenForDuration(

@@ -106,7 +106,7 @@ contract BaseVaultOld is IVaultCore, IVaultTransfers, Ownable, Initializable, ER
 
     /// @notice Exist to calculate price per full share
     /// @return Price of the business logic token per share
-    function getPricePerFullShare() override external view returns(uint256) {
+    function getPricePerFullShare() external view returns(uint256) {
         return balance().mul(1e18).div(totalSupply());
     }
 

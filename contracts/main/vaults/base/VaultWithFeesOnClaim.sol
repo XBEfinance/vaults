@@ -71,7 +71,6 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
     }
 
     function _getAndDistributeFeesOnClaimForToken(
-        address _for,
         address _rewardToken,
         uint256 _amount
     ) internal returns (uint256) {
@@ -86,11 +85,7 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
             }
             _amount = _amount.sub(fee);
             if (feeWeights[i].callFunc) {
-                ITreasury(feeWeights[i].to).feeReceiving(
-                    _for,
-                    _rewardToken,
-                    fee
-                );
+                ITreasury(feeWeights[i].to).feeReceiving(_rewardToken, fee);
             }
         }
         return _amount;

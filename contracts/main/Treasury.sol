@@ -44,7 +44,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
         address _uniswapRouter,
         uint256 _slippageTolerance,
         uint256 _swapDeadline
-    ) external initializer {
+    ) external onlyOwner initializer {
         rewardsDistributionRecipientContract = _rewardsDistributionRecipientContract;
         rewardsToken = _rewardsToken;
         setAuthorized(_governance, true);

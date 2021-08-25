@@ -21,7 +21,7 @@ contract SushiVault is BaseVault, VaultWithAutoStake {
         address[] memory _rewardsTokens,
         string memory _namePostfix,
         string memory _symbolPostfix
-    ) public initializer {
+    ) public onlyOwner initializer {
         _configureVaultWithAutoStake(_tokenToAutostake, _votingStakingRewards);
         _configure(
             _initialToken,

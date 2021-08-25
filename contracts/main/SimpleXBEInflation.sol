@@ -38,7 +38,7 @@ contract SimpleXBEInflation is Ownable, Initializable {
         uint256 _targetMinted,
         uint256 _periodsCount,
         uint256 _periodDuration
-    ) external initializer {
+    ) external onlyOwner initializer {
         token = _token;
         targetMinted = _targetMinted;
         periodicEmission = _targetMinted.div(_periodsCount);

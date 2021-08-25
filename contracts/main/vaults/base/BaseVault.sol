@@ -1,9 +1,7 @@
 pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
@@ -15,13 +13,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../../interfaces/vault/IVaultCore.sol";
 import "../../interfaces/vault/IVaultTransfers.sol";
-import "../../interfaces/vault/IVaultDelegated.sol";
 import "../../interfaces/IController.sol";
 import "../../interfaces/IStrategy.sol";
-
-import "../../mocks/StringsConcatenations.sol";
-
-import "./VaultWithFeesOnClaim.sol";
 
 /// @title EURxbVault
 /// @notice Base vault contract, used to manage funds of the clients
@@ -36,7 +29,6 @@ abstract contract BaseVault is
 {
     using EnumerableSet for EnumerableSet.AddressSet;
     using SafeERC20 for IERC20;
-    using Address for address;
     using SafeMath for uint256;
 
     /// @notice Controller instance, to simplify controller-related actions

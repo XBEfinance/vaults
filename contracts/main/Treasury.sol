@@ -11,7 +11,6 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IRewardsDistributionRecipient.sol";
-import "./interfaces/IVoting.sol";
 
 /// @title Treasury
 /// @notice Realisation of ITreasury for channeling managing fees from strategies to gov and governance address

@@ -1,9 +1,10 @@
 pragma solidity ^0.6.0;
 
+import "./staking_rewards/StakingRewards.sol";
+
 import "./interfaces/minting/IMint.sol";
 import "./interfaces/IVotingEscrow.sol";
 import "./interfaces/ILockSubscriber.sol";
-import "./staking_rewards/StakingRewards.sol";
 
 contract BonusCampaign is StakingRewards, ILockSubscriber {
     using SafeMath for uint256;

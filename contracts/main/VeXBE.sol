@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 
 import "./interfaces/ILockSubscription.sol";
-import "./interfaces/IVotingStakingRewards.sol";
 
 // @title Voting Escrow XBE
 // @author Curve Finance | Translation to Solidity - Integral Team O

@@ -78,7 +78,7 @@ contract SimpleXBEInflation is Ownable, Initializable {
         return xbeReceivers.length();
     }
 
-    function receiverAt(uint256 index) external view returns (uint256) {
+    function receiverAt(uint256 index) external view returns (address) {
         return xbeReceivers.at(index);
     }
 

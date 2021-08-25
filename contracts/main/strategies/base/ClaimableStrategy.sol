@@ -1,10 +1,7 @@
 pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
 
 import "./BaseStrategy.sol";
 import "../../interfaces/vault/IVaultStakingRewards.sol";
-import "../../interfaces/ITreasury.sol";
-import "../../interfaces/IVoting.sol";
 
 abstract contract ClaimableStrategy is BaseStrategy {
     function claim(address _rewardToken)

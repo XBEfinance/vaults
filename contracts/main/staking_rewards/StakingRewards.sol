@@ -106,7 +106,7 @@ contract StakingRewards is
                 .add(rewards[account]);
     }
 
-    function getRewardForDuration() external view override returns (uint256) {
+    function getRewardForDuration() external view returns (uint256) {
         return rewardRate.mul(rewardsDuration);
     }
 

@@ -9,7 +9,7 @@ import "../mocks/StringsConcatenations.sol";
 /// @title SushiVault
 /// @notice Vault for staking LP Sushiswap and receive rewards in CVX
 contract SushiVault is BaseVault, VaultWithAutoStake {
-    constructor() public BaseVault("XBE Sushi LP", "xs") {}
+    constructor() public BaseVault("XBE Sushi LP", "XBESushi") {}
 
     function configure(
         address _initialToken,
@@ -19,8 +19,8 @@ contract SushiVault is BaseVault, VaultWithAutoStake {
         address _tokenToAutostake,
         address _votingStakingRewards,
         address[] memory _rewardsTokens,
-        string memory __namePostfix,
-        string memory __symbolPostfix
+        string memory _namePostfix,
+        string memory _symbolPostfix
     ) public initializer {
         _configureVaultWithAutoStake(_tokenToAutostake, _votingStakingRewards);
         _configure(
@@ -29,17 +29,13 @@ contract SushiVault is BaseVault, VaultWithAutoStake {
             _governance,
             _rewardsDuration,
             _rewardsTokens,
-            __namePostfix,
-            __symbolPostfix
+            _namePostfix,
+            _symbolPostfix
         );
     }
 
-    function getValidTokensLength() public view returns (uint256) {
-        return _validTokens.length();
-    }
-
     function _getReward(
-        uint8 _claimMask,
+        bool _claimUnderlying,
         address _for,
         address _rewardToken,
         address _stakingToken
@@ -48,8 +44,7 @@ contract SushiVault is BaseVault, VaultWithAutoStake {
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
             _autoStakeForOrSendTo(_rewardToken, reward, _for);
+            emit RewardPaid(_rewardToken, _for, reward);
         }
-
-        emit RewardPaid(_rewardToken, _for, reward);
     }
 }

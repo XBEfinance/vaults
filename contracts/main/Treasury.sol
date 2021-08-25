@@ -15,9 +15,16 @@ import "./interfaces/IRewardsDistributionRecipient.sol";
 /// @title Treasury
 /// @notice Realisation of ITreasury for channeling managing fees from strategies to gov and governance address
 contract Treasury is Initializable, Ownable, ITreasury {
+
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
+
+    event FundsConverted(
+      address indexed from,
+      address indexed to,
+      uint256 indexed amountOfTo
+    );
 
     IUniswapV2Router02 public uniswapRouter;
 
@@ -63,7 +70,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
         external
         onlyOwner
     {
-        require(_slippageTolerance <= 10000, "slippageTolerance too large");
+        require(_slippageTolerance <= 10000, "slippageToleranceTooLarge");
         slippageTolerance = _slippageTolerance;
     }
 
@@ -128,6 +135,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
             address(this),
             block.timestamp + swapDeadline
         );
+        emit FundsConverted(_tokenAddress, rewardsToken, amountOutMin);
     }
 
     function toGovernance(address _tokenAddress, uint256 _amount)

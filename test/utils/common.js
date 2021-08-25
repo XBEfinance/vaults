@@ -69,7 +69,11 @@ const checkSetter = async (
   expectRevert,
 ) => {
   await contractInstance[setterMethodName](newValue, { from: validSender });
-  expect(await contractInstance[getterName]()).to.be.equal(newValue);
+  if (newValue instanceof BN) {
+    expect(await contractInstance[getterName]()).to.be.bignumber.equal(newValue);
+  } else {
+    expect(await contractInstance[getterName]()).to.be.equal(newValue);
+  }
   await expectRevert(
     contractInstance[setterMethodName](newValue, { from: nonValidSender }),
     revertMessage,

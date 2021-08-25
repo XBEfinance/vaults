@@ -8,221 +8,250 @@ const {
   expectEvent,
   expectRevert,
   ether,
-  time
+  time,
 } = require('@openzeppelin/test-helpers');
-const { accounts, contract } = require('@openzeppelin/test-environment');
 const { ZERO_ADDRESS } = constants;
-const { ZERO, ONE, getMockTokenPrepared, processEventArgs, checkSetter } = require('./utils/old/common');
-const { activeActor, actorStake, deployAndConfigureGovernance } = require(
-  './utils/old/governance_redeploy'
-);
 
-const IERC20 = contract.fromArtifact("IERC20");
-const IStrategy = contract.fromArtifact("IStrategy");
-const MockToken = contract.fromArtifact('MockToken');
-const IOneSplitAudit = contract.fromArtifact('IOneSplitAudit');
-const Treasury = contract.fromArtifact('Treasury');
-const Governance = contract.fromArtifact('Governance');
+const common = require('./utils/common.js');
+const utilsConstants = require('./utils/constants.js');
+const environment = require('./utils/environment.js');
+const deployment = require('./utils/deployment.js');
+const artifacts = require('./utils/artifacts.js');
+const { people, setPeople } = require('./utils/accounts.js');
 
-const MockContract = contract.fromArtifact("MockContract");
+let mockXBE;
+let treasury;
+let votingStakingRewards;
 
-contract('Treasury', () => {
+let mock;
+let mockedOtherToken;
 
-  const governance = accounts[0];
-  const alice = accounts[1];
-  const bob = accounts[2];
-  const keeper = accounts[3];
+let owner;
+let alice;
+const amount = ether('1');
 
-  const rewardsTokenTotalSupply = ether('1000');
-  const governanceTokenTotalSupply = ether('3000');
-  const startId = ZERO;
 
-  let treasury;
-  let governanceContract;
-  let governanceToken;
-  let rewardsToken;
-  let oneSplitMock;
+const redeploy = async () => {
+  owner = await common.waitFor("owner", people);
+  mock = await deployment.MockContract();
+  mockedOtherToken = await deployment.MockContract();
+  [
+    mockXBE,
+    treasury,
+    votingStakingRewards
+  ] = await environment.getGroup(
+    [
+      'MockXBE',
+      'Treasury',
+      'VotingStakingRewards'
+    ],
+    (key) => true,
+    true,
+    {
+      "VotingStakingRewards": {
+        4: ZERO_ADDRESS,
+        5: ZERO_ADDRESS,
+        8: [ ZERO_ADDRESS ]
+      },
+      "Treasury": {
+        3: mock.address
+      }
+    }
+  );
+  await treasury.addTokenToConvert(mockedOtherToken.address, { from: owner });
+}
 
-  beforeEach(async () => {
+const sendRewardToTreasury = async (_amount) => {
+  const _owner = await common.waitFor('owner', people);
+  await mockXBE.approve(
+    treasury.address,
+    _amount,
+    { from: _owner }
+  );
+  await mockXBE.transfer(
+    treasury.address,
+    _amount,
+    { from: _owner }
+  );
+  await treasury.toVoters();
+  return _owner;
+}
 
-    treasury = await Treasury.new({from: governance});
-    oneSplitMock = await MockContract.new({from: governance});
+contract('Treasury', (accounts) => {
 
-    [ governanceContract, governanceToken, rewardsToken ] = await deployAndConfigureGovernance(
-      startId,
-      governanceTokenTotalSupply,
-      governance,
-      treasury.address,
-      rewardsTokenTotalSupply,
-      alice,
-      rewardsTokenTotalSupply.div(new BN('2')),
-      bob
-    );
+  setPeople(accounts);
 
-    await treasury.configure(
-      governance,
-      oneSplitMock.address,
-      governanceContract.address,
-      rewardsToken.address,
-      {from: governance}
-    );
+  describe('configuration and setters', () => {
 
-  });
-
-  it('should configure properly', async () => {
-    expect(await treasury.governance()).to.be.equal(governance);
-    expect(await treasury.oneSplit()).to.be.equal(oneSplitMock.address);
-    expect(await treasury.governanceContract()).to.be.equal(governanceContract.address);
-    expect(await treasury.rewardsToken()).to.be.equal(rewardsToken.address);
-    expect(await treasury.authorized(governance)).to.be.equal(true);
-    expect(await governanceContract.rewardDistribution()).to.be.equal(treasury.address)
-  });
-
-  describe('setters', () => {
-
-    it(`should check setter setOneSplit functional`, async () => {
-      await checkSetter(
-        'setOneSplit',
-        'oneSplit',
-        (await MockContract.new()).address,
-        governance,
-        alice,
-        treasury,
-        "!governance"
-      );
+    beforeEach(async () => {
+      await redeploy();
+      owner = await sendRewardToTreasury(amount);
+      alice = await common.waitFor("alice", people);
     });
 
-    it(`should check setter setRewardsToken functional`, async () => {
-      await checkSetter(
+    xit('should configure properly', async () => {
+      expect(await treasury.owner()).to.be.equal(owner);
+      expect(await treasury.rewardsDistributionRecipientContract())
+        .to.be.equal(votingStakingRewards.address);
+      expect(await treasury.rewardsToken()).to.be.equal(mockXBE.address);
+      expect(await treasury.uniswapRouter()).to.be.equal(mock.address);
+      expect(await treasury.slippageTolerance()).to.be.bignumber.equal(
+        utilsConstants.localParams.treasury.slippageTolerance
+      );
+      expect(await treasury.swapDeadline()).to.be.bignumber.equal(
+        utilsConstants.localParams.treasury.swapDeadline
+      );
+      expect(await treasury.authorized(owner)).to.be.true;
+      expect(await treasury.authorized(treasury.address)).to.be.true;
+    });
+
+    xit('should set rewards token', async () => {
+      await common.checkSetter(
         'setRewardsToken',
         'rewardsToken',
-        (await MockContract.new()).address,
-        governance,
+        mock.address,
+        owner,
         alice,
         treasury,
-        "!governance"
+        "Ownable: caller is not the owner",
+        expect,
+        expectRevert
       );
     });
 
-    it(`should check setter setGovernanceContract functional`, async () => {
-      await checkSetter(
-        'setGovernanceContract',
-        'governanceContract',
-        (await MockContract.new()).address,
-        governance,
+    xit('should set rewards token', async () => {
+      await common.checkSetter(
+        'setRewardsToken',
+        'rewardsToken',
+        mock.address,
+        owner,
         alice,
         treasury,
-        "!governance"
+        "Ownable: caller is not the owner",
+        expect,
+        expectRevert
       );
     });
 
-    it('should check authorized address setter', async () => {
-      const mockAddress = (await MockContract.new()).address;
-      await treasury.setAuthorized(mockAddress, true, {from: governance});
-      expect(await treasury.authorized(mockAddress)).to.be.equal(true);
+    xit('should set slippage tolerance', async () => {
+      await common.checkSetter(
+        'setSlippageTolerance',
+        'slippageTolerance',
+        new BN('500'),
+        owner,
+        alice,
+        treasury,
+        "Ownable: caller is not the owner",
+        expect,
+        expectRevert
+      );
+      expectRevert(
+        treasury.setSlippageTolerance(new BN('10001'), { from: owner }),
+        "slippageToleranceTooLarge"
+      );
     });
 
-    it('should revert authorized address setter usage if sender != governance', async () => {
-      await expectRevert(treasury.setAuthorized((await MockContract.new()).address, true, {from: alice}), "!governance")
+    xit('should set rewards distribution recipient contract', async () => {
+      await common.checkSetter(
+        'setRewardsDistributionRecipientContract',
+        'rewardsDistributionRecipientContract',
+        mock.address,
+        owner,
+        alice,
+        treasury,
+        "Ownable: caller is not the owner",
+        expect,
+        expectRevert
+      );
     });
 
-  });
+    xit('should set authorized', async () => {
+      await treasury.setAuthorized(alice, { from: owner });
+      expect(await treasury.authorized(alice)).to.be.true;
+    });
 
-  it('should get expected return when swapping whole balance', async () => {
+    xit('should add and remove tokens to convert', async () => {
+      expectRevert(treasury.addTokenToConvert(mock.address, { from: alice }), "Ownable: caller is not the owner");
+      await treasury.addTokenToConvert(mock.address, { from: owner });
+      expectRevert(treasury.addTokenToConvert(mock.address, { from: owner }), "alreadyExists");
+      expect(await treasury.isAllowTokenToConvert(mock.address, { from: owner })).to.be.true;
+    });
 
-    const balance = ether('1');
-    const totalSupply = ether('2');
-    const parts = new BN('100');
-    const fromToken = await getMockTokenPrepared(alice, balance, totalSupply, bob);
-    await fromToken.approve(treasury.address, balance, {from: alice});
-    await fromToken.transfer(treasury.address, balance, {from: alice});
+    xit('should remove token to convert', async () => {
+      await treasury.addTokenToConvert(mock.address, { from: owner });
+      expectRevert(treasury.removeTokenToConvert(mock.address, { from: alice }), "Ownable: caller is not the owner");
+      await treasury.removeTokenToConvert(mock.address, { from: owner });
+      expectRevert(treasury.removeTokenToConvert(mock.address, { from: owner }), "doesntExist");
+      expect(await treasury.isAllowTokenToConvert(mock.address, { from: owner })).to.be.false;
+    });
 
-    const toToken = await MockContract.new();
+    const testCaseForConversionOfTokens = async (action) => {
 
-    const mockedExpectedReturn = ether('3');
-    const expectedReturnCalldata = (await IOneSplitAudit.at(oneSplitMock.address)).contract
-      .methods.getExpectedReturn(
-        fromToken.address,
-        toToken.address,
-        balance,
-        parts,
-        ZERO
-      ).encodeABI();
+      expectRevert(treasury.convertToRewardsToken(mock.address, amount, { from: owner }), "tokenIsNotAllowed");
 
-    await oneSplitMock.givenCalldataReturn(
-      expectedReturnCalldata,
-      web3.eth.abi.encodeParameters(
-        ["uint256", "uint256[]"],
-        [mockedExpectedReturn, [ZERO, ZERO]]
-      )
-    );
+      const expectedReturnCalldata = (await artifacts.IUniswapV2Router02.at(mock.address)).contract.methods
+        .getAmountsOut(utilsConstants.utils.ZERO, []).encodeABI();
 
-    expect(await treasury.getExpectedReturn(
-      fromToken.address,
-      toToken.address,
-      parts
-    )).to.be.bignumber.equal(mockedExpectedReturn);
+      const mockedConvertedAmount = amount.mul(new BN('2'));
+      await mock.givenMethodReturn(
+        expectedReturnCalldata,
+        web3.eth.abi.encodeParameters(
+          ["uint256[]"],
+          [[mockedConvertedAmount, utilsConstants.utils.ZERO, amount]]
+        )
+      );
 
-  });
+      const slippageTolerance = await treasury.slippageTolerance();
+      const MAX_BPS = await treasury.MAX_BPS();
+      const amountOutMin = mockedConvertedAmount.mul(slippageTolerance).div(MAX_BPS);
 
-  it('should convert non-core tokens to rewards tokens', async () => {
-    const balance = ether('1');
-    const totalSupply = ether('2');
-    const parts = new BN('100');
-    const fromToken = await getMockTokenPrepared(alice, balance, totalSupply, bob);
-    await fromToken.approve(treasury.address, balance, {from: alice});
-    await fromToken.transfer(treasury.address, balance, {from: alice});
+      const receipt = await action();
+      expectEvent(receipt, "FundsConverted", {
+        'from': mockedOtherToken.address,
+        'to': mockXBE.address,
+        'amountOfTo': amountOutMin
+      });
+    }
 
-    const mockedExpectedReturn = ether('3');
-    const expectedReturnCalldata = (await IOneSplitAudit.at(oneSplitMock.address)).contract
-      .methods.getExpectedReturn(
-        fromToken.address,
-        rewardsToken.address,
-        balance,
-        parts,
-        ZERO
-      ).encodeABI();
+    it('should execute feeReceiving properly', async () => {
+      let receipt = await treasury.feeReceiving(mockXBE.address, utilsConstants.utils.ZERO, { from: owner });
+      expectEvent.notEmitted(receipt, "FundsConverted");
 
-    const mockedOneSplitDistribution = [ZERO, new BN('100')];
+      await mockXBE.approve(treasury.address, amount, { from: owner });
+      await mockXBE.transfer(treasury.address, amount, { from: owner });
+      await testCaseForConversionOfTokens(
+        async () => await treasury.feeReceiving(mockedOtherToken.address, amount, { from: owner })
+      );
+    });
 
-    await oneSplitMock.givenCalldataReturn(
-      expectedReturnCalldata,
-      web3.eth.abi.encodeParameters(
-        ["uint256", "uint256[]"],
-        [mockedExpectedReturn, mockedOneSplitDistribution]
-      )
-    );
+    it('should execute convert tokens properly', async () => {
+      await mockXBE.approve(treasury.address, amount, { from: owner });
+      await mockXBE.transfer(treasury.address, amount, { from: owner });
+      await testCaseForConversionOfTokens(
+        async () => await treasury.convertToRewardsToken(mockedOtherToken.address, amount, { from: owner })
+      );
+    });
 
-    const swapCalldata = (await IOneSplitAudit.at(oneSplitMock.address)).contract
-      .methods.swap(
-        fromToken.address,
-        rewardsToken.address,
-        balance,
-        mockedExpectedReturn,
-        mockedOneSplitDistribution,
-        ZERO
-      ).encodeABI();
+    it('should send funds to governance', async () => {
+      const oldBalance = await mockXBE.balanceOf(owner);
+      await mockXBE.approve(
+        treasury.address,
+        amount,
+        { from: owner }
+      );
+      await mockXBE.transfer(
+        treasury.address,
+        amount,
+        { from: owner }
+      );
+      await treasury.toGovernance(mockXBE.address, amount, { from: owner });
+      const newBalance = await mockXBE.balanceOf(owner);
+      expect(newBalance.sub(oldBalance)).to.be.bignumber.equal(utilsConstants.utils.ZERO);
+    });
 
-    await expectRevert(treasury.convert(fromToken.address, parts, {from: alice}), "!authorized");
+    it('should send funds to voters', async () => {
+      expect(await mockXBE.balanceOf(votingStakingRewards.address)).to.be.bignumber.equal(amount);
+    });
 
-    await treasury.convert(fromToken.address, parts, {from: governance});
-    expect(await fromToken.allowance(treasury.address, oneSplitMock.address)).to.be.bignumber.equal(balance);
-  });
-
-  it('should send tokens to governance contract (#toVoters)', async () => {
-    const balance = ether('100');
-    await rewardsToken.approve(treasury.address, balance, {from: alice});
-    await rewardsToken.transfer(treasury.address, balance, {from: alice});
-    await treasury.toVoters();
-    expect(await rewardsToken.balanceOf(governanceContract.address)).to.be.bignumber.equal(balance);
-  });
-
-  it('should send tokens to governance address (#toGovernance)', async () => {
-    const balance = ether('100');
-    const balanceToSendToGovernance = ether('50');
-    await rewardsToken.approve(treasury.address, balance, {from: alice});
-    await rewardsToken.transfer(treasury.address, balance, {from: alice});
-    await treasury.toGovernance(rewardsToken.address, balanceToSendToGovernance, {from: governance});
-    expect(await rewardsToken.balanceOf(governance)).to.be.bignumber.equal(balanceToSendToGovernance);
   });
 });

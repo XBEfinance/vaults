@@ -52,7 +52,7 @@ contract('BonusCampaign', (accounts) => {
     );
 
     expect(await bonusCampaign.rewardsDistribution()).to.be.equal(
-      people.owner,
+      constants.utils.ZERO_ADDRESS,
     );
 
     expect(await bonusCampaign.rewardsDuration()).to.be.bignumber.equal(
@@ -130,7 +130,8 @@ contract('BonusCampaign', (accounts) => {
       await mockXBE.approve(votingStakingRewards.address, xbeToDeposit, { from: people.alice });
       await votingStakingRewards.stake(xbeToDeposit, { from: people.alice });
 
-      await lockSubscription.setActive(false); // switch off autoregistration
+      // await lockSubscription.pause({ from: people.owner }); // switch off autoregistration
+      await lockSubscription.removeSubscriber(bonusCampaign.address); // disable auto-registration
       await veXBE.createLock(xbeToDeposit, lockTime, { from: people.alice });
 
       expect(await bonusCampaign.registered(people.alice)).to.be.false;
@@ -213,7 +214,8 @@ contract('BonusCampaign', (accounts) => {
       const lockTime = (await time.latest()).add(common.months('24'));
       await mockXBE.approve(votingStakingRewards.address, xbeToDeposit, { from: people.alice });
       await votingStakingRewards.stake(xbeToDeposit, { from: people.alice });
-      await lockSubscription.setActive(false); // disable auto-registration
+      // await lockSubscription.pause({ from: people.owner }); // disable auto-registration
+      await lockSubscription.removeSubscriber(bonusCampaign.address); // disable auto-registration
       await veXBE.createLock(xbeToDeposit, lockTime, { from: people.alice });
 
       await time.increase((await bonusCampaign.rewardsDuration()).add(common.days('1')));
@@ -239,8 +241,8 @@ contract('BonusCampaign', (accounts) => {
       // expect(await bonusCampaign.periodFinish()).to.be.bignumber.equal(blockTimestamp.add(rewardsDuration));
     });
 
-    it('should not start a minting campaign if called by not by reward distribution', async () => {
-      await expectRevert(bonusCampaign.startMint({ from: people.alice }), 'Caller is not RewardsDistribution contract');
+    it('should not start a minting campaign if called not by owner', async () => {
+      await expectRevert(bonusCampaign.startMint({ from: people.alice }), 'Ownable: caller is not the owner');
     });
   });
 });

@@ -26,7 +26,7 @@ contract CvxCrvStrategy is ClaimableStrategy {
         address _governance,
         address _voting,
         Settings memory _poolSettings
-    ) public initializer {
+    ) public onlyOwner initializer {
         _configure(_wantAddress, _controllerAddress, _governance);
         poolSettings = _poolSettings;
     }

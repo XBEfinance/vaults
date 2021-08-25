@@ -60,7 +60,7 @@ contract Controller is IController, Ownable, Initializable {
         address _initialTreasury,
         address _initialStrategist,
         address _governance
-    ) external initializer {
+    ) external onlyOwner initializer {
         _treasury = _initialTreasury;
         strategist = _initialStrategist;
         transferOwnership(_governance);

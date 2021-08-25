@@ -556,10 +556,11 @@ const configureContracts = async (params, owner) => {
         contracts.controller.address,           // _controllerAddress,
         owner,                                  // _governance,
         // _poolSettings
-        [
-          contracts.mockLpSushi.address,
-          dependentsAddresses.convex.cvx, // ???
-        ],
+        // [
+        //   contracts.mockLpSushi.address,
+          contracts.mockXBE.address,
+          // dependentsAddresses.convex.cvx, // ???
+        // ],
       ],
       vaultConfigArgs: [
         contracts.mockLpSushi.address,          // _initialToken
@@ -811,7 +812,7 @@ module.exports = function (deployer, network, accounts) {
     //   inflationDelay: new BN('86400'),
     // },
     simpleXBEInflation: {
-      targetMinted: ether('5000'),
+      targetMinted: ether('10000'),
       periodsCount: new BN('52'),
       periodDuration: new BN('604800'),
     },

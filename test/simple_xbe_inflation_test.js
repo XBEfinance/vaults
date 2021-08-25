@@ -69,6 +69,7 @@ contract('SimpleXBEInflationTest', (accounts) => {
         'MockXBE',
         'SimpleXBEInflation',
         'Treasury',
+        'VotingStakingRewards',
         'MockLPSushi',
         'Controller',
         'SushiVault',

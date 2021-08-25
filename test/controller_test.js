@@ -188,14 +188,6 @@ contract('Controller', (accounts) => {
     //   '!transferVault');
   });
 
-  it('should set one split parts', async () => {
-    const oldParts = await controller.parts();
-    await expectRevert(controller.setParts(oldParts, { from: people.owner }), '!old');
-    const newParts = new BN('10');
-    await controller.setParts(newParts, { from: people.owner });
-    expect(await controller.parts()).to.be.bignumber.equal(newParts);
-  });
-
   it('should get treasury address', async () => {
     expect(await controller.rewards()).to.be.equal(treasury.address);
   });
@@ -207,13 +199,6 @@ contract('Controller', (accounts) => {
     const newTreasury = mock.address;
     await controller.setTreasury(newTreasury, { from: people.owner });
     expect(await controller.rewards()).to.be.bignumber.equal(newTreasury);
-  });
-
-  it('should set one split address', async () => {
-    await expectRevert(controller.setOneSplit(await controller.oneSplit(), { from: people.owner }), '!old');
-    const newOneSplit = mock.address;
-    await controller.setOneSplit(newOneSplit, { from: people.owner });
-    expect(await controller.oneSplit()).to.be.equal(newOneSplit);
   });
 
   it('should set strategist address', async () => {
@@ -395,7 +380,10 @@ contract('Controller', (accounts) => {
     let transferMockCalldata = revenueToken.contract
       .methods.transfer(mock.address, 0).encodeABI();
     await mock.givenMethodReturnBool(transferMockCalldata, false);
-    await expectRevert(controller.earn(mock.address, sumToEarnInRevenueToken), '!transferStrategyToken');
+    await expectRevert(
+      controller.earn(mock.address, sumToEarnInRevenueToken),
+      '!transferStrategyWant'
+    );
     ///
 
     transferMockCalldata = revenueToken.contract

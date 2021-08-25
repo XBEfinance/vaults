@@ -135,6 +135,7 @@ const environment = {
         async () => (await common.waitFor(
           'VotingStakingRewards',
           deployment.deployedContracts,
+          'environment - waiting for VotingStakingRewards as dep for SushiVault',
         )).address,
         async () => [mockXBE.address],
         async () => 'Sushi Vault',
@@ -173,11 +174,8 @@ const environment = {
         mockLpSushi.address,
         controller.address,
         owner,
-        [
-          mockLpSushi.address,
-          (await common.waitFor('MockXBE', deployedAndConfiguredContracts,
-            'environment - MockXBE as dependency for SushiStrategy')).address,
-        ],
+        (await common.waitFor('MockXBE', deployedAndConfiguredContracts,
+          'environment - MockXBE as dependency for SushiStrategy')).address,
         { from: owner },
       );
 
@@ -195,6 +193,8 @@ const environment = {
         mockLpSushi.address,
         instance.address,
       );
+
+      console.log('SushiStrategy configured');
 
       return instance;
     }),

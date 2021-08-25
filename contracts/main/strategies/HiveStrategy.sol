@@ -27,7 +27,7 @@ contract HiveStrategy is ClaimableStrategy {
         address _controllerAddress,
         address _governance,
         Settings memory _poolSettings
-    ) public initializer {
+    ) public onlyOwner initializer {
         _configure(_wantAddress, _controllerAddress, _governance);
         poolSettings = _poolSettings;
     }

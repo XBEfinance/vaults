@@ -31,7 +31,7 @@ contract CvxCrvVault is
         address[] memory _rewardsTokens,
         string memory __namePostfix,
         string memory __symbolPostfix
-    ) public initializer {
+    ) public onlyOwner initializer {
         _configureVaultWithAutoStake(_tokenToAutostake, _votingStakingRewards);
         _configureVaultWithFeesOnClaim(_enableFees);
         _configureVaultWithFeesOnDeposit(_teamWallet);

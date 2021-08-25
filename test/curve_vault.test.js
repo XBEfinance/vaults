@@ -14,7 +14,8 @@ const { ZERO_ADDRESS } = constants;
 
 const testnet_distro = require('../../curve-convex/rinkeby_distro.json');
 
-const XBEInflation = artifacts.require('XBEInflation');
+// const XBEInflation = artifacts.require('XBEInflation');
+const SimpleXBEInflation = artifacts.require('SimpleXBEInflation');
 const VeXBE = artifacts.require('VeXBE');
 const Voting = artifacts.require('Voting');
 const HiveStrategy = artifacts.require('HiveStrategy');
@@ -73,6 +74,7 @@ contract('Curve LP Testing', (accounts) => {
   let booster;
   let crv;
   let cvx;
+  let votingStakingRewards;
 
   const params = {
     bonusCampaign: {
@@ -119,7 +121,7 @@ contract('Curve LP Testing', (accounts) => {
     hiveStrategy = await HiveStrategy.new({ from: owner });
     hiveVault = await HiveVault.new({ from: owner });
     mockXBE = await MockToken.new('Mock XBE', 'mXBE', params.mockTokens.mockedTotalSupplyXBE, { from: owner });
-    xbeInflation = await XBEInflation.new({ from: owner });
+    xbeInflation = await SimpleXBEInflation.new({ from: owner });
     bonusCampaign = await BonusCampaign.new({ from: owner });
     veXBE = await VeXBE.new({ from: owner });
     voting = await Voting.new({ from: owner });
@@ -131,6 +133,7 @@ contract('Curve LP Testing', (accounts) => {
     booster = await Booster.at(dependentsAddresses.convex.booster);
     crv = await ERC20CRV.at(dependentsAddresses.curve.CRV);
     cvx = await CVX.at(dependentsAddresses.convex.cvx);
+    votingStakingRewards = await MockToken.new({from: owner});
   };
 
   const configureContracts = async () => {
@@ -141,6 +144,7 @@ contract('Curve LP Testing', (accounts) => {
     await referralProgram.configure(
       [mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
       treasury.address,
+      registry.address,
     );
 
     await registry.configure(
@@ -152,7 +156,6 @@ contract('Curve LP Testing', (accounts) => {
       voting.address,
       mockXBE.address,
       dependentsAddresses.uniswap_router_02,
-      dependentsAddresses.uniswap_factory,
       params.treasury.slippageTolerance,
       now.add(params.treasury.swapDeadline),
     );
@@ -182,26 +185,36 @@ contract('Curve LP Testing', (accounts) => {
     await hiveStrategy.configure(
       dependentsAddresses.convex.pools[0].lptoken,
       controller.address,
-      hiveVault.address,
       owner,
-      mockXBE.address,
-      voting.address,
       [
-        dependentsAddresses.curve.pool_data.mock_pool.swap_address,
         dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
         dependentsAddresses.convex.pools[0].crvRewards,
-        dependentsAddresses.convex.pools[0].token,
+        dependentsAddresses.convex.cvxRewards,
         dependentsAddresses.convex.booster,
-        dependentsAddresses.curve.pool_data.mock_pool.coins.length,
+        ZERO,
+        dependentsAddresses.curve.CRV,
+        dependentsAddresses.convex.cvx,
       ],
     );
 
     await hiveVault.configure(
-      dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
+      dependentsAddresses.convex.pools[0].lptoken,
       controller.address,
+      owner,
+      days('7'),
+      mockXBE.address,
+      votingStakingRewards.address,
+      true,
       owner,
       referralProgram.address,
       treasury.address,
+      [                                             // _rewardTokens
+        dependentsAddresses.curve.CRV,
+        dependentsAddresses.convex.cvx, // ???????
+        mockXBE.address,
+      ],
+      'Hive', // _namePostfix
+      'HV',   // _symbolPostfix
     );
 
     await hiveVault.addTokenRewards(
@@ -215,12 +228,9 @@ contract('Curve LP Testing', (accounts) => {
     );
     await xbeInflation.configure(
       mockXBE.address,
-      params.xbeinflation.initialSupply,
-      params.xbeinflation.initialRate,
-      params.xbeinflation.rateReductionTime,
-      params.xbeinflation.rateReductionCoefficient,
-      params.xbeinflation.rateDenominator,
-      params.xbeinflation.inflationDelay,
+      params.simpleXBEInflation.targetMinted,
+      params.simpleXBEInflation.periodsCount,
+      params.simpleXBEInflation.periodDuration,
     );
     await xbeInflation.addXBEReceiver(
       hiveStrategy.address,

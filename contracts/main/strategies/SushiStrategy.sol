@@ -18,7 +18,7 @@ contract SushiStrategy is ClaimableStrategy {
         address _controllerAddress,
         address _governance,
         address _xbeToken
-    ) public initializer {
+    ) public onlyOwner initializer {
         _configure(_wantAddress, _controllerAddress, _governance);
         poolSettings.lpSushi = _wantAddress;
         poolSettings.xbeToken = _xbeToken;

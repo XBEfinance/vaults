@@ -44,15 +44,9 @@ contract Registry is Ownable, Initializable {
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
     /// @param _governance governance Voting address
-    function configure(address _governance) external initializer {
+    function configure(address _governance) external onlyOwner initializer {
         transferOwnership(_governance);
     }
-
-    /// @notice Just name
-    /// @return String representation of name
-    //    function getName() external pure returns(string memory) {
-    //      return "Registry";
-    //    }
 
     /// @notice Adds vault to address set containing ordinary vault
     /// @param _vault Deployed ordinary vault address

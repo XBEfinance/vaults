@@ -556,10 +556,11 @@ const configureContracts = async (params, owner) => {
         contracts.controller.address,           // _controllerAddress,
         owner,                                  // _governance,
         // _poolSettings
-        [
-          contracts.mockLpSushi.address,
-          dependentsAddresses.convex.cvx, // ???
-        ],
+        // [
+        //   contracts.mockLpSushi.address,
+          contracts.mockXBE.address,
+          // dependentsAddresses.convex.cvx, // ???
+        // ],
       ],
       vaultConfigArgs: [
         contracts.mockLpSushi.address,          // _initialToken

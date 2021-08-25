@@ -27,7 +27,6 @@ module.exports = {
   IUniswapV2Router02: getContract('IUniswapV2Router02'),
   IUniswapV2Factory: getContract('IUniswapV2Factory'),
   IUniswapV2Pair: getContract('IUniswapV2Pair'),
-  IOneSplitAudit: getContract('IOneSplitAudit'),
   IController: getContract('IController'),
   IVaultCore: getContract('IVaultCore'),
   IStrategy: getContract('IStrategy'),

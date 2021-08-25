@@ -32,7 +32,6 @@ contract VotingStakingRewards is
     uint256 internal constant MAX_BOOST_LEVEL = PCT_BASE;
 
     address public treasury;
-    address public voting;
 
     struct BondedReward {
         uint256 amount;
@@ -71,7 +70,6 @@ contract VotingStakingRewards is
         IERC20 _stakingToken,
         uint256 _rewardsDuration,
         IVeXBE _token,
-        address _voting,
         IBoostLogicProvider _boostLogicProvider,
         address _treasury,
         uint256 _bondedLockDuration,
@@ -82,7 +80,6 @@ contract VotingStakingRewards is
         rewardsDistribution = _rewardsDistribution;
         rewardsDuration = _rewardsDuration;
         token = _token;
-        voting = _voting;
         boostLogicProvider = _boostLogicProvider;
         treasury = _treasury;
         require(_bondedLockDuration > 0, "badBondDuration");
@@ -299,13 +296,12 @@ contract VotingStakingRewards is
 
         uint256 escrowed = token.lockedAmount(msg.sender);
         require(
-            _balances[msg.sender].sub(amount) >= escrowed,
+            escrowed < amount,
             "escrowAmountFailure"
         );
 
         require(
-            _balances[msg.sender].sub(bondedRewardLocks[msg.sender].amount) >=
-                amount,
+            bondedRewardLocks[msg.sender].amount < amount,
             "cannotWithdrawBondedTokens"
         );
 

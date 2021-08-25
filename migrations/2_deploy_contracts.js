@@ -929,17 +929,17 @@ module.exports = function (deployer, network, accounts) {
         console.error(`Unsupported network: ${network}`);
       }
     } else if (network === 'development' || network === 'mainnet_fork') {
-      dependentsAddresses = testnet_distro.rinkeby;
-      dependentsAddresses.curve.pools = Object.values(dependentsAddresses
-        .curve.pool_data);
-      params = {
-        dependentsAddresses,
-        sushiSwap: sushiSwapAddresses.rinkeby,
-        ...params,
-      };
-      await deployContracts(deployer, params, owner);
-      await distributeTokens(params, alice, bob, owner);
-      await configureContracts(params, owner);
+      // dependentsAddresses = testnet_distro.rinkeby;
+      // dependentsAddresses.curve.pools = Object.values(dependentsAddresses
+      //   .curve.pool_data);
+      // params = {
+      //   dependentsAddresses,
+      //   sushiSwap: sushiSwapAddresses.rinkeby,
+      //   ...params,
+      // };
+      // await deployContracts(deployer, params, owner);
+      // await distributeTokens(params, alice, bob, owner);
+      // await configureContracts(params, owner);
     } else if (network === 'mainnet') {
       // await deployVaultsToMainnet();
     } else {

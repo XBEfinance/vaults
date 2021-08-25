@@ -375,10 +375,6 @@ const environment = {
           deployment.deployedContracts,
         )).address,
         async () => (await common.waitFor(
-          'Voting',
-          deployedAndConfiguredContracts,
-        )).address,
-        async () => (await common.waitFor(
           'BonusCampaign',
           deployment.deployedContracts,
         )).address,
@@ -435,7 +431,7 @@ const environment = {
 
       return instance;
     }),
-    
+
   StakingRewards: async (force) => await common.cacheAndReturn('StakingRewards', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.StakingRewards();

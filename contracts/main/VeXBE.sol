@@ -498,7 +498,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     }
 
     function setCreateLockAllowance(address _sender, bool _status) external {
-        createLockAllowance[_sender][msg.sender] = _status;
+        createLockAllowance[msg.sender][_sender] = _status;
     }
 
     function _createLockFor(

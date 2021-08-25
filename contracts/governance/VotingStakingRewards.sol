@@ -296,12 +296,12 @@ contract VotingStakingRewards is
         nonReentrant
         updateReward(msg.sender)
     {
-        require(amount > 0, "Cannot withdraw 0");
+        require(amount > 0, "!withdraw0");
 
         uint256 escrowed = token.lockedAmount(msg.sender);
         require(
             _balances[msg.sender].sub(amount) >= escrowed,
-            "escrow amount failure"
+            "escrowAmountFailure"
         );
 
         require(
@@ -318,7 +318,7 @@ contract VotingStakingRewards is
         emit Withdrawn(msg.sender, amount);
     }
 
-    function _BaseBoostLevel() internal view returns (uint256) {
+    function _baseBoostLevel() internal view returns (uint256) {
         return PCT_BASE.mul(inverseMaxBoostCoefficient).div(100);
     }
 
@@ -332,7 +332,7 @@ contract VotingStakingRewards is
         uint256 votingTotal = veXBE.totalSupply();
         uint256 lockedAmount = veXBE.lockedAmount(account);
         if (votingTotal == 0 || votingBalance == 0) {
-            return _BaseBoostLevel();
+            return _baseBoostLevel();
         }
 
         uint256 res = PCT_BASE
@@ -361,7 +361,7 @@ contract VotingStakingRewards is
 
         uint256 stakedAmount = _balances[account];
         if (stakedAmount == 0 || lockedAmount == 0) {
-            return _BaseBoostLevel();
+            return _baseBoostLevel();
         }
 
         uint256 lockedBoost = boostLogicProvider.hasMaxBoostLevel(account)
@@ -371,7 +371,7 @@ contract VotingStakingRewards is
         return
             lockedBoost
                 .mul(lockedAmount)
-                .add(_BaseBoostLevel().mul(stakedAmount.sub(lockedAmount)))
+                .add(_baseBoostLevel().mul(stakedAmount.sub(lockedAmount)))
                 .div(stakedAmount);
     }
 

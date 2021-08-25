@@ -1,19 +1,18 @@
 pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
 import "./interfaces/minting/IMint.sol";
 
-contract SimpleXBEInflation is Initializable {
+contract SimpleXBEInflation is Ownable, Initializable {
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    address public admin;
-    address public token;
+    IMint public token;
 
     uint256 public totalMinted;
     uint256 public targetMinted;
@@ -23,16 +22,9 @@ contract SimpleXBEInflation is Initializable {
     uint256 public periodDuration; // seconds
 
     mapping(address => uint256) public weights; // in points relative to sumWeight
-    uint256 public sumWeight = 0;
+    uint256 public sumWeight;
 
     EnumerableSet.AddressSet internal xbeReceivers;
-
-    event SetAdmin(address admin);
-
-    modifier onlyAdmin() {
-        require(msg.sender == admin, "!admin");
-        _;
-    }
 
     // """
     // @notice Contract constructor
@@ -42,12 +34,11 @@ contract SimpleXBEInflation is Initializable {
     // @param _targetMinted max amount minted during
     // """
     function configure(
-        address _token,
+        IMint _token,
         uint256 _targetMinted,
         uint256 _periodsCount,
         uint256 _periodDuration
     ) external initializer {
-        admin = msg.sender;
         token = _token;
         targetMinted = _targetMinted;
         periodicEmission = _targetMinted.div(_periodsCount);
@@ -60,59 +51,35 @@ contract SimpleXBEInflation is Initializable {
     // @notice Current number of tokens in existence (claimed or unclaimed)
     // """
     function availableSupply() external view returns (uint256) {
-        return periodicEmission;
+        return totalMinted;
     }
 
-    // """
-    // @notice Set the new admin.
-    // @dev After all is set up, admin only can change the token name
-    // @param _admin New admin address
-    // """
-    function setAdmin(address _admin) external onlyAdmin {
-        admin = _admin;
-        emit SetAdmin(_admin);
-    }
-
-    function getWeightInPoints(address _xbeReceiver, uint256 maxPoints)
+    function setXBEReceiver(address _xbeReceiver, uint256 _weight)
         external
-        view
-        returns (uint256)
+        onlyOwner
     {
-        return weights[_xbeReceiver].mul(maxPoints).div(sumWeight);
-    }
+        if (!xbeReceivers.contains(_xbeReceiver)) {
+            xbeReceivers.add(_xbeReceiver);
+        }
 
-    function addXBEReceiver(address _xbeReceiver, uint256 _weight)
-        external
-        onlyAdmin
-        returns (bool)
-    {
-        require(!xbeReceivers.contains(_xbeReceiver), "rcvrExists");
-
-        xbeReceivers.add(_xbeReceiver);
         weights[_xbeReceiver] = _weight;
-        sumWeight = sumWeight.add(_weight);
-
-        return true;
-    }
-
-    function removeXBEReceiver(address _xbeReceiver) external onlyAdmin {
-        sumWeight = sumWeight.sub(weights[_xbeReceiver]);
-        xbeReceivers.remove(_xbeReceiver);
-    }
-
-    function receiversCount() public view returns (uint256) {
-        return xbeReceivers.length();
-    }
-
-    function setWeight(address _xbeReceiver, uint256 _weight)
-        external
-        onlyAdmin
-    {
-        require(xbeReceivers.contains(_xbeReceiver), "rcvr!inList");
 
         uint256 oldWeight = weights[_xbeReceiver];
         sumWeight = sumWeight.add(_weight).sub(oldWeight);
         weights[_xbeReceiver] = _weight;
+    }
+
+    function removeXBEReceiver(address _xbeReceiver) external onlyOwner {
+        sumWeight = sumWeight.sub(weights[_xbeReceiver]);
+        xbeReceivers.remove(_xbeReceiver);
+    }
+
+    function receiversCount() external view returns (uint256) {
+        return xbeReceivers.length();
+    }
+
+    function receiverAt(uint256 index) external view returns (uint256) {
+        return xbeReceivers.at(index);
     }
 
     function _getPeriodsPassed() internal view returns (uint256) {
@@ -145,8 +112,7 @@ contract SimpleXBEInflation is Initializable {
             require(_to != address(0), "!zeroAddress");
 
             uint256 toMint = amountToPay.mul(weights[_to]).div(sumWeight);
-
-            IMint(token).mint(_to, toMint);
+            token.mint(_to, toMint);
         }
     }
 }

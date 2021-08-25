@@ -26,7 +26,7 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         uint256 _stopRegisterTime,
         uint256 _rewardsDuration,
         uint256 _bonusEmission
-    ) external initializer {
+    ) external onlyOwner initializer {
         _configure(
             address(0),
             _rewardsToken,

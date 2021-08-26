@@ -124,6 +124,7 @@ const environment = {
       const controller = await common.waitFor(
         'Controller',
         deployment.deployedContracts,
+        'environment - waiting for Controller as dep for SushiVault',
       );
 
       const originalConfigureParams = [
@@ -265,6 +266,8 @@ const environment = {
         (await common.waitFor(
           'VeXBE',
           deployment.deployedContracts,
+          'environment - waiting for VeXBE as dep for Voting'
+
         )).address,
         constants.localParams.voting.supportRequiredPct,
         constants.localParams.voting.minAcceptQuorumPct,
@@ -300,6 +303,7 @@ const environment = {
         (await common.waitFor(
           'VeXBE',
           deployment.deployedContracts,
+          'environment - waiting for VeXBE as dep for Voting'
         )).address,
         constants.localParams.voting.supportRequiredPct,
         constants.localParams.voting.minAcceptQuorumPct,
@@ -373,10 +377,12 @@ const environment = {
         async () => (await common.waitFor(
           'VeXBE',
           deployment.deployedContracts,
+          'environment - waiting for VeXBE as dep for VotingStakingRewards'
         )).address,
         async () => (await common.waitFor(
           'BonusCampaign',
           deployment.deployedContracts,
+          'environment - waiting for BonusCampaign as dep for VotingStakingRewards'
         )).address,
         async () => treasury.address,
         async () => constants.localParams.votingStakingRewards.bondedLockDuration,
@@ -417,6 +423,7 @@ const environment = {
         (await common.waitFor(
           'VotingStakingRewards',
           deployment.deployedContracts,
+          'environment - waiting for VotingStakingRewards as a dependency of VeXBE'
         )).address,
         (await common.waitFor(
           'LockSubscription',
@@ -466,6 +473,7 @@ const environment = {
         (await common.waitFor(
           'VeXBE',
           deployment.deployedContracts,
+          'environment - waiting for VeXBE as dep for BonusCampaign'
         )).address,
         configureTime.add(constants.localParams.bonusCampaign.startMintTime),
         configureTime.add(constants.localParams.bonusCampaign.stopRegisterTime),
@@ -529,6 +537,7 @@ const environment = {
         async () => (await common.waitFor(
           'Treasury',
           deployment.deployedContracts,
+          'environment - waiting for Treasury as dep for Controller',
         )).address,
         async () => bob,
         async () => owner,
@@ -551,6 +560,7 @@ const environment = {
         (await common.waitFor(
           'MockXBE',
           deployedAndConfiguredContracts,
+          'environment - waiting for MockXBE as dep for SimpleXBEInflation',
         )).address,
         constants.localParams.simpleXBEInflation.targetMinted,
         constants.localParams.simpleXBEInflation.periodsCount,

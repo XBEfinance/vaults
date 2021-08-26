@@ -17,4 +17,9 @@ contract VotingPausable {
         require(msg.sender == pauser, "!pauser");
         paused = _paused;
     }
+
+    function transferOwnership(address newPauser) public {
+        require(msg.sender == pauser, "!pauser");
+        pauser = newPauser;
+    }
 }

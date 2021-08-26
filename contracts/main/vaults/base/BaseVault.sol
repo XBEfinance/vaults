@@ -259,6 +259,10 @@ abstract contract BaseVault is
         withdraw(_amount, true);
     }
 
+    function withdrawAll() public virtual override {
+        withdraw(_balances[msg.sender], true);
+    }
+
     function withdraw(uint256 _amount, bool _claimUnderlying)
         public
         virtual
@@ -267,10 +271,6 @@ abstract contract BaseVault is
     {
         _getRewardAll(_claimUnderlying);
         _withdraw(_amount);
-    }
-
-    function withdrawAll() public virtual override {
-        withdraw(_balances[msg.sender], true);
     }
 
     function _getReward(

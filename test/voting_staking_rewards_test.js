@@ -109,7 +109,7 @@ contract('VotingStakingRewards', (accounts) => {
       boostLogicProvider = bonusCampaign;
     });
 
-    it('should configure properly', async () => {
+    xit('should configure properly', async () => {
       expect(await votingStakingRewards.rewardsToken()).to.be.equals(mockXBE.address);
       expect(await votingStakingRewards.stakingToken()).to.be.equals(mockXBE.address);
       expect(await votingStakingRewards.rewardsDistribution()).to.be.equals(treasury.address);
@@ -120,7 +120,7 @@ contract('VotingStakingRewards', (accounts) => {
       expect(await votingStakingRewards.treasury()).to.be.equals(treasury.address);
     });
 
-    it('should set inverse max boost coef', async () => {
+    xit('should set inverse max boost coef', async () => {
       await common.checkSetter(
         'setInverseMaxBoostCoefficient',
         'inverseMaxBoostCoefficient',
@@ -134,7 +134,7 @@ contract('VotingStakingRewards', (accounts) => {
       );
     });
 
-    it('should set penalty pct', async () => {
+    xit('should set penalty pct', async () => {
       await common.checkSetter(
         'setPenaltyPct',
         'penaltyPct',
@@ -148,7 +148,7 @@ contract('VotingStakingRewards', (accounts) => {
       );
     });
 
-    it('should set bonded lock duration', async () => {
+    xit('should set bonded lock duration', async () => {
       await common.checkSetter(
         'setBondedLockDuration',
         'bondedLockDuration',
@@ -162,7 +162,7 @@ contract('VotingStakingRewards', (accounts) => {
       );
     });
 
-    it('should set boosting logic provider', async () => {
+    xit('should set boosting logic provider', async () => {
       await common.checkSetter(
         'setBoostLogicProvider',
         'boostLogicProvider',

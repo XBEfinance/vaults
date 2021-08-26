@@ -89,7 +89,7 @@ contract('Treasury', (accounts) => {
       alice = await common.waitFor("alice", people);
     });
 
-    xit('should configure properly', async () => {
+    it('should configure properly', async () => {
       expect(await treasury.owner()).to.be.equal(owner);
       expect(await treasury.rewardsDistributionRecipientContract())
         .to.be.equal(votingStakingRewards.address);
@@ -105,7 +105,7 @@ contract('Treasury', (accounts) => {
       expect(await treasury.authorized(treasury.address)).to.be.true;
     });
 
-    xit('should set rewards token', async () => {
+    it('should set rewards token', async () => {
       await common.checkSetter(
         'setRewardsToken',
         'rewardsToken',
@@ -119,7 +119,7 @@ contract('Treasury', (accounts) => {
       );
     });
 
-    xit('should set rewards token', async () => {
+    it('should set rewards token', async () => {
       await common.checkSetter(
         'setRewardsToken',
         'rewardsToken',
@@ -133,7 +133,7 @@ contract('Treasury', (accounts) => {
       );
     });
 
-    xit('should set slippage tolerance', async () => {
+    it('should set slippage tolerance', async () => {
       await common.checkSetter(
         'setSlippageTolerance',
         'slippageTolerance',
@@ -151,7 +151,7 @@ contract('Treasury', (accounts) => {
       );
     });
 
-    xit('should set rewards distribution recipient contract', async () => {
+    it('should set rewards distribution recipient contract', async () => {
       await common.checkSetter(
         'setRewardsDistributionRecipientContract',
         'rewardsDistributionRecipientContract',
@@ -165,19 +165,19 @@ contract('Treasury', (accounts) => {
       );
     });
 
-    xit('should set authorized', async () => {
+    it('should set authorized', async () => {
       await treasury.setAuthorized(alice, { from: owner });
       expect(await treasury.authorized(alice)).to.be.true;
     });
 
-    xit('should add and remove tokens to convert', async () => {
+    it('should add and remove tokens to convert', async () => {
       expectRevert(treasury.addTokenToConvert(mock.address, { from: alice }), "Ownable: caller is not the owner");
       await treasury.addTokenToConvert(mock.address, { from: owner });
       expectRevert(treasury.addTokenToConvert(mock.address, { from: owner }), "alreadyExists");
       expect(await treasury.isAllowTokenToConvert(mock.address, { from: owner })).to.be.true;
     });
 
-    xit('should remove token to convert', async () => {
+    it('should remove token to convert', async () => {
       await treasury.addTokenToConvert(mock.address, { from: owner });
       expectRevert(treasury.removeTokenToConvert(mock.address, { from: alice }), "Ownable: caller is not the owner");
       await treasury.removeTokenToConvert(mock.address, { from: owner });

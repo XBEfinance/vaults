@@ -758,7 +758,6 @@ const configureContracts = async (params, owner) => {
       contracts.mockXBE.address,
       params.votingStakingRewards.rewardsDuration,
       contracts.veXBE.address,
-      contracts.voting.address,
       contracts.bonusCampaign.address, // works as a boost logic provider for now
       contracts.treasury.address, // to send remaining shares
       params.votingStakingRewards.bondedLockDuration,
@@ -935,7 +934,7 @@ module.exports = function (deployer, network, accounts) {
       }
     } else if (network === 'development' || network === 'mainnet_fork') {
       // disable for unit tests, but enable for integration tests
-      const disableDeployment = false;
+      const disableDeployment = true;
       if (!disableDeployment) {
         dependentsAddresses = testnet_distro.rinkeby;
         dependentsAddresses.curve.pools = Object.values(dependentsAddresses

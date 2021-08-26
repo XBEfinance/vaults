@@ -47,6 +47,9 @@ const processEventArgs = async (result, eventName, processArgs) => {
     throw new Error(`Result of tx is: ${result}`);
   }
   const filteredLogs = result.logs.filter((l) => l.event === eventName);
+  if (!filteredLogs || filteredLogs.length === 0) {
+    throw new Error(`no ${eventName} event is emitted`);
+  }
   const eventArgs = filteredLogs[0].args;
   await processArgs(eventArgs);
 };

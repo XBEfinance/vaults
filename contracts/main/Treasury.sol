@@ -21,9 +21,9 @@ contract Treasury is Initializable, Ownable, ITreasury {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     event FundsConverted(
-      address indexed from,
-      address indexed to,
-      uint256 indexed amountOfTo
+        address indexed from,
+        address indexed to,
+        uint256 indexed amountOfTo
     );
 
     IUniswapV2Router02 public uniswapRouter;

@@ -13,7 +13,7 @@ import "./interfaces/ILockSubscription.sol";
 // @notice Votes have a weight depending on time, so that users are
 //         committed to the future of (whatever they are voting for)
 // @dev Vote weight decays linearly over time. Lock time cannot be
-//     more than `MAXTIME` (4 years).
+//     more than `MAXTIME` (2 years).
 contract VeXBE is Initializable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
@@ -29,7 +29,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // #   |  /
     // #   |/
     // # 0 +--------+------> time
-    // #       maxtime (4 years?)
+    // #       maxtime (2 years?)
 
     struct Point {
         int128 bias;
@@ -63,25 +63,8 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // General constants
     uint256 public constant YEAR = 86400 * 365;
     uint256 public constant WEEK = 7 * 86400; // all future times are rounded by week
-    uint256 public constant MAXTIME = 2 * YEAR; // 2 years
+    uint256 public constant MAXTIME = 100 * WEEK ; // 2 years (23.333 Months)
     uint256 public constant MULTIPLIER = 10**18;
-
-    // # Allocation:
-    // # =========
-    // # * shareholders - 30%
-    // # * emplyees - 3%
-    // # * DAO-controlled reserve - 5%
-    // # * Early users - 5%
-    // # == 43% ==
-    // # left for inflation: 57%
-
-    // # Supply parameters
-    // uint256 public constant INITIAL_SUPPLY = 1303030303;
-    // uint256 public constant INITIAL_RATE = 274815283 * 10 ** 18 / YEAR;  // leading to 43% premine
-    // uint256 public constant RATE_REDUCTION_TIME = YEAR;
-    // uint256 public constant RATE_REDUCTION_COEFFICIENT = 1189207115002721024; // 2 ** (1/4) * 1e18
-    // uint256 public constant RATE_DENOMINATOR = 10 ** 18;
-    // uint256 public constant INFLATION_DELAY = 86400;
 
     uint256 public supply;
 

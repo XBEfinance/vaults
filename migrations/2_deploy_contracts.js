@@ -934,7 +934,7 @@ module.exports = function (deployer, network, accounts) {
       }
     } else if (network === 'development' || network === 'mainnet_fork') {
       // disable for unit tests, but enable for integration tests
-      const disableDeployment = false;
+      const disableDeployment = true;
       if (!disableDeployment) {
         dependentsAddresses = testnet_distro.rinkeby;
         dependentsAddresses.curve.pools = Object.values(dependentsAddresses

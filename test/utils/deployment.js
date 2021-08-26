@@ -60,7 +60,6 @@ module.exports = {
   UnwrappedToWrappedTokenConverter: getDeployerFuncWithDefaultConstructor('UnwrappedToWrappedTokenConverter'),
   WrappedToUnwrappedTokenConverter: getDeployerFuncWithDefaultConstructor('WrappedToUnwrappedTokenConverter'),
   MockContract: getDeployerFuncWithDefaultConstructor('MockContract'),
-  MockToken: getDeployerFuncWithDefaultConstructor('MockToken'),
   VeXBE: getDeployerFuncWithDefaultConstructor('VeXBE'),
   StakingRewards: getDeployerFuncWithDefaultConstructor('StakingRewards'),
   BonusCampaign: getDeployerFuncWithDefaultConstructor('BonusCampaign'),

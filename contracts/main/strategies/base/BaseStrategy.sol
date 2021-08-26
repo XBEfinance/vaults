@@ -101,8 +101,6 @@ abstract contract BaseStrategy is IStrategy, Ownable, Initializable {
             _amount = _amount.add(_balance);
         }
         address _vault = IController(controller).vaults(_want);
-        require(_vault != address(0), "!vault 0"); // additional protection so we don't burn the funds
-
         IERC20(_want).safeTransfer(_vault, _amount);
         emit Withdrawn(_want, _amount, _vault);
     }

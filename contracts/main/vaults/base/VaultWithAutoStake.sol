@@ -5,8 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import "../../interfaces/IAutoStakeFor.sol";
 
-/// @title WithReferalProgramVault
-/// @notice Vault for consumers of the system
 abstract contract VaultWithAutoStake {
     using SafeERC20 for IERC20;
 

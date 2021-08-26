@@ -34,7 +34,6 @@ contract SushiStrategy is ClaimableStrategy {
         override
         returns (uint256)
     {
-        IERC20(poolSettings.lpSushi).safeTransfer(msg.sender, _amount);
-        return _amount;
+        return 0;
     }
 }

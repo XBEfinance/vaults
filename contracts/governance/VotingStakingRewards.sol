@@ -299,14 +299,10 @@ contract VotingStakingRewards is
 
         uint256 escrowed = token.lockedAmount(msg.sender);
         require(
-            _balances[msg.sender].sub(amount) >= escrowed,
+            _balances[msg.sender].sub(escrowed).sub(
+                bondedRewardLocks[msg.sender].amount
+            ) >= amount,
             "escrow amount failure"
-        );
-
-        require(
-            _balances[msg.sender].sub(bondedRewardLocks[msg.sender].amount) >=
-                amount,
-            "cannotWithdrawBondedTokens"
         );
 
         totalSupply = totalSupply.sub(amount);

@@ -62,8 +62,6 @@ contract SimpleXBEInflation is Ownable, Initializable {
             xbeReceivers.add(_xbeReceiver);
         }
 
-        weights[_xbeReceiver] = _weight;
-
         uint256 oldWeight = weights[_xbeReceiver];
         sumWeight = sumWeight.add(_weight).sub(oldWeight);
         weights[_xbeReceiver] = _weight;

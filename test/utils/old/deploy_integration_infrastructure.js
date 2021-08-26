@@ -534,7 +534,6 @@ const deployInfrastructure = (owner, alice, bob, params) => {
       contracts.mockXBE.address,
       params.votingStakingRewards.rewardsDuration,
       contracts.veXBE.address,
-      contracts.voting.address,
       contracts.bonusCampaign.address,
       contracts.treasury.address,
       params.votingStakingRewards.bondedLockDuration,

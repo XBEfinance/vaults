@@ -275,8 +275,8 @@ contract VotingStakingRewards is
         if (block.timestamp >= bondedRewardLocks[msg.sender].unlockTime) {
             require(stakingToken.transfer(msg.sender, amount), "!tBonded");
         } else {
-            uint256 toTransfer = amount.mul(penaltyPct).div(PCT_BASE);
-            uint256 penalty = amount.sub(toTransfer);
+            uint256 penalty =  amount.mul(penaltyPct).div(PCT_BASE);
+            uint256 toTransfer = amount.sub(penalty);
             require(
                 stakingToken.transfer(msg.sender, toTransfer),
                 "!tBondedWithPenalty"
@@ -295,14 +295,11 @@ contract VotingStakingRewards is
         require(amount > 0, "!withdraw0");
 
         uint256 escrowed = token.lockedAmount(msg.sender);
-        require(
-            escrowed < amount,
-            "escrowAmountFailure"
-        );
+        uint256 bonded = bondedRewardLocks[msg.sender].amount;
 
         require(
-            bondedRewardLocks[msg.sender].amount < amount,
-            "cannotWithdrawBondedTokens"
+            _balances[msg.sender].sub(bonded).sub(escrowed) >= amount,
+            "insufficientFunds"
         );
 
         totalSupply = totalSupply.sub(amount);

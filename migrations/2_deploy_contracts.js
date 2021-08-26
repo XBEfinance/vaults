@@ -758,7 +758,6 @@ const configureContracts = async (params, owner) => {
       contracts.mockXBE.address,
       params.votingStakingRewards.rewardsDuration,
       contracts.veXBE.address,
-      contracts.voting.address,
       contracts.bonusCampaign.address, // works as a boost logic provider for now
       contracts.treasury.address, // to send remaining shares
       params.votingStakingRewards.bondedLockDuration,

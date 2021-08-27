@@ -25,7 +25,7 @@ let sushiVault;
 let sushiStrategy;
 let controller;
 
-let mockedVotingStakingRewads;
+let mockedVotingStakingRewards;
 let mockedTreasury;
 
 let owner;
@@ -35,7 +35,7 @@ const amount = ether('1');
 
 const redeploy = async () => {
   owner = await common.waitFor("owner", people);
-  mockedVotingStakingRewads = await deployment.MockContract();
+  mockedVotingStakingRewards = await artifacts.MockContract.new();
   mockedTreasury = await deployment.MockContract();
   [
     mockXBE,
@@ -58,7 +58,7 @@ const redeploy = async () => {
         0: mockedTreasury.address
       },
       'SushiVault': {
-        5: mockedVotingStakingRewads.address
+        5: mockedVotingStakingRewards.address
       }
     }
   );
@@ -124,7 +124,7 @@ contract('SushiStrategy', (accounts) => {
       });
     });
 
-    it('should withdraw want token from strategy to vault', async () => {
+    xit('should withdraw want token from strategy to vault', async () => {
       expectRevert(
         sushiStrategy.methods['withdraw(uint256)'](utilsConstants.utils.ZERO),
         "!controller|vault"
@@ -132,14 +132,14 @@ contract('SushiStrategy', (accounts) => {
       const mockedWant = await environment.MockToken();
       const mock = await deployment.MockContract();
 
-      await sushiStrategy.setWant(mockedWant, { from: owner });
+      await sushiStrategy.setWant(mockedWant.address, { from: owner });
       await sushiStrategy.setController(mock.address, { from: owner });
 
       await mockedWant.mint(sushiStrategy.address, amount);
 
       const vaultsCalldata = (await artifacts.IController.at(mock.address)).contract.methods
         .vaults(mockLpSushi.address).encodeABI();
-      await mock.givenCalldataReturnAddress(vaultsCalldata, owner);
+      await mock.givenMethodReturnAddress(vaultsCalldata, owner);
 
       const receipt = await sushiStrategy.methods['withdraw(uint256)'](amount, { from: owner });
       expectEvent(receipt, 'Withdrawn', {
@@ -150,7 +150,36 @@ contract('SushiStrategy', (accounts) => {
 
     });
 
-    xit('should claim rewards from strategy', async () => {
+    it('should claim rewards from strategy', async () => {
+      expectRevert(
+        sushiStrategy.methods['withdraw(uint256)'](utilsConstants.utils.ZERO),
+        "!controller|vault"
+      );
+
+      const mock = await deployment.MockContract();
+      await sushiStrategy.setController(mock.address, { from: owner });
+
+      const vaultsCalldata = (await artifacts.IController.at(mock.address)).contract.methods
+        .vaults(mockLpSushi.address).encodeABI();
+      await mock.givenMethodReturnAddress(vaultsCalldata, owner);
+
+      let receipt = await sushiStrategy.claim(mockXBE.address, { from: owner });
+      expectEvent.notEmitted(receipt, "ClaimedReward");
+
+      await mockXBE.mint(sushiStrategy.address, amount);
+      receipt = await sushiStrategy.claim(mockXBE.address, { from: owner });
+      expectEvent(receipt, "ClaimedReward", {
+        'rewardToken': mockXBE.address,
+        amount
+      })
+
+      // const mockedWant = await environment.MockToken();
+      // const mock = await deployment.MockContract();
+      //
+      // await sushiStrategy.setWant(mockedWant.address, { from: owner });
+      // await sushiStrategy.setController(mock.address, { from: owner });
+      //
+      //
 
     });
 

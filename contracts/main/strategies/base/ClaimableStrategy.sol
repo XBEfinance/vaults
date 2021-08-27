@@ -4,6 +4,9 @@ import "./BaseStrategy.sol";
 import "../../interfaces/vault/IVaultStakingRewards.sol";
 
 abstract contract ClaimableStrategy is BaseStrategy {
+
+    event ClaimedReward(address rewardToken, uint256 amount);
+
     function claim(address _rewardToken)
         external
         override
@@ -20,6 +23,7 @@ abstract contract ClaimableStrategy is BaseStrategy {
                 _rewardToken,
                 amount
             );
+            emit ClaimedReward(_rewardToken, amount);
             return true;
         }
         return false;

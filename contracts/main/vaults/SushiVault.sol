@@ -33,4 +33,20 @@ contract SushiVault is BaseVault, VaultWithAutoStake {
             _symbolPostfix
         );
     }
+
+    function _getReward(
+        bool _claimUnderlying,
+        address _for,
+        address _rewardToken,
+        address _stakingToken
+    ) internal override {
+        _controller.claim(_stakingToken, _rewardToken);
+
+        uint256 reward = rewards[_for][_rewardToken];
+        if (reward > 0) {
+            rewards[_for][_rewardToken] = 0;
+            _autoStakeForOrSendTo(_rewardToken, reward, _for);
+            emit RewardPaid(_rewardToken, _for, reward);
+        }
+    }
 }

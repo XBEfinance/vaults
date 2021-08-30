@@ -4,7 +4,6 @@ import "./BaseStrategy.sol";
 import "../../interfaces/vault/IVaultStakingRewards.sol";
 
 abstract contract ClaimableStrategy is BaseStrategy {
-
     event ClaimedReward(address rewardToken, uint256 amount);
 
     function claim(address _rewardToken)

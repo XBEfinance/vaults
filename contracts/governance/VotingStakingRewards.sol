@@ -105,7 +105,12 @@ contract VotingStakingRewards is
             rewards[account] = userEarned;
             userRewardPerTokenPaid[account] = rewardPerTokenStored;
             // transfer remaining reward share to treasury
-            require(stakingToken.transfer(treasury, toTreasury), "!boostDelta");
+            if (toTreasury > 0) {
+                require(
+                    stakingToken.transfer(treasury, toTreasury),
+                    "!boostDelta"
+                );
+            }
         }
         _;
     }
@@ -275,7 +280,7 @@ contract VotingStakingRewards is
         if (block.timestamp >= bondedRewardLocks[msg.sender].unlockTime) {
             require(stakingToken.transfer(msg.sender, amount), "!tBonded");
         } else {
-            uint256 penalty =  amount.mul(penaltyPct).div(PCT_BASE);
+            uint256 penalty = amount.mul(penaltyPct).div(PCT_BASE);
             uint256 toTransfer = amount.sub(penalty);
             require(
                 stakingToken.transfer(msg.sender, toTransfer),

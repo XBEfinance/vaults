@@ -45,26 +45,25 @@ function verifyAll {
 }
 
 function verifyAll_1 {
-
   generate_truffle_config "0.4.24" ".\/contracts\/governance"
-  truffle run verify Voting --network $1
+#  truffle run verify Voting --network $1
   truffle run verify VotingStakingRewards --network $1
 
   generate_truffle_config "0.6.6" ".\/contracts\/main"
   truffle run verify BonusCampaign --network $1
   truffle run verify VeXBE --network $1
   truffle run verify SimpleXBEInflation --network $1
-  truffle run verify MockToken --network $1
+#  truffle run verify MockToken --network $1
 
-  truffle run verify HiveStrategy --network $1
-  truffle run verify HiveVault --network $1
+#  truffle run verify HiveStrategy --network $1
+#  truffle run verify HiveVault --network $1
   truffle run verify SushiStrategy --network $1
   truffle run verify SushiVault --network $1
-  truffle run verify CVXStrategy --network $1
-  truffle run verify CVXVault --network $1
-  truffle run verify CvxCrvStrategy --network $1
-  truffle run verify CvxCrvVault --network $1
-  truffle run verify ReferralProgram --network $1
+#  truffle run verify CVXStrategy --network $1
+#  truffle run verify CVXVault --network $1
+#  truffle run verify CvxCrvStrategy --network $1
+#  truffle run verify CvxCrvVault --network $1
+#  truffle run verify ReferralProgram --network $1
   truffle run verify Registry --network $1
   truffle run verify Treasury --network $1
   truffle run verify Controller --network $1

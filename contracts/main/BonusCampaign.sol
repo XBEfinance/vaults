@@ -103,8 +103,7 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         uint256 amount = veToken.balanceOfAt(account, block.number);
         require(amount > 0, "!stake0");
         require(
-            veToken.lockedEnd(account).sub(veToken.lockStarts(account)) >=
-                rewardsDuration,
+            veToken.lockedEnd(account) >= startMintTime.add(rewardsDuration),
             "stakedForNotEnoughTime"
         );
         _totalSupply = _totalSupply.add(amount);

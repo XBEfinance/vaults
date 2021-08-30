@@ -71,8 +71,10 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         uint256 lockEnd,
         uint256 amount
     ) external override onlyRegistrator {
+        IVotingEscrow veToken = IVotingEscrow(address(stakingToken));
         if (
-            lockEnd.sub(lockStart) >= rewardsDuration && _canRegister(account)
+            veToken.lockedEnd(account) >= startMintTime.add(rewardsDuration) &&
+            _canRegister(account)
         ) {
             _registerFor(account);
         }

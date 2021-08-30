@@ -24,6 +24,7 @@ let mockLpSushi;
 let sushiVault;
 let sushiStrategy;
 let controller;
+let simpleXBEInflation;
 
 let mockedVotingStakingRewards;
 let mockedTreasury;
@@ -40,16 +41,18 @@ const redeploy = async () => {
   [
     mockXBE,
     mockLpSushi,
+    sushiStrategy,
     sushiVault,
     controller,
-    sushiStrategy
+    simpleXBEInflation
   ] = await environment.getGroup(
     [
       'MockXBE',
       'MockLPSushi',
+      'SushiStrategy',
       'SushiVault',
       'Controller',
-      'SushiStrategy'
+      'SimpleXBEInflation'
     ],
     (key) => true,
     true,
@@ -156,22 +159,22 @@ contract('SushiStrategy', (accounts) => {
         "!controller|vault"
       );
 
-      const mock = await deployment.MockContract();
-      await sushiStrategy.setController(mock.address, { from: owner });
+      // const mock = await deployment.MockContract();
+      // await sushiStrategy.setController(mock.address, { from: owner });
+      //
+      // const vaultsCalldata = (await artifacts.IController.at(mock.address)).contract.methods
+      //   .vaults(mockLpSushi.address).encodeABI();
+      // await mock.givenMethodReturnAddress(vaultsCalldata, owner);
 
-      const vaultsCalldata = (await artifacts.IController.at(mock.address)).contract.methods
-        .vaults(mockLpSushi.address).encodeABI();
-      await mock.givenMethodReturnAddress(vaultsCalldata, owner);
-
-      let receipt = await sushiStrategy.claim(mockXBE.address, { from: owner });
+      // let receipt = await sushiStrategy.claim(mockXBE.address, { from: owner });
+      let receipt = await controller.claim(mockLpSushi.address, mockXBE.address, { from: owner });
       expectEvent.notEmitted(receipt, "ClaimedReward");
 
       await mockXBE.mint(sushiStrategy.address, amount);
-      receipt = await sushiStrategy.claim(mockXBE.address, { from: owner });
-      expectEvent(receipt, "ClaimedReward", {
-        'rewardToken': mockXBE.address,
-        amount
-      })
+      console.log((await mockXBE.balanceOf(sushiStrategy.address)).toString());
+      await controller.claim(mockLpSushi.address, mockXBE.address, { from: owner });
+      // receipt = await sushiStrategy.claim(mockXBE.address, { from: owner });
+      expect(await mockXBE.balanceOf(sushiVault.address)).to.be.bignumber.equal(amount);
 
       // const mockedWant = await environment.MockToken();
       // const mock = await deployment.MockContract();

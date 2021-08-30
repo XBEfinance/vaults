@@ -127,6 +127,12 @@ const environment = {
         'environment - waiting for Controller as dep for SushiVault',
       );
 
+      const sushiStrategy = await common.waitFor(
+        'SushiStrategy',
+        deployedAndConfiguredContracts,
+        'environment - waiting for SushiStrategy as dep for SushiVault',
+      );
+
       const originalConfigureParams = [
         async () => mockLpSushi.address,
         async () => controller.address,
@@ -149,6 +155,7 @@ const environment = {
           originalConfigureParams.length,
         )),
       );
+      await instance.setRewardsDistribution(sushiStrategy.address);
       return instance;
     }),
   CVXVault: {},
@@ -163,7 +170,7 @@ const environment = {
 
       const mockLpSushi = await common.waitFor('MockLPSushi', deployedAndConfiguredContracts,
         'environment - waiting for MockLPSushi deployed');
-      const vault = await common.waitFor('SushiVault', deployedAndConfiguredContracts,
+      const vault = await common.waitFor('SushiVault', deployment.deployedContracts,
         'environment - waiting for SushiVault for SushiStrategy');
 
       const instance = await deployment.SushiStrategy();

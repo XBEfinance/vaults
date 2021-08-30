@@ -85,17 +85,17 @@ const waitFor = (key, container, logMetadata) => new Promise((resolve) => {
     if (key in container) {
       resolve(container[key]);
       clearInterval(timeId);
-      // if (logMetadata) {
-      //   console.log(`Found ${key}! - ${logMetadata}`);
-      // } else {
-      //   console.log(`Found ${key}!`);
-      // }
+      if (logMetadata) {
+        console.log(`Found ${key}! - ${logMetadata}`);
+      } else {
+        console.log(`Found ${key}!`);
+      }
      } else {
-      // if (logMetadata) {
-      //   console.log(`Waiting for ${key}... - ${logMetadata}`);
-      // } else {
-      //   console.log(`Waiting for ${key}...`);
-      // }
+      if (logMetadata) {
+        console.log(`Waiting for ${key}... - ${logMetadata}`);
+      } else {
+        console.log(`Waiting for ${key}...`);
+      }
     }
   }, constants.waitingForPollingInterval);
 });

@@ -12,83 +12,77 @@ const {
   ether,
   time,
 } = require('@openzeppelin/test-helpers');
-const {
-  ZERO,
-  ONE,
-  getMockTokenPrepared,
-  processEventArgs,
-} = require('./utils/old/common');
-const {
-  deployInfrastructure,
-  YEAR,
-  MULTIPLIER,
-  days,
-  defaultParams,
-} = require('./utils/old/deploy_infrastructure');
-
 const { ZERO_ADDRESS } = constants;
-const MockContract = artifacts.require('MockContract');
-const MockToken = artifacts.require('MockToken');
+
+const common = require('./utils/common.js');
+const utilsConstants = require('./utils/constants.js');
+const artifacts = require('./utils/artifacts.js');
+const environment = require('./utils/environment.js');
+const { people, setPeople } = require('./utils/accounts.js');
+
+let owner;
+let alice;
+let bob;
+let charlie;
+
+let mockXBE;
+let mockCVX;
+let mockCRV;
+let vault;
+
+let referralProgram;
+
+const deployAndConfigureReferralProgram = async () => {
+  [
+    referralProgram
+  ] = await environment.getGroup(
+    [
+      'Treasury',
+      'Registry',
+      'ReferralProgram'
+    ],
+    (key) => {
+      return [
+        "ReferralProgram"
+      ].includes(key);
+    },
+    true,
+    {
+      'Treasury': {
+        1: ZERO_ADDRESS
+      }
+    }
+  );
+}
 
 contract('ReferralProgram', (accounts) => {
-  const owner = accounts[0];
-  const alice = accounts[1];
-  const bob = accounts[2];
-  const carol = accounts[3];
 
-  let mockXBE;
-  let mockCRV;
-  let mockCVX;
-  let xbeInflation;
-  let bonusCampaign;
-  let minter;
-  let gaugeController;
-  let veXBE;
-  let voting;
-  let stakingRewards;
-  let liquidityGaugeReward;
-  let vaultWithXBExCRVStrategy;
-  let referralProgram;
+  setPeople(accounts);
 
-  let deployment;
-
-  async function deploy() {
-    deployment = deployInfrastructure(owner, alice, bob, defaultParams);
+  beforeEach(async () => {
+    owner = await common.waitFor("owner", people);
+    alice = await common.waitFor("alice", people);
+    bob = await common.waitFor("bob", people);
+    charlie = await common.waitFor("charlie", people);
     [
       mockXBE,
       mockCRV,
       mockCVX,
-      xbeInflation,
-      bonusCampaign,
-      minter,
-      gaugeController,
-      veXBE,
-      voting,
-      stakingRewards,
-      liquidityGaugeReward,
-      referralProgram,
-    ] = await deployment.proceed();
-  }
-
-  async function deployAndConfigure() {
-    await deploy();
-    await deployment.configure();
-  }
-
-  beforeEach(async () => {
-    vaultWithXBExCRVStrategy = await getMockTokenPrepared(
-      alice,
-      ether('100'),
-      ether('1000'),
-      owner,
+      vault
+    ] = await environment.getGroup(
+      [
+        'MockXBE',
+        'MockCRV',
+        'MockCVX',
+        'MockToken'
+      ],
+      (key) => true,
+      true
     );
-    await vaultWithXBExCRVStrategy.approve(bob, ether('100'));
-    await vaultWithXBExCRVStrategy.transfer(bob, ether('100'));
-    defaultParams.vaultWithXBExCRVStrategyAddress = vaultWithXBExCRVStrategy.address;
   });
 
   describe('Configuration', () => {
-    beforeEach(deploy);
+    beforeEach(deployAndConfigureReferralProgram);
 
     it('should be correct configured', async () => {
       const config = {
@@ -97,22 +91,28 @@ contract('ReferralProgram', (accounts) => {
           mockCVX.address,
           mockXBE.address,
         ],
+        registry: await artifacts.MockContract.new(),
         root: owner,
       };
 
       await expectRevert(
-        referralProgram.configure([ZERO_ADDRESS], ZERO_ADDRESS),
-        'rootIsZero',
+        referralProgram.configure([ZERO_ADDRESS], ZERO_ADDRESS, ZERO_ADDRESS),
+        'RProotIsZero',
       );
 
       await expectRevert(
-        referralProgram.configure([], config.root),
-        'tokensNotProvided',
+        referralProgram.configure([], config.root, ZERO_ADDRESS),
+        'RPregistryIsZero',
+      );
+
+      await expectRevert(
+        referralProgram.configure([], config.root, config.registry),
+        'RPtokensNotProvided',
       );
 
       await expectRevert(
         referralProgram.configure([ZERO_ADDRESS], config.root),
-        'tokenIsZero',
+        'RPtokenIsZero',
       );
 
       await referralProgram.configure(config.tokens, config.root);
@@ -133,7 +133,7 @@ contract('ReferralProgram', (accounts) => {
   });
 
   describe('Register', () => {
-    beforeEach(deployAndConfigure);
+    beforeEach(deployAndConfigureReferralProgram);
 
     it('should revert', async () => {
       await expectRevert(
@@ -160,12 +160,11 @@ contract('ReferralProgram', (accounts) => {
   });
 
   describe('Rewards', () => {
-    beforeEach(deployAndConfigure);
-
+    beforeEach(deployAndConfigureReferralProgram);
     async function registerUsers() {
       await referralProgram.methods['registerUser(address)'](owner, { from: alice });
       await referralProgram.methods['registerUser(address)'](alice, { from: bob });
-      await referralProgram.methods['registerUser(address)'](bob, { from: carol });
+      await referralProgram.methods['registerUser(address)'](bob, { from: charlie });
     }
 
     async function getRewards(userAddress, tokens) {
@@ -201,7 +200,7 @@ contract('ReferralProgram', (accounts) => {
       for (const user of users) {
         const userBalances = [];
         for (const token of tokens) {
-          userBalances[token] = await (await MockToken.at(token)).balanceOf(user);
+          userBalances[token] = await (await artifacts.MockToken.at(token)).balanceOf(user);
         }
         usersBalances[user] = userBalances;
       }
@@ -230,17 +229,17 @@ contract('ReferralProgram', (accounts) => {
 
       await registerUsers();
 
-      await referralProgram.feeReceiving(carol, tokens, amounts);
+      await referralProgram.feeReceiving(charlie, tokens[0], amounts);
 
       const ownerRewards = await getRewards(owner, tokens);
       const aliceRewards = await getRewards(alice, tokens);
       const bobRewards = await getRewards(bob, tokens);
-      const carolRewards = await getRewards(carol, tokens);
+      const charlieRewards = await getRewards(charlie, tokens);
 
       checkRewards(ownerRewards, calcPercentage(value, '10'));
       checkRewards(aliceRewards, calcPercentage(value, '20'));
       checkRewards(bobRewards, calcPercentage(value, '70'));
-      checkRewards(carolRewards, ZERO);
+      checkRewards(charlieRewards, ZERO);
     });
 
     it('should claim reward correctly', async () => {
@@ -254,16 +253,16 @@ contract('ReferralProgram', (accounts) => {
         owner,
         alice,
         bob,
-        carol,
+        charlie,
       ];
 
       // Transfer tokens to RefProgram
       for (const token of tokens) {
-        await (await MockToken.at(token)).transfer(referralProgram.address, ether('100'));
+        await (await artifacts.MockToken.at(token)).transfer(referralProgram.address, ether('100'));
       }
 
       // Notify RefProgram
-      await referralProgram.feeReceiving(carol, tokens, amounts);
+      await referralProgram.feeReceiving(charlie, tokens[0], amounts);
 
       const uRewardsBefore = await getUsersRewards(users, tokens);
       const uTokensBefore = await getUsersTokensBalances(users, tokens);
@@ -295,7 +294,7 @@ contract('ReferralProgram', (accounts) => {
   });
 
   describe('Ownership', () => {
-    beforeEach(deployAndConfigure);
+    beforeEach(deployAndConfigureReferralProgram);
 
     it('should revert if not admin', async () => {
       expectRevert(referralProgram.transferOwnership(alice, { from: alice }), '!admin');

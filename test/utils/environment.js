@@ -52,6 +52,10 @@ const environment = {
     async () => await deployment.DAOFactory()),
   MockXBE: async (force) => await common.cacheAndReturn('MockXBE', force, deployedAndConfiguredContracts,
     async () => await deployment.MockXBE()),
+  MockCRV: async (force) => await common.cacheAndReturn('MockCRV', force, deployedAndConfiguredContracts,
+    async () => await deployment.MockCRV()),
+  MockCVX: async (force) => await common.cacheAndReturn('MockCVX', force, deployedAndConfiguredContracts,
+    async () => await deployment.MockCVX()),
   MockToken: async () => {
     const alice = await common.waitFor('alice', accounts.people);
     const owner = await common.waitFor('owner', accounts.people);
@@ -492,7 +496,44 @@ const environment = {
       ).address);
       return instance;
     }),
-  ReferralProgram: {},
+  ReferralProgram: async (force, overridenConfigureParams, isConfigurationEnabled) => common.cacheAndReturn('ReferralProgram', force, deployedAndConfiguredContracts,
+    async () => {
+      const instance = await deployment.ReferralProgram();
+      if (isConfigurationEnabled) {
+        const originalConfigureParams = [
+          async () => [
+            async () => async () => (await common.waitFor(
+              'MockXBE',
+              deployment.deployedContracts,
+            )).address,
+            async () => async () => (await common.waitFor(
+              'MockCRV',
+              deployment.deployedContracts,
+            )).address,
+            async () => async () => (await common.waitFor(
+              'MockCVX',
+              deployment.deployedContracts,
+            )).address
+          ],
+          async () => async () => (await common.waitFor(
+            'Treasury',
+            deployedAndConfiguredContracts,
+          )).address,
+          async () => (await common.waitFor(
+            'Registry',
+            deployedAndConfiguredContracts,
+          )).address
+        ];
+        await instance.configure(
+          ...(await common.overrideConfigureArgsIfNeeded(
+            originalConfigureParams,
+            overridenConfigureParams,
+            originalConfigureParams.length,
+          )),
+        );
+      }
+      return instance;
+    }),
   Treasury: async (force, overridenConfigureParams) => common.cacheAndReturn('Treasury', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.Treasury();
@@ -507,7 +548,7 @@ const environment = {
         )).address,
         async () => (await common.waitFor(
           'MockXBE',
-          deployedAndConfiguredContracts,
+          deployment.deployedContracts,
         )).address,
         async () => constants.localParams.dependentsAddresses.uniswap_router_02,
         async () => constants.localParams.treasury.slippageTolerance,
@@ -527,12 +568,7 @@ const environment = {
     async () => await deployment.TokenWrapper()),
   Registry: async (force) => await common.cacheAndReturn('Registry', force, deployedAndConfiguredContracts,
     async () => {
-      const instance = await deployment.Registry();
-      const owner = await common.waitFor('owner', accounts.people);
-      await instance.configure(
-        owner,
-      );
-      return instance;
+      return await deployment.Registry();
     }),
   Controller: async (force, overridenConfigureParams) => common.cacheAndReturn('Controller', force, deployedAndConfiguredContracts,
     async () => {

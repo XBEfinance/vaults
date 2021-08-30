@@ -21,6 +21,21 @@ const getDeployerFuncWithDefaultConstructor = (key) => {
   }
 }
 
+const mockTokenOfName = (name) => {
+  return async (force=true) => {
+    return common.cacheAndReturn(name, force, deployedContracts,
+      async () => {
+        const alice = await common.waitFor('alice', accounts.people);
+        const owner = await common.waitFor('owner', accounts.people);
+        const instance = await common.getMockTokenPrepared(
+          alice, ether('500'), ether('1000'), owner,
+        );
+        return instance;
+      }
+    );
+  }
+}
+
 module.exports = {
   Kernel: getDeployerFuncWithDefaultConstructor('Kernel'),
   ACL: getDeployerFuncWithDefaultConstructor('ACL'),
@@ -65,18 +80,9 @@ module.exports = {
   BonusCampaign: getDeployerFuncWithDefaultConstructor('BonusCampaign'),
   ReferralProgram: getDeployerFuncWithDefaultConstructor('ReferralProgram'),
   Treasury: getDeployerFuncWithDefaultConstructor('Treasury'),
-  MockXBE: async (force=true) => {
-    return common.cacheAndReturn('MockXBE', force, deployedContracts,
-      async () => {
-        const alice = await common.waitFor('alice', accounts.people);
-        const owner = await common.waitFor('owner', accounts.people);
-        const instance = await common.getMockTokenPrepared(
-          alice, ether('500'), ether('1000'), owner,
-        );
-        return instance;
-      }
-    );
-  },
+  MockXBE: mockTokenOfName('MockXBE'),
+  MockCVX: mockTokenOfName('MockCVX'),
+  MockCRV: mockTokenOfName('MockCRV'),
   TokenWrapper: async (force=true) => {
     return common.cacheAndReturn('TokenWrapper', force, deployedContracts,
       async () => {

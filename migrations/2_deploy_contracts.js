@@ -412,12 +412,12 @@ const configureContracts = async (params, owner) => {
 
   const needToConfigure = {
     strategiesAndVaults: true,
-    mainContracts: true,
+    mainContracts: false,
   };
 
   const needToStart = {
-    bonusCampaign: true,
-    inflation: true,
+    bonusCampaign: false,
+    inflation: false,
   }
 
   await loadContracts();
@@ -643,79 +643,79 @@ const configureContracts = async (params, owner) => {
   }
 
   if (needToConfigure.mainContracts) {
-    await contracts.referralProgram.configure(
-      [contracts.mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
-      contracts.treasury.address,
-      contracts.registry.address,
-      { from: owner },
-    );
+    // await contracts.referralProgram.configure(
+    //   [contracts.mockXBE.address, dependentsAddresses.convex.cvx, dependentsAddresses.convex.cvxCrv],
+    //   contracts.treasury.address,
+    //   contracts.registry.address,
+    //   { from: owner },
+    // );
+    //
+    // console.log('ReferralProgram configured...');
+    //
+    // await contracts.registry.configure(
+    //   owner,
+    //   { from: owner },
+    // );
+    //
+    // console.log('Registry configured...');
+    //
+    // await contracts.treasury.configure(
+    //   contracts.voting.address,
+    //   contracts.votingStakingRewards.address,
+    //   contracts.mockXBE.address,
+    //   dependentsAddresses.uniswap_router_02,
+    //   params.treasury.slippageTolerance,
+    //   params.treasury.swapDeadline,
+    //   { from: owner },
+    // );
+    //
+    // console.log('Treasury configured...');
+    //
+    // await contracts.controller.configure(
+    //   contracts.treasury.address,
+    //   owner,
+    //   owner,
+    //   { from: owner },
+    // );
+    //
+    // console.log('Controller configured...');
+    //
+    // contracts.xbeInflation.configure(
+    //   contracts.mockXBE.address, // _token
+    //   params.simpleXBEInflation.targetMinted,
+    //   params.simpleXBEInflation.periodsCount,
+    //   params.simpleXBEInflation.periodDuration,
+    //   { from: owner },
+    // );
+    //
+    // await contracts.xbeInflation.setXBEReceiver(
+    //   contracts.sushiStrategy.address,
+    //   new BN('75'),
+    //   { from: owner },
+    // );
+    //
+    // // instead of VotingStakingRewards: reward -> treasury -> votingStakingRewards
+    // await contracts.xbeInflation.setXBEReceiver(
+    //   contracts.treasury.address,
+    //   new BN('25'),
+    //   { from: owner },
+    // );
+    //
+    // console.log('weight sushi', await contracts.xbeInflation.weights(contracts.sushiStrategy.address));
+    // console.log('weight treasury', await contracts.xbeInflation.weights(contracts.treasury.address));
+    // console.log('sumWeights', await contracts.xbeInflation.sumWeight());
+    //
+    // console.log('XBEInflation: configured');
 
-    console.log('ReferralProgram configured...');
-
-    await contracts.registry.configure(
-      owner,
-      { from: owner },
-    );
-
-    console.log('Registry configured...');
-
-    await contracts.treasury.configure(
-      contracts.voting.address,
-      contracts.votingStakingRewards.address,
-      contracts.mockXBE.address,
-      dependentsAddresses.uniswap_router_02,
-      params.treasury.slippageTolerance,
-      params.treasury.swapDeadline,
-      { from: owner },
-    );
-
-    console.log('Treasury configured...');
-
-    await contracts.controller.configure(
-      contracts.treasury.address,
-      owner,
-      owner,
-      { from: owner },
-    );
-
-    console.log('Controller configured...');
-
-    contracts.xbeInflation.configure(
-      contracts.mockXBE.address, // _token
-      params.simpleXBEInflation.targetMinted,
-      params.simpleXBEInflation.periodsCount,
-      params.simpleXBEInflation.periodDuration,
-      { from: owner },
-    );
-
-    await contracts.xbeInflation.setXBEReceiver(
-      contracts.sushiStrategy.address,
-      new BN('75'),
-      { from: owner },
-    );
-
-    // instead of VotingStakingRewards: reward -> treasury -> votingStakingRewards
-    await contracts.xbeInflation.setXBEReceiver(
-      contracts.treasury.address,
-      new BN('25'),
-      { from: owner },
-    );
-
-    console.log('weight sushi', await contracts.xbeInflation.weights(contracts.sushiStrategy.address));
-    console.log('weight treasury', await contracts.xbeInflation.weights(contracts.treasury.address));
-    console.log('sumWeights', await contracts.xbeInflation.sumWeight());
-
-    console.log('XBEInflation: configured');
-
-    await contracts.bonusCampaign.configure(
-      contracts.mockXBE.address,
-      contracts.veXBE.address,
-      now.add(params.bonusCampaign.startMintTime),
-      now.add(params.bonusCampaign.stopRegisterTime),
-      params.bonusCampaign.rewardsDuration,
-      params.bonusCampaign.emission,
-      { from: owner },
-    );
+    // await contracts.bonusCampaign.configure(
+    //   contracts.mockXBE.address,
+    //   contracts.veXBE.address,
+    //   now.add(params.bonusCampaign.startMintTime),
+    //   now.add(params.bonusCampaign.stopRegisterTime),
+    //   params.bonusCampaign.rewardsDuration,
+    //   params.bonusCampaign.emission,
+    //   { from: owner },
+    // );
 
     await contracts.bonusCampaign.setRegistrator(contracts.registrator.address, { from: owner });
 

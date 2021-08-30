@@ -17,82 +17,81 @@ const constants = require('./utils/constants');
 const environment = require('./utils/environment');
 var Eth = require('web3-eth');
 
-
-
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-const {
-  ZERO,
-  ONE,
-  getMockTokenPrepared,
-  processEventArgs,
-  processAllEvents,
-} = require('./utils/common.js');
-const {
-  deployInfrastructure,
-  YEAR,
-  MULTIPLIER,
-  days,
-  defaultParams,
-  beforeEachWithSpecificDeploymentParams,
-} = require('./utils/old/deploy_strategy_infrastructure.js');
+// const {
+//   ZERO,
+//   ONE,
+//   getMockTokenPrepared,
+//   processEventArgs,
+//   processAllEvents,
+// } = require('./utils/common.js');
+// const {
+//   deployInfrastructure,
+//   YEAR,
+//   MULTIPLIER,
+//   days,
+//   defaultParams,
+//   beforeEachWithSpecificDeploymentParams,
+// } = require('./utils/old/deploy_strategy_infrastructure.js');
 
-var eth = new Eth(Eth.givenProvider || 'ws://127.0.0.1:8545');
+// var eth = new Eth(Eth.givenProvider || 'ws://127.0.0.1:8545');
 
-let mockXBE;
-let mockCX;
-let simpleInflation;
-let mock1;
-let mock2;
-let mock3;
-let deployment;
-let mocks = {};
-let weights = {};
-let sumWeights;
-let mocksLength = 3;
-let flag = true;
-let treasury;
-let sushiStrategy;
-let sushiVault;
 
-contract('SimpleXBEInflationTest', (accounts) => {
+contract('SimpleXBEInflationTest', async (accounts) => {
   setPeople(accounts);
 
-  beforeEach(async () => {
+  let mockXBE;
+  let mockCX;
+  let simpleInflation;
+  let mock1;
+  let mock2;
+  let mock3;
+  let deployment;
+  let mocks = {};
+  let weights = {};
+  let sumWeights;
+  let mocksLength = 3;
+  let flag = true;
+  let treasury;
+  let sushiStrategy;
+  let sushiVault;
+
+  const redeploy = async () => {
     [
-        mockXBE,
-        simpleInflation,
-        treasury,
-        sushiVault,
-        sushiStrategy,
+      mockXBE,
+      simpleInflation,
+      treasury,
+      sushiVault,
+      sushiStrategy,
     ] = await environment.getGroup(
       [
         'MockXBE',
         'SimpleXBEInflation',
         'Treasury',
-        'VotingStakingRewards',
+        // 'VotingStakingRewards',
         'MockLPSushi',
         'Controller',
         'SushiVault',
         'SushiStrategy',
       ],
-        (key) => {
-            return [
-                'MockXBE',
-                'SimpleXBEInflation',
-                'Treasury',
-                'SushiVault',
-                'SushiStrategy',
-            ].includes(key);
+      (key) => {
+        return [
+          'MockXBE',
+          'SimpleXBEInflation',
+          'Treasury',
+          'SushiVault',
+          'SushiStrategy',
+        ].includes(key);
+      },
+      true,
+      {
+        "SushiVault": {
+          5: ZERO_ADDRESS
         },
-        false,
-        {
-          "SushiVault": {
-            5: ZERO_ADDRESS
-          },
-          "Treasury": {
-            1: ZERO_ADDRESS
-          }
+        "Treasury": {
+          1: ZERO_ADDRESS
         }
+      }
     );
 
     sumWeights = 0;
@@ -108,13 +107,18 @@ contract('SimpleXBEInflationTest', (accounts) => {
         sumWeights += weights[mock.address];              // take sumWeights into account
         console.log("mock: ", mock.address.toString(), 'weight', weights[mock.address]);
       }
-      flag = true;
+      flag = false;
     }
-  });
+  };
+
+
+  // beforeEach();
 
   describe('with default params of deployment', () => {
     it('should configure XBEInflation properly', async () => {
-      expect( (await simpleInflation.admin()).toString() ).to.be.equal(people.owner);
+      await redeploy();
+
+      expect( (await simpleInflation.owner()).toString() ).to.be.equal(people.owner);
       expect( (await simpleInflation.token()).toString() ).to.be.equal(mockXBE.address);
       expect( (await simpleInflation.targetMinted()).toString() ).to.be.equal( constants.localParams.simpleXBEInflation.targetMinted.toString() );
       expect( (await simpleInflation.periodicEmission()).toString() )
@@ -129,12 +133,17 @@ contract('SimpleXBEInflationTest', (accounts) => {
     });
 
     it('should add receivers', async () => {
+      await redeploy();
+
       console.log(Object.keys(mocks));
       for (mock in mocks) {
         console.log('mock.address = ', mock.address);
         console.log('weights[mock.address] = ', weights[mock.address]);
-        await simpleInflation.setXBEReceiver( mock.address, weights[mock.address]);
+        const a = mock.address;
+        const w = weights[mock.address];
+        await simpleInflation.setXBEReceiver( a, w );
       }
+
       for (mock in mocks) {
         expect( (await simpleInflation.weights(mock.address)).toString() ).to.be.equal(weights[mock.address].toString());
       }
@@ -142,6 +151,8 @@ contract('SimpleXBEInflationTest', (accounts) => {
     });
 
     it('should mint for receivers', async () => {
+      await redeploy();
+
       console.log('receivers count',
         (await simpleInflation.receiversCount({ from: people.owner })).toString()
       );
@@ -159,6 +170,7 @@ contract('SimpleXBEInflationTest', (accounts) => {
     });
 
     it('should mint only in the next period', async () => {
+      // await redeploy();
       // configure receivers
       await simpleInflation.setXBEReceiver(treasury.address, new BN('75'), { from: people.owner });
       await simpleInflation.setXBEReceiver(sushiStrategy.address, new BN('25'), { from: people.owner });
@@ -251,7 +263,7 @@ contract('SimpleXBEInflationTest', (accounts) => {
   //     processEventArgs(result, 'CalculatedEpochTimeWritten', (args) => {
   //       expect(args.epochTime.toString()).to.be.equal(startEpochTime.toString());
   //     });
-  //   });
+    });
 
   //   it('should get timestamp of the next mining epoch start while simultaneously updating mining parameters', async () => {
   //     const startEpochTime = (await xbeInflation.startEpochTime())
@@ -299,7 +311,7 @@ contract('SimpleXBEInflationTest', (accounts) => {
   //       expect(args.epochTime.toString()).to.be.equal(startEpochTime.toString());
   //     });
   //   });
-  });
+  // });
 
   // describe('with specific deployment params', () => {
 

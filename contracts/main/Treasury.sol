@@ -15,7 +15,6 @@ import "./interfaces/IRewardsDistributionRecipient.sol";
 /// @title Treasury
 /// @notice Realisation of ITreasury for channeling managing fees from strategies to gov and governance address
 contract Treasury is Initializable, Ownable, ITreasury {
-
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -98,15 +97,6 @@ contract Treasury is Initializable, Ownable, ITreasury {
         returns (bool)
     {
         return _tokensToConvert.contains(_tokenAddress);
-    }
-
-    function feeReceiving(address _tokenAddress, uint256 _amount)
-        external
-        override
-    {
-        if (_tokenAddress != rewardsToken) {
-            convertToRewardsToken(_tokenAddress, _amount);
-        }
     }
 
     function convertToRewardsToken(address _tokenAddress, uint256 amount)

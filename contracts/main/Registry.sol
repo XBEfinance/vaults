@@ -3,7 +3,6 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IController.sol";
@@ -16,7 +15,7 @@ import "./interfaces/vault/IVaultWrapped.sol";
 /// @notice The contract is the middleman actor through which the Keeper
 /// bot queries the vaults and strategies addresses to call harvest method.
 /// It also keep track of every working available vault and controller versions.
-contract Registry is Ownable, Initializable {
+contract Registry is Ownable {
     using Address for address;
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -40,13 +39,6 @@ contract Registry is Ownable, Initializable {
     /// @notice Mapping to store data whether given vault is delegated
     /// @dev vault address => is delegated (using usual utility token in spite of stablecoin)? (bool)
     mapping(address => bool) public isDelegatedVault;
-
-    /// @notice Default initialize method for solving migration linearization problem
-    /// @dev Called once only by deployer
-    /// @param _governance governance Voting address
-    function configure(address _governance) external onlyOwner initializer {
-        transferOwnership(_governance);
-    }
 
     /// @notice Adds vault to address set containing ordinary vault
     /// @param _vault Deployed ordinary vault address

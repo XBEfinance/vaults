@@ -85,7 +85,10 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
             }
             _amount = _amount.sub(fee);
             if (feeWeights[i].callFunc) {
-                ITreasury(feeWeights[i].to).feeReceiving(_rewardToken, fee);
+                ITreasury(feeWeights[i].to).convertToRewardsToken(
+                    _rewardToken,
+                    fee
+                );
             }
         }
         return _amount;

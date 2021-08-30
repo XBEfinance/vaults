@@ -11,6 +11,4 @@ interface ITreasury {
     function toGovernance(address _token, uint256 _amount) external;
 
     function convertToRewardsToken(address _token, uint256 amount) external;
-
-    function feeReceiving(address, uint256) external;
 }

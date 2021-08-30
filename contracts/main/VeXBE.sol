@@ -63,7 +63,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
     // General constants
     uint256 public constant YEAR = 86400 * 365;
     uint256 public constant WEEK = 7 * 86400; // all future times are rounded by week
-    uint256 public constant MAXTIME = 100 * WEEK ; // 2 years (23.333 Months)
+    uint256 public constant MAXTIME = 100 * WEEK; // 2 years (23.333 Months)
     uint256 public constant MULTIPLIER = 10**18;
 
     uint256 public supply;

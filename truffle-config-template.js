@@ -40,7 +40,7 @@ const rinkebyNetworkConfig = {
 };
 
 const mainnetNetworkConfig = {
-  provider: () => new HDWalletProvider(mnemonic, `https://mainnet.infura.io/v3/${process.env.INFURA_ID}`),
+  provider: () => new HDWalletProvider(mnemonic, `wss://mainnet.infura.io/ws/v3/${process.env.INFURA_ID}`),
   network_id: 1,
   networkCheckTimeout: 10000000,
   gasLimit: 5000000,
@@ -97,21 +97,18 @@ module.exports = {
     // websockets: true        // Enable EventEmitter interface for web3 (default: false)
     // },
     // Useful for deploying to a public network.
-    rinkeby: rinkebyNetworkConfig,
-    // Useful for deploying to a public network.
-    mainnet: mainnetNetworkConfig,
+    mainnet_deploy: mainnetNetworkConfig,
+    mainnet_configure: mainnetNetworkConfig,
+    mainnet: mainnetNetworkConfig, // for verify
 
+    rinkeby: rinkebyNetworkConfig, // for verify
     rinkeby_deploy: rinkebyNetworkConfig,
-    rinkeby_deploy_voting: rinkebyNetworkConfig,
 
     rinkeby_tokens: rinkebyNetworkConfig,
 
     rinkeby_configure: rinkebyNetworkConfig,
-    rinkeby_configure_voting: rinkebyNetworkConfig,
 
     rinkeby_all_with_save: rinkebyNetworkConfig,
-    rinkeby_conf: rinkebyNetworkConfig,
-    rinkeby_config_bonus_campaign: rinkebyNetworkConfig,
 
     development: ganacheNetworkConfig,
 

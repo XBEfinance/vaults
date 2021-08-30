@@ -105,7 +105,9 @@ contract VotingStakingRewards is
             rewards[account] = userEarned;
             userRewardPerTokenPaid[account] = rewardPerTokenStored;
             // transfer remaining reward share to treasury
-            require(stakingToken.transfer(treasury, toTreasury), "!boostDelta");
+            if (toTreasury > 0) {
+                require(stakingToken.transfer(treasury, toTreasury), "!boostDelta");
+            }
         }
         _;
     }

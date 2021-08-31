@@ -93,13 +93,12 @@ contract VotingStakingRewards is
 
     modifier updateReward(address account) {
         uint256 _lastTimeReward = lastTimeRewardApplicable();
-        rewardPerTokenStored = _rewardPerToken(
-            _lastTimeReward.sub(lastUpdateTime)
-        );
+        uint256 _duration = _lastTimeReward.sub(lastUpdateTime);
+        rewardPerTokenStored = _rewardPerToken(_duration);
         lastUpdateTime = _lastTimeReward;
         if (account != address(0)) {
             (uint256 userEarned, uint256 toTreasury) = potentialXbeReturns(
-                _lastTimeReward.sub(lastUpdateTime),
+                _duration,
                 account
             );
             rewards[account] = userEarned;

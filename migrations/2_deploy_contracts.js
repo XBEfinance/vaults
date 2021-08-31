@@ -17,6 +17,7 @@ const Controller = artifacts.require('Controller');
 
 const ether = (n) => new BN(web3.utils.toWei(n, 'ether'));
 const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
+const hours = (n) => new BN('3600').mul(new BN(n));
 const months = (n) => days('30').mul(new BN(n));
 
 const addressStore = {
@@ -349,7 +350,7 @@ module.exports = function (deployer, network) {
       bondedLockDuration: days('5'),
     },
     veXBE: {
-      minLockDuration: days('7'),
+      minLockDuration: days('7').sub(hours('1')),
     },
   };
 

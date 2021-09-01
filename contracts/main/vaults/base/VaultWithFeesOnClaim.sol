@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 import "./utils/Authorizable.sol";
 import "../../interfaces/ITreasury.sol";
+import "../../interfaces/IFeeReceiving.sol";
 
 /// @title WithFeesAndRsOnDepositVault
 /// @notice Vault for consumers of the system
@@ -19,7 +20,11 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
         uint256 weight;
         address to;
         mapping(address => bool) tokens;
-        bool callFunc;
+
+        // if callAction == 0 || callAction > 2 - call nothing
+        // if callAction == 1 - call convertToRewardsToken
+        // if callAction == 2 - call feeReceiving
+        uint8 callAction;
     }
 
     FeeWeight[] internal feeWeights;
@@ -39,12 +44,12 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
         address _to,
         uint256 _weight,
         address[] calldata _tokens,
-        bool _callFunc
+        uint8 _callAction
     ) external auth(msg.sender) {
         FeeWeight storage newWeight;
         newWeight.to = _to;
         newWeight.weight = _weight;
-        newWeight.callFunc = _callFunc;
+        newWeight.callAction = _callAction;
         for (uint256 i = 0; i < _tokens.length; i++) {
             newWeight.tokens[_tokens[i]] = true;
         }
@@ -71,6 +76,7 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
     }
 
     function _getAndDistributeFeesOnClaimForToken(
+        address _for,
         address _rewardToken,
         uint256 _amount
     ) internal returns (uint256) {
@@ -84,8 +90,14 @@ abstract contract VaultWithFeesOnClaim is Authorizable {
                 IERC20(_rewardToken).safeTransfer(feeWeights[i].to, fee);
             }
             _amount = _amount.sub(fee);
-            if (feeWeights[i].callFunc) {
+            if (feeWeights[i].callAction == 1) {
                 ITreasury(feeWeights[i].to).convertToRewardsToken(
+                    _rewardToken,
+                    fee
+                );
+            } else if (feeWeights[i].callAction == 2) {
+                IFeeReceiving(feeWeights[i].to).feeReceiving(
+                    _for,
                     _rewardToken,
                     fee
                 );

@@ -76,7 +76,7 @@ contract CvxCrvVault is
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
-            reward = _getAndDistributeFeesOnClaimForToken(_rewardToken, reward);
+            reward = _getAndDistributeFeesOnClaimForToken(_for, _rewardToken, reward);
             _autoStakeForOrSendTo(_rewardToken, reward, _for);
         }
         emit RewardPaid(_rewardToken, _for, reward);

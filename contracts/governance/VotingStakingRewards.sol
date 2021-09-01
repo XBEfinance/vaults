@@ -318,8 +318,8 @@ contract VotingStakingRewards is
         return PCT_BASE.mul(inverseMaxBoostCoefficient).div(100);
     }
 
-    function _lockedBoostLevel(address account)
-        internal
+    function lockedBoostLevel(address account)
+        public
         view
         returns (uint256)
     {
@@ -362,7 +362,7 @@ contract VotingStakingRewards is
 
         uint256 lockedBoost = boostLogicProvider.hasMaxBoostLevel(account)
             ? MAX_BOOST_LEVEL
-            : _lockedBoostLevel(account);
+            : lockedBoostLevel(account);
 
         return
             lockedBoost

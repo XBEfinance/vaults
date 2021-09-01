@@ -380,11 +380,6 @@ const deployInfrastructure = (owner, alice, bob, params) => {
     // );
     // // console.log('ReferralProgram configured...');
 
-    await contracts.registry.configure(
-      owner,
-      { from: owner },
-    );
-
     // console.log('Registry configured...');
 
     await contracts.treasury.configure(

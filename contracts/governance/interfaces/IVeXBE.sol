@@ -7,8 +7,6 @@ interface IVeXBE {
 
     function lockedAmount(address addr) external view returns (uint256);
 
-    function isLockedForMax(address addr) external view returns (bool);
-
     function userPointEpoch(address addr) external view returns (uint256);
 
     function userPointHistoryTs(address addr, uint256 epoch)

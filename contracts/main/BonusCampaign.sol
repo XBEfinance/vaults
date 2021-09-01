@@ -72,8 +72,10 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         uint256 amount
     ) external override onlyRegistrator {
         IVotingEscrow veToken = IVotingEscrow(address(stakingToken));
+        uint256 WEEK = 604800; // 24 * 60 * 60 * 7
         if (
-            veToken.lockedEnd(account) >= startMintTime.add(rewardsDuration) &&
+            veToken.lockedEnd(account) >=
+            block.timestamp.div(WEEK).mul(WEEK).add(veToken.MAXTIME()) &&
             _canRegister(account)
         ) {
             _registerFor(account);
@@ -103,9 +105,11 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
         // avoid double staking in this very block by subtracting one from block.number
         IVotingEscrow veToken = IVotingEscrow(address(stakingToken));
         uint256 amount = veToken.balanceOfAt(account, block.number);
+        uint256 WEEK = 604800; // 24 * 60 * 60 * 7
         require(amount > 0, "!stake0");
         require(
-            veToken.lockedEnd(account) >= startMintTime.add(rewardsDuration),
+            veToken.lockedEnd(account) >=
+                block.timestamp.div(WEEK).mul(WEEK).add(veToken.MAXTIME()),
             "stakedForNotEnoughTime"
         );
         _totalSupply = _totalSupply.add(amount);

@@ -547,7 +547,7 @@ contract VeXBE is Initializable, ReentrancyGuard {
         require(_locked.amount > 0, "!zeroLockedAmount");
         require(unlockTime > _locked.end, "canOnlyIncreaseLockDuration");
         require(
-            unlockTime <= block.timestamp + MAXTIME,
+            unlockTime <= block.timestamp.add(MAXTIME),
             "lockOnlyToValidFutureTime"
         );
 

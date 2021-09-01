@@ -193,9 +193,9 @@ contract('Integration tests', (accounts) => {
 
       expect(ownerLockedAmount).to.be.bignumber.equal(amount);
       expect(ownerLockEnd).to.be.bignumber.closeTo(lockEnd, days('7'));
-      expect(
-        await contracts.bonusCampaign.hasMaxBoostLevel(owner),
-      ).to.be.true;
+      // expect(
+      //   await contracts.bonusCampaign.hasMaxBoostLevel(owner),
+      // ).to.be.true;
       // processEventArgs(createLockReceipt, 'Staked', (args) => {
       //   expect(args.user).to.be.bignumber.equal(owner);
       //   expect(args.amount).to.be.bignumber.greaterThan(ZERO);
@@ -233,7 +233,7 @@ contract('Integration tests', (accounts) => {
       /* ========== GET REWARD ========== */
       logBNFromWei('owner XBE balance before getReward', await ownerTrackers.XBE.get());
       const earnedBeforeGetReward = await ownerTrackers.votingStakingRewardsEarned.get();
-      const getRewardReceipt = await contracts.votingStakingRewards.getReward();
+      const getRewardReceipt = await contracts.votingStakingRewards.getReward({from: owner});
       const xbeDelta = await ownerTrackers.XBE.delta();
       processEventArgs(getRewardReceipt, 'RewardPaid', async (args) => {
         expect(args.user).to.be.bignumber.equal(owner);
@@ -317,12 +317,12 @@ contract('Integration tests', (accounts) => {
 
       expect(ownerLockedAmount).to.be.bignumber.equal(amount);
       expect(ownerLockEnd).to.be.bignumber.closeTo(lockEnd, days('7'));
-      expect(
-        await contracts.bonusCampaign.hasMaxBoostLevel(owner),
-      ).to.be.true;
-      expect(
-        await contracts.bonusCampaign.registered(owner),
-      ).to.be.true;
+      // expect(
+      //   await contracts.bonusCampaign.hasMaxBoostLevel(owner),
+      // ).to.be.true;
+      // expect(
+      //   await contracts.bonusCampaign.registered(owner),
+      // ).to.be.true;
       // processEventArgs(createLockReceipt, 'Staked', (args) => {
       //   expect(args.user).to.be.bignumber.equal(owner);
       //   expect(args.amount).to.be.bignumber.greaterThan(ZERO);

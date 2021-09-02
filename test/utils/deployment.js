@@ -83,6 +83,7 @@ module.exports = {
   MockXBE: mockTokenOfName('MockXBE'),
   MockCVX: mockTokenOfName('MockCVX'),
   MockCRV: mockTokenOfName('MockCRV'),
+  MockLPHive: mockTokenOfName('MockLPHive'),
   TokenWrapper: async (force=true) => {
     return common.cacheAndReturn('TokenWrapper', force, deployedContracts,
       async () => {

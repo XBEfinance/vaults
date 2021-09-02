@@ -14,8 +14,10 @@ let deployedAndConfiguredContracts = {};
 const environment = {
   BaseKernel: async (force) => await common.cacheAndReturn('BaseKernel', force, deployedAndConfiguredContracts,
     async () => await deployment.Kernel()),
+
   BaseACL: async (force) => await common.cacheAndReturn('BaseACL', force, deployedAndConfiguredContracts,
     async () => await deployment.ACL()),
+
   Kernel: async (force) => await common.cacheAndReturn('Kernel', force, deployedAndConfiguredContracts,
     async () => {
       const daoFactory = await common.waitFor('DAOFactory', deployedAndConfiguredContracts);
@@ -46,16 +48,25 @@ const environment = {
       );
       return acl;
     }),
+
   EVMScriptRegistryFactory: async (force) => await common.cacheAndReturn('EVMScriptRegistryFactory', force, deployedAndConfiguredContracts,
     async () => await deployment.EVMScriptRegistryFactory()),
+
   DAOFactory: async (force) => await common.cacheAndReturn('DAOFactory', force, deployedAndConfiguredContracts,
     async () => await deployment.DAOFactory()),
+
   MockXBE: async (force) => await common.cacheAndReturn('MockXBE', force, deployedAndConfiguredContracts,
     async () => await deployment.MockXBE()),
+
   MockCRV: async (force) => await common.cacheAndReturn('MockCRV', force, deployedAndConfiguredContracts,
     async () => await deployment.MockCRV()),
+
   MockCVX: async (force) => await common.cacheAndReturn('MockCVX', force, deployedAndConfiguredContracts,
     async () => await deployment.MockCVX()),
+
+  MockLPHive: async (force) => await common.cacheAndReturn('MockLPHive', force, deployedAndConfiguredContracts,
+    async () => await deployment.MockLPHive()),
+
   MockToken: async () => {
     const alice = await common.waitFor('alice', accounts.people);
     const owner = await common.waitFor('owner', accounts.people);
@@ -64,6 +75,7 @@ const environment = {
     );
     return instance;
   },
+
   ConsumerEURxbVault: async (force) => await common.cacheAndReturn('ConsumerEURxbVault', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.ConsumerEURxbVault();
@@ -84,6 +96,7 @@ const environment = {
       );
       return instance;
     }),
+
   InstitutionalEURxbVault: async (force) => await common.cacheAndReturn('InstitutionalEURxbVault', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.ConsumerEURxbVault();
@@ -108,7 +121,90 @@ const environment = {
       );
       return instance;
     }),
-  HiveVault: {},
+
+  HiveVault: async () => await common.cacheAndReturn('HiveVault', force, deployedAndConfiguredContracts,
+    async () => {
+      const instance = await deployment.HiveVault();
+      const owner = await common.waitFor('owner', accounts.people);
+
+      const mockXBE = await common.waitFor(
+        'MockXBE',
+        deployedAndConfiguredContracts,
+        'environment - waiting for MockXBE as dep for HiveVault',
+      );
+
+      const mockCRV = await common.waitFor(
+        'MockCRV',
+        deployedAndConfiguredContracts,
+        'environment - waiting for MockCRV as dep for HiveVault',
+      );
+
+      const mockCVX = await common.waitFor(
+        'MockCVX',
+        deployedAndConfiguredContracts,
+        'environment - waiting for MockCVX as dep for HiveVault',
+      );
+
+      const mockLpHive = await common.waitFor(
+        'MockLPHive',
+        deployedAndConfiguredContracts,
+        'environment - waiting for MockLPHive as dep for HiveVault',
+      );
+
+      const controller = await common.waitFor(
+        'Controller',
+        deployment.deployedContracts,
+        'environment - waiting for Controller as dep for HiveVault',
+      );
+
+      const hiveStrategy = await common.waitFor(
+        'HiveStrategy',
+        deployedAndConfiguredContracts,
+        'environment - waiting for SushiStrategy as dep for HiveVault',
+      );
+
+      const referralProgram = await common.waitFor(
+        'ReferralProgram',
+        deployedAndConfiguredContracts,
+        'environment - waiting for ReferralProgram as dep for HiveVault',
+      );
+
+      const treasury = await common.waitFor(
+        'Treasury',
+        deployedAndConfiguredContracts,
+        'environment - waiting for Treasury as dep for HiveVault',
+      );
+
+      const originalConfigureParams = [
+        async () => mockLpHive.address,
+        async () => controller.address,
+        async () => owner,
+        async () => constants.localParams.vaults.rewardsDuration,
+        async () => mockXBE.address,
+        async () => (await common.waitFor(
+          'VotingStakingRewards',
+          deployment.deployedContracts,
+          'environment - waiting for VotingStakingRewards as dep for HiveVault',
+        )).address,
+        async () => true,
+        async () => owner,
+        async () => referralProgram.address,
+        async () => treasury.address,
+        async () => [mockXBE.address, mockCVX.address, mockCRV.address],
+        async () => 'Hive Vault',
+        async () => 'hv',
+      ];
+      await instance.configure(
+        ...(await common.overrideConfigureArgsIfNeeded(
+          originalConfigureParams,
+          overridenConfigureParams,
+          originalConfigureParams.length,
+        )),
+      );
+      await instance.setRewardsDistribution(sushiStrategy.address);
+      return instance;
+    }),
+
   SushiVault: async (force, overridenConfigureParams) => await common.cacheAndReturn('SushiVault', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.SushiVault();
@@ -162,11 +258,41 @@ const environment = {
       await instance.setRewardsDistribution(sushiStrategy.address);
       return instance;
     }),
+
   CVXVault: {},
   CvxCrvVault: {},
   InstitutionalEURxbStrategy: {},
   ConsumerEURxbStrategy: {},
-  HiveStrategy: {},
+
+  ConvexBooster: async (force) => common.cacheAndReturn('ConvexBooster', force, deployedAndConfiguredContracts,
+    async () => await deployment.MockContract()),
+
+  ConvexCRVRewards: async (force) => common.cacheAndReturn('ConvexCRVRewards', force, deployedAndConfiguredContracts,
+    async () => await deployment.MockContract()),
+
+  ConvexCVXRewards: async (force) => common.cacheAndReturn('ConvexCVXRewards', force, deployedAndConfiguredContracts,
+    async () => await deployment.MockContract()),
+
+  HiveStrategy: async (force) => common.cacheAndReturn('SushiStrategy', force, deployedAndConfiguredContracts,
+    async () => {
+
+      const owner = await common.waitFor('owner', accounts.people,
+        'environment - waiting for owner for SushiStrategy ');
+
+      const mockLPHive = await common.waitFor('MockLPHive', deployedAndConfiguredContracts,
+        'environment - waiting for MockLPHive deployed');
+      const mockXBE = await common.waitFor('MockXBE', deployedAndConfiguredContracts,
+        'environment - waiting for MockXBE deployed');
+      const mockCRV = await common.waitFor('MockCRV', deployedAndConfiguredContracts,
+        'environment - waiting for MockXBE deployed');
+      const mockCVX = await common.waitFor('MockCVX', deployedAndConfiguredContracts,
+        'environment - waiting for MockXBE deployed');
+
+
+
+
+    }),
+
   SushiStrategy: async (force) => common.cacheAndReturn('SushiStrategy', force, deployedAndConfiguredContracts,
     async () => {
       const owner = await common.waitFor('owner', accounts.people,
@@ -210,6 +336,7 @@ const environment = {
 
       return instance;
     }),
+
   MockLPSushi: async (force) => common.cacheAndReturn('MockLPSushi', force, deployedAndConfiguredContracts,
     async () => {
       const mockXBE = await common.waitFor('MockXBE', deployedAndConfiguredContracts,
@@ -268,8 +395,10 @@ const environment = {
       );
       return mockLpSushi;
     }),
+
   CVXStrategy: {},
   CvxCrvStrategy: {},
+
   Voting: async (force) => common.cacheAndReturn('Voting', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.Voting();
@@ -367,8 +496,10 @@ const environment = {
 
       return proxiedInstance;
     }),
+
   MockContract: async (force) => await common.cacheAndReturn('MockContract', force, deployedAndConfiguredContracts,
     async () => await deployment.MockContract()),
+
   VotingStakingRewards: async (force, overridenConfigureParams) => await common.cacheAndReturn('VotingStakingRewards', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.VotingStakingRewards();
@@ -496,6 +627,7 @@ const environment = {
       ).address);
       return instance;
     }),
+
   ReferralProgram: async (force, overridenConfigureParams, isConfigurationEnabled) => common.cacheAndReturn('ReferralProgram', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.ReferralProgram();
@@ -534,6 +666,7 @@ const environment = {
       }
       return instance;
     }),
+
   Treasury: async (force, overridenConfigureParams) => common.cacheAndReturn('Treasury', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.Treasury();
@@ -564,12 +697,15 @@ const environment = {
 
       return instance;
     }),
+
   TokenWrapper: async (force) => common.cacheAndReturn('TokenWrapper', force, deployedAndConfiguredContracts,
     async () => await deployment.TokenWrapper()),
+
   Registry: async (force) => await common.cacheAndReturn('Registry', force, deployedAndConfiguredContracts,
     async () => {
       return await deployment.Registry();
     }),
+
   Controller: async (force, overridenConfigureParams) => common.cacheAndReturn('Controller', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.Controller();
@@ -596,6 +732,7 @@ const environment = {
 
       return instance;
     }),
+
   SimpleXBEInflation: async (force) => common.cacheAndReturn('SimpleXBEInflation', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.SimpleXBEInflation();
@@ -611,6 +748,7 @@ const environment = {
       );
       return instance;
     }),
+
   LockSubscription: async (force) => common.cacheAndReturn('LockSubscription', force, deployedAndConfiguredContracts,
     async () => {
       const instance = await deployment.LockSubscription();

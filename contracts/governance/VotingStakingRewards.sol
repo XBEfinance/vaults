@@ -332,15 +332,15 @@ contract VotingStakingRewards is
         }
 
         uint256 res = PCT_BASE
-            .mul(
-                inverseMaxBoostCoefficient.add(
-                    uint256(100)
-                        .sub(inverseMaxBoostCoefficient)
-                        .mul(veXBE.lockedSupply())
-                        .mul(votingBalance)
-                        .div(votingTotal)
-                        .div(lockedAmount)
-                )
+            .mul(inverseMaxBoostCoefficient)
+            .add(
+                uint256(100)
+                    .sub(inverseMaxBoostCoefficient)
+                    .mul(PCT_BASE)
+                    .mul(veXBE.lockedSupply())
+                    .div(votingTotal)
+                    .mul(votingBalance)
+                    .div(lockedAmount)
             )
             .div(100);
 

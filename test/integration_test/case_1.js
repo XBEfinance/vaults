@@ -179,12 +179,12 @@ contract('Integration tests', (accounts) => {
 
       /* ========== CREATE LOCK ========== */
       const latestFullWeek = await getLatestFullWeek();
-      const lockEnd = latestFullWeek.add(months(23));
-      await contracts.mockXBE.approve(
-        contracts.veXBE.address,
-        amount,
-        { from: owner },
-      );
+      const lockEnd = latestFullWeek.add(days(new BN('700')));
+      // await contracts.mockXBE.approve(
+      //   contracts.veXBE.address,
+      //   amount,
+      //   { from: owner },
+      // );
 
       const createLockReceipt = await contracts.veXBE.createLock(amount, lockEnd);
 

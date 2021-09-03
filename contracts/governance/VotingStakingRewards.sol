@@ -98,7 +98,7 @@ contract VotingStakingRewards is
         lastUpdateTime = _lastTimeReward;
         if (account != address(0)) {
             (uint256 userEarned, uint256 toTreasury) = potentialXbeReturns(
-                _duration,
+                0,
                 account
             );
             rewards[account] = userEarned;

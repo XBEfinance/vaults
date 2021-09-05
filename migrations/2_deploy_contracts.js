@@ -1,5 +1,9 @@
-const { BN } = require('@openzeppelin/test-helpers');
+const { assert } = require('chai');
+const { BN, constants, time } = require('@openzeppelin/test-helpers');
+
 const fs = require('fs');
+const testnet_distro = require('../../curve-convex/distro.json');
+const { sushiSwapAddresses } = require("./configuration.js");
 
 const SimpleXbeInflation = artifacts.require('SimpleXBEInflation');
 const BonusCampaign = artifacts.require('BonusCampaign');
@@ -19,6 +23,18 @@ const ether = (n) => new BN(web3.utils.toWei(n, 'ether'));
 const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
 const hours = (n) => new BN('3600').mul(new BN(n));
 const months = (n) => days('30').mul(new BN(n));
+const getTotalSecondsBN = () => new BN(Date.now() / 1000);
+const ZERO = new BN('0');
+const { ZERO_ADDRESS } = constants;
+
+// 1.10
+const HiveStrategy = artifacts.require('HiveStrategy');
+const HiveVault = artifacts.require('HiveVault');
+const CVXStrategy = artifacts.require('CVXStrategy');
+const CVXVault = artifacts.require('CVXVault');
+const CvxCrvStrategy = artifacts.require('CvxCrvStrategy');
+const CvxCrvVault = artifacts.require('CvxCrvVault');
+const ReferralProgram = artifacts.require('ReferralProgram');
 
 const addressStore = {
   rinkeby: {
@@ -43,27 +59,30 @@ const addressStore = {
 
 let contracts = {};
 
+const wrapAddress = (value) => (typeof value === 'undefined') ? '' : value.address;
+
 const saveAddresses = () => {
-  const wrapAddress = (value) => {
-    if (typeof value === 'undefined') {
-      return '';
-    }
-
-    return value.address;
-  };
-
   const jsonAddressData = JSON.stringify({
-    xbeInflation: wrapAddress(contracts.simpleXbeInflation),
-    registrator: wrapAddress(contracts.registrator),
-    bonusCampaign: wrapAddress(contracts.bonusCampaign),
-    veXBE: wrapAddress(contracts.veXBE),
-    votingStakingRewards: wrapAddress(contracts.votingStakingRewards),
-    registry: wrapAddress(contracts.registry),
-    treasury: wrapAddress(contracts.treasury),
-    controller: wrapAddress(contracts.controller),
+    // 1.8 contracts
+    xbeInflation: wrapAddress(contracts['xbeInflation']),
+    registrator: wrapAddress(contracts['registrator']),
+    bonusCampaign: wrapAddress(contracts['bonusCampaign']),
+    veXBE: wrapAddress(contracts['veXBE']),
+    votingStakingRewards: wrapAddress(contracts['votingStakingRewards']),
+    registry: wrapAddress(contracts['registry']),
+    treasury: wrapAddress(contracts['treasury']),
+    controller: wrapAddress(contracts['controller']),
+    sushiStrategy: wrapAddress(contracts['sushiStrategy']),
+    sushiVault: wrapAddress(contracts['sushiVault']),
 
-    sushiStrategy: wrapAddress(contracts.sushiStrategy),
-    sushiVault: wrapAddress(contracts.sushiVault),
+    // 1.10 contracts
+    referralProgram: wrapAddress(contracts['referralProgram']),
+    hiveStrategy: wrapAddress(contracts['hiveStrategy']),
+    hiveVault: wrapAddress(contracts['hiveVault']),
+    cvxStrategy: wrapAddress(contracts['cvxStrategy']),
+    cvxVault: wrapAddress(contracts['cvxVault']),
+    cvxCrvStrategy: wrapAddress(contracts['cvxCrvStrategy']),
+    cvxCrvVault: wrapAddress(contracts['cvxCrvVault']),
   });
 
   fs.writeFileSync('addresses.json', jsonAddressData);
@@ -74,62 +93,68 @@ const getSavedAddress = (key) => {
   return JSON.parse(addressesJson)[key];
 };
 
-function getNowBN() {
-  return new BN(Date.now() / 1000);
-}
+const contractsToDeploy = new Map( // map: key => artifact
+  [
+    [ 'registry',             Registry ],
+    [ 'treasury',             Treasury ],
+    [ 'controller',           Controller ],
+    [ 'xbeInflation',         SimpleXbeInflation ],
+    [ 'registrator',          Registrator ],
+    [ 'bonusCampaign',        BonusCampaign ],
+    [ 'veXBE',                VeXBE ],
+    [ 'votingStakingRewards', VotingStakingRewards ],
+    [ 'sushiStrategy',        SushiStrategy ],
+    [ 'sushiVault',           SushiVault ],
+    [ 'hiveStrategy',         HiveStrategy ],
+    [ 'hiveVault',            HiveVault ],
+    [ 'cvxStrategy',          CVXStrategy ],
+    [ 'cvxVault',             CVXVault ],
+    [ 'cvxCrvStrategy',       CvxCrvStrategy ],
+    [ 'cvxCrvVault',          CvxCrvVault ],
+    [ 'referralProgram',      ReferralProgram ] ],
+);
 
 const deployContracts = async (deployer, owner) => {
-  contracts.registry = await deployer.deploy(Registry, { from: owner },);
-  console.log('registry address: ', contracts.registry.address);
+  const deploySingleContract = async (contractName, artifact) => {
+    const contractAddress = getSavedAddress(contractName);
+    // console.log(`contract address for ${contractName} is ${contractAddress}`, `type of is ${typeof contractAddress}`);
+    const needToDeployContract =
+      (typeof contractAddress) === 'undefined' || contractAddress.toString().length === 0;
 
-  contracts.treasury = await deployer.deploy(Treasury, { from: owner });
-  console.log('treasury address: ', contracts.treasury.address);
+    if (needToDeployContract) {
+      console.log(`deploying ${contractName}`);
+      contracts[contractName] = await deployer.deploy(artifact, { from: owner });
+      console.log(`${contractName} deployed. Address: `, contracts[contractName].address);
+      saveAddresses();
+    } else {
+      contracts[contractName] = await artifact.at(contractAddress);
+      console.log(`contract ${contractName} already deployed at ${contractAddress}, skipping`);
+      saveAddresses();
+    }
+  }
 
-  contracts.controller = await deployer.deploy(Controller, { from: owner });
-  console.log('controller address: ', contracts.controller.address);
-
-  contracts.simpleXbeInflation = await deployer.deploy(SimpleXbeInflation, { from: owner });
-  console.log('simpleXbeInflation address: ', contracts.simpleXbeInflation.address);
-
-  contracts.registrator = await deployer.deploy(Registrator, { from: owner });
-  console.log('registrator address: ', contracts.registrator.address);
-
-  contracts.bonusCampaign = await deployer.deploy(BonusCampaign, { from: owner });
-  console.log('bonusCampaign address: ', contracts.bonusCampaign.address);
-
-  contracts.veXBE = await deployer.deploy(VeXBE, { from: owner });
-  console.log('VeXBE address: ', contracts.veXBE.address);
-
-  contracts.votingStakingRewards = await deployer.deploy(VotingStakingRewards, { from: owner });
-  console.log('votingStakingRewards address: ', contracts.votingStakingRewards.address);
-
-  contracts.sushiStrategy = await deployer.deploy(SushiStrategy, { from: owner });
-  console.log('sushiStrategy address: ', contracts.sushiStrategy.address);
-
-  contracts.sushiVault = await deployer.deploy(SushiVault, { from: owner });
-  console.log('sushiVault address: ', contracts.sushiVault.address);
-
-  saveAddresses();
+  for await (const [key, value] of contractsToDeploy) {
+    await deploySingleContract(key, value);
+  }
 };
 
 const loadContracts = async () => {
-  contracts.votingStakingRewards = await VotingStakingRewards.at(getSavedAddress('votingStakingRewards'));
+  console.log('Loading contracts...');
+  for await (const [contractName, artifact] of contractsToDeploy) {
+    const contractAddress = getSavedAddress(contractName);
+    assert((typeof contractAddress) !== 'undefined');
+    assert(contractAddress.toString().length > new BN('0'));
 
-  contracts.registrator = await Registrator.at(getSavedAddress('registrator'));
-  contracts.xbeInflation = await SimpleXbeInflation.at(getSavedAddress('xbeInflation'));
+    const instance = await artifact.at(contractAddress);
+    assert((typeof instance) !== 'undefined');
+    contracts[contractName] = instance;
 
-  contracts.bonusCampaign = await BonusCampaign.at(getSavedAddress('bonusCampaign'));
-  contracts.veXBE = await VeXBE.at(getSavedAddress('veXBE'));
-
-  contracts.registry = await Registry.at(getSavedAddress('registry'));
-  contracts.treasury = await Treasury.at(getSavedAddress('treasury'));
-  contracts.controller = await Controller.at(getSavedAddress('controller'));
-
-  contracts.sushiVault = await SushiVault.at(getSavedAddress('sushiVault'));
-  contracts.sushiStrategy = await SushiStrategy.at(getSavedAddress('sushiStrategy'));
+    console.log('contract', contractName, 'loaded at', contractAddress);
+  }
 };
 
 const strategiesAndVaults = (network, owner, params) => {
+  const { dependentsAddresses } = params;
   return [{
     name: 'sushi',
     vault: contracts.sushiVault,
@@ -154,20 +179,135 @@ const strategiesAndVaults = (network, owner, params) => {
       'SH', // _symbolPostfix
     ],
     token: addressStore[network].pairXBE,
-  }];
+  },
+    {
+      name: 'hive',
+      vault: contracts.hiveVault,
+      strategy: contracts.hiveStrategy,
+      strategyConfigArgs: [
+        dependentsAddresses.convex.pools[0].lptoken, // _wantAddress,
+        contracts.controller.address,                // _controllerAddress,
+        owner,                                       // _governance,
+        // _poolSettings
+        [
+          dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
+          dependentsAddresses.convex.pools[0].crvRewards,
+          dependentsAddresses.convex.cvxRewards,
+          dependentsAddresses.convex.booster,
+          ZERO,
+          dependentsAddresses.curve.CRV,
+          dependentsAddresses.convex.cvx,
+        ],
+      ],
+      vaultConfigArgs: [
+        dependentsAddresses.convex.pools[0].lptoken,  // _wantAddress,
+        contracts.controller.address,                 // _initialController
+        owner,                                        // _governance
+        params.hiveVault.rewardsDuration,             // _rewardsDuration
+        addressStore[network].xbe,                    // tokenToAutostake,
+        contracts.votingStakingRewards.address,       // votingStakingRewards,
+        true,                                         // enableFees ? false
+        owner,                                        // teamWallet ? address(0) ?
+        contracts.referralProgram.address,            // _referralProgram
+        contracts.treasury.address,                   // _treasury
+        [                                             // _rewardTokens
+          dependentsAddresses.curve.CRV,
+          dependentsAddresses.convex.cvx, // ???????
+          addressStore[network].xbe,
+        ],
+        'Hive', // _namePostfix
+        'HV',   // _symbolPostfix
+      ],
+      token: dependentsAddresses.convex.pools[0].lptoken,
+    },
+    {
+      name: 'cvxCrv',
+      vault: contracts.cvxCrvVault,
+      strategy: contracts.cvxCrvStrategy,
+      strategyConfigArgs: [
+        dependentsAddresses.convex.cvxCrv,      // _wantAddress,
+        contracts.controller.address,           // _controllerAddress,
+        owner,                                  // _governance,
+        ZERO_ADDRESS,                           // _voting,
+        // _poolSettings
+        [
+          dependentsAddresses.curve.pool_data.mock_pool.lp_token_address, // lpCurve
+          dependentsAddresses.convex.cvxCrvRewards,                       // cvxCRVRewards
+          dependentsAddresses.convex.crvDepositor,                        // crvDepositor
+          dependentsAddresses.convex.booster,                             // convexBooster
+          dependentsAddresses.convex.cvxCrv,                              // cvxCrvToken
+          dependentsAddresses.curve.CRV,                                  // crvToken
+        ],
+      ],
+      vaultConfigArgs: [
+        dependentsAddresses.convex.cvxCrv,      // _initialToken
+        contracts.controller.address,           // _initialController
+        owner,                                  // _governance
+        params.cvxCrvVault.rewardsDuration,       // _rewardsDuration
+        addressStore[network].xbe,              // tokenToAutostake,
+        contracts.votingStakingRewards.address, // votingStakingRewards,
+        true,                                   // enableFees ? false
+        owner,                                  // teamWallet ? address(0) ?
+        contracts.referralProgram.address,      // _referralProgram
+        contracts.treasury.address,             // _treasury
+        [ // _rewardTokens
+          dependentsAddresses.convex.cvxCrv,    // ???????
+          addressStore[network].xbe,
+        ],
+        'cvxCRV', // _namePostfix
+        'CR',     // _symbolPostfix
+      ],
+      token: dependentsAddresses.convex.cvxCrv,
+    },
+    {
+      name: 'cvx',
+      vault: contracts.cvxVault,
+      strategy: contracts.cvxStrategy,
+      strategyConfigArgs: [
+        dependentsAddresses.convex.cvx,         // _wantAddress,
+        contracts.controller.address,           // _controllerAddress,
+        owner,                                  // _governance,
+        // _poolSettings
+        [
+          dependentsAddresses.convex.cvxRewards,// cvxRewards
+          dependentsAddresses.convex.cvx,       // cvxToken
+          ZERO,                                 // poolIndex
+        ],
+      ],
+      token: dependentsAddresses.convex.cvx,
+      vaultConfigArgs: [
+        dependentsAddresses.convex.cvx,         // _initialToken
+        contracts.controller.address,           // _initialController
+        owner,                                  // _governance
+        params.cvxVault.rewardsDuration,        // _rewardsDuration
+        addressStore[network].xbe,              // tokenToAutostake,
+        contracts.votingStakingRewards.address, // votingStakingRewards,
+        true,                                   // enableFees ? false
+        owner,                                  // teamWallet ? address(0) ?
+        contracts.referralProgram.address,      // _referralProgram
+        contracts.treasury.address,             // _treasury
+        [ // _rewardTokens
+          dependentsAddresses.convex.cvxCrv, // ???????
+          addressStore[network].xbe,
+        ],
+        'XC', // _namePostfix
+        'XC', // _symbolPostfix
+      ],
+    },
+  ];
 };
 
 const configureContracts = async (owner, network, params) => {
   await loadContracts();
 
-  // const addXBEMinter = async (minter) => {
+  // const addXBEMinter = async (minter, owner) => {
   //   if (!await contracts.xbe.getMinters(minter)) {
-  //     await contracts.xbe.addMinter(minter);
+  //     await contracts.xbe.addMinter(minter, {from: owner});
   //   }
   // };
   // add XBE minters! in mainnet
-  // await addXBEMinter(contracts.bonusCampaign.address);
-  // await addXBEMinter(contracts.xbeInflation.address);
+  // await addXBEMinter(contracts.bonusCampaign.address, owner);
+  // await addXBEMinter(contracts.xbeInflation.address, owner);
 
   console.log('Starting configuration...');
 
@@ -223,6 +363,10 @@ const configureContracts = async (owner, network, params) => {
   }
   console.log('All vaults and strategies have been configured...');
 
+  console.log('ReferralProgram configured...');
+
+  console.log('Registry configured...');
+
   await contracts.treasury.configure(
     owner,
     contracts.votingStakingRewards.address,
@@ -256,7 +400,7 @@ const configureContracts = async (owner, network, params) => {
     params.simpleXBEInflation.sushiWeight,
     { from: owner },
   );
-  // console.log('weight sushi', (await contracts.xbeInflation.weights(contracts.sushiStrategy.address)).toString());
+  console.log('weight sushi', (await contracts.xbeInflation.weights(contracts.sushiStrategy.address)).toString());
 
   // instead of VotingStakingRewards: reward -> treasury -> votingStakingRewards
   await contracts.xbeInflation.setXBEReceiver(
@@ -264,11 +408,11 @@ const configureContracts = async (owner, network, params) => {
     params.simpleXBEInflation.treasuryWeight,
     { from: owner },
   );
-  // console.log('weight treasury', (await contracts.xbeInflation.weights(contracts.treasury.address)).toString());
-  // console.log('sumWeights', (await contracts.xbeInflation.sumWeight()).toString());
+  console.log('weight treasury', (await contracts.xbeInflation.weights(contracts.treasury.address)).toString());
+  console.log('sumWeights', (await contracts.xbeInflation.sumWeight()).toString());
 
   {
-    const now = getNowBN();
+    const now = getTotalSecondsBN();
     await contracts.bonusCampaign.configure(
       addressStore[network].xbe,
       contracts.veXBE.address,
@@ -328,6 +472,15 @@ module.exports = function (deployer, network) {
     sushiVault: {
       rewardsDuration: days('7'),
     },
+    hiveVault: {
+      rewardsDuration: days('7'),
+    },
+    cvxVault: {
+      rewardsDuration: days('7'),
+    },
+    cvxCrvVault: {
+      rewardsDuration: days('7'),
+    },
     treasury: {
       slippageTolerance: new BN('9700'),
       swapDeadline: new BN('1800'),
@@ -370,7 +523,14 @@ module.exports = function (deployer, network) {
       if (network === 'rinkeby_deploy') {
         await deployContracts(deployer, owner);
       } else if (network === 'rinkeby_configure') {
-        await configureContracts(owner, 'rinkeby', params);
+        dependentsAddresses = testnet_distro.rinkeby;
+        dependentsAddresses.curve.pools = Object.values(dependentsAddresses
+          .curve.pool_data);
+        const combinedParams = {
+          dependentsAddresses,
+          ...params,
+        };
+        await configureContracts(owner, 'rinkeby', combinedParams);
       } else {
         console.error(`Unsupported network: ${network}`);
       }

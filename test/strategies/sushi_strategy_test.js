@@ -12,12 +12,12 @@ const {
 } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
-const common = require('./utils/common.js');
-const utilsConstants = require('./utils/constants.js');
-const environment = require('./utils/environment.js');
-const deployment = require('./utils/deployment.js');
-const artifacts = require('./utils/artifacts.js');
-const { people, setPeople } = require('./utils/accounts.js');
+const common = require('../utils/common.js');
+const utilsConstants = require('../utils/constants.js');
+const environment = require('../utils/environment.js');
+const deployment = require('../utils/deployment.js');
+const artifacts = require('../utils/artifacts.js');
+const { people, setPeople } = require('../utils/accounts.js');
 
 let mockXBE;
 let mockLpSushi;

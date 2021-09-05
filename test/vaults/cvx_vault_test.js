@@ -22,7 +22,7 @@ const { people, setPeople } = require('../utils/accounts.js');
 
 const { testSuite } = require('./vaults_test_suite_template.js');
 
-contract('HiveVault', (accounts) => {
+contract('CVXVault', (accounts) => {
 
   setPeople(accounts);
 
@@ -34,9 +34,9 @@ contract('HiveVault', (accounts) => {
   let vault;
   let controller;
   let mockXBE;
-  let mockCRV;
+  let mockCvxCrv;
   let mockCVX;
-  let mockLPHive;
+  let cvxRewards;
 
   beforeEach(async () => {
     owner = await common.waitFor("owner", people);
@@ -44,34 +44,31 @@ contract('HiveVault', (accounts) => {
     bob = await common.waitFor("bob", people);
     charlie = await common.waitFor("charlie", people);
     [
+      cvxRewards,
       mockXBE,
       mockCVX,
-      mockCRV,
-      mockLPHive,
+      mockCvxCrv,
       vault,
       controller
     ] = await environment.getGroup(
       [
-        "ConvexBooster",
-        "ConvexCRVRewards",
         "ConvexCVXRewards",
         "MockXBE",
         "MockCVX",
-        "MockCRV",
-        "MockLPHive",
+        "MockCvxCrv",
         "Treasury",
         "VotingStakingRewards",
-        "HiveStrategy",
+        "CVXStrategy",
         "ReferralProgram",
-        "HiveVault",
+        "CVXVault",
         "Controller"
       ],
       (key) => [
+        "ConvexCVXRewards",
         "MockXBE",
         "MockCVX",
-        "MockCRV",
-        "MockLPHive",
-        "HiveVault",
+        "MockCvxCrv",
+        "CVXVault",
         "Controller"
       ].includes(key),
       true,
@@ -90,14 +87,13 @@ contract('HiveVault', (accounts) => {
 
   it('should configure general settings properly', async () => {
     expect(await vault.owner()).to.be.equal(owner);
-    expect(await vault.stakingToken()).to.be.equal(mockLPHive.address);
+    expect(await vault.stakingToken()).to.be.equal(mockCVX.address);
     expect(await vault.controller()).to.be.equal(controller.address);
     expect(await vault.rewardsDuration()).to.be.bignumber.equal(
       utilsConstants.localParams.vaults.rewardsDuration
     );
     expect(await vault.isTokenValid(mockXBE.address)).to.be.true;
-    expect(await vault.isTokenValid(mockCRV.address)).to.be.true;
-    expect(await vault.isTokenValid(mockCVX.address)).to.be.true;
+    expect(await vault.isTokenValid(mockCvxCrv.address)).to.be.true;
   });
 
   testSuite(vault, owner);

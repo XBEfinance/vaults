@@ -10,11 +10,8 @@ import "../interfaces/vault/IVaultTransfers.sol";
 /// @title CvxCrvStrategy
 contract CvxCrvStrategy is ClaimableStrategy {
     struct Settings {
-        address lpCurve;
         address cvxCRVRewards;
         address crvDepositor;
-        address convexBooster;
-        address cvxCrvToken;
         address crvToken;
     }
 
@@ -24,7 +21,6 @@ contract CvxCrvStrategy is ClaimableStrategy {
         address _wantAddress,
         address _controllerAddress,
         address _governance,
-        address _voting,
         Settings memory _poolSettings
     ) public onlyOwner initializer {
         _configure(_wantAddress, _controllerAddress, _governance);

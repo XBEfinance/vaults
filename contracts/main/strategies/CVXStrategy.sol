@@ -11,7 +11,6 @@ import "../interfaces/IRewards.sol";
 contract CVXStrategy is ClaimableStrategy {
     struct Settings {
         address cvxRewards;
-        address cvxToken;
         uint256 poolIndex;
     }
 

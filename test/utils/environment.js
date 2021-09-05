@@ -11,14 +11,41 @@ const { localParams } = require('./constants.js');
 
 let deployedAndConfiguredContracts = {};
 
+const overrideConfigureArgsIfNeeded = async (
+  instance, originalConfigureParams, overridenConfigureParams
+) => {
+  await instance.configure(
+    ...(await common.overrideConfigureArgsIfNeeded(
+      originalConfigureParams,
+      overridenConfigureParams,
+      originalConfigureParams.length,
+    )),
+  );
+  return instance;
+}
+
 const environment = {
-  BaseKernel: async (force) => await common.cacheAndReturn('BaseKernel', force, deployedAndConfiguredContracts,
-    async () => await deployment.Kernel()),
+  BaseKernel: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'BaseKernel',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => await deployment.Kernel()
+  ),
 
-  BaseACL: async (force) => await common.cacheAndReturn('BaseACL', force, deployedAndConfiguredContracts,
-    async () => await deployment.ACL()),
+  BaseACL: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'BaseACL',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => await deployment.ACL()
+  ),
 
-  Kernel: async (force) => await common.cacheAndReturn('Kernel', force, deployedAndConfiguredContracts,
+  Kernel: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'Kernel',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const daoFactory = await common.waitFor('DAOFactory', deployedAndConfiguredContracts);
       const owner = await common.waitFor('owner', accounts.people);
@@ -29,8 +56,14 @@ const environment = {
       const result = await artifacts
         .Kernel.at(getEventArgument(daoReceipt, 'DeployDAO', 'dao'));
       return result;
-    }),
-  ACL: async (force) => await common.cacheAndReturn('ACL', force, deployedAndConfiguredContracts,
+    }
+  ),
+
+  ACL: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'ACL',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const dao = await common.waitFor(
         'Kernel', deployedAndConfiguredContracts,
@@ -47,25 +80,64 @@ const environment = {
         { from: owner },
       );
       return acl;
-    }),
+    }
+  ),
 
-  EVMScriptRegistryFactory: async (force) => await common.cacheAndReturn('EVMScriptRegistryFactory', force, deployedAndConfiguredContracts,
-    async () => await deployment.EVMScriptRegistryFactory()),
+  EVMScriptRegistryFactory: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'EVMScriptRegistryFactory',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => await deployment.EVMScriptRegistryFactory()
+  ),
 
-  DAOFactory: async (force) => await common.cacheAndReturn('DAOFactory', force, deployedAndConfiguredContracts,
-    async () => await deployment.DAOFactory()),
+  DAOFactory: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'DAOFactory',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => await deployment.DAOFactory()
+  ),
 
-  MockXBE: async (force) => await common.cacheAndReturn('MockXBE', force, deployedAndConfiguredContracts,
-    async () => await deployment.MockXBE()),
+  MockXBE: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'MockXBE',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => await deployment.MockXBE()
+  ),
 
-  MockCRV: async (force) => await common.cacheAndReturn('MockCRV', force, deployedAndConfiguredContracts,
-    async () => await deployment.MockCRV()),
+  MockCRV: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'MockCRV',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => await deployment.MockCRV()
+  ),
 
-  MockCVX: async (force) => await common.cacheAndReturn('MockCVX', force, deployedAndConfiguredContracts,
-    async () => await deployment.MockCVX()),
+  MockCVX: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'MockCVX',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => await deployment.MockCVX()
+  ),
 
-  MockLPHive: async (force) => await common.cacheAndReturn('MockLPHive', force, deployedAndConfiguredContracts,
-    async () => await deployment.MockLPHive()),
+  MockLPHive: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'MockLPHive',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => await deployment.MockLPHive()
+  ),
+
+  MockCvxCrv: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'MockCvxCrv',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => await deployment.MockCvxCrv()
+  ),
 
   MockToken: async () => {
     const alice = await common.waitFor('alice', accounts.people);
@@ -76,7 +148,11 @@ const environment = {
     return instance;
   },
 
-  ConsumerEURxbVault: async (force) => await common.cacheAndReturn('ConsumerEURxbVault', force, deployedAndConfiguredContracts,
+  ConsumerEURxbVault: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'ConsumerEURxbVault',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const instance = await deployment.ConsumerEURxbVault();
       await instance.configure(
@@ -95,9 +171,14 @@ const environment = {
         'cva',
       );
       return instance;
-    }),
+    }
+  ),
 
-  InstitutionalEURxbVault: async (force) => await common.cacheAndReturn('InstitutionalEURxbVault', force, deployedAndConfiguredContracts,
+  InstitutionalEURxbVault: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'InstitutionalEURxbVault',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const instance = await deployment.ConsumerEURxbVault();
       await instance.configure(
@@ -120,9 +201,14 @@ const environment = {
         'iva',
       );
       return instance;
-    }),
+    }
+  ),
 
-  HiveVault: async () => await common.cacheAndReturn('HiveVault', force, deployedAndConfiguredContracts,
+  HiveVault: async (force, overridenConfigureParams, isMockContractRequested) => await common.cacheAndReturnContract(
+    'HiveVault',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const instance = await deployment.HiveVault();
       const owner = await common.waitFor('owner', accounts.people);
@@ -162,6 +248,7 @@ const environment = {
         deployedAndConfiguredContracts,
         'environment - waiting for SushiStrategy as dep for HiveVault',
       );
+      await instance.setRewardsDistribution(hiveStrategy.address);
 
       const referralProgram = await common.waitFor(
         'ReferralProgram',
@@ -194,18 +281,17 @@ const environment = {
         async () => 'Hive Vault',
         async () => 'hv',
       ];
-      await instance.configure(
-        ...(await common.overrideConfigureArgsIfNeeded(
-          originalConfigureParams,
-          overridenConfigureParams,
-          originalConfigureParams.length,
-        )),
+      return await overrideConfigureArgsIfNeeded(
+        instance, originalConfigureParams, overridenConfigureParams
       );
-      await instance.setRewardsDistribution(sushiStrategy.address);
-      return instance;
-    }),
+    }
+  ),
 
-  SushiVault: async (force, overridenConfigureParams) => await common.cacheAndReturn('SushiVault', force, deployedAndConfiguredContracts,
+  SushiVault: async (force, overridenConfigureParams, isMockContractRequested) => await common.cacheAndReturnContract(
+    'SushiVault',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const instance = await deployment.SushiVault();
       const owner = await common.waitFor('owner', accounts.people);
@@ -232,6 +318,7 @@ const environment = {
         deployedAndConfiguredContracts,
         'environment - waiting for SushiStrategy as dep for SushiVault',
       );
+      await instance.setRewardsDistribution(sushiStrategy.address);
 
       const originalConfigureParams = [
         async () => mockLpSushi.address,
@@ -248,33 +335,218 @@ const environment = {
         async () => 'Sushi Vault',
         async () => 'sv',
       ];
-      await instance.configure(
-        ...(await common.overrideConfigureArgsIfNeeded(
-          originalConfigureParams,
-          overridenConfigureParams,
-          originalConfigureParams.length,
-        )),
+      return await overrideConfigureArgsIfNeeded(
+        instance, originalConfigureParams, overridenConfigureParams
       );
-      await instance.setRewardsDistribution(sushiStrategy.address);
-      return instance;
-    }),
+    }
+  ),
 
-  CVXVault: {},
-  CvxCrvVault: {},
+  CVXVault: async (force, overridenConfigureParams, isMockContractRequested) => await common.cacheAndReturnContract(
+    'CVXVault',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => {
+      const instance = await deployment.CVXVault();
+      const owner = await common.waitFor('owner', accounts.people);
+
+      const mockXBE = await common.waitFor(
+        'MockXBE',
+        deployedAndConfiguredContracts,
+        'environment - waiting for MockXBE as dep for CVXVault',
+      );
+
+      const mockCvxCrv = await common.waitFor(
+        'MockCvxCrv',
+        deployedAndConfiguredContracts,
+        'environment - waiting for MockCvxCrv as dep for CVXVault',
+      );
+
+      const mockCVX = await common.waitFor(
+        'MockCVX',
+        deployedAndConfiguredContracts,
+        'environment - waiting for MockCVX as dep for CVXVault',
+      );
+
+      const controller = await common.waitFor(
+        'Controller',
+        deployment.deployedContracts,
+        'environment - waiting for Controller as dep for CVXVault',
+      );
+
+      const cvxStrategy = await common.waitFor(
+        'CVXStrategy',
+        deployedAndConfiguredContracts,
+        'environment - waiting for CVXStrategy as dep for CVXVault',
+      );
+      await instance.setRewardsDistribution(cvxStrategy.address);
+
+      const referralProgram = await common.waitFor(
+        'ReferralProgram',
+        deployedAndConfiguredContracts,
+        'environment - waiting for ReferralProgram as dep for CVXVault',
+      );
+
+      const treasury = await common.waitFor(
+        'Treasury',
+        deployedAndConfiguredContracts,
+        'environment - waiting for Treasury as dep for CVXVault',
+      );
+
+      const originalConfigureParams = [
+        async () => mockCVX.address,
+        async () => controller.address,
+        async () => owner,
+        async () => constants.localParams.vaults.rewardsDuration,
+        async () => mockXBE.address,
+        async () => (await common.waitFor(
+          'VotingStakingRewards',
+          deployment.deployedContracts,
+          'environment - waiting for VotingStakingRewards as dep for CVXVault',
+        )).address,
+        async () => true,
+        async () => owner,
+        async () => referralProgram.address,
+        async () => treasury.address,
+        async () => [mockXBE.address, mockCvxCrv.address],
+        async () => 'CVX Vault',
+        async () => 'xc',
+      ];
+      return await overrideConfigureArgsIfNeeded(
+        instance, originalConfigureParams, overridenConfigureParams
+      );
+    }
+  ),
+
+  CvxCrvVault: async (force, overridenConfigureParams, isMockContractRequested) => await common.cacheAndReturnContract(
+    'CvxCrvVault',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => {
+      const instance = await deployment.CvxCrvVault();
+      const owner = await common.waitFor('owner', accounts.people);
+
+      const mockXBE = await common.waitFor(
+        'MockXBE',
+        deployedAndConfiguredContracts,
+        'environment - waiting for MockXBE as dep for CvxCrvVault',
+      );
+
+      const mockCRV = await common.waitFor(
+        'MockCRV',
+        deployedAndConfiguredContracts,
+        'environment - waiting for MockCRV as dep for CvxCrvVault',
+      );
+
+      const mockCVX = await common.waitFor(
+        'MockCVX',
+        deployedAndConfiguredContracts,
+        'environment - waiting for MockCVX as dep for CvxCrvVault',
+      );
+
+      const mockCvxCrv = await common.waitFor(
+        'MockCvxCrv',
+        deployedAndConfiguredContracts,
+        'environment - waiting for MockCvxCrv as dep for CvxCrvVault',
+      );
+
+      const controller = await common.waitFor(
+        'Controller',
+        deployment.deployedContracts,
+        'environment - waiting for Controller as dep for CvxCrvVault',
+      );
+
+      const cvxCrvStrategy = await common.waitFor(
+        'CvxCrvStrategy',
+        deployedAndConfiguredContracts,
+        'environment - waiting for CvxCrvStrategy as dep for CvxCrvVault',
+      );
+      await instance.setRewardsDistribution(cvxCrvStrategy.address);
+
+      const referralProgram = await common.waitFor(
+        'ReferralProgram',
+        deployedAndConfiguredContracts,
+        'environment - waiting for ReferralProgram as dep for CvxCrvVault',
+      );
+
+      const treasury = await common.waitFor(
+        'Treasury',
+        deployedAndConfiguredContracts,
+        'environment - waiting for Treasury as dep for CvxCrvVault',
+      );
+
+      const originalConfigureParams = [
+        async () => mockCvxCrv.address,
+        async () => controller.address,
+        async () => owner,
+        async () => constants.localParams.vaults.rewardsDuration,
+        async () => mockXBE.address,
+        async () => (await common.waitFor(
+          'VotingStakingRewards',
+          deployment.deployedContracts,
+          'environment - waiting for VotingStakingRewards as dep for CvxCrvVault',
+        )).address,
+        async () => true,
+        async () => owner,
+        async () => referralProgram.address,
+        async () => treasury.address,
+        async () => [mockXBE.address, mockCVX.address, mockCRV.address],
+        async () => 'CvxCrv Vault',
+        async () => 'xr',
+      ];
+      return await overrideConfigureArgsIfNeeded(
+        instance, originalConfigureParams, overridenConfigureParams
+      );
+    }
+  ),
+
+  ConvexBooster: async (force) => common.cacheAndReturnContract(
+    'ConvexBooster',
+    force,
+    deployedAndConfiguredContracts,
+    true
+  ),
+
+  ConvexCRVRewards: async (force) => common.cacheAndReturnContract(
+    'ConvexCRVRewards',
+    force,
+    deployedAndConfiguredContracts,
+    true
+  ),
+
+  ConvexCVXRewards: async (force) => common.cacheAndReturnContract(
+    'ConvexCVXRewards',
+    force,
+    deployedAndConfiguredContracts,
+    true
+  ),
+
+  ConvexCvxCrvRewards: async (force) => common.cacheAndReturnContract(
+    'ConvexCvxCrvRewards',
+    force,
+    deployedAndConfiguredContracts,
+    true
+  ),
+
+  ConvexCrvDepositor: async (force) => common.cacheAndReturnContract(
+    'ConvexCrvDepositor',
+    force,
+    deployedAndConfiguredContracts,
+    true
+  ),
+
   InstitutionalEURxbStrategy: {},
   ConsumerEURxbStrategy: {},
 
-  ConvexBooster: async (force) => common.cacheAndReturn('ConvexBooster', force, deployedAndConfiguredContracts,
-    async () => await deployment.MockContract()),
-
-  ConvexCRVRewards: async (force) => common.cacheAndReturn('ConvexCRVRewards', force, deployedAndConfiguredContracts,
-    async () => await deployment.MockContract()),
-
-  ConvexCVXRewards: async (force) => common.cacheAndReturn('ConvexCVXRewards', force, deployedAndConfiguredContracts,
-    async () => await deployment.MockContract()),
-
-  HiveStrategy: async (force) => common.cacheAndReturn('SushiStrategy', force, deployedAndConfiguredContracts,
+  HiveStrategy: async (force, overridenConfigureParams, isMockContractRequested) => common.cacheAndReturnContract(
+    'HiveStrategy',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
+
+      const instance = await deployment.HiveStrategy();
 
       const owner = await common.waitFor('owner', accounts.people,
         'environment - waiting for owner for SushiStrategy ');
@@ -284,16 +556,124 @@ const environment = {
       const mockXBE = await common.waitFor('MockXBE', deployedAndConfiguredContracts,
         'environment - waiting for MockXBE deployed');
       const mockCRV = await common.waitFor('MockCRV', deployedAndConfiguredContracts,
-        'environment - waiting for MockXBE deployed');
+        'environment - waiting for MockCRV deployed');
       const mockCVX = await common.waitFor('MockCVX', deployedAndConfiguredContracts,
-        'environment - waiting for MockXBE deployed');
+        'environment - waiting for MockCVX deployed');
 
+      const сonvexBooster = await common.waitFor('ConvexBooster', deployedAndConfiguredContracts,
+        'environment - waiting for ConvexBooster deployed');
+      const convexCRVRewards = await common.waitFor('ConvexCRVRewards', deployedAndConfiguredContracts,
+        'environment - waiting for ConvexCRVRewards deployed');
+      const convexCVXRewards = await common.waitFor('ConvexCVXRewards', deployedAndConfiguredContracts,
+        'environment - waiting for ConvexCVXRewards deployed');
 
+      const controller = await common.waitFor('Controller', deployedAndConfiguredContracts,
+        'environment - waiting for Controller deployed');
 
+      const originalConfigureParams = [
+        async () => mockLPHive.address,
+        async () => controller.address,
+        async () => owner,
+        async () => [
+          convexCRVRewards.address,
+          convexCVXRewards.address,
+          сonvexBooster.address,
+          constants.utils.ZERO,
+          mockCRV.address,
+          mockCVX.address
+        ]
+      ];
 
-    }),
+      return await overrideConfigureArgsIfNeeded(
+        instance, originalConfigureParams, overridenConfigureParams
+      );
+    }
+  ),
 
-  SushiStrategy: async (force) => common.cacheAndReturn('SushiStrategy', force, deployedAndConfiguredContracts,
+  CVXStrategy: async (force, overridenConfigureParams, isMockContractRequested) => common.cacheAndReturnContract(
+    'CVXStrategy',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => {
+      const instance = await deployment.CVXStrategy();
+
+      const owner = await common.waitFor('owner', accounts.people,
+        'environment - waiting for owner for CVXStrategy ');
+
+      const convexCVXRewards = await common.waitFor('ConvexCVXRewards', deployedAndConfiguredContracts,
+        'environment - waiting for ConvexCVXRewards deployed');
+
+      const mockCVX = await common.waitFor('MockCVX', deployedAndConfiguredContracts,
+        'environment - waiting for MockCVX deployed');
+
+      const controller = await common.waitFor('Controller', deployedAndConfiguredContracts,
+        'environment - waiting for Controller deployed');
+
+      const originalConfigureParams = [
+        async () => mockCVX.address,
+        async () => controller.address,
+        async () => owner,
+        async () => [
+          convexCVXRewards.address,
+          constants.utils.ZERO,
+        ]
+      ];
+      return await overrideConfigureArgsIfNeeded(
+        instance, originalConfigureParams, overridenConfigureParams
+      );
+    }
+  ),
+
+  CvxCrvStrategy: async (force, overridenConfigureParams, isMockContractRequested) => common.cacheAndReturnContract(
+    'CvxCrvStrategy',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => {
+      const instance = await deployment.CvxCrvStrategy();
+
+      const owner = await common.waitFor('owner', accounts.people,
+        'environment - waiting for owner for CvxCrvStrategy ');
+
+      const convexCvxCrvRewards = await common.waitFor('ConvexCvxCrvRewards', deployedAndConfiguredContracts,
+        'environment - waiting for ConvexCvxCrvRewards deployed');
+
+      const convexCrvDepositor = await common.waitFor('ConvexCrvDepositor', deployedAndConfiguredContracts,
+        'environment - waiting for ConvexCrvDepositor deployed');
+
+      const mockCvxCrv = await common.waitFor('MockCvxCrv', deployedAndConfiguredContracts,
+        'environment - waiting for MockCvxCrv deployed');
+
+      const mockCRV = await common.waitFor('MockCRV', deployedAndConfiguredContracts,
+        'environment - waiting for MockCRV deployed');
+
+      const controller = await common.waitFor('Controller', deployedAndConfiguredContracts,
+        'environment - waiting for Controller deployed');
+
+      const originalConfigureParams = [
+        async () => mockCvxCrv.address,
+        async () => controller.address,
+        async () => owner,
+        async () => [
+          convexCvxCrvRewards.address,
+          convexCrvDepositor.address,
+          mockCRV.address,
+        ]
+      ];
+      return await overrideConfigureArgsIfNeeded(
+        instance,
+        originalConfigureParams,
+        overridenConfigureParams
+      );
+    }
+  ),
+
+  SushiStrategy: async (force, _, isMockContractRequested) => common.cacheAndReturnContract(
+    'SushiStrategy',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const owner = await common.waitFor('owner', accounts.people,
         'environment - waiting for owner for SushiStrategy ');
@@ -335,9 +715,14 @@ const environment = {
       console.log('SushiStrategy configured');
 
       return instance;
-    }),
+    }
+  ),
 
-  MockLPSushi: async (force) => common.cacheAndReturn('MockLPSushi', force, deployedAndConfiguredContracts,
+  MockLPSushi: async (force, _, isMockContractRequested) => common.cacheAndReturnContract(
+    'MockLPSushi',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const mockXBE = await common.waitFor('MockXBE', deployedAndConfiguredContracts,
         'environment - MockXBE as dependency for Mock LP Sushi');
@@ -394,12 +779,14 @@ const environment = {
         ),
       );
       return mockLpSushi;
-    }),
+    }
+  ),
 
-  CVXStrategy: {},
-  CvxCrvStrategy: {},
-
-  Voting: async (force) => common.cacheAndReturn('Voting', force, deployedAndConfiguredContracts,
+  Voting: async (force, _, isMockContractRequested) => common.cacheAndReturnContract(
+    'Voting',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const instance = await deployment.Voting();
       await instance.initialize(
@@ -495,12 +882,21 @@ const environment = {
       );
 
       return proxiedInstance;
-    }),
+    }
+  ),
 
-  MockContract: async (force) => await common.cacheAndReturn('MockContract', force, deployedAndConfiguredContracts,
-    async () => await deployment.MockContract()),
+  MockContract: async (force) => await common.cacheAndReturnContract(
+    'MockContract',
+    force,
+    deployedAndConfiguredContracts,
+    true
+  ),
 
-  VotingStakingRewards: async (force, overridenConfigureParams) => await common.cacheAndReturn('VotingStakingRewards', force, deployedAndConfiguredContracts,
+  VotingStakingRewards: async (force, overridenConfigureParams, isMockContractRequested) => await common.cacheAndReturnContract(
+    'VotingStakingRewards',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const instance = await deployment.VotingStakingRewards();
       const mockXBE = await common.waitFor(
@@ -538,20 +934,20 @@ const environment = {
         ],
       ];
 
-      await instance.configure(
-        ...(await common.overrideConfigureArgsIfNeeded(
-          originalConfigureParams,
-          overridenConfigureParams,
-          originalConfigureParams.length,
-        )),
+      return await overrideConfigureArgsIfNeeded(
+        instance, originalConfigureParams, overridenConfigureParams
       );
-      return instance;
-    }),
+    }
+  ),
 
   UnwrappedToWrappedTokenConverter: {},
   WrappedToUnwrappedTokenConverter: {},
 
-  VeXBE: async (force) => await common.cacheAndReturn('VeXBE', force, deployedAndConfiguredContracts,
+  VeXBE: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'VeXBE',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const instance = await deployment.VeXBE();
 
@@ -577,11 +973,15 @@ const environment = {
         '0.0.1',
         { from: owner },
       );
-
       return instance;
-    }),
+    }
+  ),
 
-  StakingRewards: async (force) => await common.cacheAndReturn('StakingRewards', force, deployedAndConfiguredContracts,
+  StakingRewards: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'StakingRewards',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const instance = await deployment.StakingRewards();
       await instance.configure(
@@ -600,9 +1000,14 @@ const environment = {
         common.days('14'),
       );
       return instance;
-    }),
+    }
+  ),
 
-  BonusCampaign: async (force) => await common.cacheAndReturn('BonusCampaign', force, deployedAndConfiguredContracts,
+  BonusCampaign: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'BonusCampaign',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const instance = await deployment.BonusCampaign();
       const configureTime = await time.latest();
@@ -626,9 +1031,19 @@ const environment = {
         await common.waitFor('LockSubscription', deployedAndConfiguredContracts)
       ).address);
       return instance;
-    }),
+    }
+  ),
 
-  ReferralProgram: async (force, overridenConfigureParams, isConfigurationEnabled) => common.cacheAndReturn('ReferralProgram', force, deployedAndConfiguredContracts,
+  ReferralProgram: async (
+    force,
+    overridenConfigureParams,
+    isMockContractRequested,
+    isConfigurationEnabled
+  ) => common.cacheAndReturnContract(
+    'ReferralProgram',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const instance = await deployment.ReferralProgram();
       if (isConfigurationEnabled) {
@@ -656,18 +1071,19 @@ const environment = {
             deployedAndConfiguredContracts,
           )).address
         ];
-        await instance.configure(
-          ...(await common.overrideConfigureArgsIfNeeded(
-            originalConfigureParams,
-            overridenConfigureParams,
-            originalConfigureParams.length,
-          )),
+        return await overrideConfigureArgsIfNeeded(
+          instance, originalConfigureParams, overridenConfigureParams
         );
       }
       return instance;
-    }),
+    }
+  ),
 
-  Treasury: async (force, overridenConfigureParams) => common.cacheAndReturn('Treasury', force, deployedAndConfiguredContracts,
+  Treasury: async (force, overridenConfigureParams, isMockContractRequested) => common.cacheAndReturnContract(
+    'Treasury',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const instance = await deployment.Treasury();
 
@@ -687,26 +1103,36 @@ const environment = {
         async () => constants.localParams.treasury.slippageTolerance,
         async () => constants.localParams.treasury.swapDeadline,
       ];
-      await instance.configure(
-        ...(await common.overrideConfigureArgsIfNeeded(
-          originalConfigureParams,
-          overridenConfigureParams,
-          originalConfigureParams.length,
-        )),
+
+      return await overrideConfigureArgsIfNeeded(
+        instance, originalConfigureParams, overridenConfigureParams
       );
+    }
+  ),
 
-      return instance;
-    }),
+  TokenWrapper: async (force, _, isMockContractRequested) => common.cacheAndReturnContract(
+    'TokenWrapper',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => await deployment.TokenWrapper()
+  ),
 
-  TokenWrapper: async (force) => common.cacheAndReturn('TokenWrapper', force, deployedAndConfiguredContracts,
-    async () => await deployment.TokenWrapper()),
-
-  Registry: async (force) => await common.cacheAndReturn('Registry', force, deployedAndConfiguredContracts,
+  Registry: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
+    'Registry',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       return await deployment.Registry();
-    }),
+    }
+  ),
 
-  Controller: async (force, overridenConfigureParams) => common.cacheAndReturn('Controller', force, deployedAndConfiguredContracts,
+  Controller: async (force, overridenConfigureParams, isMockContractRequested) => common.cacheAndReturnContract(
+    'Controller',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const instance = await deployment.Controller();
       const owner = await common.waitFor('owner', accounts.people);
@@ -721,19 +1147,17 @@ const environment = {
         async () => bob,
         async () => owner,
       ];
-
-      await instance.configure(
-        ...(await common.overrideConfigureArgsIfNeeded(
-          originalConfigureParams,
-          overridenConfigureParams,
-          originalConfigureParams.length,
-        )),
+      return await overrideConfigureArgsIfNeeded(
+        instance, originalConfigureParams, overridenConfigureParams
       );
+    }
+  ),
 
-      return instance;
-    }),
-
-  SimpleXBEInflation: async (force) => common.cacheAndReturn('SimpleXBEInflation', force, deployedAndConfiguredContracts,
+  SimpleXBEInflation: async (force, _, isMockContractRequested) => common.cacheAndReturnContract(
+    'SimpleXBEInflation',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const instance = await deployment.SimpleXBEInflation();
       await instance.configure(
@@ -747,9 +1171,14 @@ const environment = {
         constants.localParams.simpleXBEInflation.periodDuration,
       );
       return instance;
-    }),
+    }
+  ),
 
-  LockSubscription: async (force) => common.cacheAndReturn('LockSubscription', force, deployedAndConfiguredContracts,
+  LockSubscription: async (force, _, isMockContractRequested) => common.cacheAndReturnContract(
+    'LockSubscription',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
     async () => {
       const instance = await deployment.LockSubscription();
       await instance.setEventSource(
@@ -767,19 +1196,32 @@ const environment = {
         )).address,
       );
       return instance;
-    }),
+    }
+  ),
 };
 
-const getGroup = async (keys, filterPredicate, force, overrideConfigureParamsList) => {
+const getGroup = async (
+  keys,
+  filterPredicate,
+  force,
+  overrideConfigureParamsDict,
+  isMockContractRequestedListOfBooleans
+) => {
   if (force) {
     deployedAndConfiguredContracts = {};
   }
   const promises = [];
   for (let i = 0; i < keys.length; i++) {
     if (keys[i] in environment) {
-      const overridenParams = overrideConfigureParamsList
-        ? overrideConfigureParamsList[keys[i]] : {};
-      promises.push(environment[keys[i]](force, overridenParams));
+      const overridenParams = overrideConfigureParamsDict
+        ? overrideConfigureParamsDict[keys[i]] : {};
+      const isMockContractRequested = isMockContractRequestedListOfBooleans
+        ? isMockContractRequestedListOfBooleans[keys[i]] : false;
+      promises.push(environment[keys[i]](
+        force,
+        overridenParams,
+        isMockContractRequested
+      ));
     }
   }
   const contracts = await Promise.all(promises);

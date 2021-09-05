@@ -22,7 +22,7 @@ const { people, setPeople } = require('../utils/accounts.js');
 
 const { testSuite } = require('./vaults_test_suite_template.js');
 
-contract('HiveVault', (accounts) => {
+contract('CvxCrvVault', (accounts) => {
 
   setPeople(accounts);
 
@@ -34,9 +34,9 @@ contract('HiveVault', (accounts) => {
   let vault;
   let controller;
   let mockXBE;
-  let mockCRV;
   let mockCVX;
-  let mockLPHive;
+  let mockCRV;
+  let mockCvxCrv;
 
   beforeEach(async () => {
     owner = await common.waitFor("owner", people);
@@ -46,32 +46,31 @@ contract('HiveVault', (accounts) => {
     [
       mockXBE,
       mockCVX,
+      mockCvxCrv,
       mockCRV,
-      mockLPHive,
       vault,
       controller
     ] = await environment.getGroup(
       [
-        "ConvexBooster",
-        "ConvexCRVRewards",
-        "ConvexCVXRewards",
+        "ConvexCrvDepositor",
+        "ConvexCvxCrvRewards",
         "MockXBE",
         "MockCVX",
+        "MockCvxCrv",
         "MockCRV",
-        "MockLPHive",
         "Treasury",
         "VotingStakingRewards",
-        "HiveStrategy",
+        "CvxCrvStrategy",
         "ReferralProgram",
-        "HiveVault",
+        "CvxCrvVault",
         "Controller"
       ],
       (key) => [
         "MockXBE",
         "MockCVX",
+        "MockCvxCrv",
         "MockCRV",
-        "MockLPHive",
-        "HiveVault",
+        "CvxCrvVault",
         "Controller"
       ].includes(key),
       true,
@@ -90,7 +89,7 @@ contract('HiveVault', (accounts) => {
 
   it('should configure general settings properly', async () => {
     expect(await vault.owner()).to.be.equal(owner);
-    expect(await vault.stakingToken()).to.be.equal(mockLPHive.address);
+    expect(await vault.stakingToken()).to.be.equal(mockCvxCrv.address);
     expect(await vault.controller()).to.be.equal(controller.address);
     expect(await vault.rewardsDuration()).to.be.bignumber.equal(
       utilsConstants.localParams.vaults.rewardsDuration

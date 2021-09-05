@@ -83,8 +83,8 @@ const checkSetter = async (
 const waitFor = (key, container, logMetadata) => new Promise((resolve) => {
   const timeId = setInterval(() => {
     if (key in container) {
-      resolve(container[key]);
       clearInterval(timeId);
+      resolve(container[key]);
       if (logMetadata) {
         console.log(`Found ${key}! - ${logMetadata}`);
       } else {
@@ -99,6 +99,21 @@ const waitFor = (key, container, logMetadata) => new Promise((resolve) => {
     }
   }, constants.waitingForPollingInterval);
 });
+
+const cacheAndReturnContract = async (key, force, container, isMockContractRequested, getInstance) => {
+    if (key in container && !force) {
+      return container[key];
+    }
+    let instance;
+    if (isMockContractRequested) {
+      instance = await artifacts.MockContract.new();
+    } else {
+      const temp = await getInstance();
+      instance = temp;
+    }
+    container[key] = instance;
+    return instance;
+}
 
 const cacheAndReturn = async (key, force, container, getInstance) => {
     if (key in container && !force) {
@@ -124,5 +139,6 @@ module.exports = {
   waitFor,
   getNowBN,
   cacheAndReturn,
-  overrideConfigureArgsIfNeeded
+  overrideConfigureArgsIfNeeded,
+  cacheAndReturnContract
 };

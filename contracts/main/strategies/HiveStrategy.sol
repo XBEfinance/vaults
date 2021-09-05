@@ -12,7 +12,6 @@ import "../interfaces/IRewards.sol";
 contract HiveStrategy is ClaimableStrategy {
 
     struct Settings {
-        address lpCurve;
         address crvRewards;
         address cvxRewards;
         address convexBooster;
@@ -40,7 +39,7 @@ contract HiveStrategy is ClaimableStrategy {
     function checkPoolIndex(uint256 index) public view returns (bool) {
         IBooster.PoolInfo memory _pool = IBooster(poolSettings.convexBooster)
             .poolInfo(index);
-        return _pool.lptoken == poolSettings.lpCurve;
+        return _pool.lptoken == _want;
     }
 
     function getPoolsCount() public view returns (uint256) {

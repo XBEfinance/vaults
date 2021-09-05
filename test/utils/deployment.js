@@ -13,7 +13,7 @@ const getDeployerFuncWithDefaultConstructor = (key) => {
       key, force, deployedContracts,
       async () => {
         const instance = await artifacts[key].new(
-          ...(await constructors[key](constructorGeneratorParams)),
+          ...(await constructors[key](constructorGeneratorParams))
         );
         return instance;
       }
@@ -37,10 +37,12 @@ const mockTokenOfName = (name) => {
 }
 
 module.exports = {
+
   Kernel: getDeployerFuncWithDefaultConstructor('Kernel'),
   ACL: getDeployerFuncWithDefaultConstructor('ACL'),
   EVMScriptRegistryFactory: getDeployerFuncWithDefaultConstructor('EVMScriptRegistryFactory'),
   EVMScriptExecutorMock: getDeployerFuncWithDefaultConstructor('EVMScriptExecutorMock'),
+
   DAOFactory: async (force=true) => {
     return common.cacheAndReturn('DAOFactory', force, deployedContracts,
       async () => {
@@ -57,6 +59,7 @@ module.exports = {
       }
     );
   },
+
   LockSubscription: getDeployerFuncWithDefaultConstructor('LockSubscription'),
   ConsumerEURxbVault: getDeployerFuncWithDefaultConstructor('ConsumerEURxbVault'),
   InstitutionalEURxbVault: getDeployerFuncWithDefaultConstructor('InstitutionalEURxbVault'),
@@ -80,10 +83,13 @@ module.exports = {
   BonusCampaign: getDeployerFuncWithDefaultConstructor('BonusCampaign'),
   ReferralProgram: getDeployerFuncWithDefaultConstructor('ReferralProgram'),
   Treasury: getDeployerFuncWithDefaultConstructor('Treasury'),
+
   MockXBE: mockTokenOfName('MockXBE'),
   MockCVX: mockTokenOfName('MockCVX'),
   MockCRV: mockTokenOfName('MockCRV'),
+  MockCvxCrv: mockTokenOfName('MockLPCvxCrv'),
   MockLPHive: mockTokenOfName('MockLPHive'),
+
   TokenWrapper: async (force=true) => {
     return common.cacheAndReturn('TokenWrapper', force, deployedContracts,
       async () => {

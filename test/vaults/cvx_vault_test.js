@@ -20,8 +20,6 @@ const artifacts = require('../utils/artifacts.js');
 const environment = require('../utils/environment.js');
 const { people, setPeople } = require('../utils/accounts.js');
 
-const { testSuite } = require('./vaults_test_suite_template.js');
-
 contract('CVXVault', (accounts) => {
 
   setPeople(accounts);
@@ -96,6 +94,5 @@ contract('CVXVault', (accounts) => {
     expect(await vault.isTokenValid(mockCvxCrv.address)).to.be.true;
   });
 
-  testSuite(vault, owner);
 
 });

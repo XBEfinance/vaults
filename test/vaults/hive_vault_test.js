@@ -20,9 +20,22 @@ const artifacts = require('../utils/artifacts.js');
 const environment = require('../utils/environment.js');
 const { people, setPeople } = require('../utils/accounts.js');
 
-const { testSuite } = require('./vaults_test_suite_template.js');
+const {
+  setControllerTest,
+  setRewardsDistributionTest,
+  setRewardsDurationTest,
+  pauseTest,
+  unpauseTest,
+  addRewardTokenTest,
+  removeRewardTokenTest,
+  checkRewardTokenTest,
+  getRewardTokenByIndexTest,
+  getRewardTokensCountTest
+} = require('./vaults_test_suite_template.js');
 
-contract('HiveVault', (accounts) => {
+const vaultName = 'HiveVault';
+
+contract(vaultName, (accounts) => {
 
   setPeople(accounts);
 
@@ -86,6 +99,7 @@ contract('HiveVault', (accounts) => {
         }
       }
     );
+    await vault.setRewardsDistribution(owner, { from: owner });
   });
 
   it('should configure general settings properly', async () => {
@@ -100,6 +114,75 @@ contract('HiveVault', (accounts) => {
     expect(await vault.isTokenValid(mockCVX.address)).to.be.true;
   });
 
-  testSuite(vault, owner);
+  xit('should set controller properly',
+    setControllerTest(vaultName));
+
+  xit('should set rewards distribution properly',
+    setRewardsDistributionTest(vaultName));
+
+  xit('should set rewards duration properly',
+    setRewardsDurationTest(vaultName));
+
+  xit('should pause properly', pauseTest(vaultName));
+
+  xit('should unpause properly', unpauseTest(vaultName));
+
+  xit('should add reward token properly', addRewardTokenTest(vaultName));
+
+  xit('should remove reward token properly', removeRewardTokenTest(vaultName));
+
+  xit('should check if reward token valid', checkRewardTokenTest(vaultName));
+
+  xit('should get reward token by index', getRewardTokenByIndexTest(vaultName));
+
+  xit('should get reward tokens count', getRewardTokensCountTest(vaultName));
+
+  it('should get last time rewards applicable', lastTimeRewardApplicableTest(vaultName));
+
+  it('should get reward per token', getRewardPerTokenTest(vaultName));
+
+  it('should get earned value', earnedTest(vaultName));
+
+  it('should get user reward', userRewardTest(vaultName));
+
+  it('should get balance both on vault and strategy', balanceTest(vaultName));
+
+  it('should get potential reward returns', getPotentialRewardReturns(vaultName));
+
+  xit('should deposit', async () => {
+
+  });
+
+  xit('should deposit for', async () => {
+
+  });
+
+  xit('should deposit all', async () => {
+
+  });
+
+  xit('should withdraw', async () => {
+
+  });
+
+  xit('should withdraw all', async () => {
+
+  });
+
+  xit('should withdraw with customizable claim', async () => {
+
+  });
+
+  xit('should get reward', async () => {
+
+  });
+
+  xit('should notify reward amount', async () => {
+
+  });
+
+  xit('should perform earn method', async () => {
+
+  });
 
 });

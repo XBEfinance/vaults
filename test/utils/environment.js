@@ -246,7 +246,7 @@ const environment = {
       const hiveStrategy = await common.waitFor(
         'HiveStrategy',
         deployedAndConfiguredContracts,
-        'environment - waiting for SushiStrategy as dep for HiveVault',
+        'environment - waiting for HiveStrategy as dep for HiveVault',
       );
       await instance.setRewardsDistribution(hiveStrategy.address);
 
@@ -549,7 +549,7 @@ const environment = {
       const instance = await deployment.HiveStrategy();
 
       const owner = await common.waitFor('owner', accounts.people,
-        'environment - waiting for owner for SushiStrategy ');
+        'environment - waiting for owner for HiveStrategy ');
 
       const mockLPHive = await common.waitFor('MockLPHive', deployedAndConfiguredContracts,
         'environment - waiting for MockLPHive deployed');
@@ -1262,5 +1262,6 @@ const defaultGroup = [
 module.exports = {
   defaultGroup,
   getGroup,
+  deployedAndConfiguredContracts,
   ...environment,
 };

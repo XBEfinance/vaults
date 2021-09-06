@@ -3,7 +3,7 @@ const { BN, constants, time } = require('@openzeppelin/test-helpers');
 
 const fs = require('fs');
 const testnet_distro = require('../../curve-convex/distro.json');
-const { sushiSwapAddresses } = require("./configuration.js");
+// const { sushiSwapAddresses } = require("./configuration.js");
 
 const SimpleXbeInflation = artifacts.require('SimpleXBEInflation');
 const BonusCampaign = artifacts.require('BonusCampaign');

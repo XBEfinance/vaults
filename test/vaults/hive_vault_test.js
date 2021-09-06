@@ -30,7 +30,22 @@ const {
   removeRewardTokenTest,
   checkRewardTokenTest,
   getRewardTokenByIndexTest,
-  getRewardTokensCountTest
+  getRewardTokensCountTest,
+  lastTimeRewardApplicableTest,
+  getRewardPerTokenTest,
+  earnedTest,
+  userRewardTest,
+  balanceTest,
+  getPotentialRewardReturnsTest,
+  depositTest,
+  depositForTest,
+  depositAllTest,
+  withdrawTest,
+  withdrawAllTest,
+  withdrawWithCustomizableClaimTest,
+  getRewardTest,
+  notifyRewardAmountTest,
+  earnTest
 } = require('./vaults_test_suite_template.js');
 
 const vaultName = 'HiveVault';
@@ -147,42 +162,24 @@ contract(vaultName, (accounts) => {
 
   it('should get balance both on vault and strategy', balanceTest(vaultName));
 
-  it('should get potential reward returns', getPotentialRewardReturns(vaultName));
+  it('should get potential reward returns', getPotentialRewardReturnsTest(vaultName));
 
-  xit('should deposit', async () => {
+  xit('should deposit', depositTest(vaultName));
 
-  });
+  xit('should deposit for', depositForTest(vaultName));
 
-  xit('should deposit for', async () => {
+  xit('should deposit all', depositAllTest(vaultName));
 
-  });
+  xit('should withdraw', withdrawTest(vaultName));
 
-  xit('should deposit all', async () => {
+  xit('should withdraw all', withdrawAllTest(vaultName));
 
-  });
+  xit('should withdraw with customizable claim', withdrawWithCustomizableClaimTest(vaultName));
 
-  xit('should withdraw', async () => {
+  xit('should get reward', getRewardTest(vaultName));
 
-  });
+  xit('should notify reward amount', notifyRewardAmountTest(vaultName));
 
-  xit('should withdraw all', async () => {
-
-  });
-
-  xit('should withdraw with customizable claim', async () => {
-
-  });
-
-  xit('should get reward', async () => {
-
-  });
-
-  xit('should notify reward amount', async () => {
-
-  });
-
-  xit('should perform earn method', async () => {
-
-  });
+  xit('should perform earn method', earnTest(vaultName));
 
 });

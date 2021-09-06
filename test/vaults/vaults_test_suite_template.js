@@ -191,6 +191,42 @@ const getPotentialRewardReturns = (vaultName) => async () => {
 
 }
 
+const depositTest = (vaultName) => async () => {
+
+}
+
+const depositForTest = (vaultName) => async () => {
+
+}
+
+const depositAllTest = (vaultName) => async () => {
+
+}
+
+const withdrawTest = (vaultName) => async () => {
+
+}
+
+const withdrawAllTest = (vaultName) => async () => {
+
+}
+
+const withdrawWithCustomizableClaimTest = (vaultName) => async () => {
+
+}
+
+const getRewardTest = (vaultName) => async () => {
+
+}
+
+const notifyRewardAmountTest = (vaultName) => async () => {
+
+}
+
+const earnTest = (vaultName) => async () => {
+
+}
+
 module.exports = {
   setControllerTest,
   setRewardsDistributionTest,
@@ -202,5 +238,19 @@ module.exports = {
   checkRewardTokenTest,
   getRewardTokenByIndexTest,
   getRewardTokensCountTest,
-  lastTimeRewardApplicableTest
+  lastTimeRewardApplicableTest,
+  getRewardPerTokenTest,
+  earnedTest,
+  userRewardTest,
+  balanceTest,
+  getPotentialRewardReturnsTest,
+  depositTest,
+  depositForTest,
+  depositAllTest,
+  withdrawTest,
+  withdrawAllTest,
+  withdrawWithCustomizableClaimTest,
+  getRewardTest,
+  notifyRewardAmountTest,
+  earnTest
 }

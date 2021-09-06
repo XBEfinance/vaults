@@ -692,8 +692,10 @@ const environment = {
         mockLpSushi.address,
         controller.address,
         owner,
-        (await common.waitFor('MockXBE', deployedAndConfiguredContracts,
-          'environment - MockXBE as dependency for SushiStrategy')).address,
+        [
+          (await common.waitFor('MockXBE', deployedAndConfiguredContracts,
+            'environment - MockXBE as dependency for SushiStrategy')).address
+        ],
         { from: owner },
       );
 

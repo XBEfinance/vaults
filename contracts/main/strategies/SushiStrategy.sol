@@ -6,8 +6,8 @@ import "./base/ClaimableStrategy.sol";
 
 /// @title SushiStrategy
 contract SushiStrategy is ClaimableStrategy {
+  
     struct Settings {
-        address lpSushi;
         address xbeToken;
     }
 
@@ -17,10 +17,9 @@ contract SushiStrategy is ClaimableStrategy {
         address _wantAddress,
         address _controllerAddress,
         address _governance,
-        address _xbeToken
+        Settings memory _poolSettings
     ) public onlyOwner initializer {
         _configure(_wantAddress, _controllerAddress, _governance);
-        poolSettings.lpSushi = _wantAddress;
         poolSettings.xbeToken = _xbeToken;
     }
 

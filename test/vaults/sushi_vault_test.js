@@ -48,7 +48,7 @@ const {
   earnTest
 } = require('./vaults_test_suite_template.js');
 
-contract('CVXVault', (accounts) => {
+contract('SushiVault', (accounts) => {
 
   setPeople(accounts);
 
@@ -60,9 +60,7 @@ contract('CVXVault', (accounts) => {
   let vault;
   let controller;
   let mockXBE;
-  let mockCvxCrv;
-  let mockCVX;
-  let cvxRewards;
+  let mockLPSushi;
 
   beforeEach(async () => {
     owner = await common.waitFor("owner", people);
@@ -70,31 +68,24 @@ contract('CVXVault', (accounts) => {
     bob = await common.waitFor("bob", people);
     charlie = await common.waitFor("charlie", people);
     [
-      cvxRewards,
       mockXBE,
-      mockCVX,
-      mockCvxCrv,
+      mockLPSushi,
       vault,
       controller
     ] = await environment.getGroup(
       [
-        "ConvexCVXRewards",
         "MockXBE",
-        "MockCVX",
-        "MockCvxCrv",
+        "MockLPSushi",
         "Treasury",
         "VotingStakingRewards",
-        "CVXStrategy",
-        "ReferralProgram",
-        "CVXVault",
+        "SushiStrategy",
+        "SushiVault",
         "Controller"
       ],
       (key) => [
-        "ConvexCVXRewards",
         "MockXBE",
-        "MockCVX",
-        "MockCvxCrv",
-        "CVXVault",
+        "MockLPSushi",
+        "SushiVault",
         "Controller"
       ].includes(key),
       true,
@@ -113,13 +104,12 @@ contract('CVXVault', (accounts) => {
 
   it('should configure general settings properly', async () => {
     expect(await vault.owner()).to.be.equal(owner);
-    expect(await vault.stakingToken()).to.be.equal(mockCVX.address);
+    expect(await vault.stakingToken()).to.be.equal(mockLPSushi.address);
     expect(await vault.controller()).to.be.equal(controller.address);
     expect(await vault.rewardsDuration()).to.be.bignumber.equal(
       utilsConstants.localParams.vaults.rewardsDuration
     );
     expect(await vault.isTokenValid(mockXBE.address)).to.be.true;
-    expect(await vault.isTokenValid(mockCvxCrv.address)).to.be.true;
   });
 
   xit('should set controller properly',

@@ -297,6 +297,27 @@ const strategiesAndVaults = (network, owner, params) => {
   ];
 };
 
+const configureSome = async (owner, network, params) => {
+  await loadContracts();
+
+  console.log('Starting configuration...');
+
+  const tokenAddresses = [
+    addressStore[network].xbe,
+    dependentsAddresses.convex.cvx,
+    dependentsAddresses.convex.cvxCrv
+  ];
+
+  await contracts.referralProgram.configure(
+    tokenAddresses,
+    contracts.treasury.address, // root address
+    contracts.registry.address, // registry to get fee distributors list
+    { from: owner },
+  );
+
+  console.log('ReferralProgram configured...');
+};
+
 const configureContracts = async (owner, network, params) => {
   await loadContracts();
 
@@ -362,6 +383,17 @@ const configureContracts = async (owner, network, params) => {
     console.log(`${item.name}Vault: add to registry`);
   }
   console.log('All vaults and strategies have been configured...');
+
+  await contracts.referralProgram.configure(
+    [
+      addressStore[network].xbe,
+      dependentsAddresses.convex.cvx,
+      dependentsAddresses.convex.cvxCrv
+    ],
+    contracts.treasury.address,
+    contracts.registry.address,
+    { from: owner },
+  );
 
   console.log('ReferralProgram configured...');
 
@@ -531,6 +563,15 @@ module.exports = function (deployer, network) {
           ...params,
         };
         await configureContracts(owner, 'rinkeby', combinedParams);
+      } else if (network === 'rinkeby_configure_some') {
+        dependentsAddresses = testnet_distro.rinkeby;
+        dependentsAddresses.curve.pools = Object.values(dependentsAddresses
+          .curve.pool_data);
+        const combinedParams = {
+          dependentsAddresses,
+          ...params,
+        };
+        await configureSome(owner, 'rinkeby', combinedParams);
       } else {
         console.error(`Unsupported network: ${network}`);
       }

@@ -107,6 +107,7 @@ module.exports = {
     rinkeby_tokens: rinkebyNetworkConfig,
 
     rinkeby_configure: rinkebyNetworkConfig,
+    rinkeby_configure_some: rinkebyNetworkConfig,
 
     rinkeby_all_with_save: rinkebyNetworkConfig,
 

@@ -87,7 +87,7 @@ module.exports = {
   MockXBE: mockTokenOfName('MockXBE'),
   MockCVX: mockTokenOfName('MockCVX'),
   MockCRV: mockTokenOfName('MockCRV'),
-  MockCvxCrv: mockTokenOfName('MockLPCvxCrv'),
+  MockCvxCrv: mockTokenOfName('MockCvxCrv'),
   MockLPHive: mockTokenOfName('MockLPHive'),
 
   TokenWrapper: async (force=true) => {

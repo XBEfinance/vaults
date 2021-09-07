@@ -190,7 +190,6 @@ const strategiesAndVaults = (network, owner, params) => {
         owner,                                       // _governance,
         // _poolSettings
         [
-          dependentsAddresses.curve.pool_data.mock_pool.lp_token_address,
           dependentsAddresses.convex.pools[0].crvRewards,
           dependentsAddresses.convex.cvxRewards,
           dependentsAddresses.convex.booster,
@@ -228,14 +227,10 @@ const strategiesAndVaults = (network, owner, params) => {
         dependentsAddresses.convex.cvxCrv,      // _wantAddress,
         contracts.controller.address,           // _controllerAddress,
         owner,                                  // _governance,
-        ZERO_ADDRESS,                           // _voting,
         // _poolSettings
         [
-          dependentsAddresses.curve.pool_data.mock_pool.lp_token_address, // lpCurve
           dependentsAddresses.convex.cvxCrvRewards,                       // cvxCRVRewards
           dependentsAddresses.convex.crvDepositor,                        // crvDepositor
-          dependentsAddresses.convex.booster,                             // convexBooster
-          dependentsAddresses.convex.cvxCrv,                              // cvxCrvToken
           dependentsAddresses.curve.CRV,                                  // crvToken
         ],
       ],
@@ -270,7 +265,6 @@ const strategiesAndVaults = (network, owner, params) => {
         // _poolSettings
         [
           dependentsAddresses.convex.cvxRewards,// cvxRewards
-          dependentsAddresses.convex.cvx,       // cvxToken
           ZERO,                                 // poolIndex
         ],
       ],

@@ -213,16 +213,16 @@ contract('Treasury', (accounts) => {
       });
     }
 
-    it('should execute feeReceiving properly', async () => {
-      let receipt = await treasury.feeReceiving(mockXBE.address, utilsConstants.utils.ZERO, { from: owner });
-      expectEvent.notEmitted(receipt, "FundsConverted");
-
-      await mockXBE.approve(treasury.address, amount, { from: owner });
-      await mockXBE.transfer(treasury.address, amount, { from: owner });
-      await testCaseForConversionOfTokens(
-        async () => await treasury.feeReceiving(mockedOtherToken.address, amount, { from: owner })
-      );
-    });
+    // it('should execute feeReceiving properly', async () => {
+    //   let receipt = await treasury.feeReceiving(mockXBE.address, utilsConstants.utils.ZERO, { from: owner });
+    //   expectEvent.notEmitted(receipt, "FundsConverted");
+    //
+    //   await mockXBE.approve(treasury.address, amount, { from: owner });
+    //   await mockXBE.transfer(treasury.address, amount, { from: owner });
+    //   await testCaseForConversionOfTokens(
+    //     async () => await treasury.feeReceiving(mockedOtherToken.address, amount, { from: owner })
+    //   );
+    // });
 
     it('should execute convert tokens properly', async () => {
       await mockXBE.approve(treasury.address, amount, { from: owner });

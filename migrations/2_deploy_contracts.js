@@ -296,20 +296,21 @@ const configureSome = async (owner, network, params) => {
 
   console.log('Starting configuration...');
 
-  const tokenAddresses = [
-    addressStore[network].xbe,
-    dependentsAddresses.convex.cvx,
-    dependentsAddresses.convex.cvxCrv
-  ];
+  console.log('deploy new CvxCrvStrategy');
+  const strategy = await CvxCrvStrategy.deploy();
 
-  await contracts.referralProgram.configure(
-    tokenAddresses,
-    contracts.treasury.address, // root address
-    contracts.registry.address, // registry to get fee distributors list
-    { from: owner },
-  );
+  console.log('deploy new CvxCrvVault');
 
-  console.log('ReferralProgram configured...');
+  await contracts.sushiVault.earn();
+  console.log('sushi vault earn called');
+  await contracts.hiveVault.earn();
+  console.log('hive vault earn called');
+  await contracts.cvxVault.earn();
+  console.log('cvx vault earn called');
+  await contracts.cvxCrvVault.earn();
+  console.log('cvxCrv vault earn called');
+
+  console.log('configure some finished');
 };
 
 const configureContracts = async (owner, network, params) => {
@@ -435,6 +436,27 @@ const configureContracts = async (owner, network, params) => {
     { from: owner },
   );
   console.log('weight treasury', (await contracts.xbeInflation.weights(contracts.treasury.address)).toString());
+
+  await contracts.xbeInflation.setXBEReceiver(
+    contracts.hiveStrategy.address,
+    params.simpleXBEInflation.hiveWeight,
+    { from: owner },
+  );
+  console.log('weight hive', (await contracts.xbeInflation.weights(contracts.hiveStrategy.address)).toString());
+
+  await contracts.xbeInflation.setXBEReceiver(
+    contracts.cvxStrategy.address,
+    params.simpleXBEInflation.cvxWeight,
+    { from: owner },
+  );
+  console.log('weight cvx', (await contracts.xbeInflation.weights(contracts.cvxStrategy.address)).toString());
+
+  await contracts.xbeInflation.setXBEReceiver(
+    contracts.cvxCrvStrategy.address,
+    params.simpleXBEInflation.cvxCrvWeight,
+    { from: owner },
+  );
+  console.log('weight cvxCrv', (await contracts.xbeInflation.weights(contracts.cvxCrvStrategy.address)).toString());
   console.log('sumWeights', (await contracts.xbeInflation.sumWeight()).toString());
 
   {
@@ -521,8 +543,11 @@ module.exports = function (deployer, network) {
       targetMinted: ether('10000'),
       periodsCount: new BN('52'),
       periodDuration: new BN('604800'),
-      sushiWeight: new BN('7500'),
-      treasuryWeight: new BN('2500'),
+      sushiWeight: new BN('2500'),
+      treasuryWeight: new BN('1500'),
+      hiveWeight: new BN('5000'),
+      cvxWeight: new BN('500'),
+      cvxCrvWeight: new BN('500'),
     },
     votingStakingRewards: {
       rewardsDuration: days('7'),

@@ -48,14 +48,14 @@ const processEventArgs = async (result, eventName, processArgs) => {
 const overrideConfigureArgsIfNeeded = async (
   originalConfigureParams,
   overridenConfigureParams,
-  originalConfigureParamsLength
+  originalConfigureParamsLength,
 ) => {
   const result = [];
   for (let i = 0; i < originalConfigureParamsLength; i++) {
     result.push(overridenConfigureParams && overridenConfigureParams[i] ? overridenConfigureParams[i] : await originalConfigureParams[i]());
   }
   return result;
-}
+};
 
 const checkSetter = async (
   setterMethodName,
@@ -116,13 +116,13 @@ const cacheAndReturnContract = async (key, force, container, isMockContractReque
 }
 
 const cacheAndReturn = async (key, force, container, getInstance) => {
-    if (key in container && !force) {
-      return container[key];
-    }
-    const instance = await getInstance();
-    container[key] = instance;
-    return instance;
-}
+  if (key in container && !force) {
+    return container[key];
+  }
+  const instance = await getInstance();
+  container[key] = instance;
+  return instance;
+};
 
 const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
 const months = (n) => days('30').mul(new BN(n));

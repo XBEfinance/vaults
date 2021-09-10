@@ -6,6 +6,7 @@ const setPeople = (accs) => {
   people.bob = accs[2];
   people.charlie = accs[3];
   people.tod = accs[4];
+  people.carol = accs[3];
 };
 
 module.exports = {

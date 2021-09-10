@@ -32,6 +32,7 @@ module.exports = {
   IStrategy: getContract('IStrategy'),
   IVaultWrapped: getContract('IVaultWrapped'),
   IVaultDelegated: getContract('IVaultDelegated'),
+  IRegistry: getContract('IRegistry'),
   IConverter: getContract('IConverter'),
   MockContract: getContract('MockContract'),
   MockToken: getContract('MockToken'),

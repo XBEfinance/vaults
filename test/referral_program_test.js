@@ -12,7 +12,25 @@ const {
   ether,
   time,
 } = require('@openzeppelin/test-helpers');
+const { ZERO, ZERO_ADDRESS } = constants.utils;
+
+const {
+  ZERO,
+  ONE,
+  getMockTokenPrepared,
+  processEventArgs,
+} = require('./utils/old/common');
+const {
+  deployInfrastructure,
+  YEAR,
+  MULTIPLIER,
+  days,
+  defaultParams,
+} = require('./utils/old/deploy_infrastructure');
+
 const { ZERO_ADDRESS } = constants;
+const MockContract = artifacts.require('MockContract');
+const MockToken = artifacts.require('MockToken');
 
 const common = require('./utils/common.js');
 const utilsConstants = require('./utils/constants.js');
@@ -122,16 +140,17 @@ contract('ReferralProgram', (accounts) => {
           mockXBE.address,
         ],
         registry: (await artifacts.MockContract.new()).address,
-        root: owner,
+        root: people.owner,
       };
 
+      // await referralProgram.configure([ZERO_ADDRESS], ZERO_ADDRESS, ZERO_ADDRESS);
       await expectRevert(
         referralProgram.configure([ZERO_ADDRESS], ZERO_ADDRESS, ZERO_ADDRESS, { from: owner }),
         'RProotIsZero',
       );
 
       await expectRevert(
-        referralProgram.configure([], config.root, ZERO_ADDRESS, { from: owner }),
+        referralProgram.configure([], config.root, ZERO_ADDRESS, { from: people.owner }),
         'RPregistryIsZero',
       );
 
@@ -145,18 +164,21 @@ contract('ReferralProgram', (accounts) => {
         'RPtokenIsZero',
       );
 
-      await referralProgram.configure(config.tokens, config.root, config.registry, { from: owner });
+      await referralProgram.configure(config.tokens, config.root, config.registry, { from: people.owner });
 
       const tokens = await referralProgram.getTokensList();
 
       expect(tokens).to.deep.equal(config.tokens);
 
-      const rootUser = await referralProgram.users(owner);
+      const registryAddress = await referralProgram.registry();
+      expect(registryAddress).to.be.bignumber.equal(config.registry);
+
+      const rootUser = await referralProgram.users(people.owner);
       expect(rootUser.exists).to.be.true;
-      expect(rootUser.referrer).to.be.bignumber.equal(owner);
+      expect(rootUser.referrer).to.be.bignumber.equal(people.owner);
 
       await expectRevert(
-        referralProgram.configure(config.tokens, config.root, config.registry, { from: owner }),
+        referralProgram.configure(config.tokens, config.root, config.registry, { from: people.owner }),
         'Initializable: contract is already initialized',
       );
     });
@@ -170,20 +192,49 @@ contract('ReferralProgram', (accounts) => {
 
     it('should revert', async () => {
       await expectRevert(
-        referralProgram.methods['registerUser(address)'](bob, { from: alice }),
+        referralProgram.registerUser(people.owner),
+        'RPuserExists',
+      );
+
+      await expectRevert(
+        referralProgram.methods['registerUser(address)'](people.bob, { from: people.alice }),
         'RP!referrerExists',
+      );
+
+      await expectRevert(
+        referralProgram.methods['registerUser(address,address)'](
+          people.owner,
+          people.alice,
+          { from: people.alice },
+        ),
+        'RP!feeDistributor',
       );
     });
 
     it('should register user correctly', async () => {
-      let aliceUser = await referralProgram.users(alice);
+      let aliceUser = await referralProgram.users(people.alice);
       expect(aliceUser.exists).to.be.false;
       expect(aliceUser.referrer).to.be.bignumber.equal(ZERO_ADDRESS);
 
-      await referralProgram.methods['registerUser(address)'](owner, { from: alice });
-      aliceUser = await referralProgram.users(alice);
+      await referralProgram.methods['registerUser(address)'](people.owner, { from: people.alice });
+      aliceUser = await referralProgram.users(people.alice);
       expect(aliceUser.exists).to.be.true;
-      expect(aliceUser.referrer).to.be.bignumber.equal(owner);
+      expect(aliceUser.referrer).to.be.bignumber.equal(people.owner);
+    });
+
+    it('should register user from feeDistributor correctly', async () => {
+      let aliceUser = await referralProgram.users(people.alice);
+      expect(aliceUser.exists).to.be.false;
+      expect(aliceUser.referrer).to.be.bignumber.equal(ZERO_ADDRESS);
+
+      await referralProgram.methods['registerUser(address,address)'](
+        people.owner,
+        people.alice,
+        { from: people.owner },
+      );
+      aliceUser = await referralProgram.users(people.alice);
+      expect(aliceUser.exists).to.be.true;
+      expect(aliceUser.referrer).to.be.bignumber.equal(people.owner);
     });
   });
 
@@ -195,9 +246,9 @@ contract('ReferralProgram', (accounts) => {
     });
 
     async function registerUsers() {
-      await referralProgram.methods['registerUser(address)'](owner, { from: alice });
-      await referralProgram.methods['registerUser(address)'](alice, { from: bob });
-      await referralProgram.methods['registerUser(address)'](bob, { from: charlie });
+      await referralProgram.methods['registerUser(address)'](people.owner, { from: people.alice });
+      await referralProgram.methods['registerUser(address)'](people.alice, { from: people.bob });
+      await referralProgram.methods['registerUser(address)'](people.bob, { from: people.carol });
     }
 
     async function getRewards(userAddress, tokens) {
@@ -240,19 +291,30 @@ contract('ReferralProgram', (accounts) => {
       return usersBalances;
     }
 
-    it('should register user that not yet registered when reward notified', async () => {
-      const tokens = [(await referralProgram.getTokensList())[0]];
-      const amounts = [Array(tokens.length).fill(ether('100'))[0]];
+    it('should revert if feeReceiving() called by not approved distributor', async () => {
+      const tokens = await referralProgram.getTokensList();
+      const amount = ether('100');
+      await expectRevert(
+        referralProgram.feeReceiving(people.alice, tokens[0], amount, { from: people.alice }),
+        'RP!feeDistributor',
+      );
+    });
+
+    it('should register user that not registered when reward notified', async () => {
+      const tokens = await referralProgram.getTokensList();
+      const amount = ether('100');
       const rootAddress = await referralProgram.rootAddress();
 
-      const feeReceiving = await referralProgram.feeReceiving(alice, tokens[0], amounts[0]);
+      const feeReceiving = await referralProgram.feeReceiving(people.alice, tokens[0], amount);
+
       expectEvent(feeReceiving, 'RegisterUser', {
-        user: alice,
+        user: people.alice,
         referrer: rootAddress,
       });
-      const aliceUser = await referralProgram.users(alice);
+
+      const aliceUser = await referralProgram.users(people.alice);
       expect(aliceUser.exists).to.be.true;
-      expect(aliceUser.referrer).to.be.bignumber.equal(owner);
+      expect(aliceUser.referrer).to.be.bignumber.equal(people.owner);
     });
 
     it('should correct distribute rewards', async () => {
@@ -262,17 +324,19 @@ contract('ReferralProgram', (accounts) => {
 
       await registerUsers();
 
-      await referralProgram.feeReceiving(charlie, tokens[0], amounts[0]);
+      for (let i = 0; i < tokens.length; i += 1) {
+        await referralProgram.feeReceiving(people.carol, tokens[i], amounts[i]);
+      }
 
-      const ownerRewards = await getRewards(owner, tokens);
-      const aliceRewards = await getRewards(alice, tokens);
-      const bobRewards = await getRewards(bob, tokens);
-      const charlieRewards = await getRewards(charlie, tokens);
+      const ownerRewards = await getRewards(people.owner, tokens);
+      const aliceRewards = await getRewards(people.alice, tokens);
+      const bobRewards = await getRewards(people.bob, tokens);
+      const carolRewards = await getRewards(people.carol, tokens);
 
       checkRewards(ownerRewards, calcPercentage(value, '10'));
       checkRewards(aliceRewards, calcPercentage(value, '20'));
       checkRewards(bobRewards, calcPercentage(value, '70'));
-      checkRewards(charlieRewards, utilsConstants.utils.ZERO);
+      checkRewards(carolRewards, utilsConstants.utils.ZERO);
     });
 
     it('should claim reward correctly', async () => {
@@ -283,10 +347,10 @@ contract('ReferralProgram', (accounts) => {
       await registerUsers();
 
       const users = [
-        owner,
-        alice,
-        bob,
-        charlie,
+        people.owner,
+        people.alice,
+        people.bob,
+        people.carol,
       ];
 
       // Transfer tokens to RefProgram
@@ -295,14 +359,16 @@ contract('ReferralProgram', (accounts) => {
       }
 
       // Notify RefProgram
-      await referralProgram.feeReceiving(charlie, tokens[0], amounts[0]);
+      for (let i = 0; i < tokens.length; i += 1) {
+        await referralProgram.feeReceiving(people.carol, tokens[i], amounts[i]);
+      }
 
       const uRewardsBefore = await getUsersRewards(users, tokens);
       const uTokensBefore = await getUsersTokensBalances(users, tokens);
 
       await referralProgram.claimRewardsForRoot();
-      await referralProgram.claimRewards({ from: alice });
-      await referralProgram.claimRewardsFor(bob);
+      await referralProgram.claimRewards({ from: people.alice });
+      await referralProgram.claimRewardsFor(people.bob);
 
       const uRewardsAfter = await getUsersRewards(users, tokens);
       const uTokensAfter = await getUsersTokensBalances(users, tokens);
@@ -319,7 +385,7 @@ contract('ReferralProgram', (accounts) => {
           //   reward after: ${uRewardsAfter[user][token]}
           //   reward before: ${uRewardsBefore[user][token]}`);
 
-          expect(uRewardsAfter[user][token]).to.be.bignumber.equal(utilsConstants.utils.ZERO);
+          expect(uRewardsAfter[user][token]).to.be.bignumber.equal(ZERO);
           expect(uTokensAfter[user][token]).to.be.bignumber.equal(expectedTokenBalance);
         }
       }
@@ -334,23 +400,64 @@ contract('ReferralProgram', (accounts) => {
     });
 
     it('should revert if not admin', async () => {
-      expectRevert(referralProgram.transferOwnership(alice, { from: alice }), '!admin');
+      expectRevert(referralProgram.transferOwnership(people.alice, { from: people.alice }), '!admin');
     });
 
     it('should revert if future admin is zero', async () => {
       await expectRevert(
-        referralProgram.transferOwnership(ZERO_ADDRESS, { from: owner }),
+        referralProgram.transferOwnership(ZERO_ADDRESS, { from: people.owner }),
         'RPadminIsZero',
       );
     });
 
-    it('should correct transfer ownership', async () => {
+    it('should correct transfer Ownership', async () => {
       const transferOwnership = await referralProgram
-        .transferOwnership(alice, { from: owner });
-      expectEvent(transferOwnership, 'TransferOwnership', { admin: alice });
+        .transferOwnership(people.alice, { from: people.owner });
+      expectEvent(transferOwnership, 'TransferOwnership', { admin: people.alice });
 
       const admin = await referralProgram.admin();
-      expect(admin).to.be.bignumber.equal(alice);
+      expect(admin).to.be.bignumber.equal(people.alice);
+    });
+  });
+
+  describe('Token distribution and list', () => {
+    beforeEach(deployAndConfigure);
+
+    it('should correctly change distribution', async () => {
+      await expectRevert(
+        referralProgram.changeDistribution(Array(3).fill(new BN('10'))),
+        'RP!fullDistribution',
+      );
+      const newDistribution = Array(4).fill(new BN('25'));
+      const changeDistributionReceipt = await referralProgram.changeDistribution(newDistribution);
+      const actualDistribution = await referralProgram.getDistributionList();
+      expectEvent(changeDistributionReceipt, 'NewDistribution', {
+        distribution: Array(4).fill(new BN('25')),
+      });
+      expect(actualDistribution).to.deep.equal(Array(4).fill(new BN('25')));
+    });
+
+    it('should correctly add new token', async () => {
+      const oldTokensList = await referralProgram.getTokensList();
+
+      await expectRevert(
+        referralProgram.addNewToken(ZERO_ADDRESS),
+        'RPtokenIsZero',
+      );
+
+      await expectRevert(
+        referralProgram.addNewToken(mockXBE.address),
+        'RPtokenAlreadyExists',
+      );
+
+      const mockToken = await MockToken.new('Mock Token', 'MT', ether('123'));
+
+      const newTokenReceipt = await referralProgram.addNewToken(mockToken.address);
+      const newTokensList = await referralProgram.getTokensList();
+      expectEvent(newTokenReceipt, 'NewToken', {
+        token: mockToken.address,
+      });
+      expect(newTokensList).to.deep.equal([...oldTokensList, mockToken.address]);
     });
   });
 });

@@ -47,4 +47,10 @@ module.exports = {
   WETH9: getContract('WETH9'),
   LockSubscription: getContract('LockSubscription'),
   SimpleXBEInflation: getContract('SimpleXBEInflation'),
+  StableSwapMockPool: getContract('StableSwapMockPool'),
+  ERC20LP: getContract('ERC20LP'),
+  BaseRewardPool: getContract('BaseRewardPool'),
+  Booster: getContract('Booster'),
+  ERC20CRV: getContract('ERC20CRV'),
+  ConvexToken: getContract('ConvexToken'),
 };

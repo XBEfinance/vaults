@@ -108,5 +108,6 @@ module.exports = {
   Registry: getDeployerFuncWithDefaultConstructor('Registry'),
   Controller: getDeployerFuncWithDefaultConstructor('Controller'),
   SimpleXBEInflation: getDeployerFuncWithDefaultConstructor('SimpleXBEInflation'),
+  LockSubscription: getDeployerFuncWithDefaultConstructor('LockSubscription'),
   deployedContracts,
 };

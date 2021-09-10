@@ -51,7 +51,7 @@ const overrideConfigureArgsIfNeeded = async (
   originalConfigureParamsLength,
 ) => {
   const result = [];
-  for (let i = 0; i < originalConfigureParamsLength; i++) {
+  for (let i = 0; i < originalConfigureParamsLength; i += 1) {
     result.push(overridenConfigureParams[i]
       // eslint-disable-next-line no-await-in-loop
       ? overridenConfigureParams[i] : await originalConfigureParams[i]());

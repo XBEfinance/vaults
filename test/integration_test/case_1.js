@@ -245,8 +245,9 @@ contract('Integration tests', (accounts) => {
       logBNFromWei('owner XBE balance', await ownerTrackers.XBE.get());
 
       /* ========== UNLOCK AND UNSTAKE ========== */
-      if (await time.latest() < ownerLockEnd.add(months('1'))) {
-        await time.increaseTo(ownerLockEnd.add(months('1')));
+      const withdrawTime = ownerLockEnd.add(days('7'));
+      if (await time.latest() < withdrawTime) {
+        await time.increaseTo(withdrawTime);
       }
       await contracts.veXBE.withdraw();
       const ownerBondedRewardLocks = await contracts.votingStakingRewards.bondedRewardLocks(owner);

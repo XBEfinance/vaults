@@ -37,7 +37,6 @@ const mockTokenOfName = (name) => {
 }
 
 module.exports = {
-
   Kernel: getDeployerFuncWithDefaultConstructor('Kernel'),
   ACL: getDeployerFuncWithDefaultConstructor('ACL'),
   EVMScriptRegistryFactory: getDeployerFuncWithDefaultConstructor('EVMScriptRegistryFactory'),

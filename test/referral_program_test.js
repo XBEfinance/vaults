@@ -6,7 +6,7 @@
 const { expect, assert } = require('chai');
 const {
   BN,
-  constants,
+  // constants,
   expectEvent,
   expectRevert,
   ether,
@@ -14,23 +14,18 @@ const {
 } = require('@openzeppelin/test-helpers');
 const { ZERO, ZERO_ADDRESS } = constants.utils;
 
-const {
-  ZERO,
-  ONE,
-  getMockTokenPrepared,
-  processEventArgs,
-} = require('./utils/old/common');
-const {
-  deployInfrastructure,
-  YEAR,
-  MULTIPLIER,
-  days,
-  defaultParams,
-} = require('./utils/old/deploy_infrastructure');
+const common = require('./utils/common');
+const constants = require('./utils/constants');
+const deployment = require('./utils/deployment');
+const environment = require('./utils/environment');
+const { people, setPeople } = require('./utils/accounts');
 
-const { ZERO_ADDRESS } = constants;
-const MockContract = artifacts.require('MockContract');
-const MockToken = artifacts.require('MockToken');
+const { ZERO, ZERO_ADDRESS } = constants.utils;
+const {
+  MockToken,
+  IRegistry,
+  MockContract,
+} = require('./utils/artifacts');
 
 const common = require('./utils/common.js');
 const utilsConstants = require('./utils/constants.js');
@@ -141,6 +136,7 @@ contract('ReferralProgram', (accounts) => {
         ],
         registry: (await artifacts.MockContract.new()).address,
         root: people.owner,
+        registry: registry.address,
       };
 
       // await referralProgram.configure([ZERO_ADDRESS], ZERO_ADDRESS, ZERO_ADDRESS);
@@ -149,6 +145,7 @@ contract('ReferralProgram', (accounts) => {
         'RProotIsZero',
       );
 
+      // await referralProgram.configure([ZERO_ADDRESS], ZERO_ADDRESS, ZERO_ADDRESS);
       await expectRevert(
         referralProgram.configure([], config.root, ZERO_ADDRESS, { from: people.owner }),
         'RPregistryIsZero',

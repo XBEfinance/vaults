@@ -27,6 +27,19 @@ contract ReferralProgram is Initializable, ReentrancyGuard, Ownable {
     address public rootAddress;
     IRegistry public registry;
 
+    modifier onlyFeeDistributors {
+        address[] memory distributors = getFeeDistributors();
+        bool approved;
+        for(uint256 i = 0; i < distributors.length; i++){
+            if(msg.sender == distributors[i]){
+                approved = true;
+                break;
+            }
+        }
+        require(approved, 'RP!feeDistributor');
+        _;
+    }
+
     event RegisterUser(address user, address referrer);
     event RewardReceived(address user, address referrer, address token, uint256 amount);
     event RewardsClaimed(address user, address[] tokens, uint256[] amounts);
@@ -50,6 +63,7 @@ contract ReferralProgram is Initializable, ReentrancyGuard, Ownable {
     ) external initializer {
         require(_rootAddress != address(0), "RProotIsZero");
         require(_registry != address(0), "RPregistryIsZero");
+        require(_registry != address(0), 'RPregistryIsZero');
         require(tokenAddresses.length > 0, "RPtokensNotProvided");
 
         for (uint256 i = 0; i < tokenAddresses.length; i++) {

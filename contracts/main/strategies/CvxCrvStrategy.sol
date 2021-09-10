@@ -75,14 +75,16 @@ contract CvxCrvStrategy is ClaimableStrategy {
     }
 
     function convertTokens(uint256 _amount) external {
-        address _stakingToken = _convertTokens(_amount);
-        IERC20(_stakingToken).safeTransfer(msg.sender, _amount);
+        IERC20 _stakingToken = IERC20(_convertTokens(_amount));
+        uint256 cvxCrvAmount = _stakingToken.balanceOf(address(this));
+        _stakingToken.safeTransfer(msg.sender, cvxCrvAmount);
     }
 
     function convertAndStakeTokens(uint256 _amount) external {
-        address _stakingToken = _convertTokens(_amount);
+        IERC20 _stakingToken = IERC20(_convertTokens(_amount));
         address vault = IController(controller).vaults(_want);
-        IERC20(_stakingToken).approve(vault, _amount);
-        IVaultTransfers(vault).deposit(_amount);
+        uint256 cvxCrvAmount = _stakingToken.balanceOf(address(this));
+        _stakingToken.approve(vault, cvxCrvAmount);
+        IVaultTransfers(vault).deposit(cvxCrvAmount);
     }
 }

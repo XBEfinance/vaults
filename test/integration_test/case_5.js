@@ -12,7 +12,8 @@ const constants = require('../utils/constants');
 const deployment = require('../utils/deployment');
 const environment = require('../utils/environment');
 const { people, setPeople } = require('../utils/accounts');
-const distro = require('../../distro.json');
+const distro = require('../../../curve-convex/distro.json');
+const artifacts = require('../utils/artifacts');
 
 const { ZERO, ZERO_ADDRESS } = constants.utils;
 
@@ -30,6 +31,7 @@ const {
   Registry,
   Controller,
   StableSwapMockPool,
+  StableSwapUSDT,
   ERC20LP,
   BaseRewardPool,
   Booster,
@@ -68,11 +70,14 @@ contract('Curve LP Testing', (accounts) => {
     referralProgram = await ReferralProgram.new();
     stableSwapMockPool = await StableSwapMockPool
       .at(distro.rinkeby.curve.pool_data.mock_pool.swap_address);
+    // stableSwapUSDT = await StableSwapUSDT.at('0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171');
     LPTokenMockPool = await ERC20LP.at(distro.rinkeby.convex.pools[0].lptoken);
     crvRewardsPool = await BaseRewardPool.at(distro.rinkeby.convex.pools[0].crvRewards);
     booster = await Booster.at(distro.rinkeby.convex.booster);
     cvx = await ConvexToken.at(distro.rinkeby.convex.cvx);
     crv = await ERC20CRV.at(distro.rinkeby.curve.CRV);
+
+    console.log('hive', hiveVault.address);
 
     [
       mockXBE,
@@ -112,6 +117,7 @@ contract('Curve LP Testing', (accounts) => {
       VotingStakingRewards: {
         8: [hiveVault.address],
       },
+      Treasury: {},
     });
 
     await referralProgram.configure(
@@ -143,10 +149,10 @@ contract('Curve LP Testing', (accounts) => {
     await hiveStrategy.configure(
       LPTokenMockPool.address,
       controller.address,
-      hiveVault.address,
+      // hiveVault.address,
       people.owner,
       [
-        LPTokenMockPool.address,
+        // LPTokenMockPool.address,
         crvRewardsPool.address,
         distro.rinkeby.convex.cvxRewards,
         booster.address,
@@ -180,12 +186,12 @@ contract('Curve LP Testing', (accounts) => {
       hiveStrategy.address,
     );
 
-    await simpleXBEInflation.addXBEReceiver(
+    await simpleXBEInflation.setXBEReceiver(
       hiveStrategy.address,
       new BN('25'),
     );
 
-    await simpleXBEInflation.addXBEReceiver(
+    await simpleXBEInflation.setXBEReceiver(
       treasury.address,
       new BN('25'),
     );
@@ -218,16 +224,16 @@ contract('Curve LP Testing', (accounts) => {
       await time.increase(months('2'));
 
       // hiveStrategy's earnings
-      const canClaimAmountCRV = await hiveStrategy.canClaimAmount(crv.address);
-      const cvxRewardSource = await hiveStrategy.rewardTokensToRewardSources(cvx.address);
-      const canClaimAmountCVX = await hiveStrategy.canClaimAmount(cvx.address);
+      // const canClaimAmountCRV = await hiveStrategy.canClaimAmount(crv.address);
+      // const cvxRewardSource = await hiveStrategy.rewardTokensToRewardSources(cvx.address);
+      // const canClaimAmountCVX = await hiveStrategy.canClaimAmount(cvx.address);
 
-      expect(canClaimAmountCRV).to.be.bignumber.gt(new BN('0'));
+      // expect(canClaimAmountCRV).to.be.bignumber.gt(new BN('0'));
       // expect(canClaimAmountCVX).to.be.bignumber.gt(new BN('0'));
 
       // deposit Bob
       // eslint-disable-next-line no-underscore-dangle
-      await stableSwapUSDT._mint_for_testing(depositBob, { from: people.bob });
+      // await stableSwapUSDT._mint_for_testing(depositBob, { from: people.bob });
       await LPTokenMockPool.approve(hiveVault.address, depositBob, { from: people.bob });
 
       await hiveVault.deposit(depositBob, { from: people.bob });
@@ -251,8 +257,8 @@ contract('Curve LP Testing', (accounts) => {
       // deposit Alice + depoist Bob
       expect(balanceRewardAfterBob).to.be.bignumber.equal(depositAlice.add(depositBob));
 
-      const earnedVirtualBob = await hiveVault.earnedVirtual.call({ from: people.bob });
-      const canClaimStrategy = await hiveStrategy.canClaimAmount.call();
+      // const earnedVirtualBob = await hiveVault.earnedVirtual.call({ from: people.bob });
+      // const canClaimStrategy = await hiveStrategy.canClaimAmount.call();
       // console.log(earnedVirtualBob.toString());
       // console.log(canClaimStrategy.toString());
 

@@ -6,32 +6,18 @@
 const { expect, assert } = require('chai');
 const {
   BN,
-  // constants,
   expectEvent,
   expectRevert,
   ether,
   time,
 } = require('@openzeppelin/test-helpers');
-const { ZERO, ZERO_ADDRESS } = constants.utils;
-
-const common = require('./utils/common');
-const constants = require('./utils/constants');
-const deployment = require('./utils/deployment');
-const environment = require('./utils/environment');
-const { people, setPeople } = require('./utils/accounts');
-
-const { ZERO, ZERO_ADDRESS } = constants.utils;
-const {
-  MockToken,
-  IRegistry,
-  MockContract,
-} = require('./utils/artifacts');
 
 const common = require('./utils/common.js');
 const utilsConstants = require('./utils/constants.js');
 const artifacts = require('./utils/artifacts.js');
 const environment = require('./utils/environment.js');
 const { people, setPeople } = require('./utils/accounts.js');
+const { ZERO, ZERO_ADDRESS } = utilsConstants;
 
 let owner;
 let alice;
@@ -48,14 +34,14 @@ let registry;
 let referralProgram;
 let mock;
 
-const deployAndConfigureReferralProgram = async () => {
+const deployReferralProgram = async () => {
   [
-    treasury,
+    // treasury,
     registry,
     referralProgram
   ] = await environment.getGroup(
     [
-      'Treasury',
+      // 'Treasury',
       'Registry',
       'ReferralProgram'
     ],
@@ -74,9 +60,9 @@ const configureReferralProgram = async () => {
   mock = await artifacts.MockContract.new();
   registry = await artifacts.Registry.at(mock.address);
 
-  const getVaultsInfoCaldata = registry.contract.methods.getVaultsInfo().encodeABI();
+  const getVaultsInfoCalldata = registry.contract.methods.getVaultsInfo().encodeABI();
   await mock.givenMethodReturn(
-    getVaultsInfoCaldata,
+    getVaultsInfoCalldata,
     web3.eth.abi.encodeParameters(
       [
         "address[]", "address[]", "address[]", "address[]",
@@ -96,7 +82,7 @@ const configureReferralProgram = async () => {
     registry.address,
     { from: owner }
   );
-}
+};
 
 contract('ReferralProgram', (accounts) => {
 
@@ -125,7 +111,9 @@ contract('ReferralProgram', (accounts) => {
   });
 
   describe('Configuration', () => {
-    beforeEach(deployAndConfigureReferralProgram);
+    beforeEach(async () => {
+      await deployReferralProgram();
+    });
 
     it('should be correct configured', async () => {
       const config = {
@@ -136,7 +124,7 @@ contract('ReferralProgram', (accounts) => {
         ],
         registry: (await artifacts.MockContract.new()).address,
         root: people.owner,
-        registry: registry.address,
+        // registry: registry.address,
       };
 
       // await referralProgram.configure([ZERO_ADDRESS], ZERO_ADDRESS, ZERO_ADDRESS);
@@ -183,7 +171,7 @@ contract('ReferralProgram', (accounts) => {
 
   describe('Register', () => {
     beforeEach(async () => {
-      await deployAndConfigureReferralProgram();
+      await deployReferralProgram();
       await configureReferralProgram();
     });
 
@@ -238,7 +226,7 @@ contract('ReferralProgram', (accounts) => {
   describe('Rewards', () => {
 
     beforeEach(async () => {
-      await deployAndConfigureReferralProgram();
+      await deployReferralProgram();
       await configureReferralProgram();
     });
 
@@ -265,7 +253,7 @@ contract('ReferralProgram', (accounts) => {
     }
 
     function calcPercentage(value, percentage) {
-      return value.div(new BN(100)).mul(new BN(percentage));
+      return value.mul(new BN(percentage)).div(new BN('100'));
     }
 
     function checkRewards(rewards, value) {
@@ -392,7 +380,7 @@ contract('ReferralProgram', (accounts) => {
   describe('Ownership', () => {
 
     beforeEach(async () => {
-      await deployAndConfigureReferralProgram();
+      await deployReferralProgram();
       await configureReferralProgram();
     });
 
@@ -418,7 +406,10 @@ contract('ReferralProgram', (accounts) => {
   });
 
   describe('Token distribution and list', () => {
-    beforeEach(deployAndConfigure);
+    beforeEach(async () => {
+      await deployReferralProgram();
+      await configureReferralProgram();
+    });
 
     it('should correctly change distribution', async () => {
       await expectRevert(
@@ -447,7 +438,7 @@ contract('ReferralProgram', (accounts) => {
         'RPtokenAlreadyExists',
       );
 
-      const mockToken = await MockToken.new('Mock Token', 'MT', ether('123'));
+      const mockToken = await artifacts.MockToken.new('Mock Token', 'MT', ether('123'));
 
       const newTokenReceipt = await referralProgram.addNewToken(mockToken.address);
       const newTokensList = await referralProgram.getTokensList();

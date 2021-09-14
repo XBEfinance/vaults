@@ -2,8 +2,7 @@ pragma solidity ^0.6.0;
 
 import "./base/BaseVault.sol";
 import "./base/VaultWithAutoStake.sol";
-import "./base/VaultWithFeesOnClaim.sol";
-import "./base/VaultWithFeesOnDeposit.sol";
+import "./base/VaultWithFees.sol";
 import "./base/VaultWithReferralProgram.sol";
 
 /// @title CVXVault
@@ -11,8 +10,7 @@ import "./base/VaultWithReferralProgram.sol";
 contract CVXVault is
     BaseVault,
     VaultWithAutoStake,
-    VaultWithFeesOnClaim,
-    VaultWithFeesOnDeposit,
+    VaultWithFees,
     VaultWithReferralProgram
 {
     constructor() public BaseVault("XBE CVX", "xc") {}
@@ -33,8 +31,7 @@ contract CVXVault is
         string memory __symbolPostfix
     ) public onlyOwner initializer {
         _configureVaultWithAutoStake(_tokenToAutostake, _votingStakingRewards);
-        _configureVaultWithFeesOnClaim(_enableFees);
-        _configureVaultWithFeesOnDeposit(_teamWallet);
+        _configureVaultWithFeesOnClaim(_teamWallet, _enableFees);
         _configureVaultWithReferralProgram(_referralProgram, _treasury);
         _configure(
             _initialToken,
@@ -53,12 +50,12 @@ contract CVXVault is
         returns (uint256)
     {
         require(_amount > 0, "Cannot stake 0");
-        _amount = _getFeeForDepositAndSendIt(stakingToken, _amount);
+        _registerUserInReferralProgramIfNeeded(_from);
+        _amount = _getFeesOnDeposit(stakingToken, _amount);
         _totalSupply = _totalSupply.add(_amount);
         _balances[_from] = _balances[_from].add(_amount);
         stakingToken.safeTransferFrom(_from, address(this), _amount);
         emit Staked(_from, _amount);
-        _registerUserInReferralProgramIfNeeded(_from);
         return _amount;
     }
 
@@ -75,18 +72,9 @@ contract CVXVault is
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
-            reward = _getAndDistributeFeesOnClaimForToken(_for, _rewardToken, reward);
+            reward = _getFeesOnClaimForToken(_for, _rewardToken, reward);
             _autoStakeForOrSendTo(_rewardToken, reward, _for);
         }
         emit RewardPaid(_rewardToken, _for, reward);
-    }
-
-    function _isUserAuthorized(address _user)
-        internal
-        view
-        override
-        returns (bool)
-    {
-        return owner() == _user;
     }
 }

@@ -10,7 +10,6 @@ import "../interfaces/IRewards.sol";
 /// @title HiveStrategy
 /// @notice This is contract for yield farming strategy with EURxb token for investors
 contract HiveStrategy is ClaimableStrategy {
-
     struct Settings {
         address crvRewards;
         address cvxRewards;

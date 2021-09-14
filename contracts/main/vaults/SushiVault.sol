@@ -2,7 +2,6 @@ pragma solidity ^0.6.0;
 
 import "./base/BaseVault.sol";
 import "./base/VaultWithAutoStake.sol";
-import "./base/VaultWithFeesOnClaim.sol";
 
 import "../mocks/StringsConcatenations.sol";
 

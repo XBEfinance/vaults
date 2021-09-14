@@ -318,11 +318,7 @@ contract VotingStakingRewards is
         return PCT_BASE.mul(inverseMaxBoostCoefficient).div(100);
     }
 
-    function lockedBoostLevel(address account)
-        public
-        view
-        returns (uint256)
-    {
+    function lockedBoostLevel(address account) public view returns (uint256) {
         IVeXBE veXBE = token;
         uint256 votingBalance = veXBE.balanceOf(account);
         uint256 votingTotal = veXBE.totalSupply();

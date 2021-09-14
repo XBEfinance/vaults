@@ -5,8 +5,6 @@ import "./base/VaultWithAutoStake.sol";
 
 import "../mocks/StringsConcatenations.sol";
 
-/// @title SushiVault
-/// @notice Vault for staking LP Sushiswap and receive rewards in CVX
 contract SushiVault is BaseVault, VaultWithAutoStake {
     constructor() public BaseVault("XBE Sushi LP", "XBESushi") {}
 

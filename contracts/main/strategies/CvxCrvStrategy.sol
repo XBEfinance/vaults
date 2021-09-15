@@ -29,8 +29,13 @@ contract CvxCrvStrategy is ClaimableStrategy {
 
     /// @dev Function that controller calls
     function deposit() external override onlyController {
-        uint256 _amount = IERC20(_want).balanceOf(address(this));
-        IERC20(_want).approve(poolSettings.crvDepositor, _amount);
+        IERC20 wantToken = IERC20(_want);
+        uint256 _amount = wantToken.balanceOf(address(this));
+        if (
+            wantToken.allowance(address(this), poolSettings.crvDepositor) == 0
+        ) {
+            wantToken.approve(poolSettings.crvDepositor, uint256(-1));
+        }
         IRewards(poolSettings.crvDepositor).depositAll(
             true,
             poolSettings.cvxCRVRewards
@@ -65,7 +70,12 @@ contract CvxCrvStrategy is ClaimableStrategy {
             address(this),
             _amount
         );
-        IERC20(_want).approve(poolSettings.crvDepositor, _amount);
+        IERC20 wantToken = IERC20(_want);
+        if (
+            wantToken.allowance(address(this), poolSettings.crvDepositor) == 0
+        ) {
+            wantToken.approve(poolSettings.crvDepositor, uint256(-1));
+        }
         address _stakingToken = IRewards(poolSettings.cvxCRVRewards)
             .stakingToken();
         //address(0) means that we'll not stake immediately

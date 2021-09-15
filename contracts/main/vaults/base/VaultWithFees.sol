@@ -55,6 +55,7 @@ abstract contract VaultWithFees is Ownable {
         bool _convertToRewards,
         address[] calldata _tokens
     ) external onlyOwner {
+        require(sumClaimFee + _percentage <= PCT_BASE, "!sumClaimFee overflow");
         ClaimFee storage newWeight;
         newWeight.to = _to;
         newWeight.percentage = _percentage;
@@ -63,38 +64,49 @@ abstract contract VaultWithFees is Ownable {
             newWeight.tokens[_tokens[i]] = true;
         }
         claimFee.push(newWeight);
-        sumClaimFee = sumClaimFee.add(_percentage);
+        sumClaimFee = sumClaimFee + _percentage;
     }
 
     function claimFeeReceiversCount() external view returns (uint256) {
         return claimFee.length;
     }
 
-    function claimFeeReceivers(uint256 _index) external view returns (uint256) {
-        return claimFee[_index];
+    function claimFeeReceivers(uint256 _index)
+        external
+        view
+        returns (
+            uint64,
+            address,
+            bool
+        )
+    {
+        return (
+            claimFee[_index].percentage,
+            claimFee[_index].to,
+            claimFee[_index].convertToRewards
+        );
     }
 
     function removeClaimFeeReceiver(uint256 _index) external onlyOwner {
         require(_index < claimFee.length, "indexOutOfBound");
-        sumClaimFee = sumClaimFee.sub(claimFee[_index].percentage);
+        sumClaimFee = sumClaimFee - claimFee[_index].percentage;
         claimFee[_index] = claimFee[claimFee.length - 1];
         delete claimFee[claimFee.length - 1];
     }
 
-    function setClaimFeePercentage(uint256 _index, uint256 _percentage)
+    function setClaimFeePercentage(uint256 _index, uint64 _percentage)
         external
         onlyOwner
     {
         require(_index < claimFee.length, "indexOutOfBound");
-        sumClaimFee = sumClaimFee.add(_percentage).sub(
-            claimFee[_index].percentage
-        );
+        sumClaimFee = sumClaimFee + _percentage - claimFee[_index].percentage;
         claimFee[_index].percentage = _percentage;
     }
 
     function setDepositFee(uint64 _newPercentage) external onlyOwner {
         require(
-            _newPercentage < PCT_BASE && _newPercentage != feePercentage,
+            _newPercentage < PCT_BASE &&
+                _newPercentage != depositFee.percentage,
             "Invalid percentage"
         );
         depositFee.percentage = _newPercentage;
@@ -116,9 +128,9 @@ abstract contract VaultWithFees is Ownable {
         }
         uint256 fee;
         for (uint256 i = 0; i < claimFee.length; i++) {
-            ClaimFee _claimFee = claimFee[i];
-            fee = _claimFee.percentage.mul(_amount).div(PCT_BASE);
-            if (_claimFee.tokens[_rewardToken]) {
+            ClaimFee memory _claimFee = claimFee[i];
+            fee = uint256(_claimFee.percentage).mul(_amount).div(PCT_BASE);
+            if (claimFee[i].tokens[_rewardToken]) {
                 IERC20(_rewardToken).safeTransfer(_claimFee.to, fee);
             }
             _amount = _amount.sub(fee);
@@ -142,8 +154,8 @@ abstract contract VaultWithFees is Ownable {
         internal
         returns (uint256 _sumWithoutFee)
     {
-        if (feePercentage > 0) {
-            uint256 _fee = depositFee.percentage.mul(_amount).div(PCT_BASE);
+        if (depositFee.percentage > 0) {
+            uint256 _fee = uint256(depositFee.percentage).mul(_amount).div(PCT_BASE);
             _stakingToken.safeTransfer(depositFee.to, _fee);
             _sumWithoutFee = _amount.sub(_fee);
         } else {

@@ -15,8 +15,6 @@ contract HiveStrategy is ClaimableStrategy {
         address cvxRewards;
         address convexBooster;
         uint256 poolIndex;
-        address crvToken;
-        address cvxToken;
     }
 
     Settings public poolSettings;
@@ -41,19 +39,19 @@ contract HiveStrategy is ClaimableStrategy {
         return _pool.lptoken == _want;
     }
 
-    function getPoolsCount() public view returns (uint256) {
-        return IBooster(poolSettings.convexBooster).poolLength();
-    }
-
-    function checkIfPoolIndexNeedsToBeUpdated() public view returns (bool) {
-        return !checkPoolIndex(poolSettings.poolIndex);
-    }
-
     /// @dev Function that controller calls
     function deposit() external override onlyController {
-        if (!checkIfPoolIndexNeedsToBeUpdated()) {
-            uint256 _amount = IERC20(_want).balanceOf(address(this));
-            IERC20(_want).approve(poolSettings.convexBooster, _amount);
+        if (checkPoolIndex(poolSettings.poolIndex)) {
+            IERC20 wantToken = IERC20(_want);
+            uint256 _amount = wantToken.balanceOf(address(this));
+            if (
+                wantToken.allowance(
+                    address(this),
+                    poolSettings.convexBooster
+                ) == 0
+            ) {
+                wantToken.approve(poolSettings.convexBooster, uint256(-1));
+            }
             //true means that the received lp tokens will immediately be stakes
             IBooster(poolSettings.convexBooster).depositAll(
                 poolSettings.poolIndex,

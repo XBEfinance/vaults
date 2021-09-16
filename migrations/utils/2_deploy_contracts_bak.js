@@ -15,13 +15,12 @@ const Voting = artifacts.require('Voting');
 const VotingStakingRewards = artifacts.require('VotingStakingRewards');
 
 const HiveStrategy = artifacts.require('HiveStrategy');
-const HiveVault = artifacts.require('HiveVault');
+const Vault = artifacts.require('Vault');
 
 const SushiStrategy = artifacts.require('SushiStrategy');
 const SushiVault = artifacts.require('SushiVault');
 
 const CVXStrategy = artifacts.require('CVXStrategy');
-const CVXVault = artifacts.require('CVXVault');
 
 const CvxCrvStrategy = artifacts.require('CvxCrvStrategy');
 const CvxCrvVault = artifacts.require('CvxCrvVault');
@@ -291,9 +290,7 @@ const deployContracts = async (deployer, params, owner) => {
       CVXStrategy,
       CvxCrvStrategy,
       SushiStrategy,
-      HiveVault,
-      CVXVault,
-      CvxCrvVault,
+      Vault,
       SushiVault,
     ];
 
@@ -390,13 +387,13 @@ const loadContracts = async () => {
   contracts.treasury = await Treasury.at(getSavedAddress('treasury'));
   contracts.controller = await Controller.at(getSavedAddress('controller'));
 
-  contracts.hiveVault = await HiveVault.at(getSavedAddress('hiveVault'));
+  contracts.hiveVault = await Vault.at(getSavedAddress('hiveVault'));
   contracts.hiveStrategy = await HiveStrategy.at(getSavedAddress('hiveStrategy'));
 
-  contracts.cvxCrvVault = await CvxCrvVault.at(getSavedAddress('cvxCrvVault'));
+  contracts.cvxCrvVault = await Vault.at(getSavedAddress('hiveVault'));
   contracts.cvxCrvStrategy = await CvxCrvStrategy.at(getSavedAddress('cvxCrvStrategy'));
 
-  contracts.cvxVault = await CVXVault.at(getSavedAddress('cvxVault'));
+  contracts.cvxVault = await Vault.at(getSavedAddress('hiveVault'));
   contracts.cvxStrategy = await CVXStrategy.at(getSavedAddress('cvxStrategy'));
 
   contracts.sushiVault = await SushiVault.at(getSavedAddress('sushiVault'));

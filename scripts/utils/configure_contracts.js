@@ -16,7 +16,7 @@ referralProgram = await ReferralProgram.at(getSavedAddress('referralProgram'));
 registry = await Registry.at(getSavedAddress('registry'));
 treasury = await Treasury.at(getSavedAddress('treasury'));
 controller = await Controller.at(getSavedAddress('controller'));
-hiveVault = await HiveVault.at(getSavedAddress('hiveVault'));
+hiveVault = await Vault.at(getSavedAddress('hiveVault'));
 hiveStrategy = await HiveStrategy.at(getSavedAddress('hiveStrategy'));
 
 const now = await time.latest();

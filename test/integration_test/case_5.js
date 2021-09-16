@@ -21,7 +21,7 @@ const {
   VeXBE,
   VotingStakingRewards,
   HiveStrategy,
-  HiveVault,
+  Vault,
   BonusCampaign,
   ReferralProgram,
   MockToken,
@@ -63,7 +63,7 @@ contract('Curve LP Testing', (accounts) => {
   let stableSwapMockPool;
 
   async function deployAndConfigure() {
-    hiveVault = await HiveVault.new();
+    hiveVault = await Vault.new();
     hiveStrategy = await HiveStrategy.new();
     referralProgram = await ReferralProgram.new();
     stableSwapMockPool = await StableSwapMockPool

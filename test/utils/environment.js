@@ -204,13 +204,13 @@ const environment = {
     }
   ),
 
-  HiveVault: async (force, overridenConfigureParams, isMockContractRequested) => await common.cacheAndReturnContract(
-    'HiveVault',
+  Vault: async (force, overridenConfigureParams, isMockContractRequested) => await common.cacheAndReturnContract(
+    'Vault',
     force,
     deployedAndConfiguredContracts,
     isMockContractRequested,
     async () => {
-      const instance = await deployment.HiveVault();
+      const instance = await deployment.Vault();
       const owner = await common.waitFor('owner', accounts.people);
 
       const mockXBE = await common.waitFor(

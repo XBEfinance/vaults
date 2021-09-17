@@ -136,11 +136,12 @@ const getRewardTokenByIndexTest = (vaultName) => async () => {
   const owner = await common.waitFor('owner', people);
   const alice = await common.waitFor('alice', people);
   const mock = await artifacts.MockContract.new();
+  const tokensCount = await vault.getRewardTokensCount();
   await vault.addRewardToken(mock.address, { from: owner });
-  expect(await vault.getRewardToken(new BN('3'))).to.be.equal(mock.address);
+  expect(await vault.getRewardToken(tokensCount)).to.be.equal(mock.address);
 }
 
-const getRewardTokensCountTest = (vaultName) => async () => {
+const getRewardTokensCountTest = (vaultName, initialTokensCount) => async () => {
   const vault = await common.waitFor(vaultName, deployment.deployedContracts, "rwt");
   const owner = await common.waitFor('owner', people);
   const alice = await common.waitFor('alice', people);
@@ -148,9 +149,11 @@ const getRewardTokensCountTest = (vaultName) => async () => {
   const mock2 = await artifacts.MockContract.new();
   await vault.addRewardToken(mock.address, { from: owner });
   await vault.addRewardToken(mock2.address, { from: owner });
-  expect(await vault.getRewardTokensCount()).to.be.bignumber.equal(new BN('5'));
+  let currentTokensCount = new BN('2').add(new BN(initialTokensCount));
+  expect(await vault.getRewardTokensCount()).to.be.bignumber.equal(currentTokensCount);
+  currentTokensCount = currentTokensCount.sub(new BN('1'));
   await vault.removeRewardToken(mock.address, { from: owner });
-  expect(await vault.getRewardTokensCount()).to.be.bignumber.equal(new BN('4'));
+  expect(await vault.getRewardTokensCount()).to.be.bignumber.equal(currentTokensCount);
 }
 
 const lastTimeRewardApplicableTest = (vaultName) => async () => {
@@ -243,7 +246,7 @@ module.exports = {
   earnedTest,
   userRewardTest,
   balanceTest,
-  getPotentialRewardReturnsTest,
+  // getPotentialRewardReturnsTest,
   depositTest,
   depositForTest,
   depositAllTest,

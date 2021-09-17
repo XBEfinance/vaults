@@ -36,7 +36,7 @@ const {
   earnedTest,
   userRewardTest,
   balanceTest,
-  getPotentialRewardReturnsTest,
+  // getPotentialRewardReturnsTest,
   depositTest,
   depositForTest,
   depositAllTest,
@@ -129,28 +129,28 @@ contract(vaultName, (accounts) => {
     expect(await vault.isTokenValid(mockCVX.address)).to.be.true;
   });
 
-  xit('should set controller properly',
+  it('should set controller properly',
     setControllerTest(vaultName));
 
-  xit('should set rewards distribution properly',
+  it('should set rewards distribution properly',
     setRewardsDistributionTest(vaultName));
 
-  xit('should set rewards duration properly',
+  it('should set rewards duration properly',
     setRewardsDurationTest(vaultName));
 
-  xit('should pause properly', pauseTest(vaultName));
+  it('should pause properly', pauseTest(vaultName));
 
-  xit('should unpause properly', unpauseTest(vaultName));
+  it('should unpause properly', unpauseTest(vaultName));
 
-  xit('should add reward token properly', addRewardTokenTest(vaultName));
+  it('should add reward token properly', addRewardTokenTest(vaultName));
 
-  xit('should remove reward token properly', removeRewardTokenTest(vaultName));
+  it('should remove reward token properly', removeRewardTokenTest(vaultName));
 
-  xit('should check if reward token valid', checkRewardTokenTest(vaultName));
+  it('should check if reward token valid', checkRewardTokenTest(vaultName));
 
-  xit('should get reward token by index', getRewardTokenByIndexTest(vaultName));
+  it('should get reward token by index', getRewardTokenByIndexTest(vaultName));
 
-  xit('should get reward tokens count', getRewardTokensCountTest(vaultName));
+  it('should get reward tokens count', getRewardTokensCountTest(vaultName, new BN('3')));
 
   it('should get last time rewards applicable', lastTimeRewardApplicableTest(vaultName));
 
@@ -162,24 +162,24 @@ contract(vaultName, (accounts) => {
 
   it('should get balance both on vault and strategy', balanceTest(vaultName));
 
-  it('should get potential reward returns', getPotentialRewardReturnsTest(vaultName));
+  // it('should get potential reward returns', getPotentialRewardReturnsTest(vaultName));
 
-  xit('should deposit', depositTest(vaultName));
+  it('should deposit', depositTest(vaultName));
 
-  xit('should deposit for', depositForTest(vaultName));
+  it('should deposit for', depositForTest(vaultName));
 
-  xit('should deposit all', depositAllTest(vaultName));
+  it('should deposit all', depositAllTest(vaultName));
 
-  xit('should withdraw', withdrawTest(vaultName));
+  it('should withdraw', withdrawTest(vaultName));
 
-  xit('should withdraw all', withdrawAllTest(vaultName));
+  it('should withdraw all', withdrawAllTest(vaultName));
 
-  xit('should withdraw with customizable claim', withdrawWithCustomizableClaimTest(vaultName));
+  it('should withdraw with customizable claim', withdrawWithCustomizableClaimTest(vaultName));
 
-  xit('should get reward', getRewardTest(vaultName));
+  it('should get reward', getRewardTest(vaultName));
 
-  xit('should notify reward amount', notifyRewardAmountTest(vaultName));
+  it('should notify reward amount', notifyRewardAmountTest(vaultName));
 
-  xit('should perform earn method', earnTest(vaultName));
+  it('should perform earn method', earnTest(vaultName));
 
 });

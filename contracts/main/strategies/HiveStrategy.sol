@@ -68,10 +68,8 @@ contract HiveStrategy is ClaimableStrategy {
             IRewards(poolSettings.crvRewards).getReward(),
             "!getRewardsCRV"
         );
-        require(
-            IRewards(poolSettings.cvxRewards).getReward(),
-            "!getRewardsCVX"
-        );
+
+        IRewards(poolSettings.cvxRewards).getReward(true);
     }
 
     function _withdrawSome(uint256 _amount)
@@ -79,6 +77,8 @@ contract HiveStrategy is ClaimableStrategy {
         override
         returns (uint256)
     {
+        IRewards(poolSettings.crvRewards).withdraw(_amount, true);
+
         require(
             IBooster(poolSettings.convexBooster).withdraw(
                 poolSettings.poolIndex,
@@ -86,6 +86,7 @@ contract HiveStrategy is ClaimableStrategy {
             ),
             "!withdrawSome"
         );
+
         return _amount;
     }
 }

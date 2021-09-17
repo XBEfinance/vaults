@@ -52,26 +52,18 @@ contract HiveVault is
         override
         returns (uint256)
     {
-        require(_amount > 0, "Cannot stake 0");
         _amount = _getFeeForDepositAndSendIt(stakingToken, _amount);
-        _totalSupply = _totalSupply.add(_amount);
-        _balances[_from] = _balances[_from].add(_amount);
-        stakingToken.safeTransferFrom(_from, address(this), _amount);
-        emit Staked(_from, _amount);
+        super._deposit(_from, _amount);
         _registerUserInReferralProgramIfNeeded(_from);
         return _amount;
     }
 
     function _getReward(
-        bool _claimUnderlying,
         address _for,
-        address _rewardToken,
-        address _stakingToken
-    ) internal override {
-        if (_claimUnderlying) {
-            _controller.getRewardStrategy(_stakingToken);
-        }
-        _controller.claim(_stakingToken, _rewardToken);
+        address _rewardToken
+    ) internal virtual {
+        _controller.claim(address(stakingToken), _rewardToken);
+
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
@@ -79,6 +71,15 @@ contract HiveVault is
             _autoStakeForOrSendTo(_rewardToken, reward, _for);
         }
         emit RewardPaid(_rewardToken, _for, reward);
+    }
+
+    function _getRewardAll(bool _claimUnderlying) internal override {
+        if (_claimUnderlying) {
+            _controller.getRewardStrategy(address(stakingToken));
+        }
+        for (uint256 i = 0; i < _validTokens.length(); i++) {
+            _getReward(msg.sender, _validTokens.at(i));
+        }
     }
 
     function _isUserAuthorized(address _user)

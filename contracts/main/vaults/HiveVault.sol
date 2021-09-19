@@ -1,6 +1,6 @@
 pragma solidity ^0.6.0;
 
-import "./base/BaseVault.sol";
+import "./base/BaseVaultV2.sol";
 import "./base/VaultWithAutoStake.sol";
 import "./base/VaultWithFeesOnClaim.sol";
 import "./base/VaultWithFeesOnDeposit.sol";
@@ -9,13 +9,13 @@ import "./base/VaultWithReferralProgram.sol";
 /// @title SushiVault
 /// @notice Vault for staking LP Sushiswap and receive rewards in CVX
 contract HiveVault is
-    BaseVault,
+    BaseVaultV2,
     VaultWithAutoStake,
     VaultWithFeesOnClaim,
     VaultWithFeesOnDeposit,
     VaultWithReferralProgram
 {
-    constructor() public BaseVault("XBE Hive Curve LP", "xh") {}
+    constructor() public BaseVaultV2("XBE Hive Curve LP", "xh") {}
 
     function configure(
         address _initialToken,

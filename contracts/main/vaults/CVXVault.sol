@@ -1,6 +1,6 @@
 pragma solidity ^0.6.0;
 
-import "./base/BaseVault.sol";
+import "./base/BaseVaultV2.sol";
 import "./base/VaultWithAutoStake.sol";
 import "./base/VaultWithFeesOnClaim.sol";
 import "./base/VaultWithFeesOnDeposit.sol";
@@ -9,13 +9,13 @@ import "./base/VaultWithReferralProgram.sol";
 /// @title CVXVault
 /// @notice Vault for staking of CVX and receive rewards in cvxCRV
 contract CVXVault is
-    BaseVault,
+    BaseVaultV2,
     VaultWithAutoStake,
     VaultWithFeesOnClaim,
     VaultWithFeesOnDeposit,
     VaultWithReferralProgram
 {
-    constructor() public BaseVault("XBE CVX", "xc") {}
+    constructor() public BaseVaultV2("XBE CVX", "xc") {}
 
     function configure(
         address _initialToken,

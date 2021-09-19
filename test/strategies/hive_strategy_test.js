@@ -264,7 +264,7 @@ contract('Curve LP Testing', (accounts) => {
     });
 
     // const { dependentsAddresses } = params;
-    it('getting vault lp', async () => {
+    it('acceptance test', async () => {
       expect(await hiveVault.feesEnabled()).to.be.false;
 
       const depositAlice = ether('3');
@@ -281,12 +281,7 @@ contract('Curve LP Testing', (accounts) => {
       expect(lpAlice).to.be.bignumber.equal(depositAlice);
 
       const {
-         lptoken,
-         token,
-         gauge,
-         crvRewards,
-         stash,
-        shutdown,
+         lptoken, token, gauge, crvRewards, stash, shutdown,
       } = await booster.poolInfo(0);
 
       console.log('lptoken', lptoken);
@@ -314,7 +309,6 @@ contract('Curve LP Testing', (accounts) => {
       console.log(' == token strategy balance after earn is',
         (await tokenInstance.balanceOf(hiveStrategy.address)).toString()
       );
-
       console.log(' == crvRewarsdPool balance after earn is',
         (await tokenInstance.balanceOf(crvRewardsPool.address)).toString()
       );
@@ -328,7 +322,8 @@ contract('Curve LP Testing', (accounts) => {
       // someone will call this function for our pool in Booster contract
       await booster.earmarkRewards(ZERO);
       // time passes
-      await time.increase(months('1'));
+      await time.increase(days('7'));
+      await controller.getRewardStrategy(LPTokenMockPool.address);
 
       // backend called getRewards for specified strategy
       // await controller.getRewardStrategy(LPTokenMockPool.address);
@@ -340,7 +335,6 @@ contract('Curve LP Testing', (accounts) => {
       const logValues = (msg, v1, v2, v3) => {
         console.log(`${msg}:\tcrv: ${v1},\tcvx: ${v2},\txbe: ${v3}`);
       }
-
       // let [crvEarned, cvxEarned, xbeEarned] = [0, 0, 0];
       const logEarnings = async (addr, msg) => {
         const crvEarned = await hiveVault.earned(distro.rinkeby.curve.CRV, addr);
@@ -348,41 +342,50 @@ contract('Curve LP Testing', (accounts) => {
         const xbeEarned = await hiveVault.earned(mockXBE.address, addr);
         logValues(msg, crvEarned, cvxEarned, xbeEarned);
       };
-
       const logRewards = async (addr, msg) => {
         const crvReward = await hiveVault.rewards(addr, distro.rinkeby.curve.CRV);
         const cvxReward = await hiveVault.rewards(addr, distro.rinkeby.convex.cvx);
         const xbeReward = await hiveVault.rewards(addr, mockXBE.address);
         logValues(msg, crvReward, cvxReward, xbeReward);
       };
-
       const logBalance = async (addr, msg = '') => {
         const crvBalance = await crv.balanceOf(addr);
         const xbeBalance = await mockXBE.balanceOf(addr);
         const cvxBalance = await cvx.balanceOf(addr);
-        console.log(`${msg}:\tcrv: ${crvBalance}, cvx: ${cvxBalance}, xbe: ${xbeBalance}`)
+        logValues(msg, crvBalance, cvxBalance, xbeBalance);
       };
-
+      const logRpts = async (msg = '') => {
+        const v1 = await hiveVault.rewardsPerTokensStored(crv.address);
+        const v2 = await hiveVault.rewardsPerTokensStored(cvx.address);
+        const v3 = await hiveVault.rewardsPerTokensStored(mockXBE.address);
+        logValues(msg, v1, v2, v3);
+      };
+      const logRpt = async (msg = '') => {
+        const v1 = await hiveVault.rewardPerToken(crv.address);
+        const v2 = await hiveVault.rewardPerToken(cvx.address);
+        const v3 = await hiveVault.rewardPerToken(mockXBE.address);
+        logValues(msg, v1, v2, v3);
+      };
       const logUrptp = async (addr, msg = '') => {
         const v1 = await hiveVault.userRewardPerTokenPaid(crv.address, addr);
         const v2 = await hiveVault.userRewardPerTokenPaid(cvx.address, addr);
         const v3 = await hiveVault.userRewardPerTokenPaid(mockXBE.address, addr);
         logValues(msg, v1, v2, v3);
       };
-
       const logAllRewards = async (msg) => {
         console.log('\n', msg);
+        await logBalance(alice, 'balances');
         await logEarnings(alice, 'earned');
         await logRewards(alice, 'rewards');
+        await logRpts('reward pts');
         await logUrptp(alice, 'userrptp');
-        await logBalance(alice, 'balances');
+        await logRpt('rewards pt');
         // await logBalance(owner, 'owner balances:');
         // await logBalance(wallet, 'wallet balances:');
         // await logBalance(treasury.address, 'treasury address');
-        await logBalance(hiveVault.address, 'HV balances');
+        await logBalance(hiveVault.address, 'hive balances');
         // await logBalance(votingStakingRewards.address, 'VSR balances');
       };
-
       await logAllRewards('===== before update rewards =====');
 
       // backend called getRewards for specified strategy
@@ -392,36 +395,18 @@ contract('Curve LP Testing', (accounts) => {
 
       await logAllRewards('===== after update rewards =====');
 
-      await time.increase(months('1'));
-
-      await logAllRewards('===== after 1 month passed =====');
-
-      // await hiveVault.earn();
-
+      await time.increase(days('7'));
+      await controller.getRewardStrategy(LPTokenMockPool.address);
+      await logAllRewards('===== after a week passed =====');
       await hiveVault.getReward(true, {from: alice});
       await logAllRewards('===== after alice get reward =====');
 
-      // console.log('alice deposited', depositAlice.toString());
-      // // console.log('balance from booster',
-      // //   await booster.balanceOf(hiveStrategy.address));
-      // console.log('she has now in vault',
-      //   (await crvRewardsPool.balanceOf(hiveStrategy.address)).toString()
-      // );
-      // console.log('alice crv reward from base vault',
-      //   (await hiveVault.userReward(alice, crv.address)).toString()
-      // );
-      //
-      // console.log('alice cvx reward from base vault',
-      //   (await hiveVault.userReward(alice, cvx.address)).toString()
-      // );
-      //
-      // console.log('alice xbe reward from base vault',
-      //   (await hiveVault.userReward(alice, mockXBE.address)).toString()
-      // );
-      //
-      // console.log('alice lpt balance in hive',
-      //   (await hiveVault.balanceOf(alice)).toString()
-      // );
+      await time.increase(days('7'));
+      await controller.getRewardStrategy(LPTokenMockPool.address);
+      await logAllRewards('===== after a week passed =====');
+
+      await hiveVault.getReward(true, {from: alice});
+      await logAllRewards('===== after alice get reward =====');
 
       console.log('feeweight count', (await hiveVault.feeReceiversCount()).toString());
 
@@ -433,33 +418,6 @@ contract('Curve LP Testing', (accounts) => {
         .to.be.bignumber.equal(
           depositAlice.add(lpbalance), 'withdrawn value != deposited value'
       );
-
-
-      // check real alice's balance
-      // expect(crvEarned).to.be.bignumber.equal(claimCRV);
-      // expect(cvxEarned).to.be.bignumber.equal(claimCVX);
-      // expect(xbeEarned).to.be.bignumber.equal(claimXBE);
-
-      // claim virtual for bob
-
-      // time.increase(months('1'));
-
-      // const [crvEarnedVirtual, cvxEarnedVirtual, xbeEarnedVirtual] = await hiveVault.earnedVirtual.call({ from: bob });
-      // console.log(crvEarnedVirtual.toString(), cvxEarnedVirtual.toString(), xbeEarnedVirtual.toString());
-      // claimAll virtual bob
-      // ref program => users => exitst => true
-
-      // deposit with protocol fee
-
-      // withdraw and withdrawAll
-
-      // async function getRewards(userAddress, tokens) {
-      //   const rewards = [];
-      //   for (const token of tokens) {
-      //     rewards[token] = await referralProgram.rewards(userAddress, token);
-      //   }
-      //   return rewards;
-      // }
     });
   });
 });

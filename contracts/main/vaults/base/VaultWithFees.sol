@@ -8,8 +8,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../../interfaces/ITreasury.sol";
 import "../../interfaces/IFeeReceiving.sol";
 
-/// @title WithFeesAndRsOnDepositVault
-/// @notice Vault for consumers of the system
 abstract contract VaultWithFees is Ownable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
@@ -91,7 +89,7 @@ abstract contract VaultWithFees is Ownable {
         require(_index < claimFee.length, "indexOutOfBound");
         sumClaimFee = sumClaimFee - claimFee[_index].percentage;
         claimFee[_index] = claimFee[claimFee.length - 1];
-        delete claimFee[claimFee.length - 1];
+        claimFee.pop();
     }
 
     function setClaimFeePercentage(uint256 _index, uint64 _percentage)

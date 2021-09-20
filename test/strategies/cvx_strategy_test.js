@@ -74,14 +74,15 @@ contract('cvx strategy & vault testing', (accounts) => {
     const crvEarned = await vault.earned(distro.rinkeby.curve.CRV, addr);
     const cvxEarned = await vault.earned(distro.rinkeby.convex.cvx, addr);
     const xbeEarned = await vault.earned(mockXBE.address, addr);
-    const v4 = await vault.isValidToken(cvxCrv.address) ? await vault.earned(cvxCrv.address, addr): '0';
+    const v4 = (await vault.isTokenValid(cvxCrv.address)) ?
+      await vault.earned(cvxCrv.address, addr): '0';
     logValues(msg, crvEarned, cvxEarned, xbeEarned, v4.toString());
   }
   async function logRewards (vault, addr, msg) {
     const crvReward = await vault.rewards(addr, distro.rinkeby.curve.CRV);
     const cvxReward = await vault.rewards(addr, distro.rinkeby.convex.cvx);
     const xbeReward = await vault.rewards(addr, mockXBE.address);
-    const v4 = await vault.isValidToken(cvxCrv.address)
+    const v4 = (await vault.isTokenValid(cvxCrv.address))
       ? await vault.rewards(cvxCrv.address, addr): '0';
     logValues(msg, crvReward, cvxReward, xbeReward, v4);
   }
@@ -96,32 +97,34 @@ contract('cvx strategy & vault testing', (accounts) => {
     const v1 = await vault.rewardsPerTokensStored(crv.address);
     const v2 = await vault.rewardsPerTokensStored(cvx.address);
     const v3 = await vault.rewardsPerTokensStored(mockXBE.address);
-    const v4 = await vault.isValidToken(cvxCrv.address) ? await vault.rewardsPerTokensStored(cvxCrv.addr): '0';
+    const v4 = (await vault.isTokenValid(cvxCrv.address)) ?
+      await vault.rewardsPerTokensStored(cvxCrv.addr): '0';
     logValues(msg, v1, v2, v3, v4);
   }
   async function logRpt(vault, msg = '') {
     const v1 = await vault.rewardPerToken(crv.address);
     const v2 = await vault.rewardPerToken(cvx.address);
     const v3 = await vault.rewardPerToken(mockXBE.address);
-    const v4 = await vault.isValidToken(cvxCrv.address) ? await vault.rewardPerToken(cvxCrv.address) : '0';
+    const v4 = (await vault.isTokenValid(cvxCrv.address)) ?
+      await vault.rewardPerToken(cvxCrv.address) : '0';
     logValues(msg, v1, v2, v3, v4.toString());
   }
   async function logUrptp(vault, addr, msg = '') {
     const v1 = await vault.userRewardPerTokenPaid(crv.address, addr);
     const v2 = await vault.userRewardPerTokenPaid(cvx.address, addr);
     const v3 = await vault.userRewardPerTokenPaid(mockXBE.address, addr);
-    const v4 = await vault.isValidToken(cvxCrv.address) ?
+    const v4 = (await vault.isTokenValid(cvxCrv.address)) ?
       await vault.userRewardPerTokenPaid(cvxCrv.address, addr) : '0';
 
     logValues(msg, v1, v2, v3, v4);
   }
-  async function logAllRewards (vault, msg) {
+  async function logAllRewards (vault, user, msg) {
     console.log('\n', msg);
-    await logBalance(alice, 'balances');
-    await logEarnings(vault, alice, 'earned');
-    await logRewards(vault, alice, 'rewards');
-    await logRpts(vault, 'reward pts');
-    await logUrptp(vault, alice, 'userrptp');
+    await logBalance(user, 'balances');
+    await logEarnings(vault, user, 'earned');
+    await logRewards(vault, user, 'rewards');
+    await logRpts(vault, user, 'reward pts');
+    await logUrptp(vault, user, 'userrptp');
     await logRpt(vault, 'rewards pt');
     await logBalance(hiveVault.address, 'hive balances');
   }
@@ -132,19 +135,19 @@ contract('cvx strategy & vault testing', (accounts) => {
     // deposit Alice
     // eslint-disable-next-line no-underscore-dangle
     await stableSwapMockPool._mint_for_testing(depositAlice, { from: user });
-    await logAllRewards(hiveVault, 'point 1');
+    await logAllRewards(hiveVault, user,'point 1');
     await LPTokenMockPool.approve(hiveVault.address, depositAlice, { from: user });
     await hiveVault.deposit(depositAlice, { from: user });
     await hiveVault.earn({ from: owner });
     await time.increase(months('1'));
     await booster.earmarkRewards(ZERO, { from: owner });
     await controller.getRewardStrategy(LPTokenMockPool.address, { from: owner });
-    await logAllRewards(hiveVault, 'point 1');
+    await logAllRewards(hiveVault, user, 'point 2');
     await time.increase(months('1'));
     await hiveVault.getReward(true, {from: user});
-    await logAllRewards(hiveVault,'point 2');
+    await logAllRewards(hiveVault, user,'point 3');
     await hiveVault.getReward(true, {from: user});
-    await logAllRewards(hiveVault, 'point 3');
+    await logAllRewards(hiveVault, user, 'point 4');
   }
 
   async function deployAndConfigure() {
@@ -462,8 +465,13 @@ contract('cvx strategy & vault testing', (accounts) => {
       await time.increase(months('1'));
       await controller.getRewardStrategy(cvx.address, { from: owner });
       await cvxVault.getReward({from: alice});
-      await logAllRewards(cvxVault.address, 'hhh');
-      console.log('alice reward in cvxCRV', await cvxCrv.balanceOf(alice));
+
+      // await logAllRewards(cvxVault, alice, '=== cvx vault ===');
+      console.log('alice reward in cvxCRV', (await cvxCrv.balanceOf(alice)).toString());
+      console.log('alice reward in cvx', (await cvx.balanceOf(alice)).toString());
+      console.log('alice reward in crv', (await crv.balanceOf(alice)).toString());
+      console.log('alice reward in xbe', (await mockXBE.balanceOf(alice)).toString());
+
       await cvxVault.withdraw(depositAlice, { from: alice });
 
     });

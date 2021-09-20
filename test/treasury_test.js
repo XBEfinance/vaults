@@ -51,11 +51,11 @@ const redeploy = async () => {
       "VotingStakingRewards": {
         4: ZERO_ADDRESS,
         5: ZERO_ADDRESS,
-        8: [ ZERO_ADDRESS ]
+        8: [ ZERO_ADDRESS ],
       },
       "Treasury": {
-        3: mock.address
-      }
+        3: mock.address,
+      },
     }
   );
   await treasury.addTokenToConvert(mockedOtherToken.address, { from: owner });

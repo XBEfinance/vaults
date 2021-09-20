@@ -48,11 +48,13 @@ const processEventArgs = async (result, eventName, processArgs) => {
 const overrideConfigureArgsIfNeeded = async (
   originalConfigureParams,
   overridenConfigureParams,
-  originalConfigureParamsLength,
+  // originalConfigureParamsLength,
 ) => {
   const result = [];
-  for (let i = 0; i < originalConfigureParamsLength; i += 1) {
-    result.push(overridenConfigureParams[i]
+  const length = originalConfigureParams.length;
+  const overrideDefined = (typeof overridenConfigureParams) !== 'undefined';
+  for (let i = 0; i < length; i += 1) {
+    result.push(overrideDefined && overridenConfigureParams[i]
       // eslint-disable-next-line no-await-in-loop
       ? overridenConfigureParams[i] : await originalConfigureParams[i]());
   }
@@ -110,8 +112,7 @@ const cacheAndReturnContract = async (key, force, container, isMockContractReque
     if (isMockContractRequested) {
       instance = await artifacts.MockContract.new();
     } else {
-      const temp = await getInstance();
-      instance = temp;
+      instance = await getInstance();;
     }
     container[key] = instance;
     return instance;

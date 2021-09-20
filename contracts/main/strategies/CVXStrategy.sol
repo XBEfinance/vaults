@@ -4,12 +4,12 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./base/ClaimableStrategy.sol";
-import "../interfaces/IRewards.sol";
+import "../interfaces/ICVXRewards.sol";
 
 /// @title CVXStrategy
 /// @notice CVXVault strategy: in CVX out cvxCRV
 contract CVXStrategy is ClaimableStrategy {
-    IRewards public cvxRewards;
+    ICVXRewards public cvxRewards;
 
     function configure(
         address _wantAddress,
@@ -32,7 +32,7 @@ contract CVXStrategy is ClaimableStrategy {
     }
 
     function getRewards() external override {
-        require(cvxRewards.getReward(), "!getRewards");
+        cvxRewards.getReward(true);
     }
 
     function _withdrawSome(uint256 _amount)
@@ -40,7 +40,7 @@ contract CVXStrategy is ClaimableStrategy {
         override
         returns (uint256)
     {
-        require(cvxRewards.withdrawAndUnwrap(_amount, true), "!withdrawSome");
+        cvxRewards.withdraw(_amount, true);
         return _amount;
     }
 }

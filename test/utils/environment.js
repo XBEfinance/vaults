@@ -18,7 +18,7 @@ const overrideConfigureArgsIfNeeded = async (
     ...(await common.overrideConfigureArgsIfNeeded(
       originalConfigureParams,
       overridenConfigureParams,
-      originalConfigureParams.length,
+      // originalConfigureParams.length,
     )),
   );
   return instance;
@@ -692,10 +692,8 @@ const environment = {
         mockLpSushi.address,
         controller.address,
         owner,
-        [
           (await common.waitFor('MockXBE', deployedAndConfiguredContracts,
-            'environment - MockXBE as dependency for SushiStrategy')).address
-        ],
+            'environment - MockXBE as dependency for SushiStrategy')).address,
         { from: owner },
       );
 
@@ -1096,6 +1094,7 @@ const environment = {
         async () => (await common.waitFor(
           'VotingStakingRewards',
           deployment.deployedContracts,
+          'waiting for VotingStakingRewards as dependency for Treasury',
         )).address,
         async () => (await common.waitFor(
           'MockXBE',
@@ -1105,7 +1104,7 @@ const environment = {
         async () => constants.localParams.treasury.slippageTolerance,
         async () => constants.localParams.treasury.swapDeadline,
       ];
-
+      console.log('treasury', overridenConfigureParams);
       return await overrideConfigureArgsIfNeeded(
         instance, originalConfigureParams, overridenConfigureParams
       );

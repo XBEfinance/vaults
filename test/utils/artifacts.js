@@ -48,6 +48,7 @@ module.exports = {
   LockSubscription: getContract('LockSubscription'),
   SimpleXBEInflation: getContract('SimpleXBEInflation'),
   StableSwapMockPool: getContract('StableSwapMockPool'),
+  StableSwapUSDT: getContract('StableSwapUSDT'),
   ERC20LP: getContract('ERC20LP'),
   BaseRewardPool: getContract('BaseRewardPool'),
   Booster: getContract('Booster'),

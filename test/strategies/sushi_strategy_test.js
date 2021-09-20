@@ -79,14 +79,14 @@ contract('SushiStrategy', (accounts) => {
       alice = await common.waitFor("alice", people);
     });
 
-    xit('should configure properly', async () => {
+    it('should configure properly', async () => {
       expect(await sushiStrategy.want()).to.be.equal(mockLpSushi.address);
       expect(await sushiStrategy.controller()).to.be.equal(controller.address);
       expect(await sushiStrategy.owner()).to.be.equal(owner);
       expect((await sushiStrategy.poolSettings())['xbeToken']).to.be.equal(mockXBE.address);
     });
 
-    xit('should set controller', async () => {
+    it('should set controller', async () => {
       await common.checkSetter(
         'setController',
         'controller',
@@ -100,7 +100,7 @@ contract('SushiStrategy', (accounts) => {
       );
     });
 
-    xit('should set want', async () => {
+    it('should set want', async () => {
       await common.checkSetter(
         'setWant',
         'want',
@@ -114,7 +114,7 @@ contract('SushiStrategy', (accounts) => {
       );
     });
 
-    xit('should withdraw tokens from strategy to controller', async () => {
+    it('should withdraw tokens from strategy to controller', async () => {
       expectRevert(sushiStrategy.methods['withdraw(address)'](ZERO_ADDRESS), "!controller");
       expectRevert(sushiStrategy.methods['withdraw(address)'](mockLpSushi.address), "!want");
       await sushiStrategy.setController(owner, { from: owner });
@@ -127,7 +127,7 @@ contract('SushiStrategy', (accounts) => {
       });
     });
 
-    xit('should withdraw want token from strategy to vault', async () => {
+    it('should withdraw want token from strategy to vault', async () => {
       expectRevert(
         sushiStrategy.methods['withdraw(uint256)'](utilsConstants.utils.ZERO),
         "!controller|vault"

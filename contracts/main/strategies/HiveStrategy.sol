@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./base/ClaimableStrategy.sol";
 import "../interfaces/IBooster.sol";
 import "../interfaces/IRewards.sol";
+import "../interfaces/ICVXRewards.sol";
 
 /// @title HiveStrategy
 /// @notice This is contract for yield farming strategy with EURxb token for investors
@@ -65,10 +66,8 @@ contract HiveStrategy is ClaimableStrategy {
             IRewards(poolSettings.crvRewards).getReward(),
             "!getRewardsCRV"
         );
-        require(
-            IRewards(poolSettings.cvxRewards).getReward(),
-            "!getRewardsCVX"
-        );
+
+        ICVXRewards(poolSettings.cvxRewards).getReward(true);
     }
 
     function _withdrawSome(uint256 _amount)
@@ -76,6 +75,8 @@ contract HiveStrategy is ClaimableStrategy {
         override
         returns (uint256)
     {
+        IRewards(poolSettings.crvRewards).withdraw(_amount, true);
+
         require(
             IBooster(poolSettings.convexBooster).withdraw(
                 poolSettings.poolIndex,
@@ -83,6 +84,7 @@ contract HiveStrategy is ClaimableStrategy {
             ),
             "!withdrawSome"
         );
+
         return _amount;
     }
 }

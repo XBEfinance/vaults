@@ -1,12 +1,14 @@
 pragma solidity ^0.6.0;
 
-import "./base/BaseVault.sol";
+import "./base/BaseVaultV2.sol";
 import "./base/VaultWithAutoStake.sol";
 import "./base/VaultWithFees.sol";
 import "./base/VaultWithReferralProgram.sol";
 
-contract Vault is
-    BaseVault,
+/// @title CVXVault
+/// @notice Vault for staking of CVX and receive rewards in cvxCRV
+contract CVXVault is
+    BaseVaultV2,
     VaultWithAutoStake,
     VaultWithFees,
     VaultWithReferralProgram

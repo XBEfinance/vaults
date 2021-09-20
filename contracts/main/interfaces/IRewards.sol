@@ -25,7 +25,7 @@ interface IRewards {
 
     function stakingToken() external returns (address);
 
-    function withdraw(uint256, bool) external;
+    function withdraw(uint256, bool) external returns(bool);
 
     function withdrawAndUnwrap(uint256 amount, bool claim)
         external

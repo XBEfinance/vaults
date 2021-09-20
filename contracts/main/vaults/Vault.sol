@@ -7,7 +7,7 @@ import "./base/VaultWithReferralProgram.sol";
 
 /// @title CVXVault
 /// @notice Vault for staking of CVX and receive rewards in cvxCRV
-contract CVXVault is
+contract Vault is
     BaseVaultV2,
     VaultWithAutoStake,
     VaultWithFees,
@@ -15,7 +15,7 @@ contract CVXVault is
 {
     constructor(string memory _name, string memory _symbol)
         public
-        BaseVault(_name, _symbol)
+        BaseVaultV2(_name, _symbol)
     {}
 
     function configure(

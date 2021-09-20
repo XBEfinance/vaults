@@ -18,7 +18,7 @@ contract CVXStrategy is ClaimableStrategy {
         address _cvxRewards
     ) public onlyOwner initializer {
         _configure(_wantAddress, _controllerAddress, _governance);
-        cvxRewards = IRewards(_cvxRewards);
+        cvxRewards = ICVXRewards(_cvxRewards);
     }
 
     /// @dev Function that controller calls

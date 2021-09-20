@@ -50,13 +50,9 @@ contract Vault is
         override
         returns (uint256)
     {
-        require(_amount > 0, "Cannot stake 0");
         _amount = _getFeesOnDeposit(stakingToken, _amount);
-        stakingToken.safeTransferFrom(_from, address(this), _amount);
-        _totalSupply = _totalSupply.add(_amount);
-        _balances[_from] = _balances[_from].add(_amount);
+        super._deposit(_from, _amount);
         _registerUserInReferralProgramIfNeeded(_from);
-        emit Staked(_from, _amount);
         return _amount;
     }
 

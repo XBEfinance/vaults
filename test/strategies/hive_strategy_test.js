@@ -35,15 +35,6 @@ const {
 const { waitFor } = require("../utils/common");
 const utilsConstants = require("../utils/constants.js");
 
-//     struct PoolInfo {
-//         address lptoken;
-//         address token;
-//         address gauge;
-//         address crvRewards;
-//         address stash;
-//         bool shutdown;
-//     }
-
 contract('Curve LP Testing', (accounts) => {
   setPeople(accounts);
 
@@ -335,7 +326,6 @@ contract('Curve LP Testing', (accounts) => {
       const logValues = (msg, v1, v2, v3) => {
         console.log(`${msg}:\tcrv: ${v1},\tcvx: ${v2},\txbe: ${v3}`);
       }
-      // let [crvEarned, cvxEarned, xbeEarned] = [0, 0, 0];
       const logEarnings = async (addr, msg) => {
         const crvEarned = await hiveVault.earned(distro.rinkeby.curve.CRV, addr);
         const cvxEarned = await hiveVault.earned(distro.rinkeby.convex.cvx, addr);
@@ -380,11 +370,7 @@ contract('Curve LP Testing', (accounts) => {
         await logRpts('reward pts');
         await logUrptp(alice, 'userrptp');
         await logRpt('rewards pt');
-        // await logBalance(owner, 'owner balances:');
-        // await logBalance(wallet, 'wallet balances:');
-        // await logBalance(treasury.address, 'treasury address');
         await logBalance(hiveVault.address, 'hive balances');
-        // await logBalance(votingStakingRewards.address, 'VSR balances');
       };
       await logAllRewards('===== before update rewards =====');
 

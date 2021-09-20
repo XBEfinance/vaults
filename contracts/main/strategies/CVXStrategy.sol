@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./base/ClaimableStrategy.sol";
-import "../interfaces/IRewards.sol";
+import "../interfaces/ICVXRewards.sol";
 
 /// @title CVXStrategy
 /// @notice CVXVault strategy: in CVX out cvxCRV
@@ -35,11 +35,11 @@ contract CVXStrategy is ClaimableStrategy {
         uint256 _amount = IERC20(_want).balanceOf(address(this));
 
         IERC20(_want).approve(poolSettings.cvxRewards, _amount);
-        IRewards(poolSettings.cvxRewards).stake(_amount);
+        ICVXRewards(poolSettings.cvxRewards).stake(_amount);
     }
 
     function getRewards() external override {
-        require(IRewards(poolSettings.cvxRewards).getReward(), "!getRewards");
+        ICVXRewards(poolSettings.cvxRewards).getReward(true);
     }
 
     function _withdrawSome(uint256 _amount)
@@ -47,10 +47,7 @@ contract CVXStrategy is ClaimableStrategy {
         override
         returns (uint256)
     {
-        require(
-            IRewards(poolSettings.cvxRewards).withdrawAndUnwrap(_amount, true),
-            "!withdrawSome"
-        );
+        ICVXRewards(poolSettings.cvxRewards).withdraw(_amount, true);
         return _amount;
     }
 }

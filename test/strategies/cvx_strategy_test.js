@@ -29,6 +29,7 @@ const {
   StableSwapUSDT,
   ERC20LP,
   BaseRewardPool,
+  cvxRewardPool,
   Booster,
   ERC20CRV,
   ConvexToken,
@@ -36,6 +37,15 @@ const {
 } = require('../utils/artifacts');
 const { waitFor } = require("../utils/common");
 const utilsConstants = require("../utils/constants.js");
+
+const {
+  logValues,
+  wrapReward,
+  wrapEarned,
+  wrapRpts,
+  wrapRpt,
+  wrapUrptp,
+} = require('./util/wrappers');
 
 contract('cvx strategy & vault testing', (accounts) => {
   setPeople(accounts);
@@ -54,7 +64,9 @@ contract('cvx strategy & vault testing', (accounts) => {
   let referralProgram;
   let registry;
   let stableSwapUSDT;
-  let crvRewardsPool;
+  let crvRewarder;
+  let cvxRewarder
+  let cvxCrvRewarder;
   let booster;
   let crv;
   let cvx;
@@ -67,55 +79,50 @@ contract('cvx strategy & vault testing', (accounts) => {
   let bob;
   let wallet;
 
-  function logValues (msg, v1, v2, v3, v4) {
-    console.log(`${msg}:\tcrv: ${v1},\tcvx: ${v2},\txbe: ${v3},\tcvxCRV:${v4}`);
+  async function logEarnings(vault, user, msg)  {
+    const crvEarned = await wrapEarned(vault, user, distro.rinkeby.curve.CRV);
+    const cvxEarned = await wrapEarned(vault, user, distro.rinkeby.convex.cvx);
+    const xbeEarned = await wrapEarned(vault, user, mockXBE.address);
+    const cvxCrvEarned = await wrapEarned(vault, user, cvxCrv.address);
+    logValues(msg, crvEarned, cvxEarned, xbeEarned, cvxCrvEarned);
   }
-  async function logEarnings(vault, addr, msg)  {
-    const crvEarned = await vault.earned(distro.rinkeby.curve.CRV, addr);
-    const cvxEarned = await vault.earned(distro.rinkeby.convex.cvx, addr);
-    const xbeEarned = await vault.earned(mockXBE.address, addr);
-    const v4 = (await vault.isTokenValid(cvxCrv.address)) ?
-      await vault.earned(cvxCrv.address, addr): '0';
-    logValues(msg, crvEarned, cvxEarned, xbeEarned, v4.toString());
+  async function logRewards (vault, user, msg) {
+    const crvReward = await wrapReward(vault, user, distro.rinkeby.curve.CRV);
+    const cvxReward = await wrapReward(vault, user, distro.rinkeby.convex.cvx);
+    const xbeReward = await wrapReward(vault, user, mockXBE.address);
+    const cvxCrvEarned = await wrapReward(vault, user, cvxCrv.address);
+    logValues(msg, crvReward, cvxReward, xbeReward, cvxCrvEarned);
   }
-  async function logRewards (vault, addr, msg) {
-    const crvReward = await vault.rewards(addr, distro.rinkeby.curve.CRV);
-    const cvxReward = await vault.rewards(addr, distro.rinkeby.convex.cvx);
-    const xbeReward = await vault.rewards(addr, mockXBE.address);
-    const v4 = (await vault.isTokenValid(cvxCrv.address))
-      ? await vault.rewards(cvxCrv.address, addr): '0';
-    logValues(msg, crvReward, cvxReward, xbeReward, v4);
+  async function getBalances(user) {
+    const v1 = await crv.balanceOf(user);
+    const v2 = await mockXBE.balanceOf(user);
+    const v3 = await cvx.balanceOf(user);
+    const v4 = await cvxCrv.balanceOf(user);
+    return { crv: v1, cvx: v3, xbe: v2, cvxcrv: v4};
   }
-  async function logBalance (addr, msg = '') {
-    const crvBalance = await crv.balanceOf(addr);
-    const xbeBalance = await mockXBE.balanceOf(addr);
-    const cvxBalance = await cvx.balanceOf(addr);
-    const v4 = await cvxCrv.balanceOf(addr);
-    logValues(msg, crvBalance, cvxBalance, xbeBalance, v4);
+  async function logBalance (user, msg = '') {
+    const balances = await getBalances(user);
+    logValues(msg, balances.crv, balances.cvx, balances.xbe, balances.cvxcrv);
   }
   async function logRpts (vault, msg = '') {
-    const v1 = await vault.rewardsPerTokensStored(crv.address);
-    const v2 = await vault.rewardsPerTokensStored(cvx.address);
-    const v3 = await vault.rewardsPerTokensStored(mockXBE.address);
-    const v4 = (await vault.isTokenValid(cvxCrv.address)) ?
-      await vault.rewardsPerTokensStored(cvxCrv.addr): '0';
+    const v1 = await wrapRpts(vault, crv.address);
+    const v2 = await wrapRpts(vault, cvx.address);
+    const v3 = await wrapRpts(vault, mockXBE.address);
+    const v4 = await wrapRpts(vault, cvxCrv.address);
     logValues(msg, v1, v2, v3, v4);
   }
   async function logRpt(vault, msg = '') {
-    const v1 = await vault.rewardPerToken(crv.address);
-    const v2 = await vault.rewardPerToken(cvx.address);
-    const v3 = await vault.rewardPerToken(mockXBE.address);
-    const v4 = (await vault.isTokenValid(cvxCrv.address)) ?
-      await vault.rewardPerToken(cvxCrv.address) : '0';
+    const v1 = await wrapRpt(vault, crv.address);
+    const v2 = await wrapRpt(vault, cvx.address);
+    const v3 = await wrapRpt(vault, mockXBE.address);
+    const v4 = await wrapRpt(vault, cvxCrv.address);
     logValues(msg, v1, v2, v3, v4.toString());
   }
-  async function logUrptp(vault, addr, msg = '') {
-    const v1 = await vault.userRewardPerTokenPaid(crv.address, addr);
-    const v2 = await vault.userRewardPerTokenPaid(cvx.address, addr);
-    const v3 = await vault.userRewardPerTokenPaid(mockXBE.address, addr);
-    const v4 = (await vault.isTokenValid(cvxCrv.address)) ?
-      await vault.userRewardPerTokenPaid(cvxCrv.address, addr) : '0';
-
+  async function logUrptp(vault, user, msg = '') {
+    const v1 = await wrapUrptp(vault, user, crv.address);
+    const v2 = await wrapUrptp(vault, user, cvx.address);
+    const v3 = await wrapUrptp(vault, user, mockXBE.address);
+    const v4 = await wrapUrptp(vault, user, cvxCrv.address);
     logValues(msg, v1, v2, v3, v4);
   }
   async function logAllRewards (vault, user, msg) {
@@ -123,7 +130,7 @@ contract('cvx strategy & vault testing', (accounts) => {
     await logBalance(user, 'balances');
     await logEarnings(vault, user, 'earned');
     await logRewards(vault, user, 'rewards');
-    await logRpts(vault, user, 'reward pts');
+    await logRpts(vault, 'reward pts');
     await logUrptp(vault, user, 'userrptp');
     await logRpt(vault, 'rewards pt');
     await logBalance(hiveVault.address, 'hive balances');
@@ -135,19 +142,19 @@ contract('cvx strategy & vault testing', (accounts) => {
     // deposit Alice
     // eslint-disable-next-line no-underscore-dangle
     await stableSwapMockPool._mint_for_testing(depositAlice, { from: user });
-    await logAllRewards(hiveVault, user,'point 1');
     await LPTokenMockPool.approve(hiveVault.address, depositAlice, { from: user });
     await hiveVault.deposit(depositAlice, { from: user });
     await hiveVault.earn({ from: owner });
     await time.increase(months('1'));
     await booster.earmarkRewards(ZERO, { from: owner });
     await controller.getRewardStrategy(LPTokenMockPool.address, { from: owner });
-    await logAllRewards(hiveVault, user, 'point 2');
     await time.increase(months('1'));
     await hiveVault.getReward(true, {from: user});
-    await logAllRewards(hiveVault, user,'point 3');
     await hiveVault.getReward(true, {from: user});
-    await logAllRewards(hiveVault, user, 'point 4');
+    //await logAllRewards(hiveVault, user, 'point 4');
+    await logBalance(alice, 'alice balances');
+    await logBalance(hiveVault.address, 'vault balances');
+    await logBalance(hiveStrategy.address, 'strategy balances');
   }
 
   async function deployAndConfigure() {
@@ -164,7 +171,9 @@ contract('cvx strategy & vault testing', (accounts) => {
     stableSwapMockPool = await StableSwapMockPool
       .at(distro.rinkeby.curve.pool_data.mock_pool.swap_address);
     LPTokenMockPool = await ERC20LP.at(distro.rinkeby.convex.pools[0].lptoken);
-    crvRewardsPool = await BaseRewardPool.at(distro.rinkeby.convex.pools[0].crvRewards);
+    crvRewarder = await BaseRewardPool.at(distro.rinkeby.convex.pools[0].crvRewards);
+    cvxRewarder = await cvxRewardPool.at(distro.rinkeby.convex.cvxRewards);
+    cvxCrvRewarder = await BaseRewardPool.at(distro.rinkeby.convex.cvxCrvRewards);
     booster = await Booster.at(distro.rinkeby.convex.booster);
     cvx = await ConvexToken.at(distro.rinkeby.convex.cvx);
     crv = await ERC20CRV.at(distro.rinkeby.curve.CRV);
@@ -249,7 +258,7 @@ contract('cvx strategy & vault testing', (accounts) => {
       controller.address,
       owner,
       [
-        crvRewardsPool.address,
+        crvRewarder.address,
         distro.rinkeby.convex.cvxRewards,
         booster.address,
         distro.rinkeby.convex.pools[0].id,
@@ -397,6 +406,15 @@ contract('cvx strategy & vault testing', (accounts) => {
     console.log('configuration completed');
   }
 
+  async function cvxPoolEarnedReward(account) {
+    const bal = await cvxRewarder.balanceOf(account);
+    const rpt = await cvxRewarder.rewardPerToken();
+    const urptp = await cvxRewarder.userRewardPerTokenPaid(account);
+    const rewards = await cvxRewarder.rewards(account);
+
+    return bal.mul(rpt).sub(urptp).div(new BN('1e18')).add(rewards);
+  }
+
   describe('cvx strategy & vault tests', async () => {
     beforeEach(deployAndConfigure);
 
@@ -445,12 +463,14 @@ contract('cvx strategy & vault testing', (accounts) => {
     it('acceptance test', async () => {
       expect(await cvxVault.feesEnabled()).to.be.true;
 
+      // mint cvx, crv tokens to alice
       await mintTokens(alice);
 
       const depositAlice = await cvx.balanceOf(alice);
       console.log('alice cvx balance', depositAlice.toString());
       expect(depositAlice).to.be.bignumber.gt(ZERO);
 
+      // stake cvx into cvx vault
       await cvx.approve(cvxVault.address, depositAlice, { from: alice });
       await cvxVault.deposit(depositAlice, { from: alice });
 
@@ -462,18 +482,43 @@ contract('cvx strategy & vault testing', (accounts) => {
       await cvxVault.earn();
       await time.increase(months('1'));
       await controller.getRewardStrategy(cvx.address, { from: owner });
+      console.log(' === 1 month later === ');
+      await logBalance(cvxVault.address, 'vault balances');
+      await logBalance(cvxStrategy.address, 'strategy balances');
       await time.increase(months('1'));
+      console.log(' === 1 month later === ');
+      console.log(
+        'strategy balance in cvxCrv rewarder',
+        (await cvxCrvRewarder.balanceOf(cvxStrategy.address)).toString(),
+      );
       await controller.getRewardStrategy(cvx.address, { from: owner });
+      console.log(
+        'strategy balance in cvxCrv rewarder',
+        (await cvxCrvRewarder.balanceOf(cvxStrategy.address)).toString(),
+      );
+      console.log(
+        'strategy earned:',
+        (await cvxPoolEarnedReward(cvxStrategy.address)).toString(),
+      );
+
       await cvxVault.getReward({from: alice});
 
-      // await logAllRewards(cvxVault, alice, '=== cvx vault ===');
-      console.log('alice reward in cvxCRV', (await cvxCrv.balanceOf(alice)).toString());
-      console.log('alice reward in cvx', (await cvx.balanceOf(alice)).toString());
-      console.log('alice reward in crv', (await crv.balanceOf(alice)).toString());
-      console.log('alice reward in xbe', (await mockXBE.balanceOf(alice)).toString());
+      await logBalance(alice, 'alice balances');
+      await logBalance(cvxVault.address, 'vault balances');
+      await logBalance(cvxStrategy.address, 'strategy balances');
+
+      // console.log(
+      //   'strategy balance in cvx rewarder',
+      //   (await cvxRewarder.balanceOf(cvxStrategy.address)).toString(),
+      // );
+      console.log(
+        'strategy earned reward in cvx rewarder',
+        (await cvxPoolEarnedReward(cvxStrategy.address)).toString(),
+      );
 
       await cvxVault.withdraw(depositAlice, { from: alice });
-
+      expect(await cvx.balanceOf(alice)).to.be.bignumber.equal(depositAlice);
+      await logBalance(alice, 'alice balances');
     });
   });
 });

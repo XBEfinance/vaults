@@ -54,4 +54,5 @@ module.exports = {
   Booster: getContract('Booster'),
   ERC20CRV: getContract('ERC20CRV'),
   ConvexToken: getContract('ConvexToken'),
+  cvxRewardPool: getContract('cvxRewardPool'),
 };

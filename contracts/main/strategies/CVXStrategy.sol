@@ -39,7 +39,7 @@ contract CVXStrategy is ClaimableStrategy {
     }
 
     function getRewards() external override {
-        ICVXRewards(poolSettings.cvxRewards).getReward(true);
+        ICVXRewards(poolSettings.cvxRewards).getReward(false);
     }
 
     function _withdrawSome(uint256 _amount)

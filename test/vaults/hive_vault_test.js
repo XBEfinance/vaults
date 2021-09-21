@@ -48,7 +48,7 @@ const {
   earnTest
 } = require('./vaults_test_suite_template.js');
 
-const vaultName = 'HiveVault';
+const vaultName = 'Vault';
 
 contract(vaultName, (accounts) => {
 
@@ -91,7 +91,7 @@ contract(vaultName, (accounts) => {
         "VotingStakingRewards",
         "HiveStrategy",
         "ReferralProgram",
-        "HiveVault",
+        "Vault",
         "Controller"
       ],
       (key) => [
@@ -99,7 +99,7 @@ contract(vaultName, (accounts) => {
         "MockCVX",
         "MockCRV",
         "MockLPHive",
-        "HiveVault",
+        "Vault",
         "Controller"
       ].includes(key),
       true,

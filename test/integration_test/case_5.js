@@ -21,7 +21,8 @@ const { days, months } = constants.time;
 
 const {
   HiveStrategy,
-  HiveVault,
+  Vault,
+  BonusCampaign,
   ReferralProgram,
   StableSwapMockPool,
   StableSwapUSDT,
@@ -56,7 +57,7 @@ contract('Curve LP Testing', (accounts) => {
   let mock;
 
   async function deployAndConfigure() {
-    hiveVault = await HiveVault.new();
+    hiveVault = await Vault.new();
     hiveStrategy = await HiveStrategy.new();
     referralProgram = await ReferralProgram.new();
     stableSwapMockPool = await StableSwapMockPool

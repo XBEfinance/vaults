@@ -2,20 +2,21 @@ pragma solidity ^0.6.0;
 
 import "./base/BaseVaultV2.sol";
 import "./base/VaultWithAutoStake.sol";
-import "./base/VaultWithFeesOnClaim.sol";
-import "./base/VaultWithFeesOnDeposit.sol";
+import "./base/VaultWithFees.sol";
 import "./base/VaultWithReferralProgram.sol";
 
-/// @title SushiVault
-/// @notice Vault for staking LP Sushiswap and receive rewards in CVX
-contract HiveVault is
+/// @title CVXVault
+/// @notice Vault for staking of CVX and receive rewards in cvxCRV
+contract Vault is
     BaseVaultV2,
     VaultWithAutoStake,
-    VaultWithFeesOnClaim,
-    VaultWithFeesOnDeposit,
+    VaultWithFees,
     VaultWithReferralProgram
 {
-    constructor() public BaseVaultV2("XBE Hive Curve LP", "xh") {}
+    constructor(string memory _name, string memory _symbol)
+        public
+        BaseVaultV2(_name, _symbol)
+    {}
 
     function configure(
         address _initialToken,
@@ -25,16 +26,15 @@ contract HiveVault is
         address _tokenToAutostake,
         address _votingStakingRewards,
         bool _enableFees,
-        address _teamWallet,
+        address _depositFeeWallet,
         address _referralProgram,
         address _treasury,
         address[] memory _rewardsTokens,
-        string memory __namePostfix,
-        string memory __symbolPostfix
+        string memory _namePostfix,
+        string memory _symbolPostfix
     ) public onlyOwner initializer {
         _configureVaultWithAutoStake(_tokenToAutostake, _votingStakingRewards);
-        _configureVaultWithFeesOnClaim(_enableFees);
-        _configureVaultWithFeesOnDeposit(_teamWallet);
+        _configureVaultWithFees(_depositFeeWallet, _enableFees);
         _configureVaultWithReferralProgram(_referralProgram, _treasury);
         _configure(
             _initialToken,
@@ -42,8 +42,8 @@ contract HiveVault is
             _governance,
             _rewardsDuration,
             _rewardsTokens,
-            __namePostfix,
-            __symbolPostfix
+            _namePostfix,
+            _symbolPostfix
         );
     }
 
@@ -52,42 +52,28 @@ contract HiveVault is
         override
         returns (uint256)
     {
-        _amount = _getFeeForDepositAndSendIt(stakingToken, _amount);
+        _amount = _getFeesOnDeposit(stakingToken, _amount);
         super._deposit(_from, _amount);
         _registerUserInReferralProgramIfNeeded(_from);
         return _amount;
     }
 
     function _getReward(
+        bool _claimUnderlying,
         address _for,
-        address _rewardToken
-    ) internal virtual {
-        _controller.claim(address(stakingToken), _rewardToken);
-
+        address _rewardToken,
+        address _stakingToken
+    ) internal override {
+        if (_claimUnderlying) {
+            _controller.getRewardStrategy(_stakingToken);
+        }
+        _controller.claim(_stakingToken, _rewardToken);
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
-            reward = _getAndDistributeFeesOnClaimForToken(_for, _rewardToken, reward);
+            reward = _getFeesOnClaimForToken(_for, _rewardToken, reward);
             _autoStakeForOrSendTo(_rewardToken, reward, _for);
         }
         emit RewardPaid(_rewardToken, _for, reward);
-    }
-
-    function _getRewardAll(bool _claimUnderlying) internal override {
-        if (_claimUnderlying) {
-            _controller.getRewardStrategy(address(stakingToken));
-        }
-        for (uint256 i = 0; i < _validTokens.length(); i++) {
-            _getReward(msg.sender, _validTokens.at(i));
-        }
-    }
-
-    function _isUserAuthorized(address _user)
-        internal
-        view
-        override
-        returns (bool)
-    {
-        return owner() == _user;
     }
 }

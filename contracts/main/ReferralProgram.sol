@@ -28,7 +28,12 @@ contract ReferralProgram is Initializable, ReentrancyGuard, Ownable {
     IRegistry public registry;
 
     event RegisterUser(address user, address referrer);
-    event RewardReceived(address user, address referrer, address token, uint256 amount);
+    event RewardReceived(
+        address user,
+        address referrer,
+        address token,
+        uint256 amount
+    );
     event RewardsClaimed(address user, address[] tokens, uint256[] amounts);
     event NewDistribution(uint256[] distribution);
     event NewToken(address token);
@@ -41,6 +46,7 @@ contract ReferralProgram is Initializable, ReentrancyGuard, Ownable {
                 break;
             }
         }
+        require(false, "RP!feeDistributor");
     }
 
     function configure(
@@ -50,7 +56,6 @@ contract ReferralProgram is Initializable, ReentrancyGuard, Ownable {
     ) external initializer {
         require(_rootAddress != address(0), "RProotIsZero");
         require(_registry != address(0), "RPregistryIsZero");
-        require(_registry != address(0), 'RPregistryIsZero');
         require(tokenAddresses.length > 0, "RPtokensNotProvided");
 
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
@@ -119,10 +124,7 @@ contract ReferralProgram is Initializable, ReentrancyGuard, Ownable {
             uint256 reward = rewards[userAddr][token];
             if (reward > 0) {
                 amounts[i] = reward;
-                IERC20(token).safeTransfer(
-                    userAddr,
-                    reward
-                );
+                IERC20(token).safeTransfer(userAddr, reward);
                 rewards[userAddr][token] = 0;
             }
         }

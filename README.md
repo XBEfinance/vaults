@@ -1,4 +1,4 @@
-XBE.finance - Vault contract 1.10
+XBE.finance - 1.8 and 1.10
 =================
 **The system of Smart-Contracts for bonds digitization** 
 

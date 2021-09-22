@@ -1,4 +1,4 @@
-EURxb.finance - Vault contract
+XBE.finance - Vault contract 1.10
 =================
 **The system of Smart-Contracts for bonds digitization** 
 

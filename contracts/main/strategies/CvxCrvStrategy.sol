@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./base/ClaimableStrategy.sol";
 import "../interfaces/IRewards.sol";
 import "../interfaces/vault/IVaultTransfers.sol";
+import "../interfaces/IStaker.sol";
 
 /// @title CvxCrvStrategy
 contract CvxCrvStrategy is ClaimableStrategy {
@@ -32,14 +33,12 @@ contract CvxCrvStrategy is ClaimableStrategy {
         IERC20 wantToken = IERC20(_want);
         uint256 _amount = wantToken.balanceOf(address(this));
         if (
-            wantToken.allowance(address(this), poolSettings.crvDepositor) == 0
+            wantToken.allowance(address(this), poolSettings.cvxCRVRewards) == 0
         ) {
-            wantToken.approve(poolSettings.crvDepositor, uint256(-1));
+            wantToken.approve(poolSettings.cvxCRVRewards, uint256(-1));
         }
-        IRewards(poolSettings.crvDepositor).depositAll(
-            true,
-            poolSettings.cvxCRVRewards
-        );
+
+        IStaker(poolSettings.cvxCRVRewards).stakeAll();
     }
 
     function getRewards() external override {
@@ -55,7 +54,7 @@ contract CvxCrvStrategy is ClaimableStrategy {
         returns (uint256)
     {
         require(
-            IRewards(poolSettings.cvxCRVRewards).withdrawAndUnwrap(
+            IRewards(poolSettings.cvxCRVRewards).withdraw(
                 _amount,
                 true
             ),

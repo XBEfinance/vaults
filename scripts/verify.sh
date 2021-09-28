@@ -45,10 +45,10 @@ function verifyAll {
 }
 
 function verifyAll_1 {
-  generate_truffle_config "0.4.24" ".\/contracts\/governance"
-#  truffle run verify Voting --network $1
-  truffle run verify VotingStakingRewards --network $1
-
+#  generate_truffle_config "0.4.24" ".\/contracts\/governance"
+##  truffle run verify Voting --network $1
+#  truffle run verify VotingStakingRewards --network $1
+#
   generate_truffle_config "0.6.6" ".\/contracts\/main"
   truffle run verify BonusCampaign --network $1
   truffle run verify VeXBE --network $1
@@ -68,6 +68,10 @@ function verifyAll_1 {
   truffle run verify Treasury --network $1
   truffle run verify Controller --network $1
   truffle run verify LockSubscription --network $1
+
+#  truffle run verify Vault@0x41Eb696e339f0Bb6E2d986fA1BAD23d5BdEa0D63 --network $1
+#  truffle run verify Vault@0x83FD7247f25D6FCDC0de82B40FaE2aD70A438052 --network $1
+#  truffle run verify Vault@0x5bf782986A529a223B50f6Edc950D299b85b6af3 --network $1
 }
 
 if [ -z $1 ]; then

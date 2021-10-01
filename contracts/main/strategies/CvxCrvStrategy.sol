@@ -69,11 +69,11 @@ contract CvxCrvStrategy is ClaimableStrategy {
             address(this),
             _amount
         );
-        IERC20 wantToken = IERC20(_want);
+        IERC20 convertToken = IERC20(poolSettings.crvToken);
         if (
-            wantToken.allowance(address(this), poolSettings.crvDepositor) == 0
+            convertToken.allowance(address(this), poolSettings.crvDepositor) == 0
         ) {
-            wantToken.approve(poolSettings.crvDepositor, uint256(-1));
+            convertToken.approve(poolSettings.crvDepositor, uint256(-1));
         }
         address _stakingToken = IRewards(poolSettings.cvxCRVRewards)
             .stakingToken();
@@ -94,6 +94,6 @@ contract CvxCrvStrategy is ClaimableStrategy {
         address vault = IController(controller).vaults(_want);
         uint256 cvxCrvAmount = _stakingToken.balanceOf(address(this));
         _stakingToken.approve(vault, cvxCrvAmount);
-        IVaultTransfers(vault).deposit(cvxCrvAmount);
+        IVaultTransfers(vault).depositFor(cvxCrvAmount, msg.sender);
     }
 }

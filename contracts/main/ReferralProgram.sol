@@ -43,7 +43,7 @@ contract ReferralProgram is Initializable, ReentrancyGuard, Ownable {
         for (uint256 i = 0; i < distributors.length; i++) {
             if (msg.sender == distributors[i]) {
                 _;
-                break;
+                return;
             }
         }
         require(false, "RP!feeDistributor");

@@ -162,7 +162,7 @@ contract('CVXCRV Strategy & Vault testing', (accounts) => {
     await logBalance(hiveStrategy.address, 'strategy balances');
 
     console.log(' === tokens were minted === ');
-    await logBalance(alice, 'user balances');
+    await logBalance(user, 'user balances');
     await logBalance(hiveVault.address, 'vault balances');
     await logBalance(hiveStrategy.address, 'strategy balances');
   }
@@ -492,7 +492,7 @@ contract('CVXCRV Strategy & Vault testing', (accounts) => {
       console.log('cvxcrv balance before\t', cvxCrvBalanceBefore.toString());
       console.log('cvxcrv balance after\t', cvxCrvBalanceAfter.toString());
     });
-    it('convert CRV tokens into cvxCRV and stake', async () => {
+    xit('convert CRV tokens into cvxCRV and stake', async () => {
       expect(await cvxCrvVault.claimFeesEnabled()).to.be.true;
 
       // mint cvx, crv tokens to alice
@@ -515,53 +515,45 @@ contract('CVXCRV Strategy & Vault testing', (accounts) => {
       console.log('cvxcrv balance after\t', cvxCrvBalanceAfter.toString());
       console.log('staked balance\t', stakedBalance.toString());
     });
-    xit('stake cvxCRV tokens', async () => {
-      // balance is what we staked
-      const lpAlice = await cvxCrvVault.balanceOf(alice);
-      expect(lpAlice).to.be.bignumber.equal(depositAmount);
+    it('stake cvxCRV tokens', async () => {
+      expect(await cvxCrvVault.claimFeesEnabled()).to.be.true;
 
-      await cvxCrvVault.deposit(depositAmount, { from: alice });
-      // backend call earn func
-      await cvxCrvVault.earn();
-      await time.increase(months('1'));
-      await controller.getRewardStrategy(cvx.address, { from: owner });
-      console.log(' === 1 month later === ');
-      await logBalance(cvxCrvVault.address, 'vault balances');
-      await logBalance(cvxCrvStrategy.address, 'strategy balances');
-      await time.increase(months('1'));
-      console.log(' === 1 month later === ');
-      console.log(
-        'strategy balance in cvxCrv rewarder',
-        (await cvxCrvRewarder.balanceOf(cvxCrvStrategy.address)).toString(),
-      );
-      await controller.getRewardStrategy(cvx.address, { from: owner });
-      console.log(
-        'strategy balance in cvxCrv rewarder',
-        (await cvxCrvRewarder.balanceOf(cvxCrvStrategy.address)).toString(),
-      );
-      console.log(
-        'strategy earned:',
-        (await cvxPoolEarnedReward(cvxCrvStrategy.address)).toString(),
-      );
+      // mint cvx, crv tokens to alice
+      await mintTokens(alice);
 
-      await cvxVault.getReward({from: alice});
+      const depositAmount = (await crv.balanceOf(alice)) / new BN('3');
 
-      await logBalance(alice, 'alice balances');
-      await logBalance(cvxCrvVault.address, 'vault balances');
-      await logBalance(cvxCrvStrategy.address, 'strategy balances');
+      console.log('alice crv deposit amount', depositAmount.toString());
+      // expect(new BN(depositAmount)).to.be.bignumber.gt(ZERO);
 
-      // console.log(
-      //   'strategy balance in cvx rewarder',
-      //   (await cvxRewarder.balanceOf(cvxStrategy.address)).toString(),
-      // );
-      console.log(
-        'strategy earned reward in cvx rewarder',
-        (await cvxPoolEarnedReward(cvxCrvStrategy.address)).toString(),
-      );
+      // convert crv into cvxCrv
+      const cvxCrvBalanceBefore = await cvxCrv.balanceOf(alice);
+      const crvAmount = await crv.balanceOf(alice);
+      await crv.approve(cvxCrvStrategy.address, crvAmount, { from: alice });
+      await cvxCrvStrategy.convertTokens(crvAmount, { from: alice });
+      const cvxCrvBalanceAfter = await cvxCrv.balanceOf(alice);
 
-      await cvxCrvVault.withdraw(depositAmount, { from: alice });
-      expect(await cvx.balanceOf(alice)).to.be.bignumber.equal(depositAmount);
-      await logBalance(alice, 'alice balances');
+      console.log('cvxcrv balance before\t', cvxCrvBalanceBefore.toString());
+      console.log('cvxcrv balance after\t', cvxCrvBalanceAfter.toString());
+      await logBalance(alice, 'user balances after convert');
+
+      await cvxCrv.approve(cvxCrvVault.address, cvxCrvBalanceAfter, { from: alice });
+      await cvxCrvVault.deposit(cvxCrvBalanceAfter, {from: alice });
+      await cvxCrvVault.earn({from: owner});
+      await logBalance(alice, 'user balances after stake');
+      const stakedBalance = await cvxCrvVault.balanceOf(alice);
+
+      console.log('staked balance\t', stakedBalance.toString());
+      expect(cvxCrvBalanceAfter.toString()).to.be.equal(stakedBalance.toString());
+      console.log('staked ok!');
+      await logEarnings(cvxCrvVault, alice, 'alice earned just after deposit');
+
+      await time.increase(days('14'));
+
+      await logEarnings(cvxCrvVault, alice, 'alice earned 14 days later');
+      await cvxCrvVault.getReward(true, { from: alice });
+      await logEarnings(cvxCrvVault, alice, 'alice earned after get reward');
+      await logBalance(alice, 'user balances');
     });
   });
 });

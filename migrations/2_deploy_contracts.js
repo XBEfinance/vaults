@@ -159,68 +159,68 @@ const loadContracts = async () => {
 const strategiesAndVaults = (network, owner, params) => {
   const { dependentsAddresses } = params;
   return [
-  //   {
-  //   name: 'sushi',
-  //   vault: contracts.sushiVault,
-  //   strategy: contracts.sushiStrategy,
-  //   strategyConfigArgs: [
-  //     addressStore[network].pairXBE,          // _wantAddress,
-  //     contracts.controller.address,           // _controllerAddress,
-  //     owner,                                  // _governance,
-  //     addressStore[network].xbe,
-  //   ],
-  //   vaultConfigArgs: [
-  //     addressStore[network].pairXBE,          // _initialToken
-  //     contracts.controller.address,           // _initialController
-  //     owner,                                  // _governance
-  //     params.sushiVault.rewardsDuration,      // _rewardsDuration
-  //     addressStore[network].xbe,              // _tokenToAutostake
-  //     contracts.votingStakingRewards.address, // _votingStakingRewards
-  //     [ // _rewardTokens
-  //       addressStore[network].xbe,
-  //     ],
-  //     'SH', // _namePostfix
-  //     'SH', // _symbolPostfix
-  //   ],
-  //   token: addressStore[network].pairXBE,
-  // },
-  //   {
-    //   name: 'hive',
-    //   vault: contracts.hiveVault,
-    //   strategy: contracts.hiveStrategy,
-    //   strategyConfigArgs: [
-    //     dependentsAddresses.convex.pools[0].lptoken, // _wantAddress,
-    //     contracts.controller.address,                // _controllerAddress,
-    //     owner,                                       // _governance,
-    //     // _poolSettings
-    //     [
-    //       dependentsAddresses.convex.pools[0].crvRewards,
-    //       dependentsAddresses.convex.cvxRewards,
-    //       dependentsAddresses.convex.booster,
-    //       ZERO,
-    //     ],
-    //   ],
-    //   vaultConfigArgs: [
-    //     dependentsAddresses.convex.pools[0].lptoken,  // _wantAddress,
-    //     contracts.controller.address,                 // _initialController
-    //     owner,                                        // _governance
-    //     params.hiveVault.rewardsDuration,             // _rewardsDuration
-    //     addressStore[network].xbe,                    // tokenToAutostake,
-    //     contracts.votingStakingRewards.address,       // votingStakingRewards,
-    //     true,                                         // enableFees ? false
-    //     owner,                                        // teamWallet ? address(0) ?
-    //     contracts.referralProgram.address,            // _referralProgram
-    //     contracts.treasury.address,                   // _treasury
-    //     [                                             // _rewardTokens
-    //       dependentsAddresses.curve.CRV,
-    //       dependentsAddresses.convex.cvx, // ???????
-    //       addressStore[network].xbe,
-    //     ],
-    //     'Hive', // _namePostfix
-    //     'HV',   // _symbolPostfix
-    //   ],
-    //   token: dependentsAddresses.convex.pools[0].lptoken,
-    // },
+    {
+    name: 'sushi',
+    vault: contracts.sushiVault,
+    strategy: contracts.sushiStrategy,
+    strategyConfigArgs: [
+      addressStore[network].pairXBE,          // _wantAddress,
+      contracts.controller.address,           // _controllerAddress,
+      owner,                                  // _governance,
+      addressStore[network].xbe,
+    ],
+    vaultConfigArgs: [
+      addressStore[network].pairXBE,          // _initialToken
+      contracts.controller.address,           // _initialController
+      owner,                                  // _governance
+      params.sushiVault.rewardsDuration,      // _rewardsDuration
+      addressStore[network].xbe,              // _tokenToAutostake
+      contracts.votingStakingRewards.address, // _votingStakingRewards
+      [ // _rewardTokens
+        addressStore[network].xbe,
+      ],
+      'SH', // _namePostfix
+      'SH', // _symbolPostfix
+    ],
+    token: addressStore[network].pairXBE,
+  },
+    {
+      name: 'hive',
+      vault: contracts.hiveVault,
+      strategy: contracts.hiveStrategy,
+      strategyConfigArgs: [
+        dependentsAddresses.convex.pools[0].lptoken, // _wantAddress,
+        contracts.controller.address,                // _controllerAddress,
+        owner,                                       // _governance,
+        // _poolSettings
+        [
+          dependentsAddresses.convex.pools[0].crvRewards,
+          dependentsAddresses.convex.cvxRewards,
+          dependentsAddresses.convex.booster,
+          ZERO,
+        ],
+      ],
+      vaultConfigArgs: [
+        dependentsAddresses.convex.pools[0].lptoken,  // _wantAddress,
+        contracts.controller.address,                 // _initialController
+        owner,                                        // _governance
+        params.hiveVault.rewardsDuration,             // _rewardsDuration
+        addressStore[network].xbe,                    // tokenToAutostake,
+        contracts.votingStakingRewards.address,       // votingStakingRewards,
+        true,                                         // enableFees ? false
+        owner,                                        // teamWallet ? address(0) ?
+        contracts.referralProgram.address,            // _referralProgram
+        contracts.treasury.address,                   // _treasury
+        [                                             // _rewardTokens
+          dependentsAddresses.curve.CRV,
+          dependentsAddresses.convex.cvx, // ???????
+          addressStore[network].xbe,
+        ],
+        'Hive', // _namePostfix
+        'HV',   // _symbolPostfix
+      ],
+      token: dependentsAddresses.convex.pools[0].lptoken,
+    },
     {
       name: 'cvxCrv',
       vault: contracts.cvxCrvVault,
@@ -256,36 +256,36 @@ const strategiesAndVaults = (network, owner, params) => {
       ],
       token: dependentsAddresses.convex.cvxCrv,
     },
-    // {
-    //   name: 'cvx',
-    //   vault: contracts.cvxVault,
-    //   strategy: contracts.cvxStrategy,
-    //   strategyConfigArgs: [
-    //     dependentsAddresses.convex.cvx,         // _wantAddress,
-    //     contracts.controller.address,           // _controllerAddress,
-    //     owner,                                  // _governance,
-    //     dependentsAddresses.convex.cvxRewards,  // cvxRewards
-    //   ],
-    //   token: dependentsAddresses.convex.cvx,
-    //   vaultConfigArgs: [
-    //     dependentsAddresses.convex.cvx,         // _initialToken
-    //     contracts.controller.address,           // _initialController
-    //     owner,                                  // _governance
-    //     params.cvxVault.rewardsDuration,        // _rewardsDuration
-    //     addressStore[network].xbe,              // tokenToAutostake,
-    //     contracts.votingStakingRewards.address, // votingStakingRewards,
-    //     true,                                   // enableFees ? false
-    //     owner,                                  // teamWallet ? address(0) ?
-    //     contracts.referralProgram.address,      // _referralProgram
-    //     contracts.treasury.address,             // _treasury
-    //     [ // _rewardTokens
-    //       dependentsAddresses.convex.cvxCrv, // ???????
-    //       addressStore[network].xbe,
-    //     ],
-    //     'XC', // _namePostfix
-    //     'XC', // _symbolPostfix
-    //   ],
-    // },
+    {
+      name: 'cvx',
+      vault: contracts.cvxVault,
+      strategy: contracts.cvxStrategy,
+      strategyConfigArgs: [
+        dependentsAddresses.convex.cvx,         // _wantAddress,
+        contracts.controller.address,           // _controllerAddress,
+        owner,                                  // _governance,
+        dependentsAddresses.convex.cvxRewards,  // cvxRewards
+      ],
+      token: dependentsAddresses.convex.cvx,
+      vaultConfigArgs: [
+        dependentsAddresses.convex.cvx,         // _initialToken
+        contracts.controller.address,           // _initialController
+        owner,                                  // _governance
+        params.cvxVault.rewardsDuration,        // _rewardsDuration
+        addressStore[network].xbe,              // tokenToAutostake,
+        contracts.votingStakingRewards.address, // votingStakingRewards,
+        true,                                   // enableFees ? false
+        owner,                                  // teamWallet ? address(0) ?
+        contracts.referralProgram.address,      // _referralProgram
+        contracts.treasury.address,             // _treasury
+        [ // _rewardTokens
+          dependentsAddresses.convex.cvxCrv, // ???????
+          addressStore[network].xbe,
+        ],
+        'XC', // _namePostfix
+        'XC', // _symbolPostfix
+      ],
+    },
   ];
 };
 
@@ -517,9 +517,9 @@ module.exports = function (deployer, network) {
   const owner = process.env.DEPLOYER_ACCOUNT;
 
   const params = {
-    // sushiVault: {
-    //   rewardsDuration: days('7'),
-    // },
+    sushiVault: {
+      rewardsDuration: days('7'),
+    },
     hiveVault: {
       rewardsDuration: days('7'),
     },

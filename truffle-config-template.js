@@ -47,7 +47,7 @@ const mainnetNetworkConfig = {
   from: process.env.DEPLOYER_ACCOUNT, // contracts owner address
   websockets: true,
   confirmations: 2,
-  gasPrice: 125000000000,
+  gasPrice: 85000000000,
 };
 
 const ganacheNetworkConfig = {

@@ -10,6 +10,7 @@ module.exports = {
   ConsumerEURxbVault: getContract('ConsumerEURxbVault'),
   InstitutionalEURxbVault: getContract('InstitutionalEURxbVault'),
   Vault: getContract('Vault'),
+  HiveVault: getContract('Vault'),
   SushiVault: getContract('SushiVault'),
   CVXVault: getContract('Vault'),
   CvxCrvVault: getContract('Vault'),

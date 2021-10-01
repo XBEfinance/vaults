@@ -137,22 +137,24 @@ contract('cvx strategy & vault testing', (accounts) => {
   }
 
   async function mintTokens(user) {
-    const depositAlice = ether('3');
-
-    // deposit Alice
+    const depositAmount = ether('3');
     // eslint-disable-next-line no-underscore-dangle
-    await stableSwapMockPool._mint_for_testing(depositAlice, { from: user });
-    await LPTokenMockPool.approve(hiveVault.address, depositAlice, { from: user });
-    await hiveVault.deposit(depositAlice, { from: user });
+    await stableSwapMockPool._mint_for_testing(depositAmount, { from: user });
+    await LPTokenMockPool.approve(hiveVault.address, depositAmount, { from: user });
+    await hiveVault.deposit(depositAmount, { from: user });
+    const lpUser = await hiveVault.balanceOf(user);
+    expect(lpUser).to.be.bignumber.equal(depositAmount);
     await hiveVault.earn({ from: owner });
-    await time.increase(months('1'));
+    await time.increase(days('7'));
     await booster.earmarkRewards(ZERO, { from: owner });
     await controller.getRewardStrategy(LPTokenMockPool.address, { from: owner });
-    await time.increase(months('1'));
+    await time.increase(days('7'));
+    await controller.getRewardStrategy(LPTokenMockPool.address, { from: owner });
     await hiveVault.getReward(true, {from: user});
+    await time.increase(days('7'));
+    await controller.getRewardStrategy(LPTokenMockPool.address);
     await hiveVault.getReward(true, {from: user});
-    //await logAllRewards(hiveVault, user, 'point 4');
-    await logBalance(alice, 'alice balances');
+    await logBalance(user, 'user balances');
     await logBalance(hiveVault.address, 'vault balances');
     await logBalance(hiveStrategy.address, 'strategy balances');
   }
@@ -163,9 +165,9 @@ contract('cvx strategy & vault testing', (accounts) => {
     bob = people.bob;
     wallet = people.tod;
 
-    hiveVault = await HiveVault.new();
+    hiveVault = await HiveVault.new('Hive', 'HV');
     hiveStrategy = await HiveStrategy.new();
-    cvxVault = await CVXVault.new();
+    cvxVault = await CVXVault.new('Cvx', 'CX');
     cvxStrategy = await CVXStrategy.new();
     referralProgram = await ReferralProgram.new();
     stableSwapMockPool = await StableSwapMockPool
@@ -262,8 +264,6 @@ contract('cvx strategy & vault testing', (accounts) => {
         distro.rinkeby.convex.cvxRewards,
         booster.address,
         distro.rinkeby.convex.pools[0].id,
-        distro.rinkeby.curve.CRV,
-        distro.rinkeby.convex.cvx,
       ],
       { from: owner },
     );
@@ -330,10 +330,7 @@ contract('cvx strategy & vault testing', (accounts) => {
       cvx.address,
       controller.address,
       owner,
-      [
-        distro.rinkeby.convex.cvxRewards,
-        ZERO, // remove it
-      ],
+      distro.rinkeby.convex.cvxRewards,
       { from: owner },
     );
 
@@ -461,7 +458,7 @@ contract('cvx strategy & vault testing', (accounts) => {
 
     // const { dependentsAddresses } = params;
     it('acceptance test', async () => {
-      expect(await cvxVault.feesEnabled()).to.be.true;
+      expect(await cvxVault.claimFeesEnabled()).to.be.true;
 
       // mint cvx, crv tokens to alice
       await mintTokens(alice);

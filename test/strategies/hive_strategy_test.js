@@ -68,7 +68,7 @@ contract('Curve LP Testing', (accounts) => {
     bob = people.bob;
     wallet = people.tod;
 
-    hiveVault = await HiveVault.new();
+    hiveVault = await HiveVault.new('Hive', 'HV');
     hiveStrategy = await HiveStrategy.new();
     referralProgram = await ReferralProgram.new();
     stableSwapMockPool = await StableSwapMockPool
@@ -162,8 +162,8 @@ contract('Curve LP Testing', (accounts) => {
         distro.rinkeby.convex.cvxRewards,
         booster.address,
         distro.rinkeby.convex.pools[0].id,
-        distro.rinkeby.curve.CRV,
-        distro.rinkeby.convex.cvx,
+        // distro.rinkeby.curve.CRV,
+        // distro.rinkeby.convex.cvx,
       ],
       { from: owner },
     );
@@ -256,7 +256,7 @@ contract('Curve LP Testing', (accounts) => {
 
     // const { dependentsAddresses } = params;
     it('acceptance test', async () => {
-      expect(await hiveVault.feesEnabled()).to.be.false;
+      expect(await hiveVault.claimFeesEnabled()).to.be.false;
 
       const depositAlice = ether('3');
       const depositBob = ether('10');
@@ -394,7 +394,7 @@ contract('Curve LP Testing', (accounts) => {
       await hiveVault.getReward(true, {from: alice});
       await logAllRewards('===== after alice get reward =====');
 
-      console.log('feeweight count', (await hiveVault.feeReceiversCount()).toString());
+      console.log('feeweight count', (await hiveVault.claimFeeReceiversCount()).toString());
 
       const lpbalance = await LPTokenMockPool.balanceOf(alice);
 

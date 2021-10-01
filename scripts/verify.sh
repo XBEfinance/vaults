@@ -45,10 +45,10 @@ function verifyAll {
 }
 
 function verifyAll_1 {
-#  generate_truffle_config "0.4.24" ".\/contracts\/governance"
-##  truffle run verify Voting --network $1
-#  truffle run verify VotingStakingRewards --network $1
-#
+  generate_truffle_config "0.4.24" ".\/contracts\/governance"
+#  truffle run verify Voting --network $1
+  truffle run verify VotingStakingRewards --network $1
+
   generate_truffle_config "0.6.6" ".\/contracts\/main"
   truffle run verify BonusCampaign --network $1
   truffle run verify VeXBE --network $1
@@ -69,9 +69,29 @@ function verifyAll_1 {
   truffle run verify Controller --network $1
   truffle run verify LockSubscription --network $1
 
-#  truffle run verify Vault@0x41Eb696e339f0Bb6E2d986fA1BAD23d5BdEa0D63 --network $1
-#  truffle run verify Vault@0x83FD7247f25D6FCDC0de82B40FaE2aD70A438052 --network $1
-#  truffle run verify Vault@0x5bf782986A529a223B50f6Edc950D299b85b6af3 --network $1
+#  generate_truffle_config "0.4.24" ".\/contracts\/governance"
+##  truffle run verify Voting --network $1
+#  truffle run verify VotingStakingRewards@0x0c0636ff0Cf8Cc75f2920681c83C883c8379Ac07 --network $1
+#
+#  generate_truffle_config "0.6.6" ".\/contracts\/main"
+#  truffle run verify BonusCampaign@0xB0788d3c7E44A9b406aCAa5C6e4a926F91981B20 --network $1
+#  truffle run verify VeXBE@0x9d8a892d57840c4A7bc799AE5875b12De78Fb22E --network $1
+#  truffle run verify SimpleXBEInflation@0x7533bE6EcCa6CE432b2c15576CA5c52777004d09 --network $1
+##  truffle run verify MockToken --network $1
+#
+#  truffle run verify HiveStrategy@0xc74c79D43105e7590DEDc46AD3cB498246Aa827e --network $1
+#  truffle run verify Vault@0xbBF4B2CB7Fc867f39f0919dcb32b6064Db5aD5C4 --network $1
+#  truffle run verify SushiStrategy@0x64165509011e3AE15c2e7c15C53cCbAb88C43F08 --network $1
+#  truffle run verify SushiVault@0x6648eb74a8C69aC9C1B0ECcB9481f3b39909B009 --network $1
+#  truffle run verify CVXStrategy@0x987A84B23c8e53B3Bcf68818cf6d9c5c54549949 --network $1
+#  truffle run verify Vault@0xAbE4aC62Db1c944e83bEA503b9247E25952c46a5 --network $1
+#  truffle run verify CvxCrvStrategy@0x418B99d8358ffCce8e723359FDc5835B93588101 --network $1
+#  truffle run verify Vault@0xdBe60E5f0A374aa83b0AFEa8Ec05Cf28eF2ED123 --network $1
+#  truffle run verify ReferralProgram@0x031781238C61e4F0f75bD0C60AC6BBC0Ca436cae --network $1
+#  truffle run verify Registry@0x29f2c35809664144c3Ab86088b7C86C22d3B2EeA --network $1
+#  truffle run verify Treasury@0x1D235Ac7C038F2c29FA97D1bc2ea4a1660cba1A8 --network $1
+#  truffle run verify Controller@0x7Fe30F1E809ED5E3633fAb7Dd3EEd89109571A6c --network $1
+#  truffle run verify LockSubscription@0x7A24c21Fc045b3c86CE138D8AF315f18A50C78E1 --network $1
 }
 
 if [ -z $1 ]; then

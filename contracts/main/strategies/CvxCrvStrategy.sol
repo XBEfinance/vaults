@@ -1,5 +1,4 @@
 pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -22,10 +21,14 @@ contract CvxCrvStrategy is ClaimableStrategy {
         address _wantAddress,
         address _controllerAddress,
         address _governance,
-        Settings memory _poolSettings
+        address _cvxCRVRewards,
+        address _crvDepositor,
+        address _crvToken
     ) public onlyOwner initializer {
         _configure(_wantAddress, _controllerAddress, _governance);
-        poolSettings = _poolSettings;
+        poolSettings.cvxCRVRewards = _cvxCRVRewards;
+        poolSettings.crvDepositor = _crvDepositor;
+        poolSettings.crvToken = _crvToken;
     }
 
     /// @dev Function that controller calls

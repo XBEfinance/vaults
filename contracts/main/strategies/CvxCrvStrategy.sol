@@ -1,18 +1,23 @@
 pragma solidity ^0.6.0;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./base/ClaimableStrategy.sol";
+import "../interfaces/IBooster.sol";
 import "../interfaces/IRewards.sol";
+import "../interfaces/ICVXRewards.sol";
 import "../interfaces/vault/IVaultTransfers.sol";
-import "../interfaces/IStaker.sol";
 
 /// @title CvxCrvStrategy
 contract CvxCrvStrategy is ClaimableStrategy {
     struct Settings {
-        address cvxCRVRewards;
+        address crvRewards;
+        address cvxRewards;
+        address convexBooster;
         address crvDepositor;
         address crvToken;
+        uint256 poolIndex;
     }
 
     Settings public poolSettings;
@@ -21,34 +26,49 @@ contract CvxCrvStrategy is ClaimableStrategy {
         address _wantAddress,
         address _controllerAddress,
         address _governance,
-        address _cvxCRVRewards,
-        address _crvDepositor,
-        address _crvToken
+        Settings memory _poolSettings
     ) public onlyOwner initializer {
         _configure(_wantAddress, _controllerAddress, _governance);
-        poolSettings.cvxCRVRewards = _cvxCRVRewards;
-        poolSettings.crvDepositor = _crvDepositor;
-        poolSettings.crvToken = _crvToken;
+        poolSettings = _poolSettings;
+    }
+
+    function setPoolIndex(uint256 _newPoolIndex) external onlyOwner {
+        poolSettings.poolIndex = _newPoolIndex;
+    }
+
+    function checkPoolIndex(uint256 index) public view returns (bool) {
+        IBooster.PoolInfo memory _pool = IBooster(poolSettings.convexBooster)
+            .poolInfo(index);
+        return _pool.lptoken == _want;
     }
 
     /// @dev Function that controller calls
     function deposit() external override onlyController {
-        IERC20 wantToken = IERC20(_want);
-        uint256 _amount = wantToken.balanceOf(address(this));
-        if (
-            wantToken.allowance(address(this), poolSettings.cvxCRVRewards) == 0
-        ) {
-            wantToken.approve(poolSettings.cvxCRVRewards, uint256(-1));
+        if (checkPoolIndex(poolSettings.poolIndex)) {
+            IERC20 wantToken = IERC20(_want);
+            if (
+                wantToken.allowance(
+                    address(this),
+                    poolSettings.convexBooster
+                ) == 0
+            ) {
+                wantToken.approve(poolSettings.convexBooster, uint256(-1));
+            }
+            //true means that the received lp tokens will immediately be stakes
+            IBooster(poolSettings.convexBooster).depositAll(
+                poolSettings.poolIndex,
+                true
+            );
         }
-
-        IStaker(poolSettings.cvxCRVRewards).stakeAll();
     }
 
     function getRewards() external override {
         require(
-            IRewards(poolSettings.cvxCRVRewards).getReward(),
-            "!getRewards"
+            IRewards(poolSettings.crvRewards).getReward(),
+            "!getRewardsCRV"
         );
+
+        ICVXRewards(poolSettings.cvxRewards).getReward(true);
     }
 
     function _withdrawSome(uint256 _amount)
@@ -56,44 +76,46 @@ contract CvxCrvStrategy is ClaimableStrategy {
         override
         returns (uint256)
     {
+        IRewards(poolSettings.crvRewards).withdraw(_amount, true);
+
         require(
-            IRewards(poolSettings.cvxCRVRewards).withdraw(
-                _amount,
-                true
+            IBooster(poolSettings.convexBooster).withdraw(
+                poolSettings.poolIndex,
+                _amount
             ),
             "!withdrawSome"
         );
+
         return _amount;
     }
 
-    function _convertTokens(uint256 _amount) internal returns (address) {
-        IERC20(poolSettings.crvToken).safeTransferFrom(
+    function _convertTokens(uint256 _amount) internal{
+        IERC20 convertToken = IERC20(poolSettings.crvToken);
+        convertToken.safeTransferFrom(
             msg.sender,
             address(this),
             _amount
         );
-        IERC20 convertToken = IERC20(poolSettings.crvToken);
         if (
             convertToken.allowance(address(this), poolSettings.crvDepositor) == 0
         ) {
             convertToken.approve(poolSettings.crvDepositor, uint256(-1));
         }
-        address _stakingToken = IRewards(poolSettings.cvxCRVRewards)
-            .stakingToken();
         //address(0) means that we'll not stake immediately
         //for provided sender (cause it's zero addr)
         IRewards(poolSettings.crvDepositor).depositAll(true, address(0));
-        return _stakingToken;
     }
 
     function convertTokens(uint256 _amount) external {
-        IERC20 _stakingToken = IERC20(_convertTokens(_amount));
+        _convertTokens(_amount);
+        IERC20 _stakingToken = IERC20(_want);
         uint256 cvxCrvAmount = _stakingToken.balanceOf(address(this));
         _stakingToken.safeTransfer(msg.sender, cvxCrvAmount);
     }
 
     function convertAndStakeTokens(uint256 _amount) external {
-        IERC20 _stakingToken = IERC20(_convertTokens(_amount));
+        _convertTokens(_amount);
+        IERC20 _stakingToken = IERC20(_want);
         address vault = IController(controller).vaults(_want);
         uint256 cvxCrvAmount = _stakingToken.balanceOf(address(this));
         _stakingToken.approve(vault, cvxCrvAmount);

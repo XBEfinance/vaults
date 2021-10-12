@@ -66,8 +66,8 @@ abstract contract BaseVaultV2 is
     event RewardsDurationUpdated(uint256 newDuration);
 
     constructor(string memory _name, string memory _symbol)
-    public
-    ERC20Vault(_name, _symbol)
+        public
+        ERC20Vault(_name, _symbol)
     {}
 
     /// @notice Default initialize method for solving migration linearization problem
@@ -94,6 +94,35 @@ abstract contract BaseVaultV2 is
         }
     }
 
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public override returns (bool) {
+        _updateAllRewards(recipient);
+        _transfer(sender, recipient, amount);
+        _approve(
+            sender,
+            _msgSender(),
+            _allowances[sender][_msgSender()].sub(
+                amount,
+                "ERC20: transfer amount exceeds allowance"
+            )
+        );
+        return true;
+    }
+
+    function transfer(address recipient, uint256 amount)
+        public
+        override
+        returns (bool)
+    {
+        _updateAllRewards(recipient);
+        address sender = _msgSender();
+        _transfer(sender, recipient, amount);
+        return true;
+    }
+
     /// @notice Usual setter with check if passet param is new
     /// @param _newController New value
     function setController(address _newController) public onlyOwner {
@@ -102,8 +131,8 @@ abstract contract BaseVaultV2 is
     }
 
     function setRewardsDistribution(address _rewardsDistribution)
-    external
-    onlyOwner
+        external
+        onlyOwner
     {
         rewardsDistribution = _rewardsDistribution;
     }
@@ -147,10 +176,10 @@ abstract contract BaseVaultV2 is
     }
 
     function rewardPerToken(address _rewardToken)
-    public
-    view
-    onlyValidToken(_rewardToken)
-    returns (uint256)
+        public
+        view
+        onlyValidToken(_rewardToken)
+        returns (uint256)
     {
         if (_totalSupply == 0) {
             return rewardsPerTokensStored[_rewardToken];
@@ -369,11 +398,15 @@ abstract contract BaseVaultV2 is
         }
     }
 
-    modifier updateReward(address _account) {
+    function _updateAllRewards(address _account) internal virtual {
         for (uint256 i = 0; i < _validTokens.length(); i++) {
             _updateReward(_validTokens.at(i), _account);
         }
         lastUpdateTime = lastTimeRewardApplicable();
+    }
+
+    modifier updateReward(address _account) {
+        _updateAllRewards(_account);
         _;
     }
 

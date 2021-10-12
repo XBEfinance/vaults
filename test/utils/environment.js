@@ -210,56 +210,56 @@ const environment = {
     deployedAndConfiguredContracts,
     isMockContractRequested,
     async () => {
-      const instance = await deployment.Vault();
+      const instance = await deployment.Vault(["Some Hive Vault", "shv"]);
       const owner = await common.waitFor('owner', accounts.people);
 
       const mockXBE = await common.waitFor(
         'MockXBE',
         deployedAndConfiguredContracts,
-        'environment - waiting for MockXBE as dep for HiveVault',
+        'environment - waiting for MockXBE as dep for Vault',
       );
 
       const mockCRV = await common.waitFor(
         'MockCRV',
         deployedAndConfiguredContracts,
-        'environment - waiting for MockCRV as dep for HiveVault',
+        'environment - waiting for MockCRV as dep for Vault',
       );
 
       const mockCVX = await common.waitFor(
         'MockCVX',
         deployedAndConfiguredContracts,
-        'environment - waiting for MockCVX as dep for HiveVault',
+        'environment - waiting for MockCVX as dep for Vault',
       );
 
       const mockLpHive = await common.waitFor(
         'MockLPHive',
         deployedAndConfiguredContracts,
-        'environment - waiting for MockLPHive as dep for HiveVault',
+        'environment - waiting for MockLPHive as dep for Vault',
       );
 
       const controller = await common.waitFor(
         'Controller',
         deployment.deployedContracts,
-        'environment - waiting for Controller as dep for HiveVault',
+        'environment - waiting for Controller as dep for Vault',
       );
 
       const hiveStrategy = await common.waitFor(
         'HiveStrategy',
         deployedAndConfiguredContracts,
-        'environment - waiting for HiveStrategy as dep for HiveVault',
+        'environment - waiting for HiveStrategy as dep for Vault',
       );
       await instance.setRewardsDistribution(hiveStrategy.address);
 
       const referralProgram = await common.waitFor(
         'ReferralProgram',
         deployedAndConfiguredContracts,
-        'environment - waiting for ReferralProgram as dep for HiveVault',
+        'environment - waiting for ReferralProgram as dep for Vault',
       );
 
       const treasury = await common.waitFor(
         'Treasury',
         deployedAndConfiguredContracts,
-        'environment - waiting for Treasury as dep for HiveVault',
+        'environment - waiting for Treasury as dep for Vault',
       );
 
       const originalConfigureParams = [
@@ -271,7 +271,7 @@ const environment = {
         async () => (await common.waitFor(
           'VotingStakingRewards',
           deployment.deployedContracts,
-          'environment - waiting for VotingStakingRewards as dep for HiveVault',
+          'environment - waiting for VotingStakingRewards as dep for Vault',
         )).address,
         async () => true,
         async () => owner,
@@ -578,9 +578,7 @@ const environment = {
           convexCRVRewards.address,
           convexCVXRewards.address,
           сonvexBooster.address,
-          constants.utils.ZERO,
-          mockCRV.address,
-          mockCVX.address
+          constants.utils.ZERO_ADDRESS
         ]
       ];
 
@@ -927,7 +925,7 @@ const environment = {
         async () => [
           (
             await common.waitFor(
-              'SushiVault',
+              'Vault',
               deployment.deployedContracts,
             )
           ).address,

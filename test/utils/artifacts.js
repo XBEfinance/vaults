@@ -52,8 +52,8 @@ module.exports = {
   StableSwapUSDT: getContract('StableSwapUSDT'),
   ERC20LP: getContract('ERC20LP'),
   BaseRewardPool: getContract('BaseRewardPool'),
-  Booster: getContract('Booster'),
+  IBooster: getContract('IBooster'),
   ERC20CRV: getContract('ERC20CRV'),
-  ConvexToken: getContract('ConvexToken'),
-  cvxRewardPool: getContract('cvxRewardPool'),
+  // ConvexToken: getContract('ConvexToken'),
+  // CvxRewardPool: getContract('CvxRewardPool'),
 };

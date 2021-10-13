@@ -110,16 +110,12 @@ contract Controller is IController, Ownable, Initializable {
     /// @notice Usual setter with additional checks
     /// @param _newTreasury New value
     function setTreasury(address _newTreasury) external onlyOwner {
-        require(_treasury != _newTreasury, "!old");
-        require(_newTreasury != address(0), "!treasury");
-        require(_newTreasury.isContract(), "!contract");
         _treasury = _newTreasury;
     }
 
     /// @notice Usual setter with check if param is new
     /// @param _newStrategist New value
     function setStrategist(address _newStrategist) external onlyOwner {
-        require(strategist != _newStrategist, "!old");
         strategist = _newStrategist;
     }
 
@@ -137,7 +133,6 @@ contract Controller is IController, Ownable, Initializable {
         override
         onlyOwnerOrStrategist
     {
-        require(vaults[_token] == address(0), "!vault 0");
         vaults[_token] = _vault;
     }
 

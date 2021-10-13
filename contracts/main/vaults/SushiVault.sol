@@ -1,12 +1,12 @@
 pragma solidity ^0.6.0;
 
-import "./base/BaseVault.sol";
+import "./base/BaseVaultV2.sol";
 import "./base/VaultWithAutoStake.sol";
 
 import "../mocks/StringsConcatenations.sol";
 
-contract SushiVault is BaseVault, VaultWithAutoStake {
-    constructor() public BaseVault("XBE Sushi LP", "XBESushi") {}
+contract SushiVault is BaseVaultV2, VaultWithAutoStake {
+    constructor() public BaseVaultV2("XBE Sushi LP", "XBESushi") {}
 
     function configure(
         address _initialToken,

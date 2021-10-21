@@ -43,6 +43,9 @@ contract Controller is IController, Ownable, Initializable {
     /// @notice Treasury contract address (used to channel fees to governance and rewards for voting process and investors)
     address private _treasury;
 
+    // address => can or cant call withdraw
+    mapping(address => bool) public canWithdraw;
+
     /// @dev Prevents other msg.sender than either governance or strategist addresses
     modifier onlyOwnerOrStrategist() {
         require(
@@ -90,7 +93,12 @@ contract Controller is IController, Ownable, Initializable {
     /// @param _token Token address to withdraw
     /// @param _amount Amount tokens
     function withdraw(address _token, uint256 _amount) external override {
+        require(canWithdraw[_msgSender()], "withdrawNotAllowed");
         IStrategy(strategies[_token]).withdraw(_amount);
+    }
+
+    function setWithdrawAbility(address _who, bool _status) external onlyOwner {
+        canWithdraw[_who] = _status;
     }
 
     function claim(address _wantToken, address _tokenToClaim)
@@ -134,6 +142,7 @@ contract Controller is IController, Ownable, Initializable {
         onlyOwnerOrStrategist
     {
         vaults[_token] = _vault;
+        canWithdraw[_vault] = true;
     }
 
     /// @notice Usual setter of converter contract, it implements the optimal logic to token conversion

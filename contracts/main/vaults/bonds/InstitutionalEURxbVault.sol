@@ -79,13 +79,8 @@ contract InstitutionalEURxbVault is BaseVault, AccessControl {
     }
 
     function depositUnwrapped(uint256 _amount) public onlyInvestor {
-        IERC20(tokenUnwrapped).safeTransferFrom(
-            _msgSender(),
-            address(this),
-            _amount
-        );
         uint256 shares = _deposit(
-            address(this),
+            _msgSender(),
             _convert(tokenUnwrapped, address(stakingToken), _amount)
         );
         _transfer(address(this), _msgSender(), shares);

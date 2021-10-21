@@ -21,11 +21,11 @@ contract CvxCrvStrategy is ClaimableStrategy {
         address convexBooster;
         address crvDepositor;
         address crvToken;
+        uint256 poolIndex;
         address cvxCrvToken;
         address curveCvxCrvStableSwapPool;
         uint256 curveCvxCrvIndexInStableSwapPool;
         uint256 curveAddLiquiditySlippageTolerance; // in bps, ex: 9500 == 5%
-        uint256 poolIndex;
     }
 
     Settings public poolSettings;

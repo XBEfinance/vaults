@@ -25,7 +25,8 @@ abstract contract VaultWithAutoStake {
         address _receiver
     ) internal {
         if (_token == tokenToAutostake) {
-            IERC20(_token).approve(votingStakingRewards, _amount);
+            IERC20(_token).safeApprove(votingStakingRewards, 0);
+            IERC20(_token).safeApprove(votingStakingRewards, _amount);
             IAutoStakeFor(votingStakingRewards).stakeFor(_receiver, _amount);
         } else {
             IERC20(_token).safeTransfer(_receiver, _amount);

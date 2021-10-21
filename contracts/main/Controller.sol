@@ -73,7 +73,7 @@ contract Controller is IController, Ownable, Initializable {
         external
         onlyOwner
     {
-        IERC20(_token).transfer(_msgSender(), _amount);
+        IERC20(_token).safeTransfer(_msgSender(), _amount);
     }
 
     /// @notice Used only to rescue stuck or unrelated funds from strategy to vault
@@ -159,9 +159,7 @@ contract Controller is IController, Ownable, Initializable {
         require(approvedStrategies[_token][_strategy], "!approved");
         address _current = strategies[_token];
         if (_current != address(0)) {
-            uint256 amount = IERC20(IStrategy(_current).want()).balanceOf(
-                address(this)
-            );
+            uint256 amount = IStrategy(_current).balanceOf();
             IStrategy(_current).withdraw(amount);
             emit WithdrawToVaultAll(_token);
         }
@@ -191,13 +189,13 @@ contract Controller is IController, Ownable, Initializable {
             address converter = converters[_token][_want];
             require(converter != address(0), "!converter");
             require(
-                IERC20(_token).transfer(converter, _amount),
+                IERC20(_token).safeTransfer(converter, _amount),
                 "!transferConverterToken"
             );
             _amount = IConverter(converter).convert(_strategy);
         }
         require(
-            IERC20(_want).transfer(_strategy, _amount),
+            IERC20(_want).safeTransfer(_strategy, _amount),
             "!transferStrategyWant"
         );
         IStrategy(_strategy).deposit();

@@ -492,7 +492,7 @@ contract('CVXCRV Strategy & Vault testing', (accounts) => {
       console.log('cvxcrv balance before\t', cvxCrvBalanceBefore.toString());
       console.log('cvxcrv balance after\t', cvxCrvBalanceAfter.toString());
     });
-    xit('convert CRV tokens into cvxCRV and stake', async () => {
+    it('convert CRV tokens into cvxCRV and stake', async () => {
       expect(await cvxCrvVault.claimFeesEnabled()).to.be.true;
 
       // mint cvx, crv tokens to alice
@@ -510,12 +510,12 @@ contract('CVXCRV Strategy & Vault testing', (accounts) => {
       await cvxCrvStrategy.convertAndStakeTokens(crvAmount, { from: alice });
       const cvxCrvBalanceAfter = await cvxCrv.balanceOf(alice);
       const stakedBalance = await cvxCrvVault.balanceOf(alice);
-
+      
       console.log('cvxcrv balance before\t', cvxCrvBalanceBefore.toString());
       console.log('cvxcrv balance after\t', cvxCrvBalanceAfter.toString());
       console.log('staked balance\t', stakedBalance.toString());
     });
-    it('stake cvxCRV tokens', async () => {
+    xit('stake cvxCRV tokens', async () => {
       expect(await cvxCrvVault.claimFeesEnabled()).to.be.true;
 
       // mint cvx, crv tokens to alice

@@ -9,6 +9,7 @@ import "../../interfaces/ITreasury.sol";
 import "../../interfaces/IFeeReceiving.sol";
 
 abstract contract VaultWithFees is Ownable {
+
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -97,6 +98,7 @@ abstract contract VaultWithFees is Ownable {
         onlyOwner
     {
         require(_index < claimFee.length, "indexOutOfBound");
+        require(uint256(sumClaimFee).add(uint256(_percentage)) <= uint256(uint64(-1)), "checkPercentageOverflow");
         sumClaimFee = sumClaimFee + _percentage - claimFee[_index].percentage;
         claimFee[_index].percentage = _percentage;
     }

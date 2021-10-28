@@ -9,9 +9,9 @@ import "../../interfaces/ITreasury.sol";
 import "../../interfaces/IFeeReceiving.sol";
 
 abstract contract VaultWithFees is Ownable {
-
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
+    using Address for address;
 
     struct ClaimFee {
         uint64 percentage;
@@ -134,17 +134,19 @@ abstract contract VaultWithFees is Ownable {
                 IERC20(_rewardToken).safeTransfer(_claimFee.to, fee);
             }
             _amount = _amount.sub(fee);
-            if (_claimFee.convertToRewards == true) {
-                ITreasury(_claimFee.to).convertToRewardsToken(
-                    _rewardToken,
-                    fee
-                );
-            } else {
-                IFeeReceiving(_claimFee.to).feeReceiving(
-                    _for,
-                    _rewardToken,
-                    fee
-                );
+            if (_claimFee.to.isContract()) {
+                if (_claimFee.convertToRewards == true) {
+                    ITreasury(_claimFee.to).convertToRewardsToken(
+                        _rewardToken,
+                        fee
+                    );
+                } else {
+                    IFeeReceiving(_claimFee.to).feeReceiving(
+                        _for,
+                        _rewardToken,
+                        fee
+                    );
+                }
             }
         }
         return _amount;

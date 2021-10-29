@@ -112,7 +112,7 @@ const cacheAndReturnContract = async (key, force, container, isMockContractReque
     if (isMockContractRequested) {
       instance = await artifacts.MockContract.new();
     } else {
-      instance = await getInstance();;
+      instance = await getInstance();
     }
     container[key] = instance;
     return instance;

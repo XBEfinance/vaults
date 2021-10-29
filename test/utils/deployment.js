@@ -59,6 +59,7 @@ module.exports = {
     );
   },
 
+  FeeToTreasuryTransporter: getDeployerFuncWithDefaultConstructor('FeeToTreasuryTransporter'),
   LockSubscription: getDeployerFuncWithDefaultConstructor('LockSubscription'),
   ConsumerEURxbVault: getDeployerFuncWithDefaultConstructor('ConsumerEURxbVault'),
   InstitutionalEURxbVault: getDeployerFuncWithDefaultConstructor('InstitutionalEURxbVault'),

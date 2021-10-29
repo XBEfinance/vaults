@@ -54,6 +54,7 @@ module.exports = {
   BaseRewardPool: getContract('BaseRewardPool'),
   IBooster: getContract('IBooster'),
   ERC20CRV: getContract('ERC20CRV'),
+  FeeToTreasuryTransporter: getContract('FeeToTreasuryTransporter'),
   // ConvexToken: getContract('ConvexToken'),
   // CvxRewardPool: getContract('CvxRewardPool'),
 };

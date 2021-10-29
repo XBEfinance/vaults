@@ -1197,6 +1197,46 @@ const environment = {
       return instance;
     }
   ),
+
+  FeeToTreasuryTransporter: async (force, _, isMockContractRequested) => common.cacheAndReturnContract(
+    'FeeToTreasuryTransporter',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => {
+      const instance = await deployment.FeeToTreasuryTransporter();
+      await instance.configure(
+        (await common.waitFor(
+          'MockContract',
+          deployment.deployedContracts,
+          'environment - waiting for UniswapRouter02 mock contract as dep for FeeToTreasuryTransporter',
+        )).address,
+        (await common.waitFor(
+          'Treasury',
+          deployment.deployedContracts,
+          'environment - waiting for Treasury as dep for FeeToTreasuryTransporter',
+        )).address,
+        (await common.waitFor(
+          'MockXBE',
+          deployment.deployedContracts,
+          'environment - waiting for MockXBE as dep for FeeToTreasuryTransporter',
+        )).address,
+        [
+          (await common.waitFor(
+            'MockCVX',
+            deployment.deployedContracts,
+            'environment - waiting for MockCVX as dep for FeeToTreasuryTransporter',
+          )).address,
+          (await common.waitFor(
+            'MockCRV',
+            deployment.deployedContracts,
+            'environment - waiting for MockCVX as dep for FeeToTreasuryTransporter',
+          )).address
+        ]
+      );
+      return instance;
+    }
+  ),
 };
 
 const getGroup = async (

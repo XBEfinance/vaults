@@ -16,7 +16,7 @@ abstract contract VaultWithFees is Ownable {
     struct ClaimFee {
         uint64 percentage;
         address to;
-        bool convertToRewards;
+        bool needFeeReceiving;
         mapping(address => bool) tokens;
     }
 
@@ -51,14 +51,14 @@ abstract contract VaultWithFees is Ownable {
     function addClaimFeeReceiver(
         address _to,
         uint64 _percentage,
-        bool _convertToRewards,
+        bool _needFeeReceiving,
         address[] calldata _tokens
     ) external onlyOwner {
         require(sumClaimFee + _percentage <= PCT_BASE, "!sumClaimFee overflow");
         ClaimFee storage newWeight;
         newWeight.to = _to;
         newWeight.percentage = _percentage;
-        newWeight.convertToRewards = _convertToRewards;
+        newWeight.needFeeReceiving = _needFeeReceiving;
         for (uint256 i = 0; i < _tokens.length; i++) {
             newWeight.tokens[_tokens[i]] = true;
         }
@@ -82,7 +82,7 @@ abstract contract VaultWithFees is Ownable {
         return (
             claimFee[_index].percentage,
             claimFee[_index].to,
-            claimFee[_index].convertToRewards
+            claimFee[_index].needFeeReceiving
         );
     }
 
@@ -134,19 +134,12 @@ abstract contract VaultWithFees is Ownable {
                 IERC20(_rewardToken).safeTransfer(_claimFee.to, fee);
             }
             _amount = _amount.sub(fee);
-            if (_claimFee.to.isContract()) {
-                if (_claimFee.convertToRewards == true) {
-                    ITreasury(_claimFee.to).convertToRewardsToken(
-                        _rewardToken,
-                        fee
-                    );
-                } else {
-                    IFeeReceiving(_claimFee.to).feeReceiving(
-                        _for,
-                        _rewardToken,
-                        fee
-                    );
-                }
+            if (_claimFee.to.isContract() && _claimFee.needFeeReceiving) {
+                IFeeReceiving(_claimFee.to).feeReceiving(
+                    _for,
+                    _rewardToken,
+                    fee
+                );
             }
         }
         return _amount;

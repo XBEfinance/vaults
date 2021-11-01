@@ -16,11 +16,7 @@ contract FeeToTreasuryTransporter is Initializable, Ownable {
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    event FundsConverted(
-        address indexed from,
-        address indexed to,
-        uint256 indexed amountOfTo
-    );
+    event FundsConverted(uint256[] amounts);
 
     IUniswapV2Router02 public uniswapRouter;
     address public treasury;
@@ -37,8 +33,8 @@ contract FeeToTreasuryTransporter is Initializable, Ownable {
         uniswapRouter = IUniswapV2Router02(_uniswapRouter);
         treasury = _treasury;
         rewardsToken = _rewardsToken;
-        for (uint256 i = 0; i < __tokensToConvert.length; i.add(1)) {
-            require(_tokensToConvert.add(__tokensToConvert[i]), "cannotAddInitialTokensToConvert");
+        for (uint256 i = 0; i < __tokensToConvert.length; i = i.add(1)) {
+            _tokensToConvert.add(__tokensToConvert[i]);
         }
     }
 
@@ -55,7 +51,7 @@ contract FeeToTreasuryTransporter is Initializable, Ownable {
     }
 
     function getTokensToConvertLength() external view returns(uint256) {
-        _tokensToConvert.length();
+        return _tokensToConvert.length();
     }
 
     function setRewardsToken(address _rewardsToken) external onlyOwner {
@@ -91,6 +87,8 @@ contract FeeToTreasuryTransporter is Initializable, Ownable {
         path[1] = uniswapRouter.WETH();
         path[2] = rewardsToken;
 
+        uint256[] memory actualAmounts = new uint256[](_tokensToConvertLength);
+
         for (uint256 i = 0; i < _tokensToConvertLength; i = i.add(1)) {
             address _tokenAddress = _tokensToConvert.at(i);
             path[0] = _tokenAddress;
@@ -100,16 +98,16 @@ contract FeeToTreasuryTransporter is Initializable, Ownable {
                 token.approve(address(uniswapRouter), uint256(-1));
             }
 
-            uint256 actualAmount = uniswapRouter.swapExactTokensForTokens(
+            actualAmounts[i] = uniswapRouter.swapExactTokensForTokens(
                 token.balanceOf(address(this)),
                 amountsOutMin[i],
                 path,
                 treasury,
                 deadlines[i]
             )[1];
-
-            emit FundsConverted(_tokenAddress, rewardsToken, actualAmount);
         }
+        
+        emit FundsConverted(actualAmounts);
     }
 
 }

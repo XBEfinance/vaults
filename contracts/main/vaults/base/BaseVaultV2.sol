@@ -99,6 +99,7 @@ abstract contract BaseVaultV2 is
         address recipient,
         uint256 amount
     ) public override returns (bool) {
+        _updateAllRewards(sender);
         _updateAllRewards(recipient);
         _transfer(sender, recipient, amount);
         _approve(
@@ -117,8 +118,9 @@ abstract contract BaseVaultV2 is
         override
         returns (bool)
     {
-        _updateAllRewards(recipient);
         address sender = _msgSender();
+        _updateAllRewards(sender);
+        _updateAllRewards(recipient);
         _transfer(sender, recipient, amount);
         return true;
     }

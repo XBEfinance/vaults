@@ -17,8 +17,7 @@ const overrideConfigureArgsIfNeeded = async (
   await instance.configure(
     ...(await common.overrideConfigureArgsIfNeeded(
       originalConfigureParams,
-      overridenConfigureParams,
-      // originalConfigureParams.length,
+      overridenConfigureParams
     )),
   );
   return instance;
@@ -1198,30 +1197,30 @@ const environment = {
     }
   ),
 
-  FeeToTreasuryTransporter: async (force, _, isMockContractRequested) => common.cacheAndReturnContract(
+  FeeToTreasuryTransporter: async (force, overridenConfigureParams, isMockContractRequested) => common.cacheAndReturnContract(
     'FeeToTreasuryTransporter',
     force,
     deployedAndConfiguredContracts,
     isMockContractRequested,
     async () => {
       const instance = await deployment.FeeToTreasuryTransporter();
-      await instance.configure(
-        (await common.waitFor(
+      const originalConfigureParams = [
+        async () => (await common.waitFor(
           'MockContract',
-          deployment.deployedContracts,
+          deployedAndConfiguredContracts,
           'environment - waiting for UniswapRouter02 mock contract as dep for FeeToTreasuryTransporter',
         )).address,
-        (await common.waitFor(
+        async () => (await common.waitFor(
           'Treasury',
           deployment.deployedContracts,
           'environment - waiting for Treasury as dep for FeeToTreasuryTransporter',
         )).address,
-        (await common.waitFor(
+        async () => (await common.waitFor(
           'MockXBE',
           deployment.deployedContracts,
           'environment - waiting for MockXBE as dep for FeeToTreasuryTransporter',
         )).address,
-        [
+        async () => [
           (await common.waitFor(
             'MockCVX',
             deployment.deployedContracts,
@@ -1233,8 +1232,10 @@ const environment = {
             'environment - waiting for MockCVX as dep for FeeToTreasuryTransporter',
           )).address
         ]
+      ];
+      return await overrideConfigureArgsIfNeeded(
+        instance, originalConfigureParams, overridenConfigureParams
       );
-      return instance;
     }
   ),
 };

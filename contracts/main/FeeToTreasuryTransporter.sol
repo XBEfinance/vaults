@@ -67,8 +67,8 @@ contract FeeToTreasuryTransporter is Initializable, Ownable {
     }
 
     function convertToRewardsToken(
-        uint256[] calldata amountsOutMin,
-        uint256[] calldata deadlines
+        uint256[] calldata amountsOutMin, // amounts out for swaps to XBE
+        uint256[] calldata deadlines // deadlines for swaps to XBE
     )
         external
         onlyOwner
@@ -106,7 +106,7 @@ contract FeeToTreasuryTransporter is Initializable, Ownable {
                 deadlines[i]
             )[1];
         }
-        
+
         emit FundsConverted(actualAmounts);
     }
 

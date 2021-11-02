@@ -37,6 +37,8 @@ module.exports = {
   IConverter: getContract('IConverter'),
   MockContract: getContract('MockContract'),
   MockToken: getContract('MockToken'),
+  Attacker1: getContract('Attacker1'),
+  Attacker2: getContract('Attacker2'),
   VeXBE: getContract('VeXBE'),
   StakingRewards: getContract('StakingRewards'),
   BonusCampaign: getContract('BonusCampaign'),

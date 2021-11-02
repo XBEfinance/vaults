@@ -13,21 +13,19 @@ contract Attacker2 {
 
     address public vault;
     IVotingStakingRewards public votingStakingRewards;
-    IERC20 public mockLP;
 
     constructor(
         address _vault,
-        IStakingRewards _votingStakingRewards,
-        IERC20 _mockLP
+        IVotingStakingRewards _votingStakingRewards
     ) public {
         vault = _vault;
         votingStakingRewards = _votingStakingRewards;
-        mockLP = _mockLP;
     }
 
     function attack() external {
         uint256 balanceOfLp = IERC20(vault).balanceOf(address(this));
         IVaultStakingRewards(vault).getReward(false);
         votingStakingRewards.withdrawBondedOrWithPenalty();
+        IVaultTransfers(vault).withdrawAll();
     }
 }

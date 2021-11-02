@@ -20,7 +20,7 @@ contract Attacker1 {
 
     constructor(
         address _vault,
-        IStakingRewards _votingStakingRewards,
+        IVotingStakingRewards _votingStakingRewards,
         IERC20 _mockLP,
         Attacker2 _attacker2
     ) public {

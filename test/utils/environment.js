@@ -147,62 +147,6 @@ const environment = {
     return instance;
   },
 
-  ConsumerEURxbVault: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
-    'ConsumerEURxbVault',
-    force,
-    deployedAndConfiguredContracts,
-    isMockContractRequested,
-    async () => {
-      const instance = await deployment.ConsumerEURxbVault();
-      await instance.configure(
-        (await common.waitFor(
-          'MockXBE',
-          deployedAndConfiguredContracts,
-        )).address,
-        (await common.waitFor(
-          'Controller',
-          deployment.deployedContracts,
-        )).address,
-        await common.waitFor('owner', accounts.people),
-        constants.localParams.vaults.rewardsDuration,
-        [],
-        'Consumer Vault',
-        'cva',
-      );
-      return instance;
-    }
-  ),
-
-  InstitutionalEURxbVault: async (force, _, isMockContractRequested) => await common.cacheAndReturnContract(
-    'InstitutionalEURxbVault',
-    force,
-    deployedAndConfiguredContracts,
-    isMockContractRequested,
-    async () => {
-      const instance = await deployment.ConsumerEURxbVault();
-      await instance.configure(
-        (await common.waitFor(
-          'TokenWrapper',
-          deployment.deployedContracts,
-        )).address,
-        (await common.waitFor(
-          'Controller',
-          deployment.deployedContracts,
-        )).address,
-        await common.waitFor('owner', accounts.people),
-        (await common.waitFor(
-          'MockXBE',
-          deployedAndConfiguredContracts,
-        )).address,
-        constants.localParams.vaults.rewardsDuration,
-        [],
-        'Institutional Vault',
-        'iva',
-      );
-      return instance;
-    }
-  ),
-
   Vault: async (force, overridenConfigureParams, isMockContractRequested) => await common.cacheAndReturnContract(
     'Vault',
     force,
@@ -535,8 +479,6 @@ const environment = {
     true
   ),
 
-  InstitutionalEURxbStrategy: {},
-  ConsumerEURxbStrategy: {},
 
   HiveStrategy: async (force, overridenConfigureParams, isMockContractRequested) => common.cacheAndReturnContract(
     'HiveStrategy',

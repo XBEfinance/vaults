@@ -99,7 +99,7 @@ contract Treasury is Initializable, Ownable, ITreasury {
         return _tokensToConvert.contains(_tokenAddress);
     }
 
-    function convertToRewardsToken(address _tokenAddress, uint256 amount)
+    function convertToRewardsToken(address _tokenAddress, uint256 amount, uint256 amountOutMin)
         public
         override
         authorizedOnly
@@ -110,9 +110,6 @@ contract Treasury is Initializable, Ownable, ITreasury {
         path[0] = _tokenAddress;
         path[1] = uniswapRouter.WETH();
         path[2] = rewardsToken;
-
-        uint256 amountOutMin = uniswapRouter.getAmountsOut(amount, path)[0];
-        amountOutMin = amountOutMin.mul(slippageTolerance).div(MAX_BPS);
 
         IERC20 token = IERC20(_tokenAddress);
         if (token.allowance(address(this), address(uniswapRouter)) == 0) {

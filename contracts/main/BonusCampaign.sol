@@ -104,7 +104,7 @@ contract BonusCampaign is StakingRewards, ILockSubscriber {
     {
         // avoid double staking in this very block by subtracting one from block.number
         IVotingEscrow veToken = IVotingEscrow(address(stakingToken));
-        uint256 amount = veToken.balanceOfAt(account, block.number);
+        uint256 amount = veToken.balanceOf(account);
         uint256 WEEK = 604800; // 24 * 60 * 60 * 7
         require(amount > 0, "!stake0");
         require(

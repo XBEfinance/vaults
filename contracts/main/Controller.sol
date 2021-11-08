@@ -141,6 +141,7 @@ contract Controller is IController, Ownable, Initializable {
         override
         onlyOwnerOrStrategist
     {
+        require(IVaultCore(_vault).token() == _token, "inconsistentVaultToken");
         vaults[_token] = _vault;
         canWithdraw[_vault] = true;
     }
@@ -165,6 +166,7 @@ contract Controller is IController, Ownable, Initializable {
         override
         onlyOwnerOrStrategist
     {
+        require(IStrategy(_strategy).want() == _token, "inconsistentWantToken");
         require(approvedStrategies[_token][_strategy], "!approved");
         address _current = strategies[_token];
         if (_current != address(0)) {
@@ -191,7 +193,7 @@ contract Controller is IController, Ownable, Initializable {
     /// transfers converted tokens to strategy, and executes the business logic
     /// @param _token Given token address (wERC20)
     /// @param _amount Amount of given token address
-    function earn(address _token, uint256 _amount) public override {
+    function earn(address _token, uint256 _amount) public onlyOwner override {
         address _strategy = strategies[_token];
         address _want = IStrategy(_strategy).want();
         if (_want != _token) {

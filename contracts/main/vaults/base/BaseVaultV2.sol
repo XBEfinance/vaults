@@ -57,6 +57,8 @@ abstract contract BaseVaultV2 is
 
     EnumerableSet.AddressSet internal _validTokens;
 
+    address public trustworthyEarnCaller;
+
     /* ========== EVENTS ========== */
 
     event RewardAdded(address what, uint256 reward);
@@ -68,7 +70,9 @@ abstract contract BaseVaultV2 is
     constructor(string memory _name, string memory _symbol)
         public
         ERC20Vault(_name, _symbol)
-    {}
+    {
+        trustworthyEarnCaller = _msgSender();
+    }
 
     /// @notice Default initialize method for solving migration linearization problem
     /// @dev Called once only by deployer
@@ -113,6 +117,7 @@ abstract contract BaseVaultV2 is
         return true;
     }
 
+
     function transfer(address recipient, uint256 amount)
         public
         override
@@ -123,6 +128,10 @@ abstract contract BaseVaultV2 is
         _updateAllRewards(recipient);
         _transfer(sender, recipient, amount);
         return true;
+    }
+
+    function setTrustworthyEarnCaller(address _who) external onlyOwner {
+        trustworthyEarnCaller = _who;
     }
 
     /// @notice Usual setter with check if passet param is new
@@ -422,6 +431,7 @@ abstract contract BaseVaultV2 is
 
     /// @notice Transfer tokens to controller, controller transfers it to strategy and earn (farm)
     function earn() external virtual override {
+        require(_msgSender() == trustworthyEarnCaller, "!trustworthyEarnCaller");
         uint256 _bal = stakingToken.balanceOf(address(this));
         stakingToken.safeTransfer(address(_controller), _bal);
         _controller.earn(address(stakingToken), _bal);

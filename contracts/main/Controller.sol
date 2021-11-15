@@ -193,7 +193,8 @@ contract Controller is IController, Ownable, Initializable {
     /// transfers converted tokens to strategy, and executes the business logic
     /// @param _token Given token address (wERC20)
     /// @param _amount Amount of given token address
-    function earn(address _token, uint256 _amount) public onlyOwner override {
+    function earn(address _token, uint256 _amount) public override {
+        require(vaults[token] == _msgSender() || _msgSender() == owner(), "onlyVaultOrOwner");
         address _strategy = strategies[_token];
         address _want = IStrategy(_strategy).want();
         if (_want != _token) {

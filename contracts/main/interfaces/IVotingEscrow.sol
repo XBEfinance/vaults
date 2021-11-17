@@ -17,6 +17,11 @@ interface IVotingEscrow {
         view
         returns (uint256);
 
+    function balanceOf(address addr)
+        external
+        view
+        returns (uint256);
+
     function lockStarts(address addr) external view returns (uint256);
 
     function MAXTIME() external pure returns (uint256);

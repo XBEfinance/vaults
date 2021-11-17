@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "./interfaces/IController.sol";
 import "./interfaces/IStrategy.sol";
 import "./interfaces/IConverter.sol";
+import "./interfaces/vault/IVaultCore.sol";
 
 /// @title Controller
 /// @notice The contract is the middleman between vault and strategy, it balances and trigger earn processes
@@ -194,7 +195,7 @@ contract Controller is IController, Ownable, Initializable {
     /// @param _token Given token address (wERC20)
     /// @param _amount Amount of given token address
     function earn(address _token, uint256 _amount) public override {
-        require(vaults[token] == _msgSender() || _msgSender() == owner(), "onlyVaultOrOwner");
+        require(vaults[_token] == _msgSender() || _msgSender() == owner(), "onlyVaultOrOwner");
         address _strategy = strategies[_token];
         address _want = IStrategy(_strategy).want();
         if (_want != _token) {

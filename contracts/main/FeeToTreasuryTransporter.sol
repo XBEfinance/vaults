@@ -66,6 +66,12 @@ contract FeeToTreasuryTransporter is Initializable, Ownable {
         uniswapRouter = IUniswapV2Router02(_uniswapRouter);
     }
 
+    function sendRewardToTreasure() external onlyOwner {
+        IERC20 token = IERC20(rewardsToken);
+        uint256 balance = token.balanceOf(address(this));
+        token.transfer(treasury, balance);
+    }
+
     function convertToRewardsToken(
         uint256[] calldata amountsOutMin, // amounts out for swaps to XBE
         uint256[] calldata deadlines // deadlines for swaps to XBE

@@ -1,4 +1,6 @@
 XBE.finance - Vault contract
+
+Direct clone of https://github.com/XBEfinance/vaults/ for auditing purposes by Certik
 =================
 **The system of Smart-Contracts for bonds digitization** 
 

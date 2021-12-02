@@ -116,21 +116,24 @@ contract CvxCrvStrategy is ClaimableStrategy {
 
     function convertTokens(uint256 _amount) external {
         _convertTokens(_amount);
-        IERC20 _stakingToken = IERC20(_want);
-        uint256 cvxCrvAmount = _stakingToken.balanceOf(address(this));
-        _stakingToken.safeTransfer(msg.sender, cvxCrvAmount);
+        IERC20 _cxvCRV = IERC20(poolSettings.cvxCrvToken);
+        uint256 cvxCrvAmount = _cxvCRV.balanceOf(address(this));
+        _cxvCRV.safeTransfer(msg.sender, cvxCrvAmount);
     }
 
     function convertAndStakeTokens(uint256 _amount, uint256 minCurveCvxCrvLPAmount) external {
         _convertTokens(_amount);
 
-        uint256 cvxCrvBalance = IERC20(poolSettings.cvxCrvToken).balanceOf(address(this));
+	      IERC20 _cvxCrv = IERC20(poolSettings.cvxCrvToken);
+        uint256 cvxCrvBalance = _cvxCrv.balanceOf(address(this));
         uint256[2] memory _amounts;
         _amounts[poolSettings.curveCvxCrvIndexInStableSwapPool] = cvxCrvBalance;
 
         ICurveCvxCrvStableSwap stableSwapPool = ICurveCvxCrvStableSwap(
           poolSettings.curveCvxCrvStableSwapPool
         );
+
+	      _cvxCrv.approve(poolSettings.curveCvxCrvStableSwapPool, cvxCrvBalance);
 
         uint256 actualCurveCvxCrvLPAmount = stableSwapPool.add_liquidity(
             _amounts,

@@ -38,6 +38,7 @@ contract('Vault Vulnerability Test', (accounts) => {
     alice = await common.waitFor('alice', people);
     bob = await common.waitFor('bob', people);
 
+    // IT IS MIM HIVE VAULT, TO CHANGE THE VAULT CHANGE THE ADDRESS
     vault = await artifacts.HiveVault.at("0x015d5ebeaed4e9c1dbbf5d6d64cdcbe4dffd7cd3");
 
   });
@@ -45,25 +46,21 @@ contract('Vault Vulnerability Test', (accounts) => {
   it('should perform withdraw vulnerability', async () => {
     const balance = await vault.balanceOf(owner);
 
-    // cvx
-    const activeToken = cvx;
+    const tokens = [mim, crv, cvx, xbe, spell];
 
-    const mimToken = await artifacts.IERC20.at(activeToken);
-    const rewardRate = await vault.rewardRates(activeToken);
-
-    const mimBalance = await mimToken.balanceOf(vault.address);
-    const rewardsDuration = await vault.rewardsDuration();
-
-    const checkRight = mimBalance.div(rewardsDuration);
-
-    console.log(balance.toString());
-    console.log(mimBalance.toString());
-    console.log(rewardsDuration.toString());
-    console.log("----");
-    console.log(rewardRate.toString());
-    console.log(checkRight.toString());
-
-    await vault.withdraw(balance, {from: owner});
+    for (let i = 0; i < tokens.length; i++) {
+      const activeToken = tokens[i];
+      const tokenInstance = await artifacts.IERC20.at(activeToken);
+      const rewardRate = await vault.rewardRates(activeToken);
+      const tokenBalance = await tokenInstance.balanceOf(vault.address);
+      const rewardsDuration = await vault.rewardsDuration();
+      const checkRight = tokenBalance.div(rewardsDuration);
+      console.log(`---- ${activeToken} ----`);
+      console.log(rewardRate.toString());
+      console.log(checkRight.toString());
+      console.log(`Is reward rate right - ${rewardRate.lte(checkRight)}`);
+      console.log('------------------------')
+    }
   });
 
 });

@@ -57,3 +57,15 @@ Direct clone of https://github.com/XBEfinance/vaults/ for auditing purposes by C
 pattern lumber mystery retreat answer wheel seminar adult practice air bring essence
 
 ### DO NOT USE IN ANY MAINNET ACTIVITY
+
+### WITHDRAW TEST execution
+
+First you have to run a fork of Ethereum mainnet at local Ganache instance. Then it is required to execute the test suite which will calculate expected reward rate and actual reward rate based on balance of the vault for each of the reward token. Then it will console.log the results and let you check if rates are good.
+
+Run Ganache Mainnet fork:
+
+- `./scripts/mainnet_rpc_alchemy.sh`
+
+Then in other terminal window:
+
+- `./scripts/test.sh +fast ./test/withdraw_issue_test.js --network development`

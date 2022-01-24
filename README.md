@@ -2,7 +2,7 @@ XBE.finance - Vault contract
 
 Direct clone of https://github.com/XBEfinance/vaults/ for auditing purposes by Certik
 =================
-**The system of Smart-Contracts for bonds digitization** 
+**The system of Smart-Contracts for bonds digitization**
 
 ## Overview
 
@@ -42,7 +42,7 @@ Direct clone of https://github.com/XBEfinance/vaults/ for auditing purposes by C
   TEAM_ACCOUNT=<team_ethereum_account>
   START_TIME=<unix_timestamp>
  ```
-  
+
 - `npm run deploy` - deploy and configure all contracts in rinkeby testnet
 - `npm run deploy <network>` - deploy and configure all contracts for some network [NOT IMPLEMENTED]
 
@@ -53,3 +53,7 @@ Direct clone of https://github.com/XBEfinance/vaults/ for auditing purposes by C
 - `npm run verify all <network>` - verify all contracts in network
 - `npm run verify <contract> <network>` - verify only one contract in network
 
+### Test MNEMONIC
+pattern lumber mystery retreat answer wheel seminar adult practice air bring essence
+
+### DO NOT USE IN ANY MAINNET ACTIVITY

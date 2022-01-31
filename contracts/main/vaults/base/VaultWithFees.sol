@@ -4,7 +4,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
 import "../../interfaces/ITreasury.sol";
 import "../../interfaces/IFeeReceiving.sol";
 
@@ -17,9 +16,9 @@ abstract contract VaultWithFees is Ownable {
         uint64 percentage;
         address to;
         bool needFeeReceiving;
-        mapping(address => bool) tokens;
     }
 
+    mapping(address => mapping(address => bool)) claimFeeToAvaibleTokens;
     ClaimFee[] internal claimFee;
     uint64 public sumClaimFee;
     bool public claimFeesEnabled;
@@ -60,7 +59,7 @@ abstract contract VaultWithFees is Ownable {
         newWeight.percentage = _percentage;
         newWeight.needFeeReceiving = _needFeeReceiving;
         for (uint256 i = 0; i < _tokens.length; i++) {
-            newWeight.tokens[_tokens[i]] = true;
+            claimFeeToAvaibleTokens[_to][_tokens[i]] = true;
         }
         claimFee.push(newWeight);
         sumClaimFee = sumClaimFee + _percentage;
@@ -128,18 +127,13 @@ abstract contract VaultWithFees is Ownable {
         }
         uint256 fee;
         for (uint256 i = 0; i < claimFee.length; i++) {
-            ClaimFee memory _claimFee = claimFee[i];
-            fee = uint256(_claimFee.percentage).mul(_amount).div(PCT_BASE);
-            if (claimFee[i].tokens[_rewardToken]) {
-                IERC20(_rewardToken).safeTransfer(_claimFee.to, fee);
+            fee = uint256(claimFee[i].percentage).mul(_amount).div(PCT_BASE);
+            if (claimFeeToAvaibleTokens[claimFee[i].to][_rewardToken]) {
+                IERC20(_rewardToken).safeTransfer(claimFee[i].to, fee);
             }
             _amount = _amount.sub(fee);
-            if (_claimFee.to.isContract() && _claimFee.needFeeReceiving) {
-                IFeeReceiving(_claimFee.to).feeReceiving(
-                    _for,
-                    _rewardToken,
-                    fee
-                );
+            if (claimFee[i].to.isContract() && claimFee[i].needFeeReceiving) {
+                IFeeReceiving(claimFee[i].to).feeReceiving(_for, _rewardToken, fee);
             }
         }
         return _amount;

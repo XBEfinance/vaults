@@ -103,14 +103,10 @@ contract ReferralProgram is Initializable, ReentrancyGuard, Ownable {
         if (!users[_for].exists) {
             _registerUser(rootAddress, _for);
         }
-
         address upline = users[_for].referrer;
         for (uint256 i = 0; i < distribution.length; i++) {
-            uint256 amount = rewards[upline][_token].add(
-                _amount.mul(distribution[i]).div(100)
-            );
+            uint256 amount = rewards[upline][_token].add(_amount.mul(distribution[i]).div(100));
             rewards[upline][_token] = amount;
-
             emit RewardReceived(_for, upline, _token, amount);
             upline = users[upline].referrer;
         }

@@ -338,8 +338,6 @@ abstract contract BaseVaultV2 is
                 address(stakingToken)
             );
         }
-        lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp.add(rewardsDuration);
     }
 
     function getReward(bool _claimUnderlying)
@@ -369,7 +367,7 @@ abstract contract BaseVaultV2 is
                 rewardsDuration
             );
         }
-        
+
         // Ensure the provided reward amount is not more than the balance in the contract.
         // This keeps the reward rate in the right range, preventing overflows due to
         // very high values of rewardRate in the earned and rewardsPerToken functions;
@@ -437,6 +435,8 @@ abstract contract BaseVaultV2 is
         for (uint256 i = 0; i < _validTokens.length(); i++) {
             _controller.claim(address(stakingToken), _validTokens.at(i));
         }
+        periodFinish = block.timestamp.add(rewardsDuration);
+        lastUpdateTime = block.timestamp;
     }
 
     function token() external view override returns (address) {

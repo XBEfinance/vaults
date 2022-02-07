@@ -320,7 +320,6 @@ abstract contract BaseVaultV2 is
             _controller.getRewardStrategy(_stakingToken);
         }
         _controller.claim(_stakingToken, _rewardToken);
-
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
@@ -338,6 +337,10 @@ abstract contract BaseVaultV2 is
                 address(stakingToken)
             );
         }
+        if (block.timestamp >= periodFinish) {
+            periodFinish = block.timestamp.add(rewardsDuration);
+        }
+        lastUpdateTime = block.timestamp;
     }
 
     function getReward(bool _claimUnderlying)
@@ -367,7 +370,6 @@ abstract contract BaseVaultV2 is
                 rewardsDuration
             );
         }
-
         // Ensure the provided reward amount is not more than the balance in the contract.
         // This keeps the reward rate in the right range, preventing overflows due to
         // very high values of rewardRate in the earned and rewardsPerToken functions;
@@ -430,8 +432,10 @@ abstract contract BaseVaultV2 is
     function earn() external virtual override {
         require(_msgSender() == trustworthyEarnCaller, "!trustworthyEarnCaller");
         uint256 _bal = stakingToken.balanceOf(address(this));
-        stakingToken.safeTransfer(address(_controller), _bal);
-        _controller.earn(address(stakingToken), _bal);
+        if (_bal > 0) {
+            stakingToken.safeTransfer(address(_controller), _bal);
+            _controller.earn(address(stakingToken), _bal);
+        }
         for (uint256 i = 0; i < _validTokens.length(); i++) {
             _controller.claim(address(stakingToken), _validTokens.at(i));
         }

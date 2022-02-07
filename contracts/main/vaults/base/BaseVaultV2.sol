@@ -231,7 +231,8 @@ abstract contract BaseVaultV2 is
         returns (uint256)
     {
         require(_amount > 0, "Cannot stake 0");
-        stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
+        stakingToken.safeTransferFrom(msg.sender, address(_controller), _amount);
+        _controller.earn(address(stakingToken), _amount);
         _mint(_from, _amount);
         emit Staked(_from, _amount);
         return _amount;
@@ -426,21 +427,6 @@ abstract contract BaseVaultV2 is
             "Caller is not RewardsDistribution contract"
         );
         _;
-    }
-
-    /// @notice Transfer tokens to controller, controller transfers it to strategy and earn (farm)
-    function earn() external virtual override {
-        require(_msgSender() == trustworthyEarnCaller, "!trustworthyEarnCaller");
-        uint256 _bal = stakingToken.balanceOf(address(this));
-        if (_bal > 0) {
-            stakingToken.safeTransfer(address(_controller), _bal);
-            _controller.earn(address(stakingToken), _bal);
-        }
-        for (uint256 i = 0; i < _validTokens.length(); i++) {
-            _controller.claim(address(stakingToken), _validTokens.at(i));
-        }
-        periodFinish = block.timestamp.add(rewardsDuration);
-        lastUpdateTime = block.timestamp;
     }
 
     function token() external view override returns (address) {

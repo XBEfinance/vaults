@@ -39,8 +39,8 @@ abstract contract BaseVaultV2 is
     uint256 public periodFinish;
     uint256 public rewardsDuration;
     uint256 public lastUpdateTime;
-
     address public rewardsDistribution;
+    bool private rewardExists;
 
     // token => reward per token stored
     mapping(address => uint256) public rewardsPerTokensStored;
@@ -231,8 +231,7 @@ abstract contract BaseVaultV2 is
         returns (uint256)
     {
         require(_amount > 0, "Cannot stake 0");
-        stakingToken.safeTransferFrom(msg.sender, address(_controller), _amount);
-        _controller.earn(address(stakingToken), _amount);
+        stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
         _mint(_from, _amount);
         emit Staked(_from, _amount);
         return _amount;
@@ -338,10 +337,11 @@ abstract contract BaseVaultV2 is
                 address(stakingToken)
             );
         }
-        if (block.timestamp >= periodFinish) {
+        if (rewardExists) {
+            lastUpdateTime = block.timestamp;
             periodFinish = block.timestamp.add(rewardsDuration);
+            rewardExists = false;
         }
-        lastUpdateTime = block.timestamp;
     }
 
     function getReward(bool _claimUnderlying)
@@ -371,6 +371,7 @@ abstract contract BaseVaultV2 is
                 rewardsDuration
             );
         }
+
         // Ensure the provided reward amount is not more than the balance in the contract.
         // This keeps the reward rate in the right range, preventing overflows due to
         // very high values of rewardRate in the earned and rewardsPerToken functions;
@@ -380,6 +381,7 @@ abstract contract BaseVaultV2 is
             rewardRates[_rewardToken] <= balance.div(rewardsDuration),
             "Provided reward too high"
         );
+        rewardExists = true;
         emit RewardAdded(_rewardToken, _reward);
     }
 
@@ -427,6 +429,19 @@ abstract contract BaseVaultV2 is
             "Caller is not RewardsDistribution contract"
         );
         _;
+    }
+
+    /// @notice Transfer tokens to controller, controller transfers it to strategy and earn (farm)
+    function earn() external virtual override {
+        require(_msgSender() == trustworthyEarnCaller, "!trustworthyEarnCaller");
+        uint256 _bal = stakingToken.balanceOf(address(this));
+        if (_bal > 0) {
+            stakingToken.safeTransfer(address(_controller), _bal);
+            _controller.earn(address(stakingToken), _bal);
+        }
+        for (uint256 i = 0; i < _validTokens.length(); i++) {
+            _controller.claim(address(stakingToken), _validTokens.at(i));
+        }
     }
 
     function token() external view override returns (address) {

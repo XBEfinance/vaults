@@ -40,7 +40,6 @@ abstract contract BaseVaultV2 is
     uint256 public rewardsDuration;
     uint256 public lastUpdateTime;
     address public rewardsDistribution;
-    bool private rewardExists;
 
     // token => reward per token stored
     mapping(address => uint256) public rewardsPerTokensStored;
@@ -315,11 +314,11 @@ abstract contract BaseVaultV2 is
         address _for,
         address _rewardToken,
         address _stakingToken
-    ) internal virtual {
+    ) internal virtual returns(uint256 claimedReward) {
         if (_claimUnderlying) {
             _controller.getRewardStrategy(_stakingToken);
         }
-        _controller.claim(_stakingToken, _rewardToken);
+        claimedReward = _controller.claim(_stakingToken, _rewardToken);
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;
@@ -329,13 +328,17 @@ abstract contract BaseVaultV2 is
     }
 
     function _getRewardAll(bool _claimUnderlying) internal virtual {
+        bool rewardExists;
         for (uint256 i = 0; i < _validTokens.length(); i++) {
-            _getReward(
+            uint256 claimedReward = _getReward(
                 _claimUnderlying,
                 msg.sender,
                 _validTokens.at(i),
                 address(stakingToken)
             );
+            if (claimedReward > 0) {
+                rewardExists == true;
+            }
         }
         if (rewardExists) {
             lastUpdateTime = block.timestamp;
@@ -381,7 +384,6 @@ abstract contract BaseVaultV2 is
             rewardRates[_rewardToken] <= balance.div(rewardsDuration),
             "Provided reward too high"
         );
-        rewardExists = true;
         emit RewardAdded(_rewardToken, _reward);
     }
 
@@ -439,8 +441,12 @@ abstract contract BaseVaultV2 is
             stakingToken.safeTransfer(address(_controller), _bal);
             _controller.earn(address(stakingToken), _bal);
         }
+        bool rewardExists;
         for (uint256 i = 0; i < _validTokens.length(); i++) {
-            _controller.claim(address(stakingToken), _validTokens.at(i));
+            uint256 claimedReward = _controller.claim(address(stakingToken), _validTokens.at(i));
+            if (claimedReward > 0) {
+                rewardExists == true;
+            }
         }
         if (rewardExists) {
             lastUpdateTime = block.timestamp;

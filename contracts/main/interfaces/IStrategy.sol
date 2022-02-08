@@ -20,5 +20,5 @@ interface IStrategy {
 
     function getRewards() external;
 
-    function claim(address) external returns (bool);
+    function claim(address) external returns (uint256);
 }

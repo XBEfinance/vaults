@@ -10,7 +10,7 @@ abstract contract ClaimableStrategy is BaseStrategy {
         external
         override
         onlyControllerOrVault
-        returns (bool)
+        returns (uint256)
     {
         address _vault = IController(controller).vaults(_want);
         require(_vault != address(0), "!vault 0");
@@ -23,8 +23,7 @@ abstract contract ClaimableStrategy is BaseStrategy {
                 amount
             );
             emit ClaimedReward(_rewardToken, amount);
-            return true;
         }
-        return false;
+        return amount;
     }
 }

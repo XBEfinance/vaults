@@ -442,6 +442,11 @@ abstract contract BaseVaultV2 is
         for (uint256 i = 0; i < _validTokens.length(); i++) {
             _controller.claim(address(stakingToken), _validTokens.at(i));
         }
+        if (rewardExists) {
+            lastUpdateTime = block.timestamp;
+            periodFinish = block.timestamp.add(rewardsDuration);
+            rewardExists = false;
+        }
     }
 
     function token() external view override returns (address) {

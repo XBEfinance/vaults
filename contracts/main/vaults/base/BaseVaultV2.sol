@@ -314,7 +314,7 @@ abstract contract BaseVaultV2 is
         address _for,
         address _rewardToken,
         address _stakingToken
-    ) internal virtual returns(uint256 claimedReward) {
+    ) internal virtual returns (uint256 claimedReward) {
         if (_claimUnderlying) {
             _controller.getRewardStrategy(_stakingToken);
         }
@@ -337,13 +337,12 @@ abstract contract BaseVaultV2 is
                 address(stakingToken)
             );
             if (claimedReward > 0) {
-                rewardExists == true;
+                rewardExists = true;
             }
         }
         if (rewardExists) {
             lastUpdateTime = block.timestamp;
             periodFinish = block.timestamp.add(rewardsDuration);
-            rewardExists = false;
         }
     }
 
@@ -445,13 +444,12 @@ abstract contract BaseVaultV2 is
         for (uint256 i = 0; i < _validTokens.length(); i++) {
             uint256 claimedReward = _controller.claim(address(stakingToken), _validTokens.at(i));
             if (claimedReward > 0) {
-                rewardExists == true;
+                rewardExists = true;
             }
         }
         if (rewardExists) {
             lastUpdateTime = block.timestamp;
             periodFinish = block.timestamp.add(rewardsDuration);
-            rewardExists = false;
         }
     }
 

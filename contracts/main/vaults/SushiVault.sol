@@ -36,9 +36,8 @@ contract SushiVault is BaseVaultV2, VaultWithAutoStake {
         address _for,
         address _rewardToken,
         address _stakingToken
-    ) internal override returns(uint256 claimedReward) {
+    ) internal override returns (uint256 claimedReward) {
         claimedReward = _controller.claim(_stakingToken, _rewardToken);
-
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;

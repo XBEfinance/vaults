@@ -105,9 +105,8 @@ contract Controller is IController, Ownable, Initializable {
     function claim(address _wantToken, address _tokenToClaim)
         external
         override
-        returns (uint256)
     {
-        return IStrategy(strategies[_wantToken]).claim(_tokenToClaim);
+        IStrategy(strategies[_wantToken]).claim(_tokenToClaim);
     }
 
     /// @notice forces the strategy to take away the rewards due to it
@@ -189,24 +188,5 @@ contract Controller is IController, Ownable, Initializable {
         bool _status
     ) external onlyOwner {
         approvedStrategies[_token][_strategy] = _status;
-    }
-
-    /// @notice The method converts if needed given token to business logic strategy token,
-    /// transfers converted tokens to strategy, and executes the business logic
-    /// @param _token Given token address (wERC20)
-    /// @param _amount Amount of given token address
-    function earn(address _token, uint256 _amount) public override {
-        require(vaults[_token] == _msgSender() || _msgSender() == owner(), "onlyVaultOrOwner");
-        address _strategy = strategies[_token];
-        address _want = IStrategy(_strategy).want();
-        if (_want != _token) {
-            address converter = converters[_token][_want];
-            require(converter != address(0), "!converter");
-            IERC20(_token).safeTransfer(converter, _amount);
-            _amount = IConverter(converter).convert(_strategy);
-        }
-        IERC20(_want).safeTransfer(_strategy, _amount);
-        IStrategy(_strategy).deposit();
-        emit Earn(_token, _amount);
     }
 }

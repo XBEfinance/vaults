@@ -2,7 +2,6 @@ pragma solidity ^0.6.0;
 
 import "./base/BaseVaultV2.sol";
 import "./base/VaultWithAutoStake.sol";
-
 import "../mocks/StringsConcatenations.sol";
 
 contract SushiVault is BaseVaultV2, VaultWithAutoStake {
@@ -36,8 +35,8 @@ contract SushiVault is BaseVaultV2, VaultWithAutoStake {
         address _for,
         address _rewardToken,
         address _stakingToken
-    ) internal override returns (uint256 claimedReward) {
-        claimedReward = _controller.claim(_stakingToken, _rewardToken);
+    ) internal override {
+        _controller.claim(_stakingToken, _rewardToken);
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;

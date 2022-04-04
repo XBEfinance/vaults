@@ -60,7 +60,7 @@ contract ERC20Vault is Context, IERC20 {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public view virtual returns (uint8) {
+    function decimals() public pure virtual returns (uint8) {
         return 18;
     }
 

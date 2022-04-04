@@ -7,5 +7,5 @@ interface IVaultCore {
 
     function balance() external view returns (uint256);
 
-    function earn() external;
+    function claimRewardsFromStrategy() external;
 }

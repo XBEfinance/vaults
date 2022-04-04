@@ -63,11 +63,14 @@ contract Vault is
         address _for,
         address _rewardToken,
         address _stakingToken
-    ) internal override returns (uint256 claimedReward) {
+    )
+        internal
+        override
+    {
         if (_claimUnderlying) {
             _controller.getRewardStrategy(_stakingToken);
         }
-        claimedReward = _controller.claim(_stakingToken, _rewardToken);
+        _controller.claim(_stakingToken, _rewardToken);
         uint256 reward = rewards[_for][_rewardToken];
         if (reward > 0) {
             rewards[_for][_rewardToken] = 0;

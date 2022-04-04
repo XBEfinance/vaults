@@ -41,10 +41,9 @@ contract HiveStrategy is ClaimableStrategy {
     }
 
     /// @dev Function that controller calls
-    function deposit() external override onlyController {
+    function deposit() external override onlyControllerOrVault {
         if (checkPoolIndex(poolSettings.poolIndex)) {
             IERC20 wantToken = IERC20(_want);
-            uint256 _amount = wantToken.balanceOf(address(this));
             if (
                 wantToken.allowance(
                     address(this),

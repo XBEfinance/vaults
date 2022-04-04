@@ -4,26 +4,24 @@ import "./BaseStrategy.sol";
 import "../../interfaces/vault/IVaultStakingRewards.sol";
 
 abstract contract ClaimableStrategy is BaseStrategy {
-    event ClaimedReward(address rewardToken, uint256 amount);
+    event ClaimedReward(address rewardToken, uint256 reward);
 
     function claim(address _rewardToken)
         external
         override
         onlyControllerOrVault
-        returns (uint256)
     {
         address _vault = IController(controller).vaults(_want);
         require(_vault != address(0), "!vault 0");
         IERC20 token = IERC20(_rewardToken);
-        uint256 amount = token.balanceOf(address(this));
-        if (amount > 0) {
-            token.safeTransfer(_vault, amount);
+        uint256 reward = token.balanceOf(address(this));
+        if (reward > 0) {
+            token.safeTransfer(_vault, reward);
             IVaultStakingRewards(_vault).notifyRewardAmount(
                 _rewardToken,
-                amount
+                reward
             );
-            emit ClaimedReward(_rewardToken, amount);
+            emit ClaimedReward(_rewardToken, reward);
         }
-        return amount;
     }
 }

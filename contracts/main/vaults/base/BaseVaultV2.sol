@@ -138,7 +138,7 @@ abstract contract BaseVaultV2 is
     {
         require(_amount > 0, "Cannot stake 0");
         address strategy = IController(_controller).strategies(address(stakingToken));
-        stakingToken.safeTransferFrom(_from, strategy, _amount);
+        stakingToken.safeTransferFrom(msg.sender, strategy, _amount);
         IStrategy(strategy).deposit();
         _mint(_from, _amount);
         emit Staked(_from, _amount);

@@ -388,15 +388,15 @@ abstract contract BaseVault is
         _;
     }
 
-    /// @notice Transfer tokens to controller, controller transfers it to strategy and earn (farm)
-    function earn() external virtual override {
-        uint256 _bal = stakingToken.balanceOf(address(this));
-        stakingToken.safeTransfer(address(_controller), _bal);
-        _controller.earn(address(stakingToken), _bal);
-        for (uint256 i = 0; i < _validTokens.length(); i++) {
-            _controller.claim(address(stakingToken), _validTokens.at(i));
-        }
-    }
+    // /// @notice Transfer tokens to controller, controller transfers it to strategy and earn (farm)
+    // function earn() external virtual override {
+    //     uint256 _bal = stakingToken.balanceOf(address(this));
+    //     stakingToken.safeTransfer(address(_controller), _bal);
+    //     _controller.earn(address(stakingToken), _bal);
+    //     for (uint256 i = 0; i < _validTokens.length(); i++) {
+    //         _controller.claim(address(stakingToken), _validTokens.at(i));
+    //     }
+    // }
 
     function token() external view override returns (address) {
         return address(stakingToken);

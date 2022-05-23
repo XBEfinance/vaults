@@ -675,16 +675,6 @@ const environment = {
       const sushiSwapFactory = await artifacts.UniswapV2Factory.new(owner, { from: owner });
       const sushiSwapRouter = await artifacts.UniswapV2Router02.new(sushiSwapFactory.address, weth9.address, { from: owner });
 
-      // const weth9 = await artifacts.WETH9.at(
-      //   localParams.sushiSwapAddresses.rinkeby.weth,
-      // );
-      // const sushiSwapFactory = await artifacts.IUniswapV2Factory.at(
-      //   localParams.sushiSwapAddresses.rinkeby.sushiswapFactory,
-      // );
-      // const sushiSwapRouter = await artifacts.IUniswapV2Router02.at(
-      //   localParams.sushiSwapAddresses.rinkeby.sushiswapRouter,
-      // );
-
       await mockXBE.mintSender(ether('1000'), { from: owner });
       await weth9.deposit({
         from: owner,
@@ -731,48 +721,6 @@ const environment = {
       return mockLpSushi;
     },
   ),
-
-  // FeeToTreasuryTransporter: async (force, overridenConfigureParams, isMockContractRequested) => common.cacheAndReturnContract(
-  //   'FeeToTreasuryTransporter',
-  //   force,
-  //   deployedAndConfiguredContracts,
-  //   isMockContractRequested,
-  //   async () => {
-  //     const instance = await deployment.FeeToTreasuryTransporter();
-  //     const originalConfigureParams = [
-  //       async () => (await common.waitFor(
-  //         'MockContract',
-  //         deployedAndConfiguredContracts,
-  //         'environment - waiting for UniswapRouter02 mock contract as dep for FeeToTreasuryTransporter',
-  //       )).address,
-  //       async () => (await common.waitFor(
-  //         'Treasury',
-  //         deployment.deployedContracts,
-  //         'environment - waiting for Treasury as dep for FeeToTreasuryTransporter',
-  //       )).address,
-  //       async () => (await common.waitFor(
-  //         'MockXBE',
-  //         deployment.deployedContracts,
-  //         'environment - waiting for MockXBE as dep for FeeToTreasuryTransporter',
-  //       )).address,
-  //       async () => [
-  //         (await common.waitFor(
-  //           'MockCVX',
-  //           deployment.deployedContracts,
-  //           'environment - waiting for MockCVX as dep for FeeToTreasuryTransporter',
-  //         )).address,
-  //         (await common.waitFor(
-  //           'MockCRV',
-  //           deployment.deployedContracts,
-  //           'environment - waiting for MockCVX as dep for FeeToTreasuryTransporter',
-  //         )).address
-  //       ]
-  //     ];
-  //     return await overrideConfigureArgsIfNeeded(
-  //       instance, originalConfigureParams, overridenConfigureParams
-  //     );
-  //   }
-  // )
 
   MockLPSushiRinkeby: async (force, _, isMockContractRequested) => common.cacheAndReturnContract(
     'MockLPSushi',

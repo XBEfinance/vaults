@@ -256,13 +256,6 @@ const environment = {
         'environment - waiting for Controller as dep for SushiVault',
       );
 
-      const sushiStrategy = await common.waitFor(
-        'SushiStrategy',
-        deployedAndConfiguredContracts,
-        'environment - waiting for SushiStrategy as dep for SushiVault',
-      );
-      await instance.setRewardsDistribution(sushiStrategy.address);
-
       const originalConfigureParams = [
         async () => mockLpSushi.address,
         async () => controller.address,
@@ -278,9 +271,20 @@ const environment = {
         async () => 'Sushi Vault',
         async () => 'sv',
       ];
-      return await overrideConfigureArgsIfNeeded(
+
+      const configuratedInstance = await overrideConfigureArgsIfNeeded(
         instance, originalConfigureParams, overridenConfigureParams
       );
+
+      const sushiStrategy = await common.waitFor(
+        'SushiStrategy',
+        deployedAndConfiguredContracts,
+        'environment - waiting for SushiStrategy as dep for SushiVault',
+      );
+
+      await configuratedInstance.setRewardsDistribution(sushiStrategy.address);
+
+      return configuratedInstance;
     }
   ),
 

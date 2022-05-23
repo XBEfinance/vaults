@@ -68,8 +68,8 @@ contract('SushiVault', (accounts) => {
     [
       mockXBE,
       mockLPSushi,
-      vault,
       controller,
+      vault,
     ] = await environment.getGroup(
       [
         'MockXBE',
@@ -83,8 +83,8 @@ contract('SushiVault', (accounts) => {
       (key) => [
         'MockXBE',
         'MockLPSushi',
-        'SushiVault',
         'Controller',
+        'SushiVault',
       ].includes(key),
       true,
       {
@@ -112,55 +112,54 @@ contract('SushiVault', (accounts) => {
     expect(await vault.isTokenValid(mockXBE.address)).to.be.true;
   });
 
-  // xit('should set controller properly',
-  //   setControllerTest(vaultName));
+  xit('should set controller properly',
+    setControllerTest(vaultName));
 
-  // xit('should set rewards distribution properly',
-  //   setRewardsDistributionTest(vaultName));
+  xit('should set rewards distribution properly',
+    setRewardsDistributionTest(vaultName));
 
-  // xit('should set rewards duration properly',
-  //   setRewardsDurationTest(vaultName));
+  xit('should set rewards duration properly',
+    setRewardsDurationTest(vaultName));
 
-  // xit('should pause properly', pauseTest(vaultName));
+  xit('should pause properly', pauseTest(vaultName));
 
-  // xit('should unpause properly', unpauseTest(vaultName));
+  xit('should unpause properly', unpauseTest(vaultName));
 
-  // xit('should add reward token properly', addRewardTokenTest(vaultName));
+  xit('should add reward token properly', addRewardTokenTest(vaultName));
 
-  // xit('should remove reward token properly', removeRewardTokenTest(vaultName));
+  xit('should remove reward token properly', removeRewardTokenTest(vaultName));
 
-  // xit('should check if reward token valid', checkRewardTokenTest(vaultName));
+  xit('should check if reward token valid', checkRewardTokenTest(vaultName));
 
-  // xit('should get reward token by index', getRewardTokenByIndexTest(vaultName));
+  xit('should get reward token by index', getRewardTokenByIndexTest(vaultName));
 
-  // xit('should get reward tokens count', getRewardTokensCountTest(vaultName));
+  xit('should get reward tokens count', getRewardTokensCountTest(vaultName));
 
-  // it('should get last time rewards applicable', lastTimeRewardApplicableTest(vaultName));
+  xit('should get last time rewards applicable', lastTimeRewardApplicableTest(vaultName));
 
-  // it('should get reward per token', getRewardPerTokenTest(vaultName));
+  it('should get reward per token', getRewardPerTokenTest(vaultName));
 
-  // it('should get earned value', earnedTest(vaultName));
+  it('should get earned value', earnedTest(vaultName));
 
-  // it('should get user reward', userRewardTest(vaultName));
+  it('should get user reward', userRewardTest(vaultName));
 
-  // it('should get balance both on vault and strategy', balanceTest(vaultName));
+  it('should get balance both on vault and strategy', balanceTest(vaultName));
 
-  // xit('should deposit', depositTest(vaultName));
+  xit('should deposit', depositTest(vaultName));
 
-  // xit('should deposit for', depositForTest(vaultName));
+  xit('should deposit for', depositForTest(vaultName));
 
-  // xit('should deposit all', depositAllTest(vaultName));
+  xit('should deposit all', depositAllTest(vaultName));
 
-  // xit('should withdraw', withdrawTest(vaultName));
+  xit('should withdraw', withdrawTest(vaultName));
 
-  // xit('should withdraw all', withdrawAllTest(vaultName));
+  xit('should withdraw all', withdrawAllTest(vaultName));
 
-  // xit('should withdraw with customizable claim', withdrawWithCustomizableClaimTest(vaultName));
+  xit('should withdraw with customizable claim', withdrawWithCustomizableClaimTest(vaultName));
 
-  // xit('should get reward', getRewardTest(vaultName));
+  xit('should get reward', getRewardTest(vaultName));
 
-  // xit('should notify reward amount', notifyRewardAmountTest(vaultName));
+  xit('should notify reward amount', notifyRewardAmountTest(vaultName));
 
-  // xit('should perform earn method', earnTest(vaultName));
-
+  xit('should perform earn method', earnTest(vaultName));
 });

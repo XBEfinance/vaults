@@ -7,8 +7,8 @@ const MULTIPLIER = new BN('10').pow(new BN('18'));
 const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
 const months = (n) => days('30').mul(new BN(n));
 
-const localDistro = require('../../../curve-convex/distro.json');
-const testnetDistro = require('../../../curve-convex/rinkeby_distro.json');
+const localDistro = require('../../distro.json');
+const testnetDistro = require('../../rinkeby_distro.json');
 
 const sushiSwapAddresses = {
   rinkeby: {

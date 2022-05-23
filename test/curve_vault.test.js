@@ -12,7 +12,7 @@ const { assert, expect } = require('chai');
 // contractInstance.functionName.call();
 const { ZERO_ADDRESS } = constants;
 
-const testnet_distro = require('../../curve-convex/rinkeby_distro.json');
+const testnet_distro = require('../rinkeby_distro.json');
 
 // const XBEInflation = artifacts.require('XBEInflation');
 const SimpleXBEInflation = artifacts.require('SimpleXBEInflation');

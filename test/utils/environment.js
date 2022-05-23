@@ -666,6 +666,119 @@ const environment = {
       const mockXBE = await common.waitFor('MockXBE', deployedAndConfiguredContracts,
         'environment - MockXBE as dependency for Mock LP Sushi');
 
+      const owner = await common.waitFor('owner', accounts.people);
+      const weth9 = await artifacts.WETH9.new({ from: owner });
+      const sushiSwapFactory = await artifacts.UniswapV2Factory.new(owner, { from: owner });
+      const sushiSwapRouter = await artifacts.UniswapV2Router02.new(sushiSwapFactory.address, weth9.address, { from: owner });
+
+      // const weth9 = await artifacts.WETH9.at(
+      //   localParams.sushiSwapAddresses.rinkeby.weth,
+      // );
+      // const sushiSwapFactory = await artifacts.IUniswapV2Factory.at(
+      //   localParams.sushiSwapAddresses.rinkeby.sushiswapFactory,
+      // );
+      // const sushiSwapRouter = await artifacts.IUniswapV2Router02.at(
+      //   localParams.sushiSwapAddresses.rinkeby.sushiswapRouter,
+      // );
+
+      await mockXBE.mintSender(ether('1000'), { from: owner });
+      await weth9.deposit({
+        from: owner,
+        value: localParams.sushiswapPair.wethAmountForPair,
+      });
+
+      console.log(`WETH balance ${(await weth9.balanceOf(owner)).toString()}`);
+
+      // not required now
+      await mockXBE.approve(
+        sushiSwapRouter.address,
+        localParams.sushiswapPair.xbeAmountForPair,
+        { from: owner },
+      );
+
+      // already enough
+      await weth9.approve(
+        sushiSwapRouter.address,
+        localParams.sushiswapPair.wethAmountForPair,
+        { from: owner },
+      );
+
+      // no need to add liquidity each time
+      await sushiSwapRouter.addLiquidity(
+        mockXBE.address,
+        weth9.address,
+        localParams.sushiswapPair.xbeAmountForPair,
+        localParams.sushiswapPair.wethAmountForPair,
+        localParams.sushiswapPair.xbeAmountForPair,
+        localParams.sushiswapPair.wethAmountForPair,
+        owner,
+        (await time.latest()).add(new BN('3600')),
+        { from: owner },
+      );
+      const mockLpSushi = await artifacts.IUniswapV2Pair.at(
+        await sushiSwapFactory.getPair(
+          mockXBE.address,
+          weth9.address,
+        ),
+      );
+
+      console.log('mockLpSushi:', mockLpSushi.address);
+
+      return mockLpSushi;
+    },
+  ),
+
+  // FeeToTreasuryTransporter: async (force, overridenConfigureParams, isMockContractRequested) => common.cacheAndReturnContract(
+  //   'FeeToTreasuryTransporter',
+  //   force,
+  //   deployedAndConfiguredContracts,
+  //   isMockContractRequested,
+  //   async () => {
+  //     const instance = await deployment.FeeToTreasuryTransporter();
+  //     const originalConfigureParams = [
+  //       async () => (await common.waitFor(
+  //         'MockContract',
+  //         deployedAndConfiguredContracts,
+  //         'environment - waiting for UniswapRouter02 mock contract as dep for FeeToTreasuryTransporter',
+  //       )).address,
+  //       async () => (await common.waitFor(
+  //         'Treasury',
+  //         deployment.deployedContracts,
+  //         'environment - waiting for Treasury as dep for FeeToTreasuryTransporter',
+  //       )).address,
+  //       async () => (await common.waitFor(
+  //         'MockXBE',
+  //         deployment.deployedContracts,
+  //         'environment - waiting for MockXBE as dep for FeeToTreasuryTransporter',
+  //       )).address,
+  //       async () => [
+  //         (await common.waitFor(
+  //           'MockCVX',
+  //           deployment.deployedContracts,
+  //           'environment - waiting for MockCVX as dep for FeeToTreasuryTransporter',
+  //         )).address,
+  //         (await common.waitFor(
+  //           'MockCRV',
+  //           deployment.deployedContracts,
+  //           'environment - waiting for MockCVX as dep for FeeToTreasuryTransporter',
+  //         )).address
+  //       ]
+  //     ];
+  //     return await overrideConfigureArgsIfNeeded(
+  //       instance, originalConfigureParams, overridenConfigureParams
+  //     );
+  //   }
+  // )
+
+  MockLPSushiRinkeby: async (force, _, isMockContractRequested) => common.cacheAndReturnContract(
+    'MockLPSushi',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => {
+      const mockXBE = await common.waitFor('MockXBE', deployedAndConfiguredContracts,
+        'environment - MockXBE as dependency for Mock LP Sushi');
+
       const weth9 = await artifacts.WETH9.at(
         localParams.sushiSwapAddresses.rinkeby.weth,
       );

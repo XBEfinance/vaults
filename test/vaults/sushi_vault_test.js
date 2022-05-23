@@ -36,7 +36,6 @@ const {
   earnedTest,
   userRewardTest,
   balanceTest,
-  getPotentialRewardReturnsTest,
   depositTest,
   depositForTest,
   depositAllTest,
@@ -49,7 +48,6 @@ const {
 } = require('./vaults_test_suite_template.js');
 
 contract('SushiVault', (accounts) => {
-
   setPeople(accounts);
 
   let owner;
@@ -63,44 +61,46 @@ contract('SushiVault', (accounts) => {
   let mockLPSushi;
 
   beforeEach(async () => {
-    owner = await common.waitFor("owner", people);
-    alice = await common.waitFor("alice", people);
-    bob = await common.waitFor("bob", people);
-    charlie = await common.waitFor("charlie", people);
+    owner = await common.waitFor('owner', people);
+    alice = await common.waitFor('alice', people);
+    bob = await common.waitFor('bob', people);
+    charlie = await common.waitFor('charlie', people);
     [
       mockXBE,
       mockLPSushi,
       vault,
-      controller
+      controller,
     ] = await environment.getGroup(
       [
-        "MockXBE",
-        "MockLPSushi",
-        "Treasury",
-        "VotingStakingRewards",
-        "SushiStrategy",
-        "SushiVault",
-        "Controller"
+        'MockXBE',
+        'MockLPSushi',
+        'Treasury',
+        'VotingStakingRewards',
+        'Controller',
+        'SushiVault',
+        'SushiStrategy',
       ],
       (key) => [
-        "MockXBE",
-        "MockLPSushi",
-        "SushiVault",
-        "Controller"
+        'MockXBE',
+        'MockLPSushi',
+        'SushiVault',
+        'Controller',
       ].includes(key),
       true,
       {
-        "VotingStakingRewards": {
+        'VotingStakingRewards': {
           4: ZERO_ADDRESS,
           5: ZERO_ADDRESS,
           8: [ ZERO_ADDRESS ]
         },
-        "Treasury": {
+        'Treasury': {
           3: ZERO_ADDRESS
         }
       }
     );
   });
+
+  const vaultName = 'SushiVault';
 
   it('should configure general settings properly', async () => {
     expect(await vault.owner()).to.be.equal(owner);
@@ -112,57 +112,55 @@ contract('SushiVault', (accounts) => {
     expect(await vault.isTokenValid(mockXBE.address)).to.be.true;
   });
 
-  xit('should set controller properly',
-    setControllerTest(vaultName));
+  // xit('should set controller properly',
+  //   setControllerTest(vaultName));
 
-  xit('should set rewards distribution properly',
-    setRewardsDistributionTest(vaultName));
+  // xit('should set rewards distribution properly',
+  //   setRewardsDistributionTest(vaultName));
 
-  xit('should set rewards duration properly',
-    setRewardsDurationTest(vaultName));
+  // xit('should set rewards duration properly',
+  //   setRewardsDurationTest(vaultName));
 
-  xit('should pause properly', pauseTest(vaultName));
+  // xit('should pause properly', pauseTest(vaultName));
 
-  xit('should unpause properly', unpauseTest(vaultName));
+  // xit('should unpause properly', unpauseTest(vaultName));
 
-  xit('should add reward token properly', addRewardTokenTest(vaultName));
+  // xit('should add reward token properly', addRewardTokenTest(vaultName));
 
-  xit('should remove reward token properly', removeRewardTokenTest(vaultName));
+  // xit('should remove reward token properly', removeRewardTokenTest(vaultName));
 
-  xit('should check if reward token valid', checkRewardTokenTest(vaultName));
+  // xit('should check if reward token valid', checkRewardTokenTest(vaultName));
 
-  xit('should get reward token by index', getRewardTokenByIndexTest(vaultName));
+  // xit('should get reward token by index', getRewardTokenByIndexTest(vaultName));
 
-  xit('should get reward tokens count', getRewardTokensCountTest(vaultName));
+  // xit('should get reward tokens count', getRewardTokensCountTest(vaultName));
 
-  it('should get last time rewards applicable', lastTimeRewardApplicableTest(vaultName));
+  // it('should get last time rewards applicable', lastTimeRewardApplicableTest(vaultName));
 
-  it('should get reward per token', getRewardPerTokenTest(vaultName));
+  // it('should get reward per token', getRewardPerTokenTest(vaultName));
 
-  it('should get earned value', earnedTest(vaultName));
+  // it('should get earned value', earnedTest(vaultName));
 
-  it('should get user reward', userRewardTest(vaultName));
+  // it('should get user reward', userRewardTest(vaultName));
 
-  it('should get balance both on vault and strategy', balanceTest(vaultName));
+  // it('should get balance both on vault and strategy', balanceTest(vaultName));
 
-  it('should get potential reward returns', getPotentialRewardReturnsTest(vaultName));
+  // xit('should deposit', depositTest(vaultName));
 
-  xit('should deposit', depositTest(vaultName));
+  // xit('should deposit for', depositForTest(vaultName));
 
-  xit('should deposit for', depositForTest(vaultName));
+  // xit('should deposit all', depositAllTest(vaultName));
 
-  xit('should deposit all', depositAllTest(vaultName));
+  // xit('should withdraw', withdrawTest(vaultName));
 
-  xit('should withdraw', withdrawTest(vaultName));
+  // xit('should withdraw all', withdrawAllTest(vaultName));
 
-  xit('should withdraw all', withdrawAllTest(vaultName));
+  // xit('should withdraw with customizable claim', withdrawWithCustomizableClaimTest(vaultName));
 
-  xit('should withdraw with customizable claim', withdrawWithCustomizableClaimTest(vaultName));
+  // xit('should get reward', getRewardTest(vaultName));
 
-  xit('should get reward', getRewardTest(vaultName));
+  // xit('should notify reward amount', notifyRewardAmountTest(vaultName));
 
-  xit('should notify reward amount', notifyRewardAmountTest(vaultName));
-
-  xit('should perform earn method', earnTest(vaultName));
+  // xit('should perform earn method', earnTest(vaultName));
 
 });

@@ -24,6 +24,8 @@ module.exports = {
   IUniswapV2Router02: getContract('IUniswapV2Router02'),
   IUniswapV2Factory: getContract('IUniswapV2Factory'),
   IUniswapV2Pair: getContract('IUniswapV2Pair'),
+  UniswapV2Factory: getContract('UniswapV2Factory'),
+  UniswapV2Router02: getContract('UniswapV2Router02'),
   IController: getContract('IController'),
   IVaultCore: getContract('IVaultCore'),
   IStrategy: getContract('IStrategy'),

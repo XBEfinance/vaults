@@ -8,7 +8,7 @@ const {
   time,
 } = require('@openzeppelin/test-helpers');
 
-const testnet_distro = require('../../../../curve-convex/rinkeby_distro.json');
+const testnet_distro = require('../../../rinkeby_distro.json');
 
 const days = (n) => new BN('60').mul(new BN('1440').mul(new BN(n)));
 const months = (n) => days('30').mul(new BN(n));

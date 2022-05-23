@@ -1,4 +1,4 @@
-const testnet_distro = require('../../../curve-convex/rinkeby_distro.json');
+const testnet_distro = require('../../rinkeby_distro.json');
 const dependentsAddresses = testnet_distro.rinkeby;
 dependentsAddresses.curve.pools = Object.values(dependentsAddresses
   .curve.pool_data);

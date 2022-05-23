@@ -13,7 +13,7 @@ const constants = require('../utils/constants');
 const deployment = require('../utils/deployment');
 const environment = require('../utils/environment');
 const { people, setPeople } = require('../utils/accounts');
-const distro = require('../../../curve-convex/distro.json');
+const distro = require('../../distro.json');
 const artifacts = require('../utils/artifacts');
 
 const { ZERO, ZERO_ADDRESS } = constants.utils;

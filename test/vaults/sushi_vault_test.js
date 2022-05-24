@@ -120,7 +120,7 @@ contract('SushiVault', (accounts) => {
     expect(await vault.rewardDelegators(alice)).to.be.equal(charlie);
   });
 
-  it.only('should recive reward for delegator', async () => {
+  it('should recive reward for delegator', async () => {
     // delegate alice rewards for charlie
     await vault.setDelegator(alice, charlie);
     // deposits funds for alice and charlie (50% vs 50%)

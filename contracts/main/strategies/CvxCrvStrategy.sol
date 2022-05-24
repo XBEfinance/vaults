@@ -51,7 +51,7 @@ contract CvxCrvStrategy is ClaimableStrategy {
     }
 
     /// @dev Function that controller calls
-    function deposit() external override onlyController {
+    function deposit() external override onlyControllerOrVault {
         if (checkPoolIndex(poolSettings.poolIndex)) {
             IERC20 wantToken = IERC20(_want);
             if (

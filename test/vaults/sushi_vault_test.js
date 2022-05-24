@@ -112,6 +112,48 @@ contract('SushiVault', (accounts) => {
     expect(await vault.isTokenValid(mockXBE.address)).to.be.true;
   });
 
+  it('should delegate reward, if seller is owner', async () => {
+    await expectRevert(vault.setDelegator(alice, charlie, { from: charlie }), 'Ownable: caller is not the owner');
+    // delegate alice rewards for charlie
+    await vault.setDelegator(alice, charlie);
+    // check rewardDelegators
+    expect(await vault.rewardDelegators(alice)).to.be.equal(charlie);
+  });
+
+  it('should recive reward for delegator', async () => {
+    // delegate alice rewards for charlie
+    await vault.setDelegator(alice, charlie);
+    // deposits funds for alice and charlie (50% vs 50%)
+    const balanceSushi = await mockLPSushi.balanceOf(owner);
+    await mockLPSushi.approve(vault.address, balanceSushi);
+    await vault.deposit(balanceSushi);
+    const balanceVault = await vault.balanceOf(owner);
+    await vault.transfer(alice, balanceVault.divn(2));
+    await vault.transfer(charlie, balanceVault.divn(2));
+    // add reward to vault
+    await vault.setRewardsDistribution(owner);
+    await mockXBE.transfer(vault.address, ether('100'));
+    await vault.notifyRewardAmount(mockXBE.address, ether('100'));
+    // increase time
+    await time.increase(time.duration.years(1)); // rewardDuration in test is equal 12 mounth
+    // owner hasn't vault tokens and didn't receive reward
+    const ownerXBEBalanceBefore = await mockXBE.balanceOf(owner);
+    await vault.getReward(true);
+    expect(await mockXBE.balanceOf(owner)).to.be.bignumber.equal(ownerXBEBalanceBefore);
+    // charlie autostake her rewards
+    await vault.getReward(true, { from: charlie });
+    expect(await mockXBE.balanceOf(charlie)).to.be.bignumber.zero;
+    // charlie get reward for alice
+    await vault.getRewardForDelegator(alice, { from: charlie });
+    expect(
+      ether('50').sub(await mockXBE.balanceOf(charlie)),
+    ).to.be.bignumber.lt(ether('0.0000000001')); // 50 - balanceAfter ~= 0
+    // check that both rewards has been recived
+    expect(await vault.earned(mockXBE.address, charlie)).to.be.bignumber.zero;
+    expect(await vault.earned(mockXBE.address, alice)).to.be.bignumber.zero;
+    expect(ether('50').sub(await mockXBE.balanceOf(charlie))).to.be.bignumber.lt(ether('0.0000000001')); // 50 - balanceAfter ~= 0
+  });
+
   xit('should set controller properly',
     setControllerTest(vaultName));
 

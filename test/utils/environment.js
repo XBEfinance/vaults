@@ -673,7 +673,11 @@ const environment = {
       const owner = await common.waitFor('owner', accounts.people);
       const weth9 = await artifacts.WETH9.new({ from: owner });
       const sushiSwapFactory = await artifacts.UniswapV2Factory.new(owner, { from: owner });
-      const sushiSwapRouter = await artifacts.UniswapV2Router02.new(sushiSwapFactory.address, weth9.address, { from: owner });
+      const sushiSwapRouter = await artifacts.UniswapV2Router02.new(
+        sushiSwapFactory.address,
+        weth9.address,
+        { from: owner },
+      );
 
       await mockXBE.mintSender(ether('1000'), { from: owner });
       await weth9.deposit({

@@ -120,7 +120,7 @@ contract('SushiVault', (accounts) => {
     expect(await vault.rewardDelegators(alice)).to.be.equal(charlie);
   });
 
-  it('should recive reward for delegator', async () => {
+  it.only('should recive reward for delegator', async () => {
     // delegate alice rewards for charlie
     await vault.setDelegator(alice, charlie);
     // deposits funds for alice and charlie (50% vs 50%)
@@ -143,7 +143,9 @@ contract('SushiVault', (accounts) => {
     // charlie autostake her rewards
     await vault.getReward(true, { from: charlie });
     expect(await mockXBE.balanceOf(charlie)).to.be.bignumber.zero;
-    // charlie get reward for alice
+    // only charlie get reward for alice
+    await expectRevert(vault.getRewardForDelegator(alice, { from: alice }), 'unknown sender');
+    await expectRevert(vault.getRewardForDelegator(alice, { from: owner }), 'unknown sender');
     await vault.getRewardForDelegator(alice, { from: charlie });
     expect(
       ether('50').sub(await mockXBE.balanceOf(charlie)),
@@ -152,6 +154,9 @@ contract('SushiVault', (accounts) => {
     expect(await vault.earned(mockXBE.address, charlie)).to.be.bignumber.zero;
     expect(await vault.earned(mockXBE.address, alice)).to.be.bignumber.zero;
     expect(ether('50').sub(await mockXBE.balanceOf(charlie))).to.be.bignumber.lt(ether('0.0000000001')); // 50 - balanceAfter ~= 0
+    // all user can withdraw vault tokens
+    await vault.withdrawAll({ from: alice });
+    await vault.withdrawAll({ from: charlie });
   });
 
   xit('should set controller properly',

@@ -33,6 +33,7 @@ abstract contract BaseVaultV2 is
     mapping(address => mapping(address => uint256)) public rewards;
     mapping(address => uint256) public lastUpdateTimePerToken;
     mapping(address => uint256) public periodFinishPerToken;
+    mapping(address => address) public rewardDelegators;
     EnumerableSet.AddressSet internal validTokens;
     uint256 public rewardsDuration;
     address public rewardsDistribution;
@@ -45,6 +46,7 @@ abstract contract BaseVaultV2 is
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address what, address indexed user, uint256 reward);
     event RewardsDurationUpdated(uint256 newDuration);
+    event Delegate(address delegator, address recipient);
 
     constructor(string memory _name, string memory _symbol)
         public
@@ -375,6 +377,28 @@ abstract contract BaseVaultV2 is
     function setController(address _newController) public onlyOwner {
         require(address(_controller) != _newController, "!new");
         _controller = IController(_newController);
+    }
+
+    function setDelegator(address _delegator, address _recipient) external onlyOwner {
+        require(rewardDelegators[_delegator] != _recipient, "!new");
+        rewardDelegators[_delegator] = _recipient;
+        emit Delegate(_delegator, _recipient);
+    }
+
+    function getRewardForDelegator(address _delegator)
+        nonReentrant
+        updateReward(_delegator) virtual external {
+        require(_msgSender() == rewardDelegators[_delegator], "unknown sender");
+        for (uint256 i = 0; i < validTokens.length(); i++) {
+            address _rewardToken = validTokens.at(i);
+            _controller.claim(address(stakingToken), _rewardToken);
+            uint256 reward = rewards[_delegator][_rewardToken];
+            if (reward > 0) {
+                rewards[_delegator][_rewardToken] = 0;
+                IERC20(_rewardToken).safeTransfer(_msgSender(), reward);
+                emit RewardPaid(_rewardToken, _delegator, reward);
+            }
+        }
     }
 
     function lastTimeRewardApplicable(address _rewardToken) public view returns (uint256) {

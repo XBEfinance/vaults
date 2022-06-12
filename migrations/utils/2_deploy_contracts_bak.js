@@ -5,7 +5,7 @@ const { BN, constants, time } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
 const fs = require('fs');
-const testnet_distro = require('../../curve-convex/distro.json');
+const testnet_distro = require('../distro.json');
 
 const Registrator = artifacts.require('LockSubscription');
 const SimpleXbeInflation = artifacts.require('SimpleXBEInflation');

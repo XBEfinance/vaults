@@ -1,0 +1,104 @@
+{
+  "rinkeby": {
+    "uniswap_router_02": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+    "uniswap_factory": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+    "xbEuro": "0x5640D0FfB20F700ebaE1e2E09D525e4C46153D8e",
+    "treasury": "0x8D77234fC07167380fE0b776342B9bB4f46cE4a4",
+    "convex": {
+      "voteProxy": "0x9e7c0367E68bE1D0389e4156DED38d5559264dD9",
+      "cvx": "0xfb01A5853CBf0772CBB9B623DcBa18fBF2cF1915",
+      "booster": "0x419Bd6879f2790cc46d9F78D8B402905F0Bd3abb",
+      "rFactory": "0x48aBd133C93Bd7aF4b6cb3893e5Da83C45d325a7",
+      "tFactory": "0x56EDc62f62213af5E4F898B718B115dCCF7AD068",
+      "sFactory": "0x79fD6F437DaCbABDCBE0efBE1293535e7A29680a",
+      "cvxCrv": "0xCBf5b936A0f76A9eA700a589bFC9256a91FBDBa3",
+      "crvDepositor": "0x13a4106EA05fc5FE63E8b08f8630E9a9537DFcBD",
+      "cvxCrvRewards": "0xB76aEbd29Ea68429dC97e24bc884Bb15cDbB05Ef",
+      "cvxRewards": "0x14962686bE14Af2DEe69644477e77c2135418895",
+      "poolManager": "0xB36eEd66B213cCfd4283D2A806cAD9Fa0F88B8dB",
+      "arbitratorVault": "0x407c1329EBC0b2a60F7546cDd59b6090377C0084",
+      "chef": "0x1C19A9d540829Ae1B88F14123A56e00CDA69affB",
+      "claimZap": "0x1349d2E0132509764ef311DF6Ccdd745E821E956",
+      "vestedEscrow": "0xE597219292c6F97A8cf33A92371241A596F48072",
+      "dropFactory": "0x93deB8b48DaDFAeAD561665B383bb426894C76a6",
+      "airdrop": "0x8465cDba04170622A225442531Fc604725512D53",
+      "cvxEthSLP": "0x5723dc96DDdBd3677B8EA453F91Ea69e0DcA23c7",
+      "pools": [
+        {
+          "lptoken": "0x8Feb081Af3EE4A860b5FBD89969ffD0D01AC0793",
+          "token": "0x98342fBF72a9a36ecD393CE68Eefd88830D40Cd2",
+          "gauge": "0x28BBd41794Bf6737df94CC1084E37E23F623Ea8B",
+          "crvRewards": "0x63BBaF0DC1c5110197b6A4433532fCAd333Ec638",
+          "stash": "0x7003F294D0e975B913DfD95DF10197B23679F090",
+          "rewards": [
+            {
+              "rToken": "0xbc39614927d2fF12728144ADfEA9De357ca9a704",
+              "rAddress": "0x63BBaF0DC1c5110197b6A4433532fCAd333Ec638"
+            }
+          ],
+          "name": "compound",
+          "id": 0
+        }
+      ]
+    },
+    "curve": {
+      "address_provider": "0x131d07268E812B9fA5E5d32d04928520D3b62806",
+      "pool_data": {
+        "mock_pool": {
+          "swap_address": "0x059e4B779B4a32f7785623DEA38241082264D1aC",
+          "gauge_addresses": [
+            "0x28BBd41794Bf6737df94CC1084E37E23F623Ea8B"
+          ],
+          "swap_name": "StableSwapMockPool",
+          "lp_token_address": "0x8Feb081Af3EE4A860b5FBD89969ffD0D01AC0793",
+          "coins": [
+            {
+              "name": "Coin A0",
+              "decimals": 18,
+              "underlying_name": "uCoin A0",
+              "wrapped_address": "0xE8F419e6FE30d6c5C8F8E43632cb365cDc39E37d",
+              "wrapped_decimals": 18,
+              "underlying_address": "0xb181b565585F6DaC4fC923957f745A28805a0168"
+            },
+            {
+              "name": "Coin A1",
+              "decimals": 18,
+              "underlying_name": "uCoin A1",
+              "wrapped_address": "0x57c0b0Ffc11D782C44E2cf0b15Cf46b4780678b2",
+              "wrapped_decimals": 18,
+              "underlying_address": "0x26cb2247833CaF8BAC8BFf6c6aFC832A39D0326d"
+            },
+            {
+              "name": "Coin A2",
+              "decimals": 18,
+              "underlying_name": "uCoin A2",
+              "wrapped_address": "0xd5f99cE73391D174e5f8Be7b52f0506c1176C911",
+              "wrapped_decimals": 18,
+              "underlying_address": "0x1e8793a0e01d41A4aC09CC8412313f0885F2A4a6"
+            },
+            {
+              "name": "Coin A3",
+              "decimals": 18,
+              "underlying_name": "uCoin A3",
+              "wrapped_address": "0xa5db08faab29D468C6C6FeE9ff57a74dEe070584",
+              "wrapped_decimals": 18,
+              "underlying_address": "0xAA48990255EAB494a54D58192A8378D8c0A65D9a"
+            }
+          ],
+          "lp_contract": "CurveTokenV1"
+        }
+      },
+      "CRV": "0xbc39614927d2fF12728144ADfEA9De357ca9a704",
+      "veCRV": "0x73d1274F8e782650bE7603b850255f8e3Ae99680",
+      "gaugeController": "0x5B94Dd9E3Ce7E2697132147B2F607bc6463D9D5d",
+      "minter": "0x542770219AC0e56e2552D5ac143A96511217D7Bf",
+      "vesting": "0x8B7ef637Af70C8b02cD03E7A2AE0295185d04900",
+      "fee_distributor": "0x8B7ef637Af70C8b02cD03E7A2AE0295185d04900",
+      "mock_pool": "0x8Feb081Af3EE4A860b5FBD89969ffD0D01AC0793",
+      "registry": "0x3f0A05d5e16800Bd19776198158ac0C52cEdd3A0",
+      "pool_info": "0xa974f7F7696154540b7c82437B8437B1A547b409",
+      "swaps": "0x78112877a13CF7B87031B8E2a6C547d7D2B190F0"
+    }
+  },
+  "mainnet": {}
+}

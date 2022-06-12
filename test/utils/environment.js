@@ -256,13 +256,6 @@ const environment = {
         'environment - waiting for Controller as dep for SushiVault',
       );
 
-      const sushiStrategy = await common.waitFor(
-        'SushiStrategy',
-        deployedAndConfiguredContracts,
-        'environment - waiting for SushiStrategy as dep for SushiVault',
-      );
-      await instance.setRewardsDistribution(sushiStrategy.address);
-
       const originalConfigureParams = [
         async () => mockLpSushi.address,
         async () => controller.address,
@@ -278,9 +271,20 @@ const environment = {
         async () => 'Sushi Vault',
         async () => 'sv',
       ];
-      return await overrideConfigureArgsIfNeeded(
+
+      const configuratedInstance = await overrideConfigureArgsIfNeeded(
         instance, originalConfigureParams, overridenConfigureParams
       );
+
+      const sushiStrategy = await common.waitFor(
+        'SushiStrategy',
+        deployedAndConfiguredContracts,
+        'environment - waiting for SushiStrategy as dep for SushiVault',
+      );
+
+      await configuratedInstance.setRewardsDistribution(sushiStrategy.address);
+
+      return configuratedInstance;
     }
   ),
 
@@ -658,6 +662,71 @@ const environment = {
   ),
 
   MockLPSushi: async (force, _, isMockContractRequested) => common.cacheAndReturnContract(
+    'MockLPSushi',
+    force,
+    deployedAndConfiguredContracts,
+    isMockContractRequested,
+    async () => {
+      const mockXBE = await common.waitFor('MockXBE', deployedAndConfiguredContracts,
+        'environment - MockXBE as dependency for Mock LP Sushi');
+
+      const owner = await common.waitFor('owner', accounts.people);
+      const weth9 = await artifacts.WETH9.new({ from: owner });
+      const sushiSwapFactory = await artifacts.UniswapV2Factory.new(owner, { from: owner });
+      const sushiSwapRouter = await artifacts.UniswapV2Router02.new(
+        sushiSwapFactory.address,
+        weth9.address,
+        { from: owner },
+      );
+
+      await mockXBE.mintSender(ether('1000'), { from: owner });
+      await weth9.deposit({
+        from: owner,
+        value: localParams.sushiswapPair.wethAmountForPair,
+      });
+
+      console.log(`WETH balance ${(await weth9.balanceOf(owner)).toString()}`);
+
+      // not required now
+      await mockXBE.approve(
+        sushiSwapRouter.address,
+        localParams.sushiswapPair.xbeAmountForPair,
+        { from: owner },
+      );
+
+      // already enough
+      await weth9.approve(
+        sushiSwapRouter.address,
+        localParams.sushiswapPair.wethAmountForPair,
+        { from: owner },
+      );
+
+      // no need to add liquidity each time
+      await sushiSwapRouter.addLiquidity(
+        mockXBE.address,
+        weth9.address,
+        localParams.sushiswapPair.xbeAmountForPair,
+        localParams.sushiswapPair.wethAmountForPair,
+        localParams.sushiswapPair.xbeAmountForPair,
+        localParams.sushiswapPair.wethAmountForPair,
+        owner,
+        (await time.latest()).add(new BN('3600')),
+        { from: owner },
+      );
+      const mockLpSushi = await artifacts.IUniswapV2Pair.at(
+        await sushiSwapFactory.getPair(
+          mockXBE.address,
+          weth9.address,
+        ),
+      );
+
+      console.log('mockLpSushi:', mockLpSushi.address);
+
+      return mockLpSushi;
+    },
+  ),
+
+  MockLPSushiRinkeby: async (force, _, isMockContractRequested) => common.cacheAndReturnContract(
     'MockLPSushi',
     force,
     deployedAndConfiguredContracts,

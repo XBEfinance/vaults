@@ -13,7 +13,7 @@ const constants = require('../utils/constants');
 const deployment = require('../utils/deployment');
 const environment = require('../utils/environment');
 const { people, setPeople } = require('../utils/accounts');
-const distro = require('../../../curve-convex/distro.json');
+const distro = require('../../distro.json');
 const artifacts = require('../utils/artifacts');
 
 const { ZERO, ZERO_ADDRESS } = constants.utils;
@@ -510,7 +510,7 @@ contract('CVXCRV Strategy & Vault testing', (accounts) => {
       await cvxCrvStrategy.convertAndStakeTokens(crvAmount, { from: alice });
       const cvxCrvBalanceAfter = await cvxCrv.balanceOf(alice);
       const stakedBalance = await cvxCrvVault.balanceOf(alice);
-      
+
       console.log('cvxcrv balance before\t', cvxCrvBalanceBefore.toString());
       console.log('cvxcrv balance after\t', cvxCrvBalanceAfter.toString());
       console.log('staked balance\t', stakedBalance.toString());
